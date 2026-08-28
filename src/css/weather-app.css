@@ -1971,6 +1971,7 @@ html[data-motion-effective="off"] .wx-page-live {
 }
 html[data-motion-effective="reduced"] .wx-page-blob { opacity: 0.28; }
 html[data-motion-effective="reduced"] .wx-page-sun { opacity: 0.7; }
+.weather-page-sky.wx-page--night .wx-page-sun { opacity: 0 !important; }
 .weather-root, .weather-page {
   position: relative;
   z-index: 1;

@@ -265,6 +265,7 @@
       onCityLoaded: function (city, pack) {
         pendingCityKeys.delete(cityKey(city));
         if (pack && pack.fetchedAt) setUpdated(pack.fetchedAt);
+        if (pack && pack.city && pack.city.isMyLocation) applyAmbientPageSky(pack);
         if (refreshInflight && !replaceCityCard(city, pack)) {
           refreshListsFromCache({ force: true, skipAmbient: true });
         }

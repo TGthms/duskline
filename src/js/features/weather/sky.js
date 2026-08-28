@@ -196,11 +196,19 @@
       }
     }
 
-    /** Page canvas: time-of-day + theme gradient — independent of city weather cards. */
-    function applyAmbientPageSky() {
+    /** Page canvas: browser time by default, or saved-location conditions when available. */
+    function applyAmbientPageSky(pack) {
       const sky = document.getElementById('weatherPageSky');
       if (!sky) return;
-      const hour = new Date().getHours();
+      let hour = new Date().getHours();
+      const cityTz = pack && pack.weather && pack.weather.timezone || pack && pack.city && pack.city.tz;
+      if (cityTz) {
+        try {
+          const part = new Intl.DateTimeFormat('en-GB', { timeZone: cityTz, hour: 'numeric', hour12: false, hourCycle: 'h23' }).formatToParts(new Date()).find(function (p) { return p.type === 'hour'; });
+          if (part) hour = Number(part.value);
+        } catch (e) {}
+      }
+      const code = pack && pack.weather && pack.weather.current && Number(pack.weather.current.weather_code);
       const theme = (document.documentElement.getAttribute('data-theme') || 'default');
       const period = hour < 5 ? 'night' : hour < 8 ? 'dawn' : hour < 17 ? 'day' : hour < 20 ? 'dusk' : 'night';
       // [top, mid, bottom] — soft, satisfying palettes tuned per theme
@@ -230,7 +238,11 @@
           dusk: ['#100818', '#3a1848', '#000408']
         },
       };
-      const set = (palettes[theme] || palettes.default)[period];
+      let set = (palettes[theme] || palettes.default)[period];
+      if (code >= 95) set = ['#24172d', '#352044', '#100a1c'];
+      else if ((code >= 51 && code < 70) || (code >= 80 && code < 85)) set = period === 'night' ? ['#17243a', '#26384e', '#0b1320'] : ['#46718f', '#6d9ab1', '#18344d'];
+      else if ((code >= 71 && code < 80) || (code >= 85 && code < 90)) set = period === 'night' ? ['#202b3c', '#34445a', '#101722'] : ['#7890a7', '#b8c7d4', '#40586d'];
+      else if (code >= 2 && code <= 3) set = period === 'night' ? ['#18243b', '#2a3852', '#0b1220'] : ['#52799b', '#86a9c2', '#294965'];
       const level = motionLevel();
       sky.style.setProperty('--wx-page-1', set[0]);
       sky.style.setProperty('--wx-page-2', set[1]);
@@ -238,6 +250,7 @@
       sky.style.setProperty('--wx-page-flat', set[2]);
       sky.setAttribute('data-period', period);
       sky.setAttribute('data-theme-sky', theme);
+      sky.setAttribute('data-condition', Number.isFinite(code) ? String(code) : 'ambient');
 
       // Soft ambient texture (not weather-condition FX)
       let fx = 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,255,255,.06), transparent 45%)';

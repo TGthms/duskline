@@ -413,9 +413,10 @@
         }
         const cur = pack.weather.current || {};
         const ocur = om.weather.current || {};
-        ['relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility', 'precipitation'].forEach(function (k) {
+        ['relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility'].forEach(function (k) {
           if (cur[k] == null && ocur[k] != null) cur[k] = ocur[k];
         });
+        if (ocur.precipitation != null) cur.precipitation = ocur.precipitation;
         pack.weather.current = cur;
 
         const d = pack.weather.daily || {};
@@ -503,7 +504,10 @@
             if (e && e.name === 'AbortError') throw e;
             return null;
           }),
-          loadOpenMeteoCity(c, signal)
+          loadOpenMeteoCity(c, signal),
+          Promise.resolve().then(function () {
+            return loadNwsAlerts(roundCoord(c.lat), roundCoord(c.lon), null);
+          }).catch(function () { return []; })
         ]);
         const nws = results[0];
         const om = results[1];
@@ -511,6 +515,10 @@
           pack = await enrichWithOpenMeteo(nws, signal, om);
         } else {
           pack = om;
+        }
+        if (pack && pack.weather && !pack.error) {
+          pack.alerts = Array.isArray(results[2]) ? results[2] : [];
+          pack._alertsLoading = false;
         }
       } else {
         pack = await loadOpenMeteoCity(c, signal);
