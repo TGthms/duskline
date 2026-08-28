@@ -1,0 +1,814 @@
+/* USA Travel Guide — responsive, constrained, theme finish, CJK */
+/* ═══ LAYOUT SAFETY NET ═══
+   Grid/flex items default to min-width:auto, which can force overflow when
+   content contains long unbreakable words (this is what broke the hero on
+   mobile). Applied broadly here so it stays safe across all languages. */
+.hero-content, .intro-left, .intro-right, .seasons-left, .seasons-right,
+.season-card, .culture-intro > *, .section-header > *, .dest-header-wrapper > *,
+.site-footer-inner, .routes-grid > *, .tips-grid > *,
+.culture-tiles > *, .practical-grid > *, .regions-track > *,
+.settings-grid > *, .tools-grid > *, .pill-group > * {
+  min-width: 0;
+}
+h1, h2, h3, .hero-desc, .intro-body, .intro-pull, p { overflow-wrap: break-word; }
+
+/* Fixed nav offset for in-page anchors.
+   Keep this tight to the scrolled bar height so the previous section
+   doesn’t peek under the nav (e.g. hero strip above About). */
+section[id], footer[id] { scroll-margin-top: 64px; }
+/* Immersive full-viewport stages: no extra offset */
+#hero,
+#gallery { scroll-margin-top: 0; }
+/* About: solid stage so nothing from hero shows through */
+#intro {
+  scroll-margin-top: 60px;
+  background: var(--bg-base);
+}
+
+/* ═══ RESPONSIVE ═══
+   Breakpoints cover: large tablet/small laptop (1100), tablet portrait &
+   large phones landscape (860), phones (540), narrow phones (400),
+   wearable/mini webviews (280), plus short-viewport rules earlier. */
+@media (max-width: 1100px) {
+  .regions-nav-btns { display: flex; }
+  /* When scroll arrows appear, keep intro copy above them in the right column */
+  .regions-header-wrapper {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
+    grid-template-areas:
+      "title copy"
+      "title nav";
+  }
+  .regions-track {
+    display: flex; grid-template-columns: none; gap: 16px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    padding: 4px 60px 28px; margin: 0 -60px;
+    -ms-overflow-style: none; scrollbar-width: none;
+    /* Touch momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .regions-track::-webkit-scrollbar { display: none; }
+  .region-card { flex: 0 0 min(300px, 78vw); scroll-snap-align: center; }
+  .practical-grid { grid-template-columns: repeat(2,1fr); }
+  .culture-tiles { grid-template-columns: repeat(3,1fr); }
+  .routes-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Destinations carousel stays usable on tablets */
+  .dest-track {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .dest-card { flex: 0 0 min(320px, 78vw); }
+}
+@media (max-width: 860px) {
+  #navbar,
+  #navbar.scrolled { padding: 14px 24px; }
+  .nav-links { display: none; }
+  .nav-actions { margin-left: auto; gap: 8px; flex-shrink: 0; }
+  .nav-hamburger { display: flex; flex-shrink: 0; }
+  /* Phone + hamburger: icon-only logo — prevents mark / America stacking beside action icons */
+  .nav-logo span { display: none; }
+  .nav-logo { font-size: 22px; padding: 4px 2px; }
+
+  /* Mobile hero: bottom-weighted (not vertically centered) — more polished native feel */
+  #hero {
+    align-items: flex-end;
+    justify-content: flex-end;
+    min-height: 100dvh;
+    min-height: 100svh;
+  }
+  /*
+    Mobile Modern light: show a clearer photo (less dim / less milky scrim).
+    Type still sits on a light bottom falloff — not a heavy wash over the image.
+  */
+  html[data-theme="minimal"] .hero-bg::after {
+    background:
+      linear-gradient(to top, rgba(245, 245, 247, 0.72) 0%, rgba(245, 245, 247, 0.22) 36%, transparent 58%),
+      linear-gradient(105deg, rgba(245, 245, 247, 0.18) 0%, transparent 50%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 0%, transparent 24%);
+  }
+  html[data-theme="elegant"] .hero-bg::after {
+    background:
+      linear-gradient(to top, rgba(246, 241, 232, 0.75) 0%, rgba(246, 241, 232, 0.28) 38%, transparent 60%),
+      linear-gradient(105deg, rgba(246, 241, 232, 0.22) 0%, transparent 52%),
+      linear-gradient(to bottom, rgba(40, 28, 18, 0.12) 0%, transparent 26%);
+  }
+  html[data-theme="minimal"] .hero-bg-photo {
+    filter: brightness(0.96) saturate(1.03) contrast(1.01);
+  }
+  html[data-theme="elegant"] .hero-bg-photo {
+    filter: brightness(0.93) saturate(1.02) contrast(1.01);
+  }
+  #hero, #intro, #regions, #destinations, #practical, #seasons, #culture, #routes, #tips, #fun-facts, .site-footer { padding-left: 24px; padding-right: 24px; }
+  /* Gallery teaser is full-bleed — do not inset the section */
+  .hero-content {
+    padding:
+      0
+      24px
+      max(6.25rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
+    max-width: 36rem;
+    width: 100%;
+  }
+  .hero-h1 {
+    max-width: 12ch;
+    line-height: 0.98;
+    margin-bottom: 1.1rem;
+  }
+  .hero-desc {
+    font-size: clamp(0.98rem, 3.6vw, 1.08rem);
+    line-height: 1.62;
+    margin-bottom: 1.75rem;
+    max-width: 34em;
+  }
+  .hero-cta { gap: 10px; }
+  .hero-cta .btn-primary,
+  .hero-cta .btn-ghost {
+    border-radius: 10px;
+    letter-spacing: .1em;
+    min-height: 48px;
+  }
+  .hero-explore-btn {
+    min-height: 54px;
+    width: auto;
+  }
+  .hero-scroll {
+    bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  }
+  .scroll-line { height: 44px; }
+  .intro-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    align-items: stretch;
+  }
+  /* Intro photos remain visible on mobile: hero tall + two-up row */
+  .intro-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  .intro-right .img-card-tall {
+    height: clamp(220px, 58vw, 300px);
+    width: 100%;
+  }
+  .intro-right .img-card-row { gap: 12px; }
+  .intro-right .img-card-sm {
+    height: clamp(132px, 36vw, 180px);
+    min-height: 120px;
+  }
+  .intro-right .scene-label {
+    bottom: 10px;
+    left: 10px;
+    font-size: 9px;
+    letter-spacing: .1em;
+    padding: 5px 8px;
+  }
+  .intro-facts { grid-template-columns: repeat(2,1fr); }
+  .regions-track { padding: 4px 24px 28px; margin: 0 -24px; }
+  .region-card { flex: 0 0 min(268px, 78vw); height: min(440px, 70vh); }
+  .practical-grid { grid-template-columns: 1fr; background: none; border: none; gap: 16px; }
+  .prac-card { border: 1px solid var(--border-light); border-radius: 8px; }
+  .seasons-grid { grid-template-columns: 1fr; gap: 48px; }
+  .culture-tiles { grid-template-columns: repeat(2, 1fr); }
+  .routes-grid { grid-template-columns: 1fr; }
+  .tips-grid { grid-template-columns: 1fr; }
+
+  .settings-overlay { padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); align-items: stretch; }
+  .settings-panel { max-height: calc(100dvh - 24px); padding: 26px 18px; }
+  .settings-title-row { align-items: center; }
+  .settings-close { flex-basis: 40px; width: 40px; height: 40px; }
+  .settings-grid { grid-template-columns: 1fr; }
+  /* tools-grid already collapses at 900px; keep panel usable on phones */
+  .tools-panel { max-height: calc(100dvh - 24px); width: min(100%, 1180px); }
+  .hero-stats { display: none; }
+  .site-footer { text-align: center; }
+  .section-header { grid-template-columns: 1fr; }
+  .section-header p { text-align: left; max-width: 100%; }
+  .dest-header-wrapper { flex-wrap: wrap; gap: 16px; }
+  .regions-header-wrapper {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "copy"
+      "nav";
+    row-gap: 14px;
+    align-items: start;
+  }
+  .regions-header-wrapper > p {
+    justify-self: start;
+    max-width: 100%;
+    text-align: left;
+  }
+  .regions-header-wrapper > .regions-nav-btns {
+    justify-self: start;
+  }
+  .culture-intro { grid-template-columns: 1fr; gap: 32px; }
+  .tip-row { padding: 18px 16px; gap: 12px; }
+  .tip-row-photo { flex-basis: 64px; width: 64px; height: 64px; min-width: 64px; max-width: 64px; }
+  .dest-track { padding: 10px 24px 30px; margin: 0 -24px;}
+  .dest-card { flex: 0 0 min(280px, 82vw); height: min(380px, 62vh);}
+  .modal-facts { grid-template-columns: 1fr 1fr; }
+  .modal-header, .modal-body { padding-left: 24px; padding-right: 24px; }
+  .modal-title { font-size: clamp(1.5rem, 6vw, 2rem); }
+  .modal-header { padding-top: 28px; padding-bottom: 18px; }
+  /* Mobile nav: account for notches + bottom home indicator */
+  .nav-mobile {
+    padding-top: max(100px, calc(80px + env(safe-area-inset-top, 0px)));
+    padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Keep sticky gallery filters under the mini-app bar on phones */
+  body.page-gallery .gallery-filters {
+    top: calc(60px + env(safe-area-inset-top, 0px));
+  }
+}
+/* Mid phones / small tablets in portrait — avoid cramped 3-col swatches */
+@media (max-width: 720px) {
+  .intro-facts { gap: 10px; }
+  .fact-card { padding: 18px 14px; }
+  /* Keep From | ⇄ | To — never stack swap as a full-width bar */
+  .currency-tool {
+    grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+  }
+  .currency-tool .tool-field:first-child { grid-column: 1 / -1; }
+  .currency-tool .tool-swap {
+    width: 48px;
+    height: 46px;
+    border-radius: 50%;
+    justify-self: center;
+  }
+}
+@media (max-width: 540px) {
+  .tool-two-col { grid-template-columns: 1fr; }
+  .tool-card { padding: 22px 18px; }
+  .culture-tiles { grid-template-columns: repeat(2,1fr); }
+  .seasons-right { grid-template-columns: 1fr; }
+  .modal-facts { grid-template-columns: 1fr; }
+  .region-card { flex-basis: min(240px, 82vw); height: min(420px, 68vh); }
+  .btn-primary, .btn-ghost { min-height: 44px; }
+  .gallery-filter { min-height: 44px; }
+  /* Sticky filters: leave room for gallery mini-app bar on phones */
+  body.page-gallery .gallery-filters {
+    top: calc(56px + env(safe-area-inset-top, 0px));
+  }
+}
+@media (max-width: 400px) {
+  .hero-cta { width: 100%; flex-direction: column; align-items: stretch; }
+  .hero-cta .btn-primary, .hero-cta .btn-ghost,
+  .hero-explore-btn {
+    flex: 1 1 auto; justify-content: center; width: 100%; text-align: center;
+  }
+  #hero, #intro, #regions, #destinations, #practical, #seasons, #culture, #routes, #tips, footer { padding-left: 16px; padding-right: 16px; }
+  /* Mini-app pages keep the roomier gallery-style gutters (not the 16px guide squeeze) */
+  body.page-gallery #gallery,
+  body.page-tools #tools.tools-page {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  #navbar { padding-left: 14px; padding-right: 14px; }
+  .hero-content {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 0;
+    padding-bottom: max(5.5rem, calc(4.25rem + env(safe-area-inset-bottom, 0px)));
+  }
+  .hero-h1 { font-size: clamp(2.55rem, 12.5vw, 3.35rem); letter-spacing: -.035em; }
+  .hero-desc { font-size: 0.98rem; }
+  .section-header h2, #practical h2, .tips-header h2 { font-size: clamp(1.7rem, 8vw, 2.2rem) !important; }
+  .loader-bar { width: min(240px, 70vw); }
+  .regions-track { padding: 4px 14px 28px; margin: 0 -14px; }
+  .dest-track { padding: 10px 14px 30px; margin: 0 -14px; }
+}
+/* Ultra-narrow / wearable webviews (~Apple Watch size and similar). */
+@media (max-width: 280px) {
+  #navbar { padding: 8px 6px; gap: 4px; flex-wrap: nowrap; }
+  .nav-logo {
+    font-size: 18px; padding: 2px 4px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+  }
+  .nav-logo span { display: none; }   /* icon-only mark */
+  .nav-actions { gap: 3px; margin-left: 2px; flex-shrink: 0; }
+  .nav-settings-btn, .nav-tool-btn { width: 30px; height: 30px; }
+
+  #hero { min-height: 280px; }
+  .hero-content { padding: 0 8px 40px; }
+  .hero-eyebrow { font-size: 10px; letter-spacing: .12em; }
+  .hero-desc { font-size: 13px; }
+  .gallery-caption { font-size: 10px; }
+  .settings-panel { padding: 16px 12px; }
+  .culture-tiles { grid-template-columns: 1fr; }
+}
+/* Foldables / split-screen: very short + moderately wide */
+@media (max-height: 500px) and (min-width: 600px) {
+  #hero { min-height: 320px; height: 100dvh; }
+  .hero-content { padding-bottom: 40px; }
+  .hero-stats { display: none; }
+  .hero-scroll { display: none; }
+  .settings-panel, .tools-panel { max-height: calc(100dvh - 16px); }
+}
+/* Safe areas for notched phones / Dynamic Island when not already covered. */
+@supports (padding: max(0px)) {
+  #navbar {
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+  }
+  @media (min-width: 861px) {
+    #navbar {
+      padding-left: max(60px, env(safe-area-inset-left));
+      padding-right: max(60px, env(safe-area-inset-right));
+    }
+  }
+}
+/* Very large / TV viewports: keep type and section rhythm proportional. */
+@media (min-width: 1920px) {
+  .hero-content { max-width: 1100px; padding-bottom: 120px; }
+  .hero-h1 { font-size: clamp(5rem, 7vw, 9rem); }
+  #intro, #regions, #destinations, #practical, #seasons, #culture, #routes, #tips {
+    padding-left: clamp(60px, 6vw, 120px);
+    padding-right: clamp(60px, 6vw, 120px);
+  }
+}
+
+/* ═══ CONSTRAINED / WEARABLE WEBVIEWS (watchOS Safari, mini browsers) ═══
+   Goal: zero “A problem occurred” from GPU/memory thrash. Prefer content
+   over effects — effects are progressive enhancement on larger screens. */
+@media (max-width: 320px), (max-height: 280px) {
+  #cursorCanvas,
+  body::before,
+  #progress-bar { display: none !important; }
+
+  /* Skip boot splash — less time stuck on a spinner */
+  #loader { display: none !important; }
+
+  /* Instant content — no scroll-reveal waiting on IO / animations */
+  .reveal,
+  .reveal-left,
+  .reveal-right,
+  .gallery-item img,
+  .gallery-caption {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .gallery-item { min-height: 0; }
+  .gallery-item.is-revealed .gallery-caption { opacity: 1 !important; }
+
+  /* Blur is expensive and flaky on tiny GPUs */
+  nav,
+  .gallery-app-bar,
+  .settings-overlay,
+  .lightbox,
+  .lightbox-progress,
+  .nav-mobile,
+  #modal-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html { scroll-behavior: auto; }
+  #hero { min-height: 220px; height: auto; padding-bottom: 24px; }
+  .hero-h1 { font-size: clamp(1.6rem, 12vw, 2.2rem); margin-bottom: 12px; }
+  .hero-stats, .hero-scroll { display: none !important; }
+  .nav-links { display: none; }
+  .nav-hamburger { display: flex; }
+
+  .lightbox-img {
+    max-width: 96vw;
+    max-height: 55dvh;
+    min-width: 0;
+    min-height: 0;
+    box-shadow: none;
+  }
+  .lightbox-progress {
+    /* Stay bottom-left so it doesn't collide with close (bottom-right) */
+    left: max(10px, env(safe-area-inset-left));
+    right: auto;
+    transform: none;
+    width: min(180px, calc(100% - 72px));
+    min-width: 0;
+    padding: 8px 10px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .lightbox-progress-msg { font-size: 10px; }
+  .lightbox-progress-pct { font-size: 11px; }
+  /* Move the close button to the bottom on wearable webviews — many of these
+     mini-browsers float their own address bar over the top of the page,
+     which hides/covers a top-positioned button. */
+  .lightbox-close {
+    top: auto;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .settings-panel,
+  .tools-panel { max-height: none; }
+  .tool-card { padding: 14px 12px; }
+}
+
+/* ═══ THEME-SPECIFIC FINISH ═══
+   Each palette already owns tokens; these are surgical overrides so light
+   themes never wash out type, and glass/luxury keep their character. */
+html[data-theme="minimal"] .btn-primary,
+html[data-theme="elegant"] .btn-primary {
+  color: #fff;
+}
+html[data-theme="minimal"] .btn-primary:hover,
+html[data-theme="elegant"] .btn-primary:hover {
+  color: #fff;
+}
+html[data-theme="minimal"] .dest-filter-btn.active,
+html[data-theme="elegant"] .dest-filter-btn.active,
+html[data-theme="minimal"] .gallery-filter.active,
+html[data-theme="elegant"] .gallery-filter.active {
+  color: #fff;
+}
+/* Immersive hero photo: theme-specific solid fills no longer override .hero-bg.
+   Scrims + image filters live in home.css. */
+/* Daylight type: product-page clarity (tighter tracking, less “magazine serif”) */
+html[data-theme="minimal"] .hero-h1,
+html[data-theme="minimal"] .section-header h2,
+html[data-theme="minimal"] .intro-left h2,
+html[data-theme="minimal"] .nav-logo,
+html[data-theme="minimal"] .gallery-app-title {
+  font-style: normal;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+html[data-theme="minimal"] .hero-h1 em,
+html[data-theme="minimal"] .section-header h2 em,
+html[data-theme="minimal"] .intro-left h2 em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--accent-1);
+}
+html[data-theme="minimal"] .section-eyebrow,
+html[data-theme="minimal"] .hero-eyebrow {
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--text-mute);
+}
+html[data-theme="minimal"] .section-eyebrow::after,
+html[data-theme="minimal"] .hero-eyebrow::before {
+  background: var(--border-med);
+  opacity: 1;
+}
+html[data-theme="minimal"] body::before {
+  opacity: 0.02;
+  mix-blend-mode: multiply;
+}
+html[data-theme="minimal"] .btn-primary {
+  border-radius: 980px;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+html[data-theme="minimal"] .btn-ghost {
+  border-radius: 980px;
+}
+/* Frosted bar only after scroll; over hero use soft top fade (see home.css) — not a solid bar */
+html[data-theme="minimal"] #navbar.scrolled {
+  border-bottom: 1px solid var(--border-light);
+}
+html[data-theme="minimal"] #navbar:not(.scrolled) {
+  /* Soft gradient from home.css; do not force a solid frosted panel */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+
+/* Twilight Glass finish — Apple dark product page (pair with Gallery Daylight) */
+html[data-theme="glass"] { color-scheme: dark; }
+html[data-theme="glass"] .btn-primary,
+html[data-theme="glass"] .tool-seg-btn.active,
+html[data-theme="glass"] .dest-filter-btn.active,
+html[data-theme="glass"] .gallery-filter.active {
+  color: #fff;
+}
+html[data-theme="glass"] .btn-primary {
+  border-radius: 980px;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+html[data-theme="glass"] .btn-ghost {
+  border-radius: 980px;
+}
+html[data-theme="glass"] .hero-h1,
+html[data-theme="glass"] .section-header h2,
+html[data-theme="glass"] .intro-left h2,
+html[data-theme="glass"] .nav-logo,
+html[data-theme="glass"] .gallery-app-title {
+  font-style: normal;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+html[data-theme="glass"] .hero-h1 em,
+html[data-theme="glass"] .section-header h2 em,
+html[data-theme="glass"] .intro-left h2 em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--accent-1);
+}
+html[data-theme="glass"] .section-eyebrow,
+html[data-theme="glass"] .hero-eyebrow {
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--text-mute);
+}
+html[data-theme="glass"] .section-eyebrow::after,
+html[data-theme="glass"] .hero-eyebrow::before {
+  background: var(--border-med);
+  opacity: 1;
+}
+/* Glass nav material only when scrolled — transparent over the hero photo */
+html[data-theme="glass"] #navbar:not(.scrolled) {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+html[data-theme="glass"] #navbar.scrolled {
+  border-bottom: 1px solid var(--border-light);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+html[data-theme="glass"] body::before {
+  opacity: 0.03;
+  mix-blend-mode: soft-light;
+}
+html[data-theme="glass"] body {
+  background-image: none;
+  background-color: var(--bg-base);
+}
+html[data-theme="glass"] .settings-panel,
+html[data-theme="glass"] .settings-group,
+html[data-theme="glass"] .tool-card,
+html[data-theme="glass"] .modal-box {
+  background: rgba(29, 29, 31, 0.88);
+  border-color: var(--border-light);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+}
+/* Light themes: softer card shadows, stronger borders for definition */
+html[data-theme="minimal"] .fact-card,
+html[data-theme="elegant"] .fact-card,
+html[data-theme="minimal"] .season-card,
+html[data-theme="elegant"] .season-card,
+html[data-theme="minimal"] .route-card,
+html[data-theme="elegant"] .route-card,
+html[data-theme="minimal"] .settings-group,
+html[data-theme="elegant"] .settings-group,
+html[data-theme="minimal"] .tool-card,
+html[data-theme="elegant"] .tool-card {
+  box-shadow: 0 1px 0 rgba(0,0,0,.03), 0 10px 28px rgba(20, 20, 20, 0.05);
+}
+/* Culture mosaic + tip dossier rows: no floating shadows (shared hairlines only) */
+html[data-theme="minimal"] .culture-tile,
+html[data-theme="elegant"] .culture-tile,
+html[data-theme="minimal"] .tip-row,
+html[data-theme="elegant"] .tip-row {
+  box-shadow: none;
+}
+html[data-theme="minimal"] .culture-tiles,
+html[data-theme="elegant"] .culture-tiles {
+  box-shadow: 0 1px 0 rgba(0,0,0,.03), 0 10px 28px rgba(20, 20, 20, 0.05);
+}
+html[data-theme="minimal"] .prac-card,
+html[data-theme="elegant"] .prac-card {
+  border-color: var(--border-light);
+}
+
+/* Cards & type weight — magazine body is never ultra-thin */
+.intro-body, .hero-desc, .section-header p, .route-desc, .tip-body, .prac-body, .culture-tile-desc {
+  font-weight: 400;
+}
+
+/* ═══ CJK TYPOGRAPHY (Chinese · Japanese) ═══
+   Full-width glyphs read larger than Latin at the same px size, and very
+   tight Latin line-heights / negative tracking make big CJK titles feel
+   oversized and cramped. Scale display type down and open leading.
+   Selectors cover both data-lang (set by JS) and native lang attrs. */
+html[data-lang="zh"],
+html[data-lang="ja"],
+html[lang^="zh"],
+html[lang="ja"] {
+  /* Prefer Noto for CJK runs; Latin still falls through to Public Sans / Fraunces */
+  --ff-body: 'Noto Sans SC', 'Noto Sans JP', 'Public Sans', Helvetica, Arial, sans-serif;
+  word-break: break-word;
+  line-break: strict;
+}
+
+html[data-lang="zh"],
+html[lang^="zh"] {
+  --ff-display: 'Noto Serif SC', 'Noto Sans SC', 'Fraunces', Georgia, serif;
+  --ff-serif:   'Noto Serif SC', 'Noto Sans SC', Georgia, serif;
+  --ff-body:    'Noto Sans SC', 'Public Sans', Helvetica, Arial, sans-serif;
+}
+
+html[data-lang="ja"],
+html[lang="ja"] {
+  --ff-display: 'Noto Serif JP', 'Noto Sans JP', 'Fraunces', Georgia, serif;
+  --ff-serif:   'Noto Serif JP', 'Noto Sans JP', Georgia, serif;
+  --ff-body:    'Noto Sans JP', 'Public Sans', Helvetica, Arial, sans-serif;
+}
+
+/* Daylight theme already uses sans for display — keep that for CJK too */
+html[data-theme="minimal"][data-lang="zh"],
+html[data-theme="minimal"][lang^="zh"] {
+  --ff-display: 'Noto Sans SC', 'Public Sans', Helvetica, Arial, sans-serif;
+  --ff-serif:   'Noto Sans SC', 'Public Sans', Helvetica, Arial, sans-serif;
+}
+html[data-theme="minimal"][data-lang="ja"],
+html[data-theme="minimal"][lang="ja"] {
+  --ff-display: 'Noto Sans JP', 'Public Sans', Helvetica, Arial, sans-serif;
+  --ff-serif:   'Noto Sans JP', 'Public Sans', Helvetica, Arial, sans-serif;
+}
+
+/* Large display / title sizes — ~20–30% smaller max, roomier line-height */
+html[data-lang="zh"] .hero-h1,
+html[data-lang="ja"] .hero-h1,
+html[lang^="zh"] .hero-h1,
+html[lang="ja"] .hero-h1 {
+  font-size: clamp(2.2rem, 5.2vw, 4.4rem);
+  line-height: 1.28;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+html[data-lang="zh"] .hero-h1 em,
+html[data-lang="ja"] .hero-h1 em,
+html[lang^="zh"] .hero-h1 em,
+html[lang="ja"] .hero-h1 em {
+  font-style: normal; /* CJK italics often synthesize poorly */
+  font-weight: 600;
+}
+
+html[data-lang="zh"] .intro-left h2,
+html[data-lang="ja"] .intro-left h2,
+html[data-lang="zh"] .section-header h2,
+html[data-lang="ja"] .section-header h2,
+html[data-lang="zh"] .seasons-left h2,
+html[data-lang="ja"] .seasons-left h2,
+html[data-lang="zh"] .culture-intro h2,
+html[data-lang="ja"] .culture-intro h2,
+html[data-lang="zh"] .tips-header h2,
+html[data-lang="ja"] .tips-header h2,
+html[data-lang="zh"] .settings-header h2,
+html[data-lang="ja"] .settings-header h2,
+html[data-lang="zh"] .loader-text,
+html[data-lang="ja"] .loader-text,
+html[lang^="zh"] .intro-left h2,
+html[lang="ja"] .intro-left h2,
+html[lang^="zh"] .section-header h2,
+html[lang="ja"] .section-header h2,
+html[lang^="zh"] .seasons-left h2,
+html[lang="ja"] .seasons-left h2,
+html[lang^="zh"] .culture-intro h2,
+html[lang="ja"] .culture-intro h2,
+html[lang^="zh"] .tips-header h2,
+html[lang="ja"] .tips-header h2,
+html[lang^="zh"] .settings-header h2,
+html[lang="ja"] .settings-header h2 {
+  font-size: clamp(1.7rem, 3vw, 2.45rem);
+  line-height: 1.3;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+html[data-lang="zh"] .intro-left h2 em,
+html[data-lang="ja"] .intro-left h2 em,
+html[data-lang="zh"] .section-header h2 em,
+html[data-lang="ja"] .section-header h2 em,
+html[data-lang="zh"] .settings-header h2 em,
+html[data-lang="ja"] .settings-header h2 em,
+html[lang^="zh"] .intro-left h2 em,
+html[lang="ja"] .intro-left h2 em,
+html[lang^="zh"] .section-header h2 em,
+html[lang="ja"] .section-header h2 em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+html[data-lang="zh"] .intro-pull,
+html[data-lang="ja"] .intro-pull,
+html[lang^="zh"] .intro-pull,
+html[lang="ja"] .intro-pull {
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  line-height: 1.75;
+  letter-spacing: 0;
+  font-style: normal;
+}
+
+html[data-lang="zh"] .modal-title,
+html[data-lang="ja"] .modal-title,
+html[lang^="zh"] .modal-title,
+html[lang="ja"] .modal-title {
+  font-size: clamp(1.45rem, 3.5vw, 1.9rem);
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+html[data-lang="zh"] .nav-mobile a,
+html[data-lang="ja"] .nav-mobile a,
+html[lang^="zh"] .nav-mobile a,
+html[lang="ja"] .nav-mobile a {
+  font-size: clamp(1.3rem, 5.2vw, 1.85rem);
+  font-style: normal;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+html[data-lang="zh"] .dest-name,
+html[data-lang="ja"] .dest-name,
+html[lang^="zh"] .dest-name,
+html[lang="ja"] .dest-name {
+  font-size: 1.45rem;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+html[data-lang="zh"] .region-name,
+html[data-lang="ja"] .region-name,
+html[lang^="zh"] .region-name,
+html[lang="ja"] .region-name {
+  font-size: 1.35rem;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+html[data-lang="zh"] .stat-num,
+html[data-lang="ja"] .stat-num,
+html[lang^="zh"] .stat-num,
+html[lang="ja"] .stat-num {
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+  letter-spacing: 0;
+}
+
+html[data-lang="zh"] .tool-result,
+html[data-lang="ja"] .tool-result,
+html[lang^="zh"] .tool-result,
+html[lang="ja"] .tool-result {
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+html[data-lang="zh"] .loader-text,
+html[data-lang="ja"] .loader-text,
+html[lang^="zh"] .loader-text,
+html[lang="ja"] .loader-text {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+/* Body / UI copy: slightly more leading for dense CJK */
+html[data-lang="zh"] body,
+html[data-lang="ja"] body,
+html[lang^="zh"] body,
+html[lang="ja"] body {
+  line-height: 1.85;
+}
+html[data-lang="zh"] .hero-desc,
+html[data-lang="ja"] .hero-desc,
+html[data-lang="zh"] .intro-body,
+html[data-lang="ja"] .intro-body,
+html[lang^="zh"] .hero-desc,
+html[lang="ja"] .hero-desc,
+html[lang^="zh"] .intro-body,
+html[lang="ja"] .intro-body {
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+}
+
+/* Decorative giant numbers stay subdued for CJK layout density */
+html[data-lang="zh"] .region-num,
+html[data-lang="ja"] .region-num,
+html[data-lang="zh"] .prac-num,
+html[data-lang="ja"] .prac-num,
+html[lang^="zh"] .region-num,
+html[lang="ja"] .region-num,
+html[lang^="zh"] .prac-num,
+html[lang="ja"] .prac-num {
+  font-size: 3.2rem;
+}
+
+@media (max-width: 400px) {
+  html[data-lang="zh"] .hero-h1,
+  html[data-lang="ja"] .hero-h1,
+  html[lang^="zh"] .hero-h1,
+  html[lang="ja"] .hero-h1 {
+    font-size: clamp(1.85rem, 9vw, 2.6rem);
+    line-height: 1.3;
+  }
+  html[data-lang="zh"] .section-header h2,
+  html[data-lang="ja"] .section-header h2,
+  html[lang^="zh"] .section-header h2,
+  html[lang="ja"] .section-header h2 {
+    font-size: clamp(1.45rem, 6.5vw, 1.85rem) !important;
+  }
+}
+

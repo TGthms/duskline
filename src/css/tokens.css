@@ -1,0 +1,371 @@
+/* USA Travel Guide — tokens, themes, base, typography */
+/* ═══════════════════════════════════════════
+   TOKENS & BASE SETTINGS (THEME FRAMEWORK)
+   Editorial travel-magazine system: each theme owns
+   color + type pairing; body text always stays readable.
+═══════════════════════════════════════════ */
+:root {
+  /* Default: Midnight Atlas — ink navy, brass, editorial cream */
+  --bg-base:     #07101c;
+  --bg-surface:  #0d1829;
+  --bg-surface-2:#142338;
+  --bg-card:     rgba(246, 240, 228, 0.035);
+  --bg-card-hov: rgba(201, 162, 89, 0.08);
+
+  --accent-1:    #c9a259;
+  --accent-1-lt: #e0c48a;
+  --accent-1-dk: #9a7840;
+  --accent-2:    #b85c42;
+
+  --text-main:   #f4efe4;
+  --text-dim:    rgba(244, 239, 228, 0.72);
+  --text-mute:   rgba(244, 239, 228, 0.48);
+  --text-inv:    #0a1220;
+
+  --border-light: rgba(201, 162, 89, 0.16);
+  --border-med:   rgba(201, 162, 89, 0.38);
+
+  --nav-bg:      rgba(7, 16, 28, 0.88);
+  --modal-bg:    rgba(5, 10, 18, 0.55);
+
+  /* Licensed web fonts only (Google Fonts + generic fallbacks) */
+  --ff-display:  'Fraunces', 'Noto Serif SC', 'Noto Serif JP', Georgia, 'Times New Roman', serif;
+  --ff-serif:    'Special Elite', 'Noto Serif SC', 'Noto Serif JP', Georgia, serif;
+  --ff-body:     'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+
+  --radius:      6px;
+  --radius-lg:   12px;
+  --shadow-card: 0 18px 40px rgba(0, 0, 0, 0.22);
+  --hairline:    1px solid var(--border-light);
+
+  /*
+   * Layout rhythm (fluid type + caps)
+   * - section-x grows with viewport, then stops so content never becomes a
+   *   stretched reading line on ultra-wide screens
+   * - content-max keeps side margins on large displays
+   */
+  --content-max: 72rem;          /* ~1152px at 16px root */
+  --prose-max:    68ch;           /* comfortable ~65–75 characters */
+  --prose-wide:   40rem;          /* ~640px alternate measure */
+  --section-y:   clamp(4.5rem, 4rem + 4vw, 8.25rem);
+  --section-x:   clamp(1rem, 0.6rem + 3.5vw, 3.75rem);
+
+  --body-weight: 400;
+  /* Hybrid fluid body: rem floor + viewport lean, rem ceiling (respects user zoom) */
+  --body-size:   clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem); /* ~15–17px */
+  --body-leading: 1.7;
+
+  /* Type scale — clamp(min, rem + vw, max); preferred always includes rem */
+  --fs-hero:     clamp(2.75rem, 1.6rem + 5.2vw, 6.5rem);
+  --fs-display:  clamp(2rem, 1.35rem + 2.2vw, 3.25rem);
+  --fs-title:    clamp(1.65rem, 1.25rem + 1.4vw, 2.5rem);
+  --fs-lead:     clamp(1.05rem, 0.95rem + 0.45vw, 1.35rem);
+  --fs-body:     var(--body-size);
+  --fs-small:    clamp(0.8125rem, 0.78rem + 0.15vw, 0.9rem);
+  --fs-micro:    clamp(0.6875rem, 0.66rem + 0.1vw, 0.75rem);
+  --fs-btn:      clamp(0.6875rem, 0.65rem + 0.12vw, 0.75rem);
+
+  /* Regional Gradients Base */
+  --rc-ne: #1a3a5c; --rc-so: #2a1a0a; --rc-mw: #1a3020; --rc-we: #1a1038; --rc-sw: #2a1008;
+}
+
+/* Theme: Gallery Daylight — light product palette
+   Cool silver white + soft black type + confident blue accent. */
+[data-theme="minimal"] {
+  --bg-base:     #f5f5f7;
+  --bg-surface:  #ffffff;
+  --bg-surface-2:#e8e8ed;
+  --bg-card:     #ffffff;
+  --bg-card-hov: #f5f5f7;
+
+  --accent-1:    #0071e3;
+  --accent-1-lt: #2997ff;
+  --accent-1-dk: #0066cc;
+  --accent-2:    #6e6e73;
+
+  --text-main:   #1d1d1f;
+  --text-dim:    #6e6e73;
+  --text-mute:   #86868b;
+  --text-inv:    #ffffff;
+
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-med:   rgba(0, 0, 0, 0.18);
+
+  --nav-bg:      rgba(255, 255, 255, 0.78);
+  --modal-bg:    rgba(255, 255, 255, 0.6);
+
+  /* Public Sans only — licensed Google Font; not system product fonts */
+  --ff-display:  'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --ff-serif:    'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --ff-body:     'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --body-weight: 400;
+  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
+
+  /* Soft neutral region tints (cool, not muddy) */
+  --rc-ne: #e8eef6; --rc-so: #f3efe9; --rc-mw: #e9f0ea; --rc-we: #eceaf3; --rc-sw: #f2ebe8;
+}
+
+/* Theme: Classic Elegant — warm paper, burgundy, readable sans body (never all-serif) */
+[data-theme="elegant"] {
+  --bg-base:     #f6f1e8;
+  --bg-surface:  #efe8db;
+  --bg-surface-2:#e4d9c8;
+  --bg-card:     #fffdf8;
+  --bg-card-hov: #f8f2e8;
+
+  --accent-1:    #7a2e2e;
+  --accent-1-lt: #9b4444;
+  --accent-1-dk: #541f1f;
+  --accent-2:    #b8956a;
+
+  --text-main:   #241f1b;
+  --text-dim:    #5a524a;
+  --text-mute:   #8f8578;
+  --text-inv:    #fffdf8;
+
+  --border-light: rgba(122, 46, 46, 0.14);
+  --border-med:   rgba(122, 46, 46, 0.36);
+
+  --nav-bg:      rgba(246, 241, 232, 0.94);
+  --modal-bg:    rgba(239, 232, 219, 0.6);
+
+  --ff-display:  'Fraunces', 'Noto Serif SC', 'Noto Serif JP', Georgia, serif;
+  --ff-serif:    'Special Elite', 'Noto Serif SC', 'Noto Serif JP', Georgia, serif;
+  --ff-body:     'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --body-weight: 400;
+  --shadow-card: 0 16px 40px rgba(36, 31, 27, 0.1);
+
+  --rc-ne: #e4e8f0; --rc-so: #f3e4de; --rc-mw: #e4eee6; --rc-we: #ebe4f0; --rc-sw: #efe6df;
+}
+
+/* Theme: Twilight Glass — dark twin of Gallery Daylight
+   Apple product-night palette (MacBook Pro–style): pure black stage,
+   graphite elevated surfaces, soft white type, system blue accents.
+   Same clean sans stack as Daylight — not brass/magazine glass. */
+[data-theme="glass"] {
+  /* Near-black stage + elevated graphite (Apple dark UI) */
+  --bg-base:     #000000;
+  --bg-surface:  #1d1d1f;
+  --bg-surface-2:#2c2c2e;
+  --bg-card:     #1d1d1f;
+  --bg-card-hov: #2c2c2e;
+
+  /* Apple dark-mode blue family */
+  --accent-1:    #0a84ff;
+  --accent-1-lt: #64b5ff;
+  --accent-1-dk: #0071e3;
+  --accent-2:    #98989d;
+
+  /* Soft white + mid grays on black */
+  --text-main:   #f5f5f7;
+  --text-dim:    #a1a1a6;
+  --text-mute:   #6e6e73;
+  --text-inv:    #ffffff;
+
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-med:   rgba(255, 255, 255, 0.16);
+
+  /* Frosted dark nav (blur + translucent graphite) */
+  --nav-bg:      rgba(22, 22, 23, 0.72);
+  --modal-bg:    rgba(29, 29, 31, 0.55);
+
+  /* Match Gallery Daylight type — product-page sans only */
+  --ff-display:  'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --ff-serif:    'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --ff-body:     'Public Sans', 'Noto Sans SC', 'Noto Sans JP', Helvetica, Arial, sans-serif;
+  --body-weight: 400;
+  --shadow-card: 0 2px 24px rgba(0, 0, 0, 0.45);
+
+  /* Soft dark region tints (cool graphite, not muddy) */
+  --rc-ne: #141a22; --rc-so: #1a1614; --rc-mw: #141a16; --rc-we: #16141c; --rc-sw: #1a1412;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  color-scheme: dark;
+  /* Stop iOS/Android from auto-inflating text and breaking layouts */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Prefer dynamic viewport units where supported (mobile URL bars) */
+  height: 100%;
+  /* Stable root for rem-based fluid type (user zoom still scales everything) */
+  font-size: 100%;
+}
+/* Phones / coarse pointers: instant scroll is more reliable than CSS smooth */
+@media (max-width: 900px), (pointer: coarse) {
+  html { scroll-behavior: auto; }
+  .dest-track, .regions-track { scroll-behavior: auto; }
+}
+/* Used while restoring scroll after closing overlays — must win over smooth. */
+html.scroll-instant,
+html.scroll-instant * { scroll-behavior: auto !important; }
+html[data-theme="minimal"],
+html[data-theme="elegant"] { color-scheme: light; }
+body {
+  background: var(--bg-base);
+  color: var(--text-main);
+  font-family: var(--ff-body);
+  font-weight: var(--body-weight);
+  font-size: var(--body-size);
+  line-height: var(--body-leading);
+  overflow-x: hidden;
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background 0.45s ease, color 0.45s ease;
+  /* Prevent horizontal rubber-band overscroll that reveals empty gutters */
+  overscroll-behavior-x: none;
+  min-height: 100%;
+  min-height: 100dvh;
+  /* Prefer soft wrapping over mid-word breaks for body copy */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* ── Typography primitives (display vs reading) ── */
+h1, h2, h3, h4, h5, h6,
+.hero-h1,
+.section-header h2,
+.intro-left h2,
+.seasons-left h2,
+.culture-intro h2,
+.tips-header h2,
+.fun-facts-header h2,
+.settings-header h2,
+.modal-title,
+.dest-name,
+.region-name,
+.nav-logo,
+.nav-mobile a,
+.nav-mobile-settings {
+  /* Never hyphenate brand / display type */
+  hyphens: none;
+  -webkit-hyphens: none;
+  /* Prefer whole-word wraps; avoid letter-by-letter breaks */
+  overflow-wrap: normal;
+  word-break: normal;
+  /* Modern browsers: balance multi-line headlines */
+  text-wrap: balance;
+}
+
+p, .intro-body, .hero-desc, .tips-header p, .fun-facts-header p,
+.section-header p, .dest-desc, .tip-body, .prac-body, .legal-doc p {
+  /* Reading measure: caps line length; wide screens grow side margins instead */
+  max-width: var(--prose-max);
+  text-wrap: pretty;
+  hyphens: manual;
+}
+
+/* Primary CTAs stay one unit when possible — wrap as a whole block, not mid-phrase */
+.btn-primary,
+.btn-ghost,
+.hero-explore-btn,
+.gallery-enter-btn {
+  white-space: nowrap;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+/* Media never forces horizontal scroll across languages / breakpoints */
+img, video, canvas, svg { max-width: 100%; height: auto; }
+/* Cursor trail keeps explicit full-viewport sizing */
+#cursorCanvas { max-width: none; height: 100%; }
+/* Lightbox image uses its own max-width rules (don't let height:auto collapse it oddly) */
+.lightbox .lightbox-img { height: auto; }
+
+/* Quiet editorial paper grain — desktop only (fixed full-viewport layers cost GPU on phones). */
+body { isolation: isolate; }
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.04;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.85) 0 0.5px, transparent 1px),
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,.65) 0 0.6px, transparent 1px),
+    radial-gradient(circle at 40% 80%, rgba(0,0,0,.45) 0 0.5px, transparent 1px);
+  background-size: 120px 120px, 180px 180px, 90px 90px;
+  mix-blend-mode: soft-light;
+}
+html[data-theme="minimal"] body::before,
+html[data-theme="elegant"] body::before {
+  opacity: 0.055;
+  mix-blend-mode: multiply;
+}
+@media (max-width: 900px), (pointer: coarse) {
+  body::before { display: none; }
+}
+html[data-mobile-lite="true"] body::before { display: none; }
+
+/* Skip link — fully removed from the visual layout until keyboard focus.
+   Uses the classic clip technique (not off-screen transform), so it never
+   “peeks” during load, reduced-motion, or accidental :focus from the mouse. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  /* Keep out of paint until focused */
+  pointer-events: none;
+  background: var(--accent-1);
+  color: var(--text-inv);
+  font-family: var(--ff-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-decoration: none;
+  z-index: 10001;
+}
+/* Keyboard only — :focus-visible avoids random mouse/programmatic flashes */
+.skip-link:focus-visible {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 12px 18px;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: nowrap;
+  pointer-events: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  outline: 2px solid var(--text-main);
+  outline-offset: 3px;
+}
+/* Older engines without :focus-visible still get a working skip target */
+@supports not selector(:focus-visible) {
+  .skip-link:focus {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 12px 18px;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: nowrap;
+    pointer-events: auto;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+/* Skip target: allow focus without a visible ring on the whole page chrome */
+#main:focus {
+  outline: none;
+}
+

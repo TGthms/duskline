@@ -1,0 +1,25 @@
+/* USA Travel Guide — scroll reveal */
+/* ═══ SCROLL REVEAL ═══
+   Restrained editorial entrances — short travel, soft ease.
+   Avoids the large “template card cascade” slide that feels generic. */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-left  { opacity: 0; transform: translateX(-14px); transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1); }
+.reveal-right { opacity: 0; transform: translateX(14px);  transition: opacity .55s cubic-bezier(.22,1,.36,1), transform .55s cubic-bezier(.22,1,.36,1); }
+.reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateX(0); }
+.reveal-delay-1  { transition-delay: .04s; }
+.reveal-delay-2  { transition-delay: .08s; }
+.reveal-delay-3  { transition-delay: .12s; }
+.reveal-delay-4  { transition-delay: .16s; }
+.reveal-delay-5  { transition-delay: .2s; }
+
+@media (max-width: 900px), (pointer: coarse) {
+  /* Prefer snappier reveals over motion on touch devices */
+  .reveal, .reveal-left, .reveal-right {
+    transition-duration: .35s;
+  }
+  .reveal-delay-1, .reveal-delay-2, .reveal-delay-3, .reveal-delay-4, .reveal-delay-5 {
+    transition-delay: 0s;
+  }
+}
+

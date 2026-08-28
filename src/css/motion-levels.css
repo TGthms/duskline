@@ -1,0 +1,161 @@
+/* USA Travel Guide — animation Full / Reduced / Off */
+/* ═══ ANIMATION LEVELS (Settings: Full / Reduced / Off)
+   - full: default site motion
+   - reduced: short opacity-first motion (a11y-friendly)
+   - off: no decorative motion
+   data-motion-effective is set by JS (user + OS + constrained device).
+   OS prefers-reduced-motion maps to the same as “reduced”. */
+
+/* ── Reduced: minimal smooth motion ── */
+html[data-motion-effective="reduced"] {
+  scroll-behavior: auto;
+}
+html[data-motion-effective="reduced"] #cursorCanvas { display: none !important; }
+html[data-motion-effective="reduced"] .dest-track,
+html[data-motion-effective="reduced"] .regions-track { scroll-behavior: auto; }
+
+/* Soft, short fades — no large slides/scales */
+html[data-motion-effective="reduced"] .reveal,
+html[data-motion-effective="reduced"] .reveal-left,
+html[data-motion-effective="reduced"] .reveal-right {
+  transform: none;
+  transition: opacity .35s ease;
+  transition-delay: 0s !important;
+}
+html[data-motion-effective="reduced"] .reveal.visible,
+html[data-motion-effective="reduced"] .reveal-left.visible,
+html[data-motion-effective="reduced"] .reveal-right.visible {
+  opacity: 1;
+  transform: none;
+}
+
+html[data-motion-effective="reduced"] .hero-h1,
+html[data-motion-effective="reduced"] .hero-desc,
+html[data-motion-effective="reduced"] .hero-cta,
+html[data-motion-effective="reduced"] .hero-stats,
+html[data-motion-effective="reduced"] .hero-scroll {
+  animation-name: fadeIn;
+  animation-duration: .4s;
+  animation-delay: .05s;
+  animation-timing-function: ease;
+  animation-fill-mode: forwards;
+  transform: none;
+}
+html[data-motion-effective="reduced"] .hero-bg-img,
+html[data-motion-effective="reduced"] .hero-bg-img.is-hero-enter {
+  animation: fadeIn .5s ease forwards !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1;
+}
+html[data-motion-effective="reduced"] .intro-photo-label.is-swapping {
+  transform: none;
+  filter: none;
+  transition-duration: .12s;
+}
+html[data-motion-effective="reduced"] .intro-photo-layer {
+  transition: opacity .35s ease;
+  transform: none !important;
+}
+html[data-motion-effective="reduced"] .intro-facts.is-entered .fact-card {
+  animation: fadeIn .35s ease both;
+}
+
+/* Dial down large hover motion (keep subtle feedback) */
+html[data-motion-effective="reduced"] .dest-card:hover,
+html[data-motion-effective="reduced"] .region-card:hover,
+html[data-motion-effective="reduced"] .route-card:hover,
+html[data-motion-effective="reduced"] .tip-row:hover,
+html[data-motion-effective="reduced"] .prac-card:hover,
+html[data-motion-effective="reduced"] .fact-card:hover,
+html[data-motion-effective="reduced"] .culture-tile:hover {
+  transform: none;
+}
+html[data-motion-effective="reduced"] .dest-card:hover .dest-bg,
+html[data-motion-effective="reduced"] .region-card:hover .region-card-bg,
+html[data-motion-effective="reduced"] .season-card:hover .season-card-photo,
+html[data-motion-effective="reduced"] .route-card:hover .route-card-photo,
+html[data-motion-effective="reduced"] .prac-card:hover .prac-card-photo,
+html[data-motion-effective="reduced"] .culture-tile:hover .culture-tile-photo,
+html[data-motion-effective="reduced"] .tip-row:hover .tip-row-photo {
+  transform: none;
+}
+html[data-motion-effective="reduced"] .marquee-track {
+  animation: none;
+}
+html[data-motion-effective="reduced"] .fun-fact-text.is-swapping,
+html[data-motion-effective="reduced"] .fun-fact-text.is-visible {
+  transition-duration: .15s;
+  transform: none;
+}
+html[data-motion-effective="reduced"] .loader-fill {
+  animation-duration: .6s;
+}
+html[data-motion-effective="reduced"] #modal-overlay,
+html[data-motion-effective="reduced"] .modal-box,
+html[data-motion-effective="reduced"] .settings-overlay,
+html[data-motion-effective="reduced"] .lightbox {
+  transition-duration: .2s !important;
+}
+
+/* OS preference: same as Reduced until user picks Off or Full (JS may still set data-motion-effective) */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion-effective="off"]):not([data-motion-effective="full"]) {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── Off: no decorative motion ── */
+html[data-motion-effective="off"] *,
+html[data-motion-effective="off"] *::before,
+html[data-motion-effective="off"] *::after {
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+}
+html[data-motion-effective="off"] { scroll-behavior: auto; }
+html[data-motion-effective="off"] #cursorCanvas { display: none !important; }
+html[data-motion-effective="off"] .dest-track,
+html[data-motion-effective="off"] .regions-track { scroll-behavior: auto; }
+html[data-motion-effective="off"] .hero-h1,
+html[data-motion-effective="off"] .hero-desc,
+html[data-motion-effective="off"] .hero-cta,
+html[data-motion-effective="off"] .hero-stats,
+html[data-motion-effective="off"] .hero-scroll {
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+}
+html[data-motion-effective="off"] .hero-bg-img,
+html[data-motion-effective="off"] .hero-bg-img.is-hero-enter {
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+html[data-motion-effective="off"] .intro-photo-label,
+html[data-motion-effective="off"] .intro-photo-label.is-swapping {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+html[data-motion-effective="off"] .intro-photo-layer {
+  transition: none !important;
+  transform: none !important;
+}
+html[data-motion-effective="off"] .intro-facts.is-entered .fact-card {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+html[data-motion-effective="off"] .reveal,
+html[data-motion-effective="off"] .reveal-left,
+html[data-motion-effective="off"] .reveal-right {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+html[data-motion-effective="off"] .marquee-track { animation: none !important; }
+

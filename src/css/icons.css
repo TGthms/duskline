@@ -1,0 +1,177 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SF Symbols–style stroke icons (site-wide)
+   Use .sf-icon inline SVG; never emoji for UI chrome.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.sf-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+  overflow: visible;
+}
+.sf-icon--label {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+  opacity: 0.92;
+}
+.sf-icon--check {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  display: block;
+}
+.sf-icon--close {
+  width: 16px;
+  height: 16px;
+  display: block;
+  margin: 0;
+  flex-shrink: 0;
+}
+/* Brand mark is the original ✦ character in HTML (not an SVG). */
+.sf-icon--sparkle,
+.sf-icon--brand {
+  /* legacy classes — unused after Phase 1 brand restore */
+  display: none;
+}
+.sf-icon--chevron {
+  width: 1em;
+  height: 1em;
+  opacity: 0.75;
+}
+.sf-icon--nav {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.sf-icon--hero {
+  width: 1em;
+  height: 1em;
+  display: block;
+}
+.sf-icon--star {
+  width: 12px;
+  height: 12px;
+  display: block;
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Settings / pills already use flex — keep icon + label aligned */
+.settings-group-label .sf-icon--label {
+  color: var(--accent-1);
+}
+.pill-check .sf-icon {
+  display: block;
+}
+
+/* Phase 4 keepers: practical + seasons/culture/tips card icons */
+.prac-icon .sf-icon--prac {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: block;
+  color: currentColor;
+}
+.sf-icon--season,
+.sf-icon--culture,
+.sf-icon--tip {
+  display: block;
+  color: currentColor;
+  stroke-width: 1.75;
+}
+.tools-hub-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+  stroke-width: 1.75;
+}
+.dest-arrow .sf-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* Destination rating stars as SVG */
+.dest-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--accent-1);
+  font-size: 0; /* hide any leftover glyph */
+  line-height: 0;
+}
+.dest-star .sf-icon--star {
+  width: 12px;
+  height: 12px;
+}
+.dest-star.half {
+  position: relative;
+  color: rgba(255, 255, 255, 0.28);
+}
+.dest-star.half .sf-icon--star-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  color: var(--accent-1);
+}
+.dest-star.half .sf-icon--star-fill .sf-icon--star {
+  width: 12px;
+  height: 12px;
+}
+
+/* Brand mark (✦) + tags — text only after Phase 1 */
+.region-tag,
+.dest-tag {
+  display: inline-flex;
+  align-items: center;
+}
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+.gallery-app-mark:not(.gallery-app-mark-svg) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+/* Tools hub chevron */
+.tools-hub-chevron .sf-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Modal / lightbox close already sized by button; ensure SVG centers */
+.modal-close .sf-icon,
+.settings-close .sf-icon,
+.lightbox-close .sf-icon,
+.weather-sheet-close .sf-icon {
+  pointer-events: none;
+}
+
+/* Gallery empty / decode placeholder */
+.ph-icon .sf-icon {
+  width: 2rem;
+  height: 2rem;
+  opacity: 0.55;
+}
+
+/* Learn-more trailing chevron (optional inline) */
+.prac-more .sf-icon--chevron {
+  width: 0.85em;
+  height: 0.85em;
+  margin-left: 0.15em;
+  opacity: 0.85;
+}

@@ -1,0 +1,875 @@
+/* USA Travel Guide — gallery grid, lightbox, teaser */
+/* ═══════════════════════════════════════════════════════════════
+   GALLERY SECTION
+   Filter pills + a responsive photo grid + a fullscreen lightbox.
+   Matches the site's existing visual language:
+     - "reveal on scroll" fade/rise (same feel as .reveal elsewhere)
+     - hover image zoom (same trick as .dest-card / .region-card)
+     - lightbox open/close styled like #modal-overlay (blur + scale)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Search + sort row above category filters */
+.gallery-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: stretch;
+  max-width: var(--content-max);
+  margin: 8px auto 8px;
+  padding: 0 4px;
+}
+.gallery-search-wrap {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.gallery-search {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-med, var(--border-light));
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: 500 14px/1.3 var(--ff-body);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.gallery-search::placeholder { color: var(--text-dim); opacity: .85; }
+.gallery-search:focus {
+  border-color: var(--accent-1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-1) 22%, transparent);
+}
+.gallery-sort-wrap {
+  flex: 0 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+.gallery-sort-label {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.gallery-sort {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-med, var(--border-light));
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: 600 13px/1.3 var(--ff-body);
+  cursor: pointer;
+  outline: none;
+}
+.gallery-sort:focus {
+  border-color: var(--accent-1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-1) 22%, transparent);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gallery-filters {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 12px auto 36px; max-width: var(--content-max);
+  position: sticky; top: 72px; z-index: 40;
+  padding: 12px 4px;
+  background: color-mix(in srgb, var(--bg-base) 88%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+@supports not (background: color-mix(in srgb, white 50%, black)) {
+  .gallery-filters { background: var(--bg-base); }
+}
+.gallery-filter {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px; border: 1px solid var(--border-light);
+  background: var(--bg-card); color: var(--text-dim); font-family: var(--ff-body);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .25s cubic-bezier(0.2,0.8,0.2,1);
+  -webkit-tap-highlight-color: transparent; user-select: none;
+  min-height: 44px;
+}
+/* No translateY on hover — vertical motion on sticky filters feels like the grid jumped. */
+.gallery-filter:hover { background: var(--bg-card-hov); color: var(--text-main); border-color: var(--border-med); }
+.gallery-filter.active {
+  background: var(--accent-1); color: var(--text-inv); border-color: var(--accent-1);
+}
+.gallery-filter-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.4em; height: 1.4em; padding: 0 5px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; letter-spacing: .02em;
+  background: rgba(0,0,0,.18); color: inherit; opacity: .85;
+}
+.gallery-filter.active .gallery-filter-count { background: rgba(0,0,0,.22); }
+/* Shortest-column masonry (JS packs .gallery-item into .gallery-col once per
+   sort/filter/breakpoint — NEVER on image load). overflow-anchor avoids the
+   browser compensating scroll position when nodes reparent. */
+.gallery-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  overflow-anchor: none;
+}
+.gallery-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-anchor: none;
+}
+.gallery-actions { max-width: var(--content-max); margin: 40px auto 0; display: flex; justify-content: center; }
+.gallery-expand-btn { background: var(--bg-card); }
+
+.gallery-empty-state {
+  display: none; text-align: center; max-width: 420px; margin: 48px auto 0;
+  color: var(--text-mute); font-size: 14px; line-height: 1.6;
+  padding: 28px 24px; border: 1px dashed var(--border-light); border-radius: 12px;
+  background: var(--bg-card);
+}
+.gallery-empty-state.show { display: block; }
+
+/* Each photo tile: natural height from the image; break-inside avoids so a
+   card never splits across columns.
+   ── Stability notes (black-hover / paint bugs) ──
+   Do NOT: opacity on the tile + opacity on the img + dark ::after overlay +
+   box-shadow/hover layer promotion + backface-visibility. That combination
+   causes intermittent black tiles on Safari/Chrome when GPU re-composites
+   large color-managed photos. Keep the image layer dead-simple. */
+.gallery-item {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  margin: 0;
+  /* Neutral skeleton — never pure black */
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-light);
+  /* Visible as soon as it enters layout; no tile-level opacity animation */
+  opacity: 1;
+  transition: border-color .2s ease;
+  /* Height from JS aspect-ratio (width/height attrs) — stable before decode */
+  min-height: 0;
+  overflow-anchor: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Ensure absolutely positioned img has a sized containing block before JS runs */
+.gallery-item:not([style*="aspect-ratio"]) {
+  aspect-ratio: 4 / 3;
+}
+.gallery-item.img-ready { min-height: 0; }
+/* Soft entrance only after first paint of the image (class toggled in JS) */
+.gallery-item.is-revealed .gallery-caption { opacity: 1; }
+
+/* Hover: border only — no shadow, no transform, no filter on the photo.
+   Shadows force a new compositing layer and were a common black-flash trigger. */
+@media (hover: hover), (any-hover: hover) {
+  .gallery-item:hover,
+  .gallery-item:focus-visible {
+    border-color: var(--border-med);
+    outline: none;
+  }
+  .gallery-item:focus-visible {
+    outline: 2px solid var(--accent-1);
+    outline-offset: 2px;
+  }
+  .gallery-item:hover .gallery-zoom-hint,
+  .gallery-item:focus-visible .gallery-zoom-hint { opacity: 1; }
+}
+
+/* Filtering a category out: fade, then display:none. */
+.gallery-item.fade-out {
+  opacity: 0;
+  transition: opacity .28s ease;
+  pointer-events: none;
+}
+.gallery-item.hidden { display: none; }
+
+.gallery-item img {
+  /* Fill the aspect-ratio box edge-to-edge (no letterbox gutters). Slight crop OK.
+     Box size is locked via width/height attrs + JS aspect-ratio on .gallery-item
+     so scroll masonry stays stable (no re-pack on decode). */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  background-color: var(--bg-surface-2);
+  opacity: 0;
+  transition: opacity .28s ease;
+  transform: none;
+  filter: none;
+  backface-visibility: visible;
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none; /* clicks hit the tile, not the img */
+}
+.gallery-item img.loaded { opacity: 1; }
+/* Aspect ratio lives on .gallery-item (applyGalleryAspectRatio) — not on the img. */
+
+/* No full-tile dark ::after overlay — that was a major black-flash source.
+   Caption carries its own soft gradient background instead. */
+.gallery-zoom-hint {
+  position: absolute; top: 12px; right: 12px; z-index: 3;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  /* Solid bg — no backdrop-filter over the photo */
+  background: rgba(0,0,0,.5); color: #fff; border: 1px solid rgba(255,255,255,.22);
+  opacity: 0;
+  transition: opacity .2s ease;
+  pointer-events: none;
+}
+.gallery-zoom-hint svg { width: 15px; height: 15px; }
+
+/* If a photo's file is missing/broken (e.g. you referenced a filename you
+   haven't uploaded to images/gallery/ yet), show a deliberate "no photo yet"
+   placeholder instead of an empty box - so an unfinished gallery still reads
+   as intentional, styled work rather than looking broken. */
+.gallery-item.load-error { border: 1px dashed var(--border-med); cursor: default; min-height: 180px; }
+.gallery-item.load-error:hover { border-color: var(--border-med); }
+.gallery-item.load-error img { display: none; }
+.gallery-item-placeholder {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px;
+  color: var(--text-mute); font-family: var(--ff-body); z-index: 2;
+  min-height: 180px;
+  background: var(--bg-surface);
+}
+.gallery-item-placeholder .ph-icon { font-size: 1.8rem; opacity: .5; }
+.gallery-item-placeholder .ph-text { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+
+.gallery-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 28px 14px 12px;
+  color: #fff; font-family: var(--ff-body); font-size: 13px; font-weight: 600;
+  letter-spacing: .01em; line-height: 1.3;
+  opacity: 0;
+  transition: opacity .3s ease;
+  z-index: 2; pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0,0,0,.55);
+  /* Gradient lives on the caption, not a pseudo over the whole image */
+  background: linear-gradient(to top, rgba(0,0,0,.58) 0%, rgba(0,0,0,.18) 55%, transparent 100%);
+}
+
+@media (hover: none) {
+  .gallery-zoom-hint { display: none; }
+  /* Touch: always show captions once revealed */
+  .gallery-item.is-revealed .gallery-caption { opacity: 1; }
+}
+
+/* Segmented control (Gas / EV) */
+.tool-seg {
+  display: flex; gap: 6px; margin-bottom: 4px;
+  padding: 4px; border-radius: 999px; border: 1px solid var(--border-light);
+  background: var(--bg-base);
+}
+.tool-seg-btn {
+  flex: 1; min-height: 36px; border: 0; border-radius: 999px; cursor: pointer;
+  background: transparent; color: var(--text-dim); font: 600 12px var(--ff-body);
+  letter-spacing: .04em; transition: background .2s ease, color .2s ease;
+}
+.tool-seg-btn:hover { color: var(--text-main); }
+.tool-seg-btn.active {
+  background: var(--accent-1); color: var(--text-inv);
+}
+html[data-theme="minimal"] .tool-seg-btn.active,
+html[data-theme="elegant"] .tool-seg-btn.active { color: #fff; }
+.tool-field-hint { font-size: 11px; color: var(--text-mute); margin-top: 4px; line-height: 1.4; }
+.tool-card[data-drive-mode="ev"] .drive-gas-field { display: none !important; }
+.tool-card[data-drive-mode="gas"] .drive-ev-field { display: none !important; }
+
+/* ── LIGHTBOX ──
+   Same open/close mechanics as #modal-overlay: opacity + visibility +
+   pointer-events (not display:none) so the fade/scale can actually animate. */
+.lightbox {
+  position: fixed; inset: 0; z-index: 1001;
+  background: rgba(0,0,0,.94); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .35s ease, visibility .35s ease; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  overscroll-behavior: contain;
+  /* Fill dynamic viewport on mobile browsers with collapsing chrome */
+  min-height: 100%;
+  min-height: 100dvh;
+}
+.lightbox.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.lightbox-counter {
+  position: absolute; top: max(16px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left));
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: #fff;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,.12);
+  z-index: 2;
+}
+
+.lightbox-stage {
+  display: flex; flex-direction: column; align-items: center; max-width: min(1200px, 100%);
+  width: 100%;
+  min-height: 120px;
+  position: relative;
+}
+.lightbox.open .lightbox-stage { opacity: 1; }
+
+/* Image frame: progress overlays the center of the current (thumb/full) photo */
+.lightbox-frame {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(92vw, 100%, 1600px);
+  max-height: min(82dvh, 1200px);
+}
+
+.lightbox-img {
+  max-width: min(92vw, 100%, 1600px); max-height: min(82dvh, 1200px); width: auto; height: auto;
+  border-radius: 8px; touch-action: pan-y pinch-zoom;
+  box-shadow: 0 16px 48px rgba(0,0,0,.45);
+  object-fit: contain;
+  background: #141414;
+  min-width: min(28vw, 200px);
+  min-height: min(22vh, 160px);
+  display: block;
+}
+.lightbox-img.is-loading {
+  cursor: progress;
+}
+
+/* Compact bottom strip — thumb stays visible while full-res loads */
+.lightbox-progress {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 4;
+  width: min(320px, calc(100% - 32px));
+  min-width: 0;
+  max-width: 360px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(8, 10, 14, 0.72);
+  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  pointer-events: none;
+}
+.lightbox-progress[hidden] { display: none !important; }
+.lightbox-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  overflow: hidden;
+}
+.lightbox-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-1-dk, #9a7840), var(--accent-1, #c9a259), var(--accent-1-lt, #e0c48a));
+  /* JS eases the width every frame — keep CSS transition short so it feels fluid */
+  transition: width .08s linear;
+  will-change: width;
+  position: relative;
+}
+/* Soft sheen while decode/render is the long wait — bar feels alive even if % holds */
+.lightbox-progress.is-decoding .lightbox-progress-fill {
+  background-image:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 38%,
+      rgba(255, 255, 255, 0.28) 50%,
+      transparent 62%,
+      transparent 100%
+    ),
+    linear-gradient(90deg, var(--accent-1-dk, #9a7840), var(--accent-1, #c9a259), var(--accent-1-lt, #e0c48a));
+  background-size: 220% 100%, 100% 100%;
+  background-position: 120% 0, 0 0;
+  animation: lightboxDecodeSheen 1.35s ease-in-out infinite;
+}
+@keyframes lightboxDecodeSheen {
+  0%   { background-position: 120% 0, 0 0; }
+  100% { background-position: -120% 0, 0 0; }
+}
+.lightbox-progress.is-indeterminate .lightbox-progress-fill {
+  width: 35% !important;
+  animation: lightboxIndeterminate 1s ease-in-out infinite;
+}
+@keyframes lightboxIndeterminate {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+.lightbox-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-family: var(--ff-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: rgba(255,255,255,.88);
+}
+.lightbox-progress-pct {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--accent-1-lt, #e0c48a);
+  min-width: 3.2em;
+  text-align: right;
+  flex-shrink: 0;
+}
+.lightbox-progress-msg {
+  color: rgba(255,255,255,.82);
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 400px) {
+  .lightbox-progress {
+    width: min(280px, calc(100% - 24px));
+    min-width: 0;
+    padding: 8px 10px;
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  }
+  .lightbox-progress-msg { font-size: 10.5px; }
+  .lightbox-progress-track { height: 5px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .lightbox-progress {
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    width: min(280px, 50vw);
+    padding: 6px 10px;
+  }
+  .lightbox-progress-label { margin-top: 4px; }
+}
+/* lightbox progress multi-size */
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-progress-fill { transition: none; }
+  .lightbox-progress.is-decoding .lightbox-progress-fill { animation: none; }
+  .lightbox-progress.is-indeterminate .lightbox-progress-fill { animation: none; width: 50% !important; }
+}
+
+.lightbox-info {
+  text-align: center; margin-top: 16px; max-width: min(640px, 92vw);
+  padding: 0 8px;
+}
+.lightbox-caption { color: #fff; font-family: var(--ff-body); font-size: clamp(14px, 1.6vw, 16px); font-weight: 600; }
+.lightbox-meta { color: rgba(255,255,255,.62); font-family: var(--ff-body); font-size: 12.5px; margin-top: 6px; letter-spacing: .02em; }
+.lightbox-hd-btn {
+  appearance: none;
+  margin: 12px auto 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.28);
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  font: 650 12px/1.2 var(--ff-body);
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.lightbox-hd-btn:hover,
+.lightbox-hd-btn:focus-visible {
+  background: rgba(255,255,255,.22);
+  border-color: rgba(255,255,255,.45);
+  outline: none;
+}
+.lightbox-hd-btn:active { transform: scale(.98); }
+.lightbox-hd-btn[hidden] { display: none !important; }
+.lightbox-hd-btn.is-loading {
+  opacity: .7;
+  pointer-events: none;
+}
+
+.lightbox-close, .lightbox-prev, .lightbox-next {
+  position: absolute; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.14); color: #fff; font-size: 22px;
+  cursor: pointer; padding: 10px; opacity: .85; transition: all .25s cubic-bezier(0.2,0.8,0.2,1);
+  min-width: 48px; min-height: 48px; display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; user-select: none; border-radius: 50%;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 2;
+}
+.lightbox-close:hover, .lightbox-prev:hover, .lightbox-next:hover,
+.lightbox-close:focus-visible, .lightbox-prev:focus-visible, .lightbox-next:focus-visible {
+  opacity: 1; background: rgba(0,0,0,.55); border-color: rgba(255,255,255,.35);
+}
+/* Keep base translateY(-50%) on prev/next when hovering so buttons don't jump */
+.lightbox-close:hover, .lightbox-close:focus-visible { transform: none; }
+.lightbox-prev:hover, .lightbox-prev:focus-visible { transform: translateY(-50%) translateX(-2px); }
+.lightbox-next:hover, .lightbox-next:focus-visible { transform: translateY(-50%) translateX(2px); }
+.lightbox-close { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+.lightbox-prev { left: max(8px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); }
+.lightbox-next { right: max(8px, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); }
+
+/* ── Responsiveness across breakpoints ── */
+@media (max-width: 1024px) {
+  .gallery-grid { gap: 14px; }
+  .gallery-col { gap: 14px; }
+  .gallery-filters { top: 64px; }
+}
+@media (max-width: 640px) {
+  .gallery-filters { gap: 8px; margin: 20px auto 24px; padding: 8px 0; top: 58px; }
+  .gallery-filter { padding: 8px 14px; font-size: 12px; min-height: 40px; }
+  .gallery-grid { gap: 10px; }
+  .gallery-col { gap: 10px; }
+  .gallery-item { border-radius: 8px; }
+  .gallery-caption { font-size: 11.5px; padding: 14px 10px 10px; }
+  .lightbox-prev, .lightbox-next { font-size: 18px; min-width: 44px; min-height: 44px; }
+  .lightbox-close { font-size: 18px; min-width: 44px; min-height: 44px; }
+  .lightbox-counter { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); font-size: 9px; }
+  .lightbox-img,
+  .lightbox-video { max-width: 96vw; max-height: 68dvh; border-radius: 6px; }
+}
+/* Single-column gallery on very narrow devices (watch / mini browsers). */
+@media (max-width: 360px) {
+  .gallery-grid { gap: 0; }
+  .gallery-col { gap: 12px; }
+  .gallery-filter { padding: 8px 12px; font-size: 11px; }
+  .gallery-filters { top: 52px; }
+}
+/* Phones in landscape have very little vertical space - shrink the image
+   so the caption/controls never get squeezed off-screen. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .lightbox-img { max-height: 56dvh; }
+  .lightbox-info { margin-top: 8px; }
+  .lightbox-prev, .lightbox-next { min-width: 40px; min-height: 40px; font-size: 16px; }
+  .gallery-filters { position: static; }
+  /* Short landscape: keep brand mark only so mark/America never stacks beside icons */
+  .nav-logo { white-space: nowrap; }
+  .nav-logo span { display: none; }
+}
+/* Large TVs / ultra-wide desktops: four columns of natural-ratio photos. */
+@media (min-width: 1600px) {
+  .gallery-grid { gap: 18px; max-width: 1400px; }
+  .gallery-col { gap: 18px; }
+  .gallery-filters { max-width: 1400px; }
+  .lightbox-img { max-height: min(82dvh, 1100px); max-width: min(90vw, 1600px); }
+}
+
+/* Short viewports generally (landscape phones/tablets, small laptop windows,
+   foldables) - #hero's 700px minimum was tuned for portrait phones and full
+   desktop windows, so on anything shorter it pushed real content below an
+   extra scroll before the page even begins. Ease it back in two steps and
+   tighten the hero's own spacing to match. */
+@media (max-height: 640px) {
+  #hero { min-height: 460px; }
+  .hero-content { padding-bottom: 56px; }
+  .hero-h1 { margin-bottom: 18px; }
+  .hero-stats { bottom: 56px; gap: 16px; }
+  .hero-scroll { display: none; }
+}
+@media (max-height: 420px) {
+  #hero { min-height: 360px; }
+  .hero-eyebrow { margin-bottom: 10px; }
+  .hero-cta { gap: 8px 12px; }
+}
+
+/* Accessibility: Focus outlines */
+:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-1); }
+::selection { background: var(--accent-1); color: var(--text-inv); }
+
+/* ═══ GALLERY SECTION (homepage immersive entrance) ═══ */
+/*
+  True full-viewport stage — same language as #hero, not an enlarged card.
+  Breaks out of any content gutters via 100vw centering trick.
+*/
+#gallery.gallery-teaser-section,
+.gallery-teaser-section {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  overflow: clip;
+  background: #0a1018; /* no white band if the photo layer lags */
+  /* Flush under fixed nav when linked from #gallery (hero-like) */
+  scroll-margin-top: 0;
+}
+.gallery-teaser {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  /* Full viewport — reads as its own “screen”, not a banner card */
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  border-radius: 0;
+  overflow: hidden;
+  color: #fff;
+  border: 0;
+  box-shadow: none;
+  isolation: isolate;
+  /* Stage is not a link — only .gallery-enter-btn navigates */
+  cursor: default;
+}
+.gallery-enter-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+/* Photo layer — full bleed cover */
+.gallery-teaser-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    url('../../images/gallery/medium/SFgolden_gate_bridge.webp') center 42% / cover no-repeat,
+    url('../../images/gallery/thumbs/SFgolden_gate_bridge.jpeg') center 42% / cover no-repeat,
+    #0a1018;
+  transform: scale(1.06);
+  transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.gallery-teaser:hover .gallery-teaser-bg,
+.gallery-teaser:focus-visible .gallery-teaser-bg {
+  transform: scale(1.12);
+}
+/* Separate cinematic veil (not baked into bg so zoom stays clean) */
+.gallery-teaser-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to top,
+      rgba(4, 8, 16, 0.92) 0%,
+      rgba(4, 8, 16, 0.55) 28%,
+      rgba(4, 8, 16, 0.18) 55%,
+      rgba(4, 8, 16, 0.28) 100%
+    ),
+    linear-gradient(
+      100deg,
+      rgba(4, 8, 16, 0.62) 0%,
+      rgba(4, 8, 16, 0.15) 48%,
+      transparent 70%
+    );
+}
+.gallery-teaser-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: clamp(12px, 1.6vw, 18px);
+  width: 100%;
+  max-width: min(42rem, 100%);
+  margin: 0;
+  padding:
+    max(5.5rem, calc(4.5rem + env(safe-area-inset-top, 0px)))
+    var(--section-x)
+    max(4.5rem, calc(3.5rem + env(safe-area-inset-bottom, 0px)));
+  box-sizing: border-box;
+}
+.gallery-teaser-content .section-eyebrow {
+  color: rgba(255, 255, 255, 0.72);
+  margin-bottom: 2px;
+  letter-spacing: 0.22em;
+}
+.gallery-teaser-content .section-eyebrow::after {
+  background: rgba(255, 255, 255, 0.45);
+  max-width: 56px;
+}
+.gallery-teaser-content h2 {
+  font-family: var(--ff-display);
+  font-size: clamp(2.75rem, 1.5rem + 4.2vw, 5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  color: #fff;
+  margin: 0;
+  text-shadow:
+    0 2px 40px rgba(0, 0, 0, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.gallery-teaser-content h2 em {
+  display: block;
+  font-style: italic;
+  color: #fff;
+  font-weight: 400;
+  text-shadow:
+    0 2px 32px rgba(0, 0, 0, 0.55),
+    0 0 48px color-mix(in srgb, var(--accent-1) 40%, transparent);
+}
+.gallery-teaser-content p {
+  margin: 0;
+  font-size: clamp(0.95rem, 0.88rem + 0.35vw, 1.08rem);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: min(32rem, 100%);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.4);
+}
+/*
+  Gallery enter CTA — white outline frame with grid/plus mark
+  (distinct from hero luminous capsule).
+*/
+.gallery-enter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  align-self: flex-start;
+  padding: 1rem 1.2rem 1rem 1.4rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s ease;
+}
+.gallery-enter-btn-label { white-space: nowrap; }
+.gallery-enter-btn-icon {
+  display: inline-flex;
+  opacity: 0.9;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+}
+.gallery-enter-btn-icon svg { display: block; }
+.gallery-enter-btn:hover,
+.gallery-enter-btn:focus-visible {
+  background: #fff;
+  color: #0a0a0c;
+  border-color: #fff;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.32);
+  transform: translateY(-2px);
+}
+html[data-theme="glass"] .gallery-enter-btn:hover,
+html[data-theme="glass"] .gallery-enter-btn:focus-visible {
+  color: #0a0a0c;
+}
+.gallery-enter-btn:hover .gallery-enter-btn-icon,
+.gallery-enter-btn:focus-visible .gallery-enter-btn-icon {
+  transform: translateX(3px) scale(1.05);
+  opacity: 1;
+}
+/* Subtle bottom cue — reinforces “full stage”, not a card edge */
+.gallery-teaser-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0.55;
+}
+.gallery-teaser-hint-line {
+  display: block;
+  width: 1px;
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.75));
+}
+.gallery-teaser-cta { display: none; }
+
+html[data-motion-effective="reduced"] .gallery-teaser-bg,
+html[data-motion-effective="off"] .gallery-teaser-bg {
+  transition: none;
+  transform: none;
+}
+html[data-motion-effective="reduced"] .gallery-teaser:hover .gallery-teaser-bg,
+html[data-motion-effective="off"] .gallery-teaser:hover .gallery-teaser-bg {
+  transform: none;
+}
+
+@media (max-width: 860px) {
+  .gallery-teaser-content {
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-bottom: max(3.75rem, calc(3rem + env(safe-area-inset-bottom, 0px)));
+    max-width: 100%;
+  }
+}
+@media (max-width: 540px) {
+  .gallery-teaser-content h2 {
+    font-size: clamp(2.35rem, 10.5vw, 3rem);
+  }
+  .gallery-enter-btn {
+    padding: 0.9rem 1.05rem 0.9rem 1.2rem;
+    letter-spacing: 0.12em;
+  }
+  .gallery-teaser-hint { display: none; }
+}
+@media (max-height: 520px) and (min-width: 600px) {
+  .gallery-teaser {
+    min-height: 100dvh;
+    height: auto;
+  }
+}
+
+/* Gallery video badge + lightbox video */
+/* Gallery video badge (iOS Photos-style cue) */
+.gallery-video-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 8px; border-radius: 6px;
+  background: rgba(0,0,0,.55); color: #fff;
+  font-size: 11px; font-weight: 650; letter-spacing: .02em;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,.18);
+}
+.gallery-video-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+.lightbox-video {
+  display: block;
+  max-width: min(92vw, 1100px);
+  max-height: min(78dvh, 900px);
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  background: #000;
+  outline: none;
+}
+.lightbox-video[hidden],
+.lightbox-img[hidden] { display: none !important; }
+.lightbox-frame:has(.lightbox-video:not([hidden])) .lightbox-progress { display: none !important; }

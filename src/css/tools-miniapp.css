@@ -1,0 +1,292 @@
+/* USA Travel Guide — tools mini-app layouts (non-weather) */
+/* ═══ Tools mini-app layout (non-weather detail pages) ═══ */
+body.page-tools .tools-page.tools-miniapp {
+  max-width: min(560px, 100%);
+  margin: 0 auto;
+  padding-top: 12px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  /* Do not flex-grow: that stretched short mini-apps into a tall empty band above the footer */
+  flex: 0 0 auto;
+}
+.tools-miniapp-sub {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-mute);
+  text-align: center;
+  max-width: 36em;
+  margin-inline: auto;
+}
+/* Flat list tools (clock) — no heavy nested card */
+body.page-tools .tools-miniapp[data-tool="clock"] .tools-miniapp-body,
+body.page-tools .tools-miniapp.tools-miniapp-flat .tools-miniapp-body {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  border-radius: 0;
+}
+body.page-tools .tools-miniapp[data-tool="clock"] .clock-row {
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+body.page-tools .tools-miniapp[data-tool="clock"] .clock-city { font-size: 1.05rem; }
+body.page-tools .tools-miniapp[data-tool="clock"] .clock-time {
+  font-size: 1.45rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.tools-miniapp-body {
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-light) 80%, transparent);
+  border-radius: 22px;
+  padding: 22px 20px 24px;
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 12%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+body.page-tools .tools-miniapp .tool-form {
+  gap: 14px;
+}
+body.page-tools .tools-miniapp .tool-field span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 6px;
+}
+body.page-tools .tools-miniapp .tool-field input,
+body.page-tools .tools-miniapp .tool-field select {
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 17px;
+  padding: 10px 14px;
+}
+body.page-tools .tools-miniapp .tool-result-hero {
+  margin-top: 22px;
+  text-align: center;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+body.page-tools .tools-miniapp .tool-meta {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 13px;
+}
+body.page-tools .tools-miniapp .tool-swap {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  padding: 0;
+  justify-self: center;
+  align-self: end;
+}
+/* Currency: stable amount + From | ⇄ | To — override ALL legacy grid rules */
+body.page-tools .tools-miniapp .currency-tool.tool-form,
+body.page-tools .tools-miniapp .currency-tool {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "amount amount amount"
+    "from   swap   to" !important;
+  gap: 14px 12px !important;
+  align-items: end !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+body.page-tools .tools-miniapp .currency-tool > .tool-field:nth-child(1) { grid-area: amount !important; width: 100%; }
+body.page-tools .tools-miniapp .currency-tool > .tool-field:nth-child(2) { grid-area: from !important; min-width: 0; }
+body.page-tools .tools-miniapp .currency-tool > .tool-swap { grid-area: swap !important; margin: 0; }
+body.page-tools .tools-miniapp .currency-tool > .tool-field:nth-child(4) { grid-area: to !important; min-width: 0; }
+body.page-tools .tools-miniapp .currency-tool .tool-field,
+body.page-tools .tools-miniapp .currency-tool .tool-field input,
+body.page-tools .tools-miniapp .currency-tool .tool-field select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/* Clock: no nested scroll card — page scrolls */
+body.page-tools .tools-miniapp .clock-list,
+body.page-tools .tools-page.tools-miniapp .clock-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: none !important;
+  overflow: visible !important;
+}
+body.page-tools .tools-miniapp .tool-info-list-app {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+body.page-tools .tools-miniapp .tool-info-list-app li {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-surface-2, var(--bg-card)) 70%, transparent);
+  border: 1px solid var(--border-light);
+  font-size: 15px;
+  line-height: 1.4;
+}
+body.page-tools .tools-miniapp .tool-info-list-app strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05em;
+  color: var(--accent-1);
+}
+body.page-tools .tools-miniapp .tool-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-surface-2, #000) 35%, transparent);
+}
+body.page-tools .tools-miniapp .tool-seg-btn {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-mute);
+  font-weight: 600;
+  cursor: pointer;
+}
+body.page-tools .tools-miniapp .tool-seg-btn.active {
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: 0 1px 4px color-mix(in srgb, #000 15%, transparent);
+}
+@media (max-width: 480px) {
+  body.page-tools .tools-miniapp-body { padding: 18px 14px 20px; border-radius: 18px; }
+  body.page-tools .tools-miniapp .tool-two-col { grid-template-columns: 1fr; }
+}
+@media (min-width: 900px) {
+  body.page-tools .tools-page.tools-miniapp { max-width: 600px; }
+}
+
+/* Tool fields / hub grids (moved from weather.css) */
+/* Travel tools (page layout; legacy .tools-panel kept harmless if ever reused) */
+.tools-panel { width: min(1180px, 100%); max-height: min(88dvh, 920px); }
+.tools-grid {
+  max-width: var(--content-max); margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+/* On the dedicated tools page, never clamp height like a dialog.
+   Keep horizontal section-x inset (same rhythm as gallery) — do not zero sides. */
+body.page-tools .tools-panel,
+body.page-tools #tools.tools-page {
+  max-height: none;
+  width: 100%;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  transform: none;
+}
+.tool-card {
+  padding: 22px 20px; border: 1px solid var(--border-light); border-radius: var(--radius);
+  background: var(--bg-card); min-width: 0; display: flex; flex-direction: column;
+}
+.tool-card-wide { grid-column: 1 / -1; grid-row: auto; }
+.tool-form { display: grid; gap: 12px; }
+.currency-tool {
+  grid-template-columns: minmax(100px, 1.1fr) minmax(90px, .8fr) 44px minmax(90px, .8fr);
+  align-items: end;
+}
+.tool-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tool-field span { color: var(--text-mute); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.tool-field input, .tool-field select {
+  width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid var(--border-light);
+  border-radius: var(--radius); background: var(--bg-base); color: var(--text-main);
+  /* 16px minimum prevents iOS Safari from zooming the page on focus */
+  font: 500 16px var(--ff-body); outline: none;
+  color-scheme: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Ensure select options stay readable on dark & light themes */
+.tool-field option { background: var(--bg-surface); color: var(--text-main); }
+.tool-field input:focus, .tool-field select:focus { border-color: var(--accent-1); box-shadow: 0 0 0 1px var(--accent-1); }
+.tool-swap { width: 44px; height: 44px; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-card); color: var(--text-main); cursor: pointer; font-size: 18px; transition: all .25s; }
+.tool-swap:hover { border-color: var(--accent-1); color: var(--accent-1); transform: translateY(-2px); }
+.tool-result { margin-top: 16px; color: var(--text-main); font-family: var(--ff-display); font-size: clamp(1.45rem, 2.6vw, 2.2rem); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.tool-result-sm { font-size: clamp(1.15rem, 2vw, 1.55rem); }
+.tool-meta { margin-top: 8px; color: var(--text-mute); font-size: 12px; line-height: 1.6; }
+.clock-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow: auto; }
+.clock-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+.clock-row:last-child { border-bottom: 0; }
+.clock-city { color: var(--text-main); font-weight: 600; font-size: 13px; }
+.clock-zone { color: var(--text-mute); font-size: 11px; margin-top: 3px; }
+.clock-time { color: var(--accent-1); font-weight: 700; font-size: 17px; white-space: nowrap; }
+.stacked { gap: 12px; }
+.tool-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tool-info-list {
+  list-style: none; display: flex; flex-direction: column; gap: 10px;
+  margin: 4px 0 0; padding: 0; flex: 1;
+}
+.tool-info-list li {
+  font-size: 13px; line-height: 1.5; color: var(--text-dim);
+  padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius);
+  background: var(--bg-base);
+}
+.tool-info-list strong { color: var(--accent-1); font-family: var(--ff-body); font-weight: 700; letter-spacing: .02em; }
+
+/* Tools: single column on narrower widths */
+@media (max-width: 900px) {
+  .tools-grid { grid-template-columns: 1fr; }
+  .tool-card-wide { grid-column: auto; }
+  /* From | swap | To on one row (amount still full width via page-tools rules) */
+  .currency-tool {
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+    align-items: end;
+  }
+  .currency-tool .tool-field:first-child { grid-column: 1 / -1; }
+  .currency-tool .tool-swap {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    justify-self: center;
+  }
+}
+/* Landscape phones / short viewports: denser multi-column, less vertical waste */
+@media (max-height: 520px) and (orientation: landscape) {
+  .tools-panel { max-height: calc(100dvh - 12px); padding: 16px 18px; width: min(96vw, 1180px); }
+  .settings-header { margin-bottom: 14px; }
+  .settings-header h2 { font-size: clamp(1.4rem, 3.5vh, 1.9rem); margin-bottom: 6px; }
+  .settings-header p { display: none; }
+  .tools-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tool-card-wide { grid-column: 1 / -1; }
+  .tool-card { padding: 14px 12px; }
+  .tool-result { margin-top: 10px; font-size: 1.2rem; }
+  .tool-field input, .tool-field select { min-height: 38px; padding: 8px 10px; font-size: 13px; }
+  .currency-tool { grid-template-columns: minmax(80px, 1fr) minmax(80px, .7fr) 40px minmax(80px, .7fr); }
+  .clock-list { max-height: 140px; }
+  .tool-info-list { gap: 6px; }
+  .tool-info-list li { padding: 7px 9px; font-size: 12px; }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  .tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-eyebrow { margin-bottom: 6px; }
+}
