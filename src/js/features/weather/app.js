@@ -946,7 +946,19 @@
   function renderCityList(ul, packs) {
     if (!ul) return;
     ul.innerHTML = '';
-    packs.forEach((pack) => ul.appendChild(buildRowButton(pack)));
+    let region = '';
+    packs.forEach((pack) => {
+      const nextRegion = pack && pack.city && pack.city.region;
+      if (nextRegion && nextRegion !== region) {
+        const heading = document.createElement('li');
+        heading.className = 'weather-region-heading';
+        heading.setAttribute('role', 'presentation');
+        heading.textContent = nextRegion;
+        ul.appendChild(heading);
+        region = nextRegion;
+      }
+      ul.appendChild(buildRowButton(pack));
+    });
   }
 
   function refreshListsFromCache(opts) {
@@ -2815,7 +2827,7 @@
     }
   }
 
-  // Kick off — clear any stuck full-screen PE from a prior session / bfcache
+  // Kick off — paint the complete static catalog immediately, then refresh it quietly.
   myLocationCity = loadMyLocation();
   loadNameCacheFromSession();
   ensureListTappable();
@@ -2826,6 +2838,7 @@
   }
   applyAmbientPageSky();
   seedStaticCityNames();
+  refreshListsFromCache({ force: true, skipAmbient: true });
   var bootCity = cityFromQuery();
   if (bootCity) {
     openDeepLinkFirst(bootCity).then(function (opened) {
@@ -2836,7 +2849,7 @@
       });
     });
   } else {
-    refresh(true, { quiet: false, reason: 'boot' });
+    refresh(true, { quiet: true, reason: 'boot' });
   }
   scheduleAutoRefresh();
   // Keep ambient sky in sync with clock / theme
