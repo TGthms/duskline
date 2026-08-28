@@ -6,13 +6,14 @@
 <meta name="description" content="Duskline — clear, global weather forecasts and severe-weather awareness.">
 <link rel="canonical" href="https://duskline.pages.dev/">
 <meta name="theme-color" content="#08111f">
-<meta name="color-scheme" content="dark light">
+<meta name="application-name" content="Duskline">
+<meta name="color-scheme" content="dark">
 <title data-i18n="pageTitle.weather">Duskline Weather</title>
 <link rel="icon" type="image/jpeg" href="assets/duskline-icon.jpg">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Duskline">
-<meta property="og:title" content="Weather">
-<meta property="og:description" content="Weather forecasts and warnings for the US and the world.">
+<meta property="og:title" content="Duskline — Weather, wherever you are">
+<meta property="og:description" content="Clear, global forecasts, air quality, and severe-weather awareness.">
 <meta property="og:url" content="https://duskline.pages.dev/">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
@@ -98,9 +99,9 @@
       var light = appearance === 'system' ? isOsLight() : appearance === 'light';
       return light ? (style === 'classic' ? 'elegant' : 'minimal') : (style === 'classic' ? 'default' : 'glass');
     }
-    var appearance = localStorage.getItem('duskline-appearance');
+    var appearance = 'dark';
     var style = 'modern';
-    var t = null;
+    var t = 'default';
     if (appearance === 'system' || appearance === 'light' || appearance === 'dark') {
       t = resolveTheme(appearance, style);
     } else {
@@ -110,7 +111,7 @@
     }
     if (VALID.indexOf(t) < 0) t = 'default';
     document.documentElement.setAttribute('data-theme', t);
-    document.documentElement.style.colorScheme = (t === 'minimal' || t === 'elegant') ? 'light' : 'dark';
+    document.documentElement.style.colorScheme = 'dark';
 
     var m = localStorage.getItem('duskline-motion');
     if (!m && localStorage.getItem('duskline-reduce-motion') === 'on') m = 'reduced';
@@ -136,21 +137,14 @@
   <div class="loader-sub" data-i18n="tools.weatherSub">Weather, wherever you are</div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
 </div>
-<canvas id="cursorCanvas" aria-hidden="true"></canvas>
-<header id="navbar" class="gallery-app-bar" role="banner">
-  <a href="#main" class="duskline-wordmark" aria-label="Duskline home">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    <span class="gallery-app-back-label">⌂</span>
-  </a>
-  <div class="gallery-app-title" aria-current="page">
-    <img class="duskline-logo" src="assets/duskline-icon.jpg" alt="">
+<header id="navbar" class="gallery-app-bar duskline-header" role="banner">
+  <a href="#main" class="duskline-brand" aria-label="Duskline home">
     <img class="duskline-logo" src="assets/duskline-icon.jpg" alt="">
     <span>duskline</span>
-  </div>
+  </a>
   <div class="nav-actions gallery-app-actions">
-    <label class="duskline-language-label" for="dusklineLanguage">Language</label>
+    <label class="duskline-language-label" for="dusklineLanguage" data-i18n="settings.languageLabel">Language</label>
     <select id="dusklineLanguage" aria-label="Language"></select>
-    <button class="duskline-theme-toggle" id="dusklineThemeToggle" type="button" aria-label="Switch to light mode" title="Switch theme">☼</button>
   </div>
 </header>
 <main id="main" tabindex="-1">
@@ -256,7 +250,6 @@
 <script src="src/js/data/duskline-locales.js" defer></script>
 <script src="src/js/data/dest-weather-cities.js" defer></script>
 <script src="src/js/core/env.js" defer></script>
-<script src="src/js/core/nav-return.js" defer></script>
 <script src="src/js/core/runtime.js" defer></script>
 <script src="src/js/duskline-controls.js" defer></script>
 <script src="src/js/features/weather/ns.js" defer></script>
