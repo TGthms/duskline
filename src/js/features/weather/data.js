@@ -476,7 +476,7 @@
 
     /**
      * Load one city.
-     * US: NWS → Open-Meteo fallback
+     * US: NWS + Open-Meteo enrichment → Open-Meteo fallback
      * Non-US: Open-Meteo only
      * opts.enrich: Open-Meteo gap-fill after NWS (detail open only)
      * opts.forceFetch: bypass TTL cache (manual/auto refresh)
@@ -506,6 +506,13 @@
 
       if (!pack || pack.error || !pack.weather) {
         pack = await loadOpenMeteoCity(c, signal);
+      }
+
+      // Every U.S. card uses both providers: NWS supplies the official
+      // forecast path, while Open-Meteo fills the richer global fields and air
+      // quality used by Duskline's detail view. Keep the NWS pack if OM fails.
+      if (pack && pack.weather && !pack.error && isLikelyUs(c) && pack.source === 'nws') {
+        pack = await enrichWithOpenMeteo(pack, signal);
       }
 
       if (pack && pack.weather && opts.enrich && pack.needsEnrich) {

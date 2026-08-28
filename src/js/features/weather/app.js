@@ -1172,10 +1172,9 @@
         if (gen !== refreshGen) return;
         lastListFetch = Date.now();
 
-        // Phase 2: alerts
-        if (!quiet) {
-          setLoadProgress(64, t('weather.loadingAlerts', 'Checking weather alerts…'));
-        }
+        // NWS alerts are fetched for every U.S. city, including quiet startup.
+        // Quiet mode only suppresses progress UI; it must not suppress safety data.
+        if (!quiet) setLoadProgress(64, t('weather.loadingAlerts', 'Checking weather alerts…'));
         await alertsApi.prefetchAlertsForCache(function (done, total) {
           if (gen !== refreshGen || quiet) return;
           const pct = 64 + Math.round((done / Math.max(1, total)) * 32);
