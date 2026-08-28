@@ -140,6 +140,8 @@ body.page-tools .weather-root.tools-page {
   position: relative;
   overflow: hidden;
   transition: transform .18s ease, box-shadow .18s ease;
+  height: 132px;
+  box-sizing: border-box;
 }
 .weather-row::after {
   content: '';

@@ -262,8 +262,11 @@
       REFRESH_MS: REFRESH_MS,
       t: t,
       onLoadProgress: setLoadProgress,
-      onCityLoaded: function () {
-        if (refreshInflight) refreshListsFromCache({ force: true, skipAmbient: true });
+      onCityLoaded: function (city, pack) {
+        pendingCityKeys.delete(cityKey(city));
+        if (refreshInflight && !replaceCityCard(city, pack)) {
+          refreshListsFromCache({ force: true, skipAmbient: true });
+        }
       },
       loadNwsAlerts: function () { return alertsApi.loadNwsAlerts.apply(null, arguments); },
       applyAlertsToPack: function () { return alertsApi.applyAlertsToPack.apply(null, arguments); },
@@ -300,6 +303,7 @@
 
   // List paint lock (was in alerts slice — kept here for load orchestration)
   var listPaintLocked = false;
+  var pendingCityKeys = new Set();
   var listPaintTimer = 0;
   var listPaintQueued = false;
   function cancelPendingListPaints() {
@@ -825,7 +829,7 @@
       const row = document.createElement('div');
       row.className = 'weather-row weather-row--loading';
       row.setAttribute('aria-busy', 'true');
-      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">···</div></div>`;
+      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">--</div></div>`;
       li.appendChild(row);
       return li;
     }
@@ -968,8 +972,25 @@
         ul.appendChild(heading);
         region = nextRegion;
       }
-      ul.appendChild(buildRowButton(pack));
+      const item = buildRowButton(pack);
+      item.dataset.cityKey = cityKey(pack.city || {});
+      ul.appendChild(item);
     });
+  }
+
+  function replaceCityCard(city, pack) {
+    const key = cityKey(city || (pack && pack.city) || {});
+    const lists = [myLocListEl, favListEl, listEl];
+    for (const list of lists) {
+      if (!list) continue;
+      const current = list.querySelector('li[data-city-key="' + CSS.escape(key) + '"]');
+      if (!current) continue;
+      const next = buildRowButton(pack);
+      next.dataset.cityKey = key;
+      current.replaceWith(next);
+      return true;
+    }
+    return false;
   }
 
   function refreshListsFromCache(opts) {
@@ -984,7 +1005,9 @@
 
     const myPacks = myLocationCity
       ? [(function () {
-          const p = cache.get(myKey) || { city: myLocationCity, pending: true, fetchedAt: 0 };
+          const p = pendingCityKeys.has(myKey)
+            ? { city: myLocationCity, pending: true, fetchedAt: 0 }
+            : (cache.get(myKey) || { city: myLocationCity, pending: true, fetchedAt: 0 });
           // Always surface the stored geolocation stamp on the pin
           if (p.city) {
             p.city = Object.assign({}, p.city, {
@@ -1000,10 +1023,14 @@
     // Favorites exclude my-location pin (shown above)
     const favPacks = favs
       .filter((c) => !myKey || cityKey(c) !== myKey)
-      .map((c) => cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 });
+      .map((c) => pendingCityKeys.has(cityKey(c))
+        ? { city: c, pending: true, fetchedAt: 0 }
+        : (cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 }));
     const majorPacks = MAJOR
       .filter((c) => !favKeys.has(cityKey(c)) && (!myKey || cityKey(c) !== myKey))
-      .map((c) => cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 });
+      .map((c) => pendingCityKeys.has(cityKey(c))
+        ? { city: c, pending: true, fetchedAt: 0 }
+        : (cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 }));
 
     if (myLocBlock) myLocBlock.hidden = !myLocationCity;
     if (favBlock) favBlock.hidden = favPacks.length === 0;
@@ -1099,7 +1126,7 @@
     // Forced reload: ensure NWS + OM re-fetch
     if (force) {
       if (!quiet) {
-        // Manual / first load: wipe layers so UI can show progress cleanly
+        // Manual refresh invalidates weather values; visible cards stay in place.
         cache.clear();
         dataApi.clearAllNwsPointsCache();
       } else {
@@ -1114,13 +1141,6 @@
     // Manual always available — busy state only (re-click cancels prior gen)
     setRefreshBusy(true);
 
-    if (!quiet) {
-      if (favBlock) favBlock.hidden = true;
-      if (myLocBlock) myLocBlock.hidden = true;
-      // Single progress surface until forecasts + alerts complete — then one list paint
-      showWeatherLoadingUI();
-    }
-
     if (!myLocationCity) myLocationCity = loadMyLocation();
     const favs = loadFavorites();
     const cities = [];
@@ -1130,6 +1150,8 @@
     });
     const seen = new Set(cities.map(cityKey));
     MAJOR.forEach((c) => { if (!seen.has(cityKey(c))) cities.push(c); });
+    cities.forEach((c) => pendingCityKeys.add(cityKey(c)));
+    refreshListsFromCache({ force: true, skipAmbient: true });
 
     const run = (async () => {
       try {
@@ -1169,7 +1191,9 @@
           if (gen !== refreshGen) return;
         }
 
-        // ONE reveal (or quiet single paint over existing list)
+        // Cards have already been visible throughout; this final pass only
+        // reconciles favorites/location sections and timestamps.
+        cities.forEach((c) => pendingCityKeys.delete(cityKey(c)));
         listPaintLocked = false;
         cancelPendingListPaints();
         if (!quiet) clearWeatherSkeleton();
@@ -1185,6 +1209,7 @@
         if (e && e.name === 'AbortError') {
           // Superseded by a newer refresh — leave UI to the winner
           if (gen === refreshGen) {
+            cities.forEach((c) => pendingCityKeys.delete(cityKey(c)));
             listPaintLocked = false;
             if (!quiet) clearWeatherSkeleton();
             if (cache.size) refreshListsFromCache({ force: true });
@@ -1194,6 +1219,7 @@
         }
         if (gen !== refreshGen) return;
         listPaintLocked = false;
+        cities.forEach((c) => pendingCityKeys.delete(cityKey(c)));
         if (!quiet) {
           showError(t('weather.error', 'Could not load weather data.'));
           clearWeatherSkeleton();
