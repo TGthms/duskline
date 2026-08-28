@@ -1037,41 +1037,12 @@ function onResizeRAF(fn) {
   } catch (e) { /* ignore */ }
 }
 
-/* ── SCROLL UI (progress + nav) — one rAF-throttled handler ── */
-const progressBar = document.getElementById('progress-bar');
+/* ── SCROLL UI (navigation only) ── */
 let scrollUiPending = false;
-let lastProgressScale = -1;
-let scrollMax = 0;
-let scrollMaxDirty = true;
-function invalidateScrollMax() { scrollMaxDirty = true; }
-function ensureScrollMax() {
-  if (!scrollMaxDirty) return;
-  const h = document.documentElement;
-  scrollMax = Math.max(0, (h.scrollHeight || 0) - (h.clientHeight || 0));
-  scrollMaxDirty = false;
-}
-try {
-  window.addEventListener('resize', invalidateScrollMax, { passive: true });
-  window.addEventListener('orientationchange', invalidateScrollMax, { passive: true });
-  window.addEventListener('load', invalidateScrollMax, { passive: true });
-  if (typeof ResizeObserver === 'function' && document.body) {
-    const ro = new ResizeObserver(() => { invalidateScrollMax(); });
-    ro.observe(document.body);
-  }
-} catch (e) { /* ignore */ }
 
 function updateScrollUi() {
   scrollUiPending = false;
   const y = window.scrollY || document.documentElement.scrollTop || 0;
-  if (progressBar) {
-    ensureScrollMax();
-    const pct = scrollMax > 0 ? Math.min(1, Math.max(0, y / scrollMax)) : 0;
-    const q = Math.round(pct * 1000) / 1000;
-    if (q !== lastProgressScale) {
-      lastProgressScale = q;
-      progressBar.style.transform = 'scaleX(' + q + ')';
-    }
-  }
   if (typeof onPageScroll === 'function') onPageScroll(y);
 }
 window.addEventListener('scroll', () => {

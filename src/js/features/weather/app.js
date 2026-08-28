@@ -262,6 +262,9 @@
       REFRESH_MS: REFRESH_MS,
       t: t,
       onLoadProgress: setLoadProgress,
+      onCityLoaded: function () {
+        if (refreshInflight) refreshListsFromCache({ force: true, skipAmbient: true });
+      },
       loadNwsAlerts: function () { return alertsApi.loadNwsAlerts.apply(null, arguments); },
       applyAlertsToPack: function () { return alertsApi.applyAlertsToPack.apply(null, arguments); },
       ensureNwsAlerts: function () { return alertsApi.ensureNwsAlerts.apply(null, arguments); }
@@ -818,6 +821,14 @@
     const li = document.createElement('li');
     const fav = isFavorite(c);
 
+    if (pack.pending && !pack.weather) {
+      const row = document.createElement('div');
+      row.className = 'weather-row weather-row--loading';
+      row.setAttribute('aria-busy', 'true');
+      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">···</div></div>`;
+      li.appendChild(row);
+      return li;
+    }
     if (pack.error || !pack.weather || !pack.weather.current) {
       const row = document.createElement('div');
       row.className = 'weather-row weather-row--error';
@@ -973,7 +984,7 @@
 
     const myPacks = myLocationCity
       ? [(function () {
-          const p = cache.get(myKey) || { city: myLocationCity, error: true, fetchedAt: 0 };
+          const p = cache.get(myKey) || { city: myLocationCity, pending: true, fetchedAt: 0 };
           // Always surface the stored geolocation stamp on the pin
           if (p.city) {
             p.city = Object.assign({}, p.city, {
@@ -989,10 +1000,10 @@
     // Favorites exclude my-location pin (shown above)
     const favPacks = favs
       .filter((c) => !myKey || cityKey(c) !== myKey)
-      .map((c) => cache.get(cityKey(c)) || { city: c, error: true, fetchedAt: 0 });
+      .map((c) => cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 });
     const majorPacks = MAJOR
       .filter((c) => !favKeys.has(cityKey(c)) && (!myKey || cityKey(c) !== myKey))
-      .map((c) => cache.get(cityKey(c)) || { city: c, error: true, fetchedAt: 0 });
+      .map((c) => cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 });
 
     if (myLocBlock) myLocBlock.hidden = !myLocationCity;
     if (favBlock) favBlock.hidden = favPacks.length === 0;

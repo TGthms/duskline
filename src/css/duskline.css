@@ -18,7 +18,9 @@ body.duskline .gallery-app-mark { color: var(--duskline-accent); }
 body.duskline .weather-root.tools-page { width: min(1180px, calc(100% - 48px)); max-width: none; margin-inline: auto; }
 body.duskline .weather-page { max-width: none; width: 100%; }
 body.duskline .weather-shell { background: transparent; border: 0; box-shadow: none; }
-body.duskline .weather-row, body.duskline .weather-mod { background: var(--duskline-panel); border-color: rgba(125,211,252,.16); }
+body.duskline .weather-mod { background: var(--duskline-panel); border-color: rgba(125,211,252,.16); }
+body.duskline .weather-row--loading { background: linear-gradient(135deg, rgba(34,58,86,.82), rgba(17,31,50,.82)); }
+body.duskline .weather-row-temp--loading { color: rgba(234,243,255,.58); letter-spacing: .18em; }
 body.duskline .weather-btn:hover, body.duskline .weather-btn:focus-visible { color: var(--duskline-accent); border-color: var(--duskline-accent); }
 body.duskline .weather-search { background: rgba(8,17,31,.72); border-color: rgba(125,211,252,.24); color: var(--duskline-ink); }
 body.duskline .weather-attribution { color: var(--duskline-muted); }

@@ -560,6 +560,7 @@
       const quiet = !!opts.quiet;
       const forceFetch = !!opts.forceFetch;
       const onProgress = typeof deps.onLoadProgress === 'function' ? deps.onLoadProgress : function () {};
+      const onCityLoaded = typeof deps.onCityLoaded === 'function' ? deps.onCityLoaded : function () {};
       function tMsg(key, fallback) {
         return typeof deps.t === 'function' ? deps.t(key, fallback) : fallback;
       }
@@ -597,6 +598,7 @@
             out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
           }
           cache.set(cityKey(cities[idx]), out[idx]);
+          onCityLoaded(cities[idx], out[idx]);
           bump();
         }
       }
@@ -636,6 +638,7 @@
               if (out[idx] && out[idx].weather && !out[idx].error) continue;
               out[idx] = packs[j];
               cache.set(cityKey(cities[idx]), packs[j]);
+              onCityLoaded(cities[idx], packs[j]);
               bump();
             }
           }
@@ -646,6 +649,7 @@
             if (out[idx] && out[idx].weather) continue;
             out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
             cache.set(cityKey(cities[idx]), out[idx]);
+            onCityLoaded(cities[idx], out[idx]);
             bump();
           }
         }
@@ -655,6 +659,7 @@
         if (!out[i]) {
           out[i] = { error: true, city: cities[i], fetchedAt: Date.now() };
           cache.set(cityKey(cities[i]), out[i]);
+          onCityLoaded(cities[i], out[i]);
         }
       }
 
