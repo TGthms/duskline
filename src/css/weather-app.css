@@ -2576,7 +2576,8 @@ html[data-motion-effective="off"] .weather-row::after {
   z-index: 20 !important;
 }
 .weather-detail-bar #weatherDetailBack {
-  min-width: 72px;
+  width: 44px;
+  min-width: 44px;
   min-height: 40px;
   background: rgba(255,255,255,.22) !important;
   color: #fff !important;

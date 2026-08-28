@@ -1,0 +1,14 @@
+{
+  "name": "Duskline Weather",
+  "short_name": "Duskline",
+  "description": "Clear, global weather forecasts, air quality, and public alerts.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "assets/duskline-icon.jpg", "sizes": "960x960", "type": "image/jpeg", "purpose": "any maskable" }
+  ]
+}

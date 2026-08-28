@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1260" viewBox="0 0 2400 1260" role="img" aria-labelledby="title desc">
+  <title id="title">Duskline — Weather, wherever you are</title>
+  <desc id="desc">A calm twilight gradient above a deep blue horizon with the Duskline wordmark.</desc>
+  <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#172b62"/><stop offset=".63" stop-color="#e58a79"/><stop offset=".64" stop-color="#10295b"/><stop offset="1" stop-color="#06132d"/></linearGradient><radialGradient id="glow"><stop stop-color="#ffe8a2"/><stop offset="1" stop-color="#ffb37a" stop-opacity="0"/></radialGradient></defs>
+  <rect width="2400" height="1260" rx="112" fill="url(#sky)"/><circle cx="520" cy="620" r="230" fill="url(#glow)" opacity=".8"/>
+  <g fill="#f3f7ff" font-family="Arial, Helvetica, sans-serif"><text x="170" y="880" font-size="112" font-weight="700" letter-spacing="18">duskline</text><text x="180" y="978" font-size="42" opacity=".82" letter-spacing="4">WEATHER, WHEREVER YOU ARE</text></g>
+</svg>

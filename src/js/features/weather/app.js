@@ -834,8 +834,27 @@
     if (pack.pending && !pack.weather) {
       const row = document.createElement('div');
       row.className = 'weather-row weather-row--loading';
+      row.setAttribute('role', 'button');
+      row.tabIndex = 0;
+      row.setAttribute('aria-label', (displayCityName(c) || c.name || '') + '. ' + t('weather.loadingForecast', 'Loading forecast…'));
       row.setAttribute('aria-busy', 'true');
       row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">--</div></div>`;
+      const openPending = async () => {
+        row.setAttribute('aria-busy', 'true');
+        try {
+          const fresh = await dataApi.loadCity(c, null, { forceFetch: true, enrich: true });
+          cache.set(cityKey(c), fresh);
+          pendingCityKeys.delete(cityKey(c));
+          openDetail(fresh);
+          replaceCityCard(c, fresh);
+        } catch (e) {
+          showError(t('weather.error', 'Could not load weather data.'));
+        }
+      };
+      row.addEventListener('click', openPending);
+      row.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPending(); }
+      });
       li.appendChild(row);
       return li;
     }
