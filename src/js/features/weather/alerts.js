@@ -21,9 +21,9 @@
     function getDetailMods() { return typeof deps.getDetailMods === 'function' ? deps.getDetailMods() : null; }
     function isDetailVisible() { return typeof deps.isDetailVisible === 'function' ? deps.isDetailVisible() : false; }
     function getOpenCity() { return typeof deps.getOpenCity === 'function' ? deps.getOpenCity() : null; }
-    function scheduleListPaintFromAlerts() {
+    function scheduleListPaintFromAlerts(pack) {
       if (typeof deps.scheduleListPaintFromAlerts === 'function') {
-        deps.scheduleListPaintFromAlerts();
+        deps.scheduleListPaintFromAlerts(pack);
         return;
       }
       // fallback no-op
@@ -302,11 +302,11 @@
         applyAlertsToPack(pack, alerts || []);
         // Surgical DOM update only — full openDetail() was wiping open <details>
         patchDetailAlerts(pack);
-        scheduleListPaintFromAlerts();
+        scheduleListPaintFromAlerts(pack);
       }).catch(function () {
         applyAlertsToPack(pack, []);
         patchDetailAlerts(pack);
-        scheduleListPaintFromAlerts();
+        scheduleListPaintFromAlerts(pack);
       });
     }
 

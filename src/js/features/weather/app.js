@@ -264,6 +264,7 @@
       onLoadProgress: setLoadProgress,
       onCityLoaded: function (city, pack) {
         pendingCityKeys.delete(cityKey(city));
+        if (pack && pack.fetchedAt) setUpdated(pack.fetchedAt);
         if (refreshInflight && !replaceCityCard(city, pack)) {
           refreshListsFromCache({ force: true, skipAmbient: true });
         }
@@ -281,8 +282,8 @@
       getDetailMods: function () { return detailMods; },
       isDetailVisible: isDetailVisible,
       getOpenCity: function () { return openCity; },
-      scheduleListPaintFromAlerts: function () {
-        if (typeof scheduleListPaintFromAlerts === 'function') scheduleListPaintFromAlerts();
+      scheduleListPaintFromAlerts: function (pack) {
+        if (typeof scheduleListPaintFromAlerts === 'function') scheduleListPaintFromAlerts(pack);
       }
     });
   }
@@ -313,7 +314,11 @@
       listPaintTimer = 0;
     }
   }
-  function scheduleListPaintFromAlerts() {
+  function scheduleListPaintFromAlerts(pack) {
+    if (pack && pack.city) {
+      pendingCityKeys.delete(cityKey(pack.city));
+      if (replaceCityCard(pack.city, pack)) return;
+    }
     if (listPaintLocked) {
       listPaintQueued = true;
       return;
@@ -1190,13 +1195,12 @@
           if (gen !== refreshGen) return;
         }
 
-        // Cards have already been visible throughout; this final pass only
-        // reconciles favorites/location sections and timestamps.
+        // Cards have already been updated individually; do not rebuild the list.
         cities.forEach((c) => pendingCityKeys.delete(cityKey(c)));
         listPaintLocked = false;
         cancelPendingListPaints();
         if (!quiet) clearWeatherSkeleton();
-        refreshListsFromCache({ force: true });
+        if (!cache.size) refreshListsFromCache({ force: true });
 
         let ok = 0;
         cache.forEach(function (p) { if (p && p.weather && !p.error) ok++; });

@@ -30,6 +30,7 @@ body.duskline .weather-root, body.duskline .weather-page { isolation: auto; }
 body.duskline .weather-page-sky { z-index: 0; }
 body.duskline .weather-shell { position: relative; z-index: 3; }
 body.duskline .weather-list, body.duskline .weather-row { position: relative; z-index: 3; }
+body.duskline .weather-list li { animation: none !important; }
 body.duskline .weather-region-heading { margin: 24px 4px 8px; color: rgba(234,243,255,.72); font: 700 .72rem/1.2 'Public Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; list-style: none; }
 body.duskline .weather-region-heading:first-child { margin-top: 4px; }
 body.duskline #weatherLoading[hidden], body.duskline #weatherError[hidden], body.duskline #weatherSuggest[hidden] { display: none !important; }

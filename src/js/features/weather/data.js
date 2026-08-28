@@ -403,10 +403,10 @@
       }
     }
 
-    async function enrichWithOpenMeteo(pack, signal) {
+    async function enrichWithOpenMeteo(pack, signal, prefetched) {
       if (!pack || !pack.weather || !pack.city || pack.error) return pack;
       try {
-        const om = await loadOpenMeteoCity(pack.city, signal);
+        const om = prefetched || await loadOpenMeteoCity(pack.city, signal);
         if (!om || !om.weather || !om.weather.current) {
           pack.needsEnrich = false;
           return pack;
@@ -496,23 +496,24 @@
 
       let pack = null;
       if (isLikelyUs(c)) {
-        try {
-          pack = await loadNwsCity(c, signal);
-        } catch (e) {
-          if (e && e.name === 'AbortError') throw e;
-          pack = null;
+        // Start both providers together. NWS remains authoritative for the
+        // U.S. forecast/alert path; Open-Meteo supplies enrichment and air data.
+        const results = await Promise.all([
+          loadNwsCity(c, signal).catch(function (e) {
+            if (e && e.name === 'AbortError') throw e;
+            return null;
+          }),
+          loadOpenMeteoCity(c, signal)
+        ]);
+        const nws = results[0];
+        const om = results[1];
+        if (nws && nws.weather && !nws.error) {
+          pack = await enrichWithOpenMeteo(nws, signal, om);
+        } else {
+          pack = om;
         }
-      }
-
-      if (!pack || pack.error || !pack.weather) {
+      } else {
         pack = await loadOpenMeteoCity(c, signal);
-      }
-
-      // Every U.S. card uses both providers: NWS supplies the official
-      // forecast path, while Open-Meteo fills the richer global fields and air
-      // quality used by Duskline's detail view. Keep the NWS pack if OM fails.
-      if (pack && pack.weather && !pack.error && isLikelyUs(c) && pack.source === 'nws') {
-        pack = await enrichWithOpenMeteo(pack, signal);
       }
 
       if (pack && pack.weather && opts.enrich && pack.needsEnrich) {
