@@ -16,8 +16,34 @@ body.duskline .duskline-brand { display: inline-flex; align-items: center; gap: 
 body.duskline.weather-sky-light .duskline-brand { color: #15263b; }
 body.duskline .duskline-logo { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.2), 0 5px 18px rgba(125,211,252,.2); }
 body.duskline .duskline-language-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-body.duskline #dusklineLanguage { min-height: 38px; border: 1px solid rgba(125,211,252,.25); border-radius: 999px; background: rgba(8,17,31,.92); color: var(--duskline-ink); padding: 0 13px; font: 600 12px 'Public Sans', sans-serif; }
-body.duskline.weather-sky-light #dusklineLanguage { background: rgba(255,255,255,.86); color: #15263b; border-color: rgba(31,74,109,.2); }
+body.duskline #dusklineLanguage {
+  appearance: none;
+  -webkit-appearance: none;
+  width: clamp(132px, 16vw, 168px);
+  min-height: 40px;
+  padding: 0 38px 0 14px;
+  border: 1px solid rgba(125,211,252,.3);
+  border-radius: 12px;
+  background-color: rgba(8,17,31,.9);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23eaf3ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  color: var(--duskline-ink);
+  font: 600 13px/1 'Public Sans', sans-serif;
+  letter-spacing: .01em;
+  cursor: pointer;
+  color-scheme: dark;
+}
+body.duskline #dusklineLanguage:hover { border-color: var(--duskline-accent); }
+body.duskline #dusklineLanguage:focus-visible { outline: 3px solid rgba(125,211,252,.42); outline-offset: 3px; }
+body.duskline.weather-sky-light #dusklineLanguage {
+  background-color: rgba(255,255,255,.9);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2315263b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  color: #15263b;
+  border-color: rgba(31,74,109,.24);
+  color-scheme: light;
+}
+html[dir="rtl"] body.duskline #dusklineLanguage { padding: 0 14px 0 38px; background-position: left 13px center; }
 body.duskline .gallery-app-mark { color: var(--duskline-accent); }
 body.duskline .weather-root.tools-page { width: min(1180px, calc(100% - 48px)); max-width: none; margin-inline: auto; }
 body.duskline .weather-page { max-width: none; width: 100%; }
@@ -192,4 +218,18 @@ html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .duskline-brand
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLanguage { background: rgba(255,255,255,.86); color: #15263b; border-color: rgba(31,74,109,.2); }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .weather-search { background: rgba(255,255,255,.72); border-color: rgba(31,74,109,.22); color: #15263b; }
 html[dir="rtl"] body.duskline .weather-toolbar-actions { flex-direction: row-reverse; }
+/* Keep the compact language control consistent even when the shared theme
+   layer applies a background shorthand later in the cascade. */
+html[data-theme="minimal"] body.duskline #dusklineLanguage {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 40px;
+  border-radius: 12px;
+  padding-inline: 14px 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2315263b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  color-scheme: light;
+}
+html[dir="rtl"] body.duskline #dusklineLanguage { padding-inline: 38px 14px; background-position: left 13px center; }
 @media (max-width: 640px) { body.duskline .duskline-header { padding-inline: 16px; } body.duskline .weather-root.tools-page { width: min(100% - 24px, 1180px); } body.duskline .weather-toolbar { padding-inline: 0; } }
