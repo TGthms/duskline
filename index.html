@@ -120,9 +120,6 @@
     if (VALID.indexOf(t) < 0) t = 'default';
     document.documentElement.setAttribute('data-theme', t);
     document.documentElement.style.colorScheme = (t === 'minimal' || t === 'elegant') ? 'light' : 'dark';
-    var splashHour = new Date().getHours() + new Date().getMinutes() / 60;
-    var splashPeriod = splashHour < 5.5 || splashHour >= 20 ? 'night' : splashHour < 8 ? 'dawn' : splashHour < 17.5 ? 'day' : 'dusk';
-    document.documentElement.setAttribute('data-splash-period', splashPeriod);
 
     var m = localStorage.getItem('duskline-motion');
     if (!m && localStorage.getItem('duskline-reduce-motion') === 'on') m = 'reduced';
@@ -141,11 +138,6 @@
 <body class="page-tools duskline">
 
 <a class="skip-link" href="#main" data-i18n="aria.skipToMain">Skip to main content</a>
-<div id="loader">
-  <div class="loader-text">duskline</div>
-  <div class="loader-sub" data-i18n="tools.weatherSub">Weather, wherever you are</div>
-  <div class="loader-bar"><div class="loader-fill"></div></div>
-</div>
 <header id="navbar" class="gallery-app-bar duskline-header" role="banner">
   <a href="#main" class="duskline-brand" aria-label="Duskline home">
     <img class="duskline-logo" src="assets/duskline-icon.jpg" alt="">
