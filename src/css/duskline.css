@@ -153,7 +153,7 @@ body.duskline #weatherRefresh,
 body.duskline #weatherDetailRefresh { appearance: none; -webkit-appearance: none; flex: 0 0 40px !important; width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 50% !important; }
 body.duskline #weatherRefresh svg,
 body.duskline #weatherDetailRefresh svg { width: 17px; height: 17px; stroke-width: 1.8; }
-body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer { color: #18324d !important; background-color: rgba(255,255,255,.82) !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer { color: #18324d !important; background-color: transparent !important; }
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer-copy,
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .footer-legal-links a { color: #18324d !important; }
 body.duskline .weather-detail-attrib,
