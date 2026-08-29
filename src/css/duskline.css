@@ -101,6 +101,36 @@ body.duskline .wx-sun-mod-hero,
 body.duskline .wx-sun-mod-hero-label,
 body.duskline .wx-sun-mod-hero-time,
 body.duskline .wx-sun-mod-secondary { color: var(--wx-content, #fff) !important; text-shadow: 0 1px 3px var(--wx-content-shadow, rgba(0,0,0,.4)); }
+/* Weather surfaces are deliberately dark/atmospheric in both page modes. */
+body.duskline .weather-row-city,
+body.duskline .weather-row-meta,
+body.duskline .weather-row-cond,
+body.duskline .weather-row-hl,
+body.duskline .weather-row-updated,
+body.duskline .weather-row-temp,
+body.duskline .weather-detail-hero,
+body.duskline .weather-detail-hero h2,
+body.duskline .weather-detail-temp,
+body.duskline .weather-detail-cond,
+body.duskline .weather-detail-hl,
+body.duskline .weather-detail-updated,
+body.duskline .weather-mod,
+body.duskline .weather-mod-label,
+body.duskline .weather-mod-value,
+body.duskline .weather-mod-sub,
+body.duskline .weather-hourly,
+body.duskline .weather-hourly-item,
+body.duskline .weather-daily,
+body.duskline .weather-daily-row,
+body.duskline .weather-daily-day,
+body.duskline .weather-daily-hi,
+body.duskline .weather-daily-lo,
+body.duskline .wx-sun-mod-hero,
+body.duskline .wx-sun-mod-hero-label,
+body.duskline .wx-sun-mod-hero-time,
+body.duskline .wx-sun-mod-secondary { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
+body.duskline .weather-detail-hero .weather-detail-loading,
+body.duskline .weather-detail-loading-panel { color: rgba(255,255,255,.78) !important; }
 body.duskline .weather-region-heading:first-child { margin-top: 4px; }
 body.duskline #weatherLoading[hidden], body.duskline #weatherError[hidden], body.duskline #weatherSuggest[hidden] { display: none !important; }
 body.duskline .gallery-app-footer { background: var(--duskline-night); }
@@ -111,6 +141,20 @@ body.page-tools.duskline:has(.weather-root) .gallery-app-footer .gallery-app-foo
 body.page-tools.duskline:has(.weather-root) .gallery-app-footer .footer-legal-links a { color: rgba(234,243,255,.72) !important; }
 body.duskline.weather-sky-light .gallery-app-footer .gallery-app-footer-copy,
 body.duskline.weather-sky-light .gallery-app-footer .footer-legal-links a { color: rgba(21,38,59,.66) !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer {
+  background: rgba(255,255,255,.82) !important;
+  color: #18324d !important;
+  border-top-color: rgba(24,50,77,.16) !important;
+}
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .footer-legal-links a { color: #18324d !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .footer-legal-links { border-top-color: rgba(24,50,77,.16) !important; }
+body.duskline #weatherRefresh,
+body.duskline #weatherDetailRefresh { width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 50% !important; }
+body.duskline #weatherRefresh svg,
+body.duskline #weatherDetailRefresh svg { width: 17px; height: 17px; stroke-width: 1.8; }
+body.duskline .weather-detail-attrib,
+body.duskline .weather-daily-pop { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
 body.duskline #loader { background: linear-gradient(160deg, #152b61 0%, #e58c79 52%, #081a3d 53%, #050d20 100%); }
 html[data-splash-period="night"] body.duskline #loader { background: radial-gradient(circle at 50% 32%, rgba(94,116,210,.22), transparent 34%), linear-gradient(160deg, #111a45, #241d4d 48%, #050b18 49%, #020611); }
 html[data-splash-period="dawn"] body.duskline #loader { background: radial-gradient(circle at 54% 34%, rgba(255,223,155,.3), transparent 27%), linear-gradient(160deg, #385ca2, #d88d91 52%, #19325d 53%, #091528); }
@@ -118,7 +162,9 @@ html[data-splash-period="day"] body.duskline #loader { background: radial-gradie
 html[data-splash-period="dusk"] body.duskline #loader { background: radial-gradient(circle at 46% 36%, rgba(255,198,129,.3), transparent 30%), linear-gradient(160deg, #5668ac, #e58c79 52%, #19284f 53%, #071226); }
 html[data-theme="minimal"] body.duskline #loader { color: #10243e; }
 html[data-theme="minimal"][data-splash-period="night"] body.duskline #loader { background: linear-gradient(160deg, #5c76b0, #b29ac3 52%, #4b648f 53%, #253957); }
+html[data-theme="minimal"][data-splash-period="dawn"] body.duskline #loader { background: linear-gradient(160deg, #9dc9e8, #f0b0a9 52%, #6689b7 53%, #345073); }
 html[data-theme="minimal"][data-splash-period="day"] body.duskline #loader { background: linear-gradient(160deg, #bde7f7, #82c4e6 52%, #5b9bc8 53%, #35618e); }
+html[data-theme="minimal"][data-splash-period="dusk"] body.duskline #loader { background: linear-gradient(160deg, #8395cb, #efa58e 52%, #536789 53%, #293c61); }
 body.duskline .loader-logo { width: clamp(76px, 13vw, 132px); height: clamp(76px, 13vw, 132px); border-radius: 28%; object-fit: cover; box-shadow: 0 0 0 2px rgba(255,255,255,.32), 0 22px 70px rgba(0,0,0,.34); }
 body.duskline .loader-text { font-family: 'Public Sans', sans-serif; font-style: normal; font-weight: 700; letter-spacing: .14em; text-transform: lowercase; color: #f5f8ff; text-shadow: 0 5px 28px rgba(0,0,0,.3); }
 body.duskline .loader-sub { color: rgba(245,248,255,.78); }
