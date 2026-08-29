@@ -136,13 +136,13 @@ body.duskline #weatherLoading[hidden], body.duskline #weatherError[hidden], body
 body.duskline .gallery-app-footer { background: var(--duskline-night); }
 /* Keep the established footer geometry. Duskline only supplies readable
    theme-aware ink; the footer remains part of the page flow. */
-body.page-tools.duskline:has(.weather-root) .gallery-app-footer { background: transparent !important; }
+body.page-tools.duskline:has(.weather-root) .gallery-app-footer { background-color: var(--duskline-night) !important; }
 body.page-tools.duskline:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
 body.page-tools.duskline:has(.weather-root) .gallery-app-footer .footer-legal-links a { color: rgba(234,243,255,.72) !important; }
 body.duskline.weather-sky-light .gallery-app-footer .gallery-app-footer-copy,
 body.duskline.weather-sky-light .gallery-app-footer .footer-legal-links a { color: rgba(21,38,59,.66) !important; }
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer {
-  background: rgba(255,255,255,.82) !important;
+  background-color: #fff !important;
   color: #18324d !important;
   border-top-color: rgba(24,50,77,.16) !important;
 }
