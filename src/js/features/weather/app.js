@@ -840,12 +840,13 @@
       row.setAttribute('aria-busy', 'true');
       row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">--</div></div>`;
       const openPending = async () => {
-        row.setAttribute('aria-busy', 'true');
+        if (isDetailVisible() && openCity && openCity.city && sameCity(openCity.city, c)) return;
+        openDetailLoading(c);
         try {
           const fresh = await dataApi.loadCity(c, null, { forceFetch: true, enrich: true });
           cache.set(cityKey(c), fresh);
           pendingCityKeys.delete(cityKey(c));
-          openDetail(fresh);
+          if (openCity && openCity.city && sameCity(openCity.city, c)) openDetail(fresh);
           replaceCityCard(c, fresh);
         } catch (e) {
           showError(t('weather.error', 'Could not load weather data.'));
@@ -1331,6 +1332,34 @@
 
   function isDetailVisible() {
     return !!(detailEl && detailEl.classList.contains('open') && !detailEl.classList.contains('is-closing'));
+  }
+
+  // The detail surface is useful before the background city queue completes.
+  // Open it immediately, then replace this loading state with the fetched pack.
+  function openDetailLoading(city) {
+    if (!detailEl || !city) return;
+    openCity = { city: city, pending: true };
+    if (detailHero) {
+      detailHero.innerHTML = `<h2>${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div>`;
+    }
+    if (detailMods) {
+      detailMods.innerHTML = `<div class="weather-detail-loading-panel" role="status" aria-live="polite"><span class="weather-detail-spinner" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
+    }
+    if (detailBack) {
+      detailBack.hidden = false;
+      detailBack.style.visibility = 'visible';
+      detailBack.style.display = '';
+    }
+    markDetailInteractive();
+    forceCloseSheet();
+    lockDetailPage();
+    cancelDetailMotion();
+    detailEl.classList.remove('is-closing', 'wx-detail-enter');
+    detailEl.classList.add('open');
+    detailEl.style.opacity = '';
+    detailEl.style.pointerEvents = '';
+    if (detailScroll) detailScroll.scrollTop = 0;
+    try { detailBack.focus({ preventScroll: true }); } catch (e) {}
   }
 
   function openDetail(pack) {

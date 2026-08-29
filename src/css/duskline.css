@@ -8,12 +8,16 @@
   --duskline-panel: rgba(11, 26, 47, .72);
 }
 body.duskline { background: var(--duskline-night); color: var(--duskline-ink); }
+body.duskline.weather-sky-light { background: #eef5fb; color: #15263b; }
 body.duskline .gallery-app-bar { background: linear-gradient(180deg, rgba(8,17,31,.98), rgba(8,17,31,.76)); border-bottom-color: rgba(125,211,252,.16); }
+body.duskline.weather-sky-light .gallery-app-bar { background: rgba(246,250,255,.88); border-bottom-color: rgba(31,74,109,.15); box-shadow: 0 8px 24px rgba(31,74,109,.08); }
 body.duskline .duskline-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-inline: clamp(20px, 4vw, 56px); }
 body.duskline .duskline-brand { display: inline-flex; align-items: center; gap: 11px; color: var(--duskline-ink); font: 700 clamp(1.15rem, 2vw, 1.45rem)/1 'Public Sans', sans-serif; letter-spacing: .1em; text-decoration: none; text-transform: lowercase; }
+body.duskline.weather-sky-light .duskline-brand { color: #15263b; }
 body.duskline .duskline-logo { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.2), 0 5px 18px rgba(125,211,252,.2); }
 body.duskline .duskline-language-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 body.duskline #dusklineLanguage { min-height: 38px; border: 1px solid rgba(125,211,252,.25); border-radius: 999px; background: rgba(8,17,31,.92); color: var(--duskline-ink); padding: 0 13px; font: 600 12px 'Public Sans', sans-serif; }
+body.duskline.weather-sky-light #dusklineLanguage { background: rgba(255,255,255,.86); color: #15263b; border-color: rgba(31,74,109,.2); }
 body.duskline .gallery-app-mark { color: var(--duskline-accent); }
 body.duskline .weather-root.tools-page { width: min(1180px, calc(100% - 48px)); max-width: none; margin-inline: auto; }
 body.duskline .weather-page { max-width: none; width: 100%; }
@@ -23,6 +27,7 @@ body.duskline .weather-row--loading { background: linear-gradient(135deg, rgba(3
 body.duskline .weather-row-temp--loading { color: rgba(234,243,255,.58); letter-spacing: .18em; }
 body.duskline .weather-btn:hover, body.duskline .weather-btn:focus-visible { color: var(--duskline-accent); border-color: var(--duskline-accent); }
 body.duskline .weather-search { background: rgba(8,17,31,.72); border-color: rgba(125,211,252,.24); color: var(--duskline-ink); }
+body.duskline.weather-sky-light .weather-search { background: rgba(255,255,255,.72); border-color: rgba(31,74,109,.22); color: #15263b; }
 body.duskline .weather-attribution { color: var(--duskline-muted); }
 body.duskline .gallery-app-footer { border-top-color: rgba(125,211,252,.14); }
 html[dir="rtl"] body.duskline { text-align: right; }
@@ -33,9 +38,38 @@ body.duskline .weather-list, body.duskline .weather-row { position: relative; z-
 body.duskline .weather-list li { animation: none !important; }
 body.duskline .weather-region-heading { margin: 24px 4px 8px; color: rgba(234,243,255,.72); font: 700 .72rem/1.2 'Public Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; list-style: none; }
 body.duskline .weather-detail-back { border-radius: 14px !important; padding: 0 !important; }
+body.duskline .weather-detail-back {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+body.duskline.weather-sky-light .duskline-header { color: #15263b; }
+body.duskline.weather-sky-light .duskline-brand .duskline-logo { box-shadow: 0 0 0 1px rgba(21,38,59,.18), 0 5px 18px rgba(31,74,109,.14); }
+body.duskline.weather-sky-light .weather-btn { background: rgba(255,255,255,.68); border-color: rgba(31,74,109,.2); color: #15263b; }
+body.duskline.weather-sky-light .weather-search::placeholder { color: rgba(21,38,59,.55); }
+body.duskline.weather-sky-light .weather-search-icon { color: rgba(21,38,59,.55); }
+body.duskline.weather-sky-light .weather-region-heading { color: rgba(21,38,59,.68); }
+body.duskline.weather-sky-light .weather-row { color: #15263b; }
+body.duskline.weather-sky-light .weather-row-meta,
+body.duskline.weather-sky-light .weather-row-updated { color: rgba(21,38,59,.62); }
+body.duskline.weather-sky-light .weather-mod { color: #15263b; }
+body.duskline.weather-sky-light .weather-detail-loading-panel { color: #15263b; }
 body.duskline .weather-region-heading:first-child { margin-top: 4px; }
 body.duskline #weatherLoading[hidden], body.duskline #weatherError[hidden], body.duskline #weatherSuggest[hidden] { display: none !important; }
 body.duskline .gallery-app-footer { background: var(--duskline-night); }
+body.duskline.weather-sky-light .gallery-app-footer { background: #eef5fb; color: #15263b; }
+body.duskline #loader { background: radial-gradient(circle at 50% 38%, rgba(67,128,184,.26), transparent 32%), linear-gradient(160deg, #152b61 0%, #e58c79 52%, #081a3d 53%, #050d20 100%); }
+body.duskline .loader-logo { width: clamp(76px, 13vw, 132px); height: clamp(76px, 13vw, 132px); border-radius: 28%; object-fit: cover; box-shadow: 0 0 0 2px rgba(255,255,255,.32), 0 22px 70px rgba(0,0,0,.34); }
+body.duskline .loader-text { font-family: 'Public Sans', sans-serif; font-style: normal; font-weight: 700; letter-spacing: .14em; text-transform: lowercase; color: #f5f8ff; text-shadow: 0 5px 28px rgba(0,0,0,.3); }
+body.duskline .loader-sub { color: rgba(245,248,255,.78); }
+body.duskline .loader-bar { width: min(300px, 70vw); background: rgba(255,255,255,.28); }
+body.duskline .loader-fill { background: linear-gradient(90deg, #8bd8ff, #ffe0a4); }
 body.duskline .legal-page { max-width: 760px; margin: 0 auto; padding: 116px 24px 80px; color: var(--duskline-ink); }
 body.duskline .legal-back { margin: 0 0 48px; }
 body.duskline .legal-eyebrow { margin: 0 0 14px; color: var(--duskline-accent); font: 700 .72rem/1 'Public Sans', sans-serif; letter-spacing: .16em; }
@@ -45,5 +79,29 @@ body.duskline .legal-page h1 { margin: 0 0 28px; font: 700 clamp(2rem, 5vw, 3.5r
 body.duskline .legal-page h2 { margin: 34px 0 10px; font: 700 1.15rem/1.3 'Public Sans', sans-serif; }
 body.duskline .legal-page p { color: var(--duskline-muted); line-height: 1.75; }
 body.duskline .legal-page a { color: var(--duskline-accent); }
+body.duskline .legal-topbar { position: fixed; inset: 0 0 auto; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px clamp(20px, 4vw, 56px); background: rgba(8,17,31,.88); border-bottom: 1px solid rgba(125,211,252,.14); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+body.duskline .legal-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--duskline-ink); font: 700 1.05rem/1 'Public Sans', sans-serif; letter-spacing: .12em; text-decoration: none; text-transform: lowercase; }
+body.duskline .legal-brand img { width: 30px; height: 30px; border-radius: 9px; object-fit: cover; }
+body.duskline .legal-topbar label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+body.duskline #dusklineLegalLanguage { min-height: 36px; border: 1px solid rgba(125,211,252,.25); border-radius: 999px; background: rgba(8,17,31,.92); color: var(--duskline-ink); padding: 0 12px; font: 600 12px 'Public Sans', sans-serif; }
+body.duskline.weather-detail-open .weather-detail-loading-panel,
+body.duskline .weather-detail-loading-panel { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 180px; color: var(--duskline-ink); }
+body.duskline .weather-detail-loading { margin-top: 12px; color: var(--duskline-muted); font-size: 1rem; }
+body.duskline .weather-detail-spinner { width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: duskline-spin .8s linear infinite; }
+@keyframes duskline-spin { to { transform: rotate(360deg); } }
+html[data-motion-effective="reduced"] body.duskline .weather-detail-spinner,
+html[data-motion-effective="off"] body.duskline .weather-detail-spinner { animation: none; }
+body.duskline.weather-sky-light .legal-topbar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); }
+body.duskline.weather-sky-light .legal-brand,
+body.duskline.weather-sky-light #dusklineLegalLanguage { color: #15263b; }
+body.duskline.weather-sky-light #dusklineLegalLanguage { background: rgba(255,255,255,.86); border-color: rgba(31,74,109,.2); }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-topbar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-brand,
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLegalLanguage { color: #15263b; }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLegalLanguage { background: rgba(255,255,255,.86); border-color: rgba(31,74,109,.2); }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .gallery-app-bar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); box-shadow: 0 8px 24px rgba(31,74,109,.08); }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .duskline-brand { color: #15263b; }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLanguage { background: rgba(255,255,255,.86); color: #15263b; border-color: rgba(31,74,109,.2); }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .weather-search { background: rgba(255,255,255,.72); border-color: rgba(31,74,109,.22); color: #15263b; }
 html[dir="rtl"] body.duskline .weather-toolbar-actions { flex-direction: row-reverse; }
 @media (max-width: 640px) { body.duskline .duskline-header { padding-inline: 16px; } body.duskline .weather-root.tools-page { width: min(100% - 24px, 1180px); } body.duskline .weather-toolbar { padding-inline: 0; } }

@@ -58,6 +58,6 @@
     global.I18N[code] = Object.assign({}, global.I18N[code] || {});
     packs[code].forEach(function (value, index) { global.I18N[code][keys[index]] = value; });
     global.I18N[code]['settings.languageLabel'] = code === 'en' ? 'Language' : locales.find(function (x) { return x[0] === code; })[1];
-    global.I18N[code]['pageTitle.weather'] = global.I18N[code]['tools.weatherLabel'] + ' — Duskline';
+    global.I18N[code]['pageTitle.weather'] = global.I18N[code]['tools.weatherLabel'] + ' — duskline';
   });
 })(window);

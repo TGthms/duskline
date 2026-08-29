@@ -456,33 +456,11 @@ if (!SUPPORTED_LANGS.includes(currentLang)) currentLang = 'en';
 
 /** Appearance: system | light | dark · Style: classic | modern */
 function migrateAppearanceStyleFromLegacyTheme() {
-  if (safeStorage.has('duskline-appearance')) {
-    return {
-      appearance: safeStorage.get('duskline-appearance', 'system'),
-      style: safeStorage.get('duskline-style', 'modern')
-    };
-  }
-  // Migrate old 6-theme key once
-  const old = safeStorage.has('duskline-theme')
-    ? safeStorage.get('duskline-theme', 'auto')
-    : 'auto';
-  let appearance = 'system';
-  let style = 'modern';
-  if (old === 'auto') { appearance = 'system'; style = 'modern'; }
-  else if (old === 'minimal') { appearance = 'light'; style = 'modern'; }
-  else if (old === 'elegant') { appearance = 'light'; style = 'classic'; }
-  else if (old === 'default') { appearance = 'dark'; style = 'classic'; }
-  else if (old === 'glass') { appearance = 'dark'; style = 'modern'; }
-  else if (old === 'luxury' || old === 'nature') { appearance = 'dark'; style = 'classic'; }
-  try {
-    safeStorage.set('duskline-appearance', appearance);
-    safeStorage.set('duskline-style', style);
-  } catch (e) {}
-  return { appearance: appearance, style: style };
+  return { appearance: 'system', style: 'modern' };
 }
 const _as0 = migrateAppearanceStyleFromLegacyTheme();
-let prefAppearance = _as0.appearance;
-let prefStyle = _as0.style;
+let prefAppearance = 'system';
+let prefStyle = 'modern';
 if (prefAppearance !== 'system' && prefAppearance !== 'light' && prefAppearance !== 'dark') {
   prefAppearance = 'system';
 }

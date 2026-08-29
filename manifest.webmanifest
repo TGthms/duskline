@@ -1,6 +1,6 @@
 {
-  "name": "Duskline Weather",
-  "short_name": "Duskline",
+  "name": "duskline weather",
+  "short_name": "duskline",
   "description": "Clear, global weather forecasts, air quality, and public alerts.",
   "start_url": "./",
   "scope": "./",
