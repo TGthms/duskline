@@ -112,6 +112,20 @@
       const seed = opts.seed != null ? opts.seed : 0;
       const isRow = !!opts.isRow;
       const s = skyFor(code || 0, hour, seed);
+      // Keep labels legible against each city's actual gradient, independent
+      // of the page's system appearance.
+      function luminance(hex) {
+        try {
+          const h = hex.replace('#', '');
+          const rgb = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+          return rgb.map((v) => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4))
+            .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+        } catch (e) { return 0.12; }
+      }
+      const lightSky = (luminance(s.c1) + luminance(s.c2)) / 2 > .22;
+      el.style.setProperty('--wx-content', lightSky ? '#10243e' : '#f4f8ff');
+      el.style.setProperty('--wx-content-muted', lightSky ? 'rgba(16,36,62,.72)' : 'rgba(244,248,255,.72)');
+      el.style.setProperty('--wx-content-shadow', lightSky ? 'rgba(255,255,255,.32)' : 'rgba(0,0,0,.5)');
       const level = motionLevel();
       el.style.setProperty('--wx-sky-1', s.c1);
       el.style.setProperty('--wx-sky-2', s.c2);
