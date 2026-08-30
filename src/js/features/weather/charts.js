@@ -894,39 +894,71 @@
       };
     }
 
-    /** Compact module tile — Apple style: hero next event + path + secondary time */
+    /** Compact module tile — hero next event + path + daylight stats (fills wide layouts). */
     function sunArcSvg(sunriseIso, sunsetIso, compact, timeZone) {
-      const W = compact ? 300 : 320;
-      const H = compact ? 72 : 100;
-      const g = sunPathGeometry(sunriseIso, sunsetIso, W, H, 8, 8, 10, 8, timeZone);
-      // Apple: during day emphasize SUNSET; at night emphasize SUNRISE
+      const W = compact ? 320 : 340;
+      const H = compact ? 88 : 110;
+      const g = sunPathGeometry(sunriseIso, sunsetIso, W, H, 8, 8, 12, 14, timeZone);
       const heroIsSunset = g.isDay;
       const heroIso = heroIsSunset ? sunsetIso : sunriseIso;
-      const secondaryIso = heroIsSunset ? sunriseIso : sunsetIso;
       const heroLabel = heroIsSunset
         ? t('weather.sunset', 'Sunset')
         : t('weather.sunrise', 'Sunrise');
-      const secondaryLabel = heroIsSunset
-        ? t('weather.sunrise', 'Sunrise')
-        : t('weather.sunset', 'Sunset');
+      const TW = 35 * 60 * 1000;
+      const firstLight = g.rise - TW;
+      const lastLight = g.set + TW;
+      const daylight = g.set - g.rise;
+      let remainLab = t('weather.untilSunset', 'Until sunset');
+      let remainVal = formatDurationMs(Math.max(0, g.set - g.now));
+      if (g.beforeRise) {
+        remainLab = t('weather.untilSunrise', 'Until sunrise');
+        remainVal = formatDurationMs(Math.max(0, g.rise - g.now));
+      } else if (g.afterSet) {
+        remainLab = t('weather.untilSunrise', 'Until sunrise');
+        remainVal = formatDurationMs(Math.max(0, (g.nextRise || (g.rise + 24 * 3600000)) - g.now));
+      }
+      const fmtMs = function (ms) {
+        if (!Number.isFinite(ms)) return '—';
+        try {
+          const opts = { hour: 'numeric', minute: '2-digit' };
+          if (timeZone) opts.timeZone = timeZone;
+          return new Date(ms).toLocaleTimeString(localeTag(), opts);
+        } catch (e) { return '—'; }
+      };
       const hourLabs = [0, 0.25, 0.5, 0.75, 1].map(function (f, i) {
         const labs = ['00', '06', '12', '18', '24'];
         const x = 8 + f * (W - 16);
-        return `<text class="wx-sun-axis" x="${x.toFixed(1)}" y="${H - 1}" font-size="8" text-anchor="middle" font-family="system-ui,sans-serif">${labs[i]}</text>`;
+        return `<text class="wx-sun-axis" x="${x.toFixed(1)}" y="${H - 2}" font-size="8" text-anchor="middle" font-family="system-ui,sans-serif">${labs[i]}</text>`;
       }).join('');
+      const stats = [
+        [t('weather.sunrise', 'Sunrise'), formatClock(sunriseIso, timeZone)],
+        [t('weather.sunset', 'Sunset'), formatClock(sunsetIso, timeZone)],
+        [t('weather.firstLight', 'First Light'), fmtMs(firstLight)],
+        [t('weather.lastLight', 'Last Light'), fmtMs(lastLight)],
+        [remainLab, remainVal],
+        [t('weather.totalDaylight', 'Total Daylight'), formatDurationMs(daylight)]
+      ];
+      let statsHtml = '<div class="wx-sun-tile-stats">';
+      stats.forEach(function (row) {
+        statsHtml += `<div class="wx-sun-tile-stat"><span>${escapeHtml(row[0])}</span><strong>${escapeHtml(row[1])}</strong></div>`;
+      });
+      statsHtml += '</div>';
       return (
-        `<div class="wx-sun-mod-hero">` +
-          `<div class="wx-sun-mod-hero-label">${escapeHtml(heroLabel)}</div>` +
-          `<div class="wx-sun-mod-hero-time">${escapeHtml(formatClock(heroIso))}</div>` +
-        `</div>` +
-        `<svg class="weather-sun-arc${compact ? ' weather-sun-arc--compact' : ''}" viewBox="0 0 ${W} ${H}" aria-hidden="true">` +
-          `<line class="wx-sun-horizon" x1="8" y1="${g.horizonY.toFixed(1)}" x2="${W - 8}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>` +
-          (g.area ? `<path class="wx-sun-area" d="${g.area}"/>` : '') +
-          `<path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2" stroke-linejoin="round"/>` +
-          `<circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="5.5" stroke-width="2"/>` +
-          hourLabs +
-        `</svg>` +
-        `<div class="wx-sun-mod-secondary">${escapeHtml(secondaryLabel)}: ${escapeHtml(formatClock(secondaryIso))}</div>`
+        `<div class="wx-sun-tile">` +
+          `<div class="wx-sun-tile-hero">` +
+            `<div class="wx-sun-mod-hero-label">${escapeHtml(heroLabel)}</div>` +
+            `<div class="wx-sun-mod-hero-time">${escapeHtml(formatClock(heroIso, timeZone))}</div>` +
+            `<div class="wx-sun-tile-remain">${escapeHtml(remainLab)} · ${escapeHtml(remainVal)}</div>` +
+          `</div>` +
+          `<svg class="weather-sun-arc weather-sun-arc--tile" viewBox="0 0 ${W} ${H}" aria-hidden="true">` +
+            `<line class="wx-sun-horizon" x1="8" y1="${g.horizonY.toFixed(1)}" x2="${W - 8}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>` +
+            (g.area ? `<path class="wx-sun-area" d="${g.area}"/>` : '') +
+            `<path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2" stroke-linejoin="round"/>` +
+            `<circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="5.5" stroke-width="2"/>` +
+            hourLabs +
+          `</svg>` +
+          statsHtml +
+        `</div>`
       );
     }
 

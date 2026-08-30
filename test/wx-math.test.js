@@ -32,7 +32,7 @@ test('precip and pressure conversion', () => {
 });
 
 test('hourFromIso uses wall-clock hour, not browser TZ, for bare ISO', () => {
-  assert.equal(math.hourFromIso('2026-08-30T03:15'), 3);
+  assert.equal(math.hourFromIso('2026-08-30T03:15'), 3.25);
   assert.equal(math.hourFromIso('2026-08-30T22:00:00'), 22);
 });
 

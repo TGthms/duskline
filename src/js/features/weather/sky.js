@@ -13,6 +13,170 @@
     function motionFull() { return motionLevel() === 'full'; }
     var WEATHER_STATIC_LIST_FX = deps.staticListFx !== false;
 
+    const SKY_MODES = ['day', 'night', 'cloud', 'overcast', 'rain', 'storm', 'snow', 'fog'];
+
+    function rainSkewDeg(windDeg) {
+      if (windDeg == null || !Number.isFinite(Number(windDeg))) return -7;
+      const d = ((Number(windDeg) % 360) + 360) % 360;
+      return Math.max(-14, Math.min(14, Math.sin(d * Math.PI / 180) * 12));
+    }
+
+    function clearSkyModeClasses(host) {
+      if (!host) return;
+      for (let i = 0; i < SKY_MODES.length; i++) {
+        host.classList.remove('wx-sky--' + SKY_MODES[i]);
+      }
+    }
+
+    function stopStormFx(host) {
+      if (!host) return;
+      const timers = host._wxBoltTimers;
+      if (timers && timers.length) {
+        for (let i = 0; i < timers.length; i++) {
+          try { clearTimeout(timers[i]); } catch (e) {}
+        }
+      }
+      host._wxBoltTimers = [];
+      if (host._wxBolt) {
+        try { clearTimeout(host._wxBolt); } catch (e) {}
+        host._wxBolt = 0;
+      }
+      const bolt = host.querySelector('.wx-lightning');
+      if (bolt) bolt.classList.remove('is-leader', 'is-flash', 'is-flash-2');
+      host.classList.remove('wx-sky-flash', 'wx-sky-flash-soft');
+    }
+
+    function randRange(a, b) {
+      return a + Math.random() * (b - a);
+    }
+
+    function boltSegment(x0, y0, x1, y1, jag) {
+      const pts = [[x0, y0]];
+      const dist = Math.hypot(x1 - x0, y1 - y0);
+      const n = Math.max(8, Math.min(18, Math.round(dist / 6)));
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        pts.push([
+          x0 + (x1 - x0) * t + randRange(-jag, jag) * (0.4 + t),
+          y0 + (y1 - y0) * t + randRange(-jag * 0.35, jag * 0.35)
+        ]);
+      }
+      pts.push([x1, y1]);
+      return pts;
+    }
+
+    function ptsToPath(pts) {
+      let d = 'M' + pts[0][0].toFixed(2) + ' ' + pts[0][1].toFixed(2);
+      for (let i = 1; i < pts.length; i++) {
+        d += 'L' + pts[i][0].toFixed(2) + ' ' + pts[i][1].toFixed(2);
+      }
+      return d;
+    }
+
+    function paintBoltSvg(svg) {
+      if (!svg) return { x: 50 };
+      const NS = 'http://www.w3.org/2000/svg';
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.setAttribute('viewBox', '0 0 240 90');
+      svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+      const cloudToCloud = Math.random() < 0.38;
+      let x0;
+      let main;
+      if (cloudToCloud) {
+        x0 = randRange(18, 90);
+        const x1 = Math.max(12, Math.min(228, x0 + randRange(50, 110) * (Math.random() < 0.5 ? -1 : 1)));
+        main = boltSegment(x0, randRange(8, 22), x1, randRange(10, 26), 1.8);
+      } else {
+        x0 = randRange(40, 200);
+        const x1 = Math.max(20, Math.min(220, x0 + randRange(-28, 28)));
+        main = boltSegment(x0, randRange(2, 8), x1, randRange(42, 68), 2.1);
+      }
+      const forks = [];
+      const forkN = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < forkN; i++) {
+        const from = main[2 + Math.floor(Math.random() * Math.max(1, main.length - 5))];
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        const fy = Math.min(72, from[1] + randRange(6, 16));
+        forks.push(boltSegment(
+          from[0], from[1],
+          from[0] + dir * randRange(8, 22),
+          fy,
+          1.5
+        ));
+      }
+      function addPath(d, cls) {
+        const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', d);
+        p.setAttribute('class', cls);
+        p.setAttribute('fill', 'none');
+        p.setAttribute('stroke-linecap', 'round');
+        p.setAttribute('stroke-linejoin', 'round');
+        svg.appendChild(p);
+      }
+      addPath(ptsToPath(main), 'wx-bolt-glow');
+      addPath(ptsToPath(main), 'wx-bolt-core');
+      for (let i = 0; i < forks.length; i++) {
+        addPath(ptsToPath(forks[i]), 'wx-bolt-glow wx-bolt-fork');
+        addPath(ptsToPath(forks[i]), 'wx-bolt-core wx-bolt-fork');
+      }
+      return { x: (x0 / 240) * 100 };
+    }
+
+    function later(host, ms, fn) {
+      const id = window.setTimeout(fn, ms);
+      if (!host._wxBoltTimers) host._wxBoltTimers = [];
+      host._wxBoltTimers.push(id);
+      return id;
+    }
+
+    function armStormFx(host) {
+      stopStormFx(host);
+      if (!host || motionLevel() !== 'full') return;
+      if (!host.classList.contains('wx-sky--storm')) return;
+      const fire = function () {
+        if (!host.classList.contains('wx-sky--storm')) return;
+        const wrap = host.querySelector('.wx-lightning');
+        if (!wrap) return;
+        let svg = wrap.querySelector('.wx-lightning-bolt');
+        if (!svg) {
+          svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', 'wx-lightning-bolt');
+          svg.setAttribute('viewBox', '0 0 240 90');
+          svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+          svg.setAttribute('aria-hidden', 'true');
+          wrap.appendChild(svg);
+        }
+        const hit = paintBoltSvg(svg);
+        wrap.style.setProperty('--wx-bolt-x', hit.x.toFixed(1) + '%');
+        wrap.classList.remove('is-flash', 'is-flash-2');
+        wrap.classList.add('is-leader');
+        later(host, 35, function () {
+          if (!host.classList.contains('wx-sky--storm')) return;
+          wrap.classList.remove('is-leader');
+          wrap.classList.add('is-flash');
+          host.classList.add('wx-sky-flash');
+          later(host, 70, function () {
+            wrap.classList.remove('is-flash');
+            host.classList.remove('wx-sky-flash');
+            later(host, 40, function () {
+              if (!host.classList.contains('wx-sky--storm')) return;
+              paintBoltSvg(svg);
+              wrap.classList.add('is-flash-2');
+              host.classList.add('wx-sky-flash-soft');
+              later(host, 90, function () {
+                wrap.classList.remove('is-flash-2');
+                host.classList.remove('wx-sky-flash-soft');
+              });
+            });
+          });
+        });
+        const heavy = host.getAttribute('data-wx-intensity') === 'heavy';
+        const gap = heavy ? (2400 + Math.random() * 5200) : (4200 + Math.random() * 9000);
+        host._wxBolt = window.setTimeout(fire, gap);
+      };
+      host._wxBolt = window.setTimeout(fire, 600 + Math.random() * 1800);
+    }
+
     function celestialPos(hour, isRow) {
       const night = hour < 5.5 || hour >= 20;
       if (night) {
@@ -163,7 +327,32 @@
       el.style.setProperty('--wx-cloud-2-x', c2x + '%');
       el.style.setProperty('--wx-cloud-3-x', c3x + '%');
       const isPrecipFx = s.fx === 'rain' || s.fx === 'storm' || s.fx === 'snow';
-      el.style.setProperty('--wx-cloud-op', isPrecipFx ? '0.9' : ((code >= 2 && code < 50) ? '0.85' : (s.fx === 'clear' || s.fx === 'clear-dawn' || s.fx === 'clear-dusk') ? '0.22' : '0.55'));
+      const isClear = s.fx === 'clear' || s.fx === 'clear-dawn' || s.fx === 'clear-dusk' || s.fx === 'clear-night';
+      el.style.setProperty('--wx-cloud-op', isPrecipFx ? '0.9' : (s.fx === 'fog' ? '0.2' : ((code === 3) ? '0.92' : (code === 2 ? (night ? '0.3' : '0.72') : (isClear ? '0' : '0.5')))));
+      el.style.setProperty('--wx-rain-skew', rainSkewDeg(opts.windDeg).toFixed(1) + 'deg');
+      const windMs = Number(opts.windMs);
+      const rainDur = (!Number.isFinite(windMs) || windMs < 0)
+        ? 1.15
+        : Math.max(0.88, 1.32 - Math.min(0.4, windMs / 28));
+      el.style.setProperty('--wx-rain-dur', rainDur.toFixed(2) + 's');
+      const visM = Number(opts.visibility);
+      let fogOp = s.fx === 'fog' ? 1 : 0;
+      if (s.fx !== 'fog' && Number.isFinite(visM) && visM > 0 && visM < 4000) {
+        fogOp = Math.max(fogOp, Math.min(0.55, (4000 - visM) / 4000));
+      }
+      const hum = Number(opts.humidity);
+      if (s.fx === 'fog' && Number.isFinite(hum)) {
+        fogOp = Math.min(1, 0.7 + hum / 250);
+      }
+      el.style.setProperty('--wx-fog-op', String(fogOp));
+      const uv = Number(opts.uv);
+      const corona = (!night && Number.isFinite(uv)) ? Math.max(0.4, Math.min(1, uv / 8)) : (night ? 0 : 0.7);
+      el.style.setProperty('--wx-corona-op', String(corona));
+      if (Number.isFinite(windMs)) {
+        el.style.setProperty('--wx-cloud-drift', Math.max(0.6, Math.min(1.45, 0.75 + windMs / 22)).toFixed(2));
+      } else {
+        el.style.setProperty('--wx-cloud-drift', '1');
+      }
 
       // List rows: static (no rain particles). Detail view: full animated FX.
       const listStatic = WEATHER_STATIC_LIST_FX && isRow;
@@ -233,12 +422,21 @@
     function applyAmbientPageSky(pack) {
       const sky = document.getElementById('weatherPageSky');
       if (!sky) return;
-      let hour = new Date().getHours();
+      const now = new Date();
+      let hour = now.getHours() + now.getMinutes() / 60;
       const cityTz = pack && pack.weather && pack.weather.timezone || pack && pack.city && pack.city.tz;
       if (cityTz) {
         try {
-          const part = new Intl.DateTimeFormat('en-GB', { timeZone: cityTz, hour: 'numeric', hour12: false, hourCycle: 'h23' }).formatToParts(new Date()).find(function (p) { return p.type === 'hour'; });
-          if (part) hour = Number(part.value);
+          const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: cityTz, hour: 'numeric', minute: 'numeric', hour12: false, hourCycle: 'h23'
+          }).formatToParts(now);
+          let h = now.getHours();
+          let min = now.getMinutes();
+          for (let i = 0; i < parts.length; i++) {
+            if (parts[i].type === 'hour') h = Number(parts[i].value) % 24;
+            if (parts[i].type === 'minute') min = Number(parts[i].value) || 0;
+          }
+          hour = h + min / 60;
         } catch (e) {}
       }
       const code = pack && pack.weather && pack.weather.current && Number(pack.weather.current.weather_code);
@@ -305,34 +503,27 @@
       // Pale page wash (minimal/elegant day+dawn) — footer/attribution need dark ink.
       document.body.classList.toggle('wx-page-canvas-light',
         (theme === 'minimal' || theme === 'elegant') && (period === 'day' || period === 'dawn'));
-      // Full motion: living sun/moon/cloud ornaments. Reduced/off: static gradient only.
+      // Quiet canvas: sun/moon + one cloud. No hue-filter, no blob stack.
       let live = sky.querySelector('.wx-page-live');
-      if (level === 'full') {
+      const liveHtml =
+        '<div class="wx-page-cloud wx-page-cloud-a"></div>' +
+        '<div class="wx-page-sun"></div>' +
+        '<div class="wx-page-moon"></div>' +
+        '<div class="wx-page-glow"></div>';
+      if (level === 'full' || level === 'reduced') {
         if (!live) {
           live = document.createElement('div');
           live.className = 'wx-page-live';
           live.setAttribute('aria-hidden', 'true');
-          live.innerHTML =
-            '<div class="wx-page-blob wx-page-blob-1"></div>' +
-            '<div class="wx-page-blob wx-page-blob-2"></div>' +
-            '<div class="wx-page-blob wx-page-blob-3"></div>' +
-            '<div class="wx-page-cloud wx-page-cloud-a"></div>' +
-            '<div class="wx-page-cloud wx-page-cloud-b"></div>' +
-            '<div class="wx-page-sun"></div>' +
-            '<div class="wx-page-moon"></div>' +
-            '<div class="wx-page-glow"></div>';
+          live.innerHTML = liveHtml;
           sky.appendChild(live);
-        } else if (!live.querySelector('.wx-page-cloud')) {
-          // Upgrade older live layers that only had blobs/sun
-          live.insertAdjacentHTML('beforeend',
-            '<div class="wx-page-cloud wx-page-cloud-a"></div>' +
-            '<div class="wx-page-cloud wx-page-cloud-b"></div>' +
-            '<div class="wx-page-moon"></div>');
+        } else if (live.querySelector('.wx-page-blob') || !live.querySelector('.wx-page-cloud')) {
+          live.innerHTML = liveHtml;
         }
         const pos = celestialPos(hour, false);
         sky.style.setProperty('--wx-page-sun-left', pos.left.toFixed(1) + '%');
         sky.style.setProperty('--wx-page-sun-top', Math.max(8, pos.top * 0.55).toFixed(1) + '%');
-        sky.style.setProperty('--wx-page-sun-size', (pos.night ? 48 : Math.max(100, pos.size * 1.15)).toFixed(0) + 'px');
+        sky.style.setProperty('--wx-page-sun-size', (pos.night ? 52 : Math.max(108, pos.size * 1.12)).toFixed(0) + 'px');
       } else if (live) {
         try { live.remove(); } catch (e) { live.innerHTML = ''; }
       }
@@ -353,34 +544,65 @@
           <div class="wx-ornament wx-sun"></div>
           <div class="wx-ornament wx-moon"></div>
           <div class="wx-ornament wx-stars"></div>
+          <div class="wx-ornament wx-stars wx-stars-b"></div>
+          <div class="wx-ornament wx-stars wx-stars-c"></div>
           <div class="wx-ornament wx-cloud wx-cloud-1"></div>
           <div class="wx-ornament wx-cloud wx-cloud-2"></div>
           <div class="wx-ornament wx-cloud wx-cloud-3"></div>
-          <div class="wx-ornament wx-rain" aria-hidden="true"></div>
-          <div class="wx-ornament wx-snow" aria-hidden="true"></div>
-          <div class="wx-ornament wx-lightning" aria-hidden="true"></div>`;
+          <div class="wx-ornament wx-fog" aria-hidden="true"></div>
+          <div class="wx-ornament wx-fog wx-fog-b" aria-hidden="true"></div>
+          <div class="wx-ornament wx-fog wx-fog-c" aria-hidden="true"></div>
+          <div class="wx-ornament wx-snow-haze" aria-hidden="true"></div>`;
         host.appendChild(box);
-      } else if (!box.querySelector('.wx-rain')) {
-        // Upgrade ornaments created before rain layers existed
-        box.insertAdjacentHTML('beforeend',
-          '<div class="wx-ornament wx-rain" aria-hidden="true"></div>' +
-          '<div class="wx-ornament wx-snow" aria-hidden="true"></div>' +
-          '<div class="wx-ornament wx-lightning" aria-hidden="true"></div>');
+      } else if (box.querySelector('.wx-rain') || box.querySelector('.wx-lightning')) {
+        box.querySelectorAll('.wx-rain, .wx-rain-splash, .wx-snow:not(.wx-snow-haze), .wx-lightning').forEach(function (n) {
+          try { n.remove(); } catch (e) {}
+        });
       }
       return box;
+    }
+
+    function ensurePrecip(host) {
+      if (!host) return null;
+      let box = host.querySelector('.wx-precip');
+      if (!box) {
+        box = document.createElement('div');
+        box.className = 'wx-precip';
+        box.setAttribute('aria-hidden', 'true');
+        box.innerHTML = `
+          <div class="wx-ornament wx-rain wx-rain-far"></div>
+          <div class="wx-ornament wx-rain"></div>
+          <div class="wx-ornament wx-rain wx-rain-near"></div>
+          <div class="wx-ornament wx-rain-splash"></div>
+          <div class="wx-ornament wx-snow wx-snow-far"></div>
+          <div class="wx-ornament wx-snow"></div>
+          <div class="wx-ornament wx-lightning">
+            <div class="wx-lightning-flash"></div>
+            <svg class="wx-lightning-bolt" viewBox="0 0 240 90" preserveAspectRatio="xMidYMin meet"></svg>
+          </div>`;
+        host.appendChild(box);
+      }
+      return box;
+    }
+
+    function precipHostFor(skyHost) {
+      const fx = document.getElementById('weatherDetailFx');
+      if (fx && skyHost && skyHost.id === 'weatherDetailSky') return fx;
+      return null;
     }
     function skyModeFromCode(code, hour, staticFx) {
       const night = hour < 6 || hour >= 20;
       const c = code || 0;
       let mode = night ? 'night' : 'day';
       if (c >= 95) mode = 'storm';
+      else if (c === 45 || c === 48) mode = 'fog';
       else if ((c >= 51 && c < 70) || (c >= 80 && c < 85)) mode = 'rain';
       else if ((c >= 71 && c < 80) || (c >= 85 && c < 90)) mode = 'snow';
-      else if (c >= 2 && c <= 3) mode = night ? 'night' : 'cloud';
-      else if (c === 45 || c === 48) mode = 'cloud';
+      else if (c === 3) mode = 'overcast';
+      else if (c === 2) mode = night ? 'night' : 'cloud';
       if (staticFx) {
         if (mode === 'rain' || mode === 'storm' || mode === 'snow') {
-          mode = night ? 'night' : 'cloud';
+          mode = night ? 'night' : (c === 3 ? 'overcast' : 'cloud');
         }
       }
       return mode;
@@ -392,20 +614,28 @@
       opts = opts || {};
       const h = hour != null ? hour : 12;
       const mode = skyModeFromCode(code, h, !!(opts.staticFx || opts.isRow));
-      host.classList.remove('wx-sky--day', 'wx-sky--night', 'wx-sky--cloud', 'wx-sky--rain', 'wx-sky--storm', 'wx-sky--snow');
+      stopStormFx(host);
+      const fx = precipHostFor(host);
+      if (fx) stopStormFx(fx);
+      clearSkyModeClasses(host);
       host.classList.add('wx-sky--' + mode);
       if (opts.isRow) host.classList.add('wx-sky--row');
       else host.classList.remove('wx-sky--row');
-      // Strip leftover ornaments if a row was ever upgraded
       const box = host.querySelector('.wx-ornaments');
       if (box) {
         try { box.remove(); } catch (e) { box.innerHTML = ''; }
+      }
+      if (fx) {
+        fx.innerHTML = '';
+        clearSkyModeClasses(fx);
       }
     }
 
     function paintSkyMode(host, code, isoTime, opts) {
       if (!host) return;
       ensureOrnaments(host);
+      const fx = precipHostFor(host);
+      if (fx) ensurePrecip(fx);
       opts = opts || {};
       let hour = opts.hour;
       if (hour == null) {
@@ -415,17 +645,28 @@
           hour = 12;
           try {
             if (isoTime && typeof isoTime === 'string') {
-              const m = isoTime.match(/T(\d{2})/);
-              if (m) hour = parseInt(m[1], 10);
+              const m = isoTime.match(/T(\d{2})(?::(\d{2}))?/);
+              if (m) hour = parseInt(m[1], 10) + (parseInt(m[2] || '0', 10) / 60);
             }
           } catch (e) {}
         }
       }
       const mode = skyModeFromCode(code, hour, !!(opts.staticFx || (WEATHER_STATIC_LIST_FX && opts.isRow)));
-      host.classList.remove('wx-sky--day', 'wx-sky--night', 'wx-sky--cloud', 'wx-sky--rain', 'wx-sky--storm', 'wx-sky--snow');
+      clearSkyModeClasses(host);
       host.classList.add('wx-sky--' + mode);
       if (opts.isRow) host.classList.add('wx-sky--row');
       else host.classList.remove('wx-sky--row');
+      const stormHost = fx || host;
+      if (fx) {
+        clearSkyModeClasses(fx);
+        fx.classList.add('wx-sky--' + mode);
+        fx.dataset.wxIntensity = host.dataset.wxIntensity || '';
+      }
+      if (mode === 'storm' && motionFull() && !opts.staticFx) armStormFx(stormHost);
+      else {
+        stopStormFx(host);
+        if (fx) stopStormFx(fx);
+      }
     }
 
     return {

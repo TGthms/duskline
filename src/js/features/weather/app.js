@@ -886,26 +886,31 @@
     })[ch]);
   }
 
-  /** Local clock hour (0–23) for a city pack, using its timezone when available. */
+  /** Local clock hour as a fraction (14.5 = 14:30) so the sun creeps, not hops. */
   function localHourForPack(pack) {
     try {
       const tz = (pack && pack.weather && pack.weather.timezone)
         || (pack && pack.city && pack.city.tz);
       if (tz) {
         const parts = new Intl.DateTimeFormat('en-GB', {
-          timeZone: tz, hour: 'numeric', hour12: false, hourCycle: 'h23'
+          timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false, hourCycle: 'h23'
         }).formatToParts(new Date());
-        const h = parts.find((p) => p.type === 'hour');
-        if (h) return parseInt(h.value, 10) % 24;
+        let h = 0;
+        let min = 0;
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i].type === 'hour') h = parseInt(parts[i].value, 10) % 24;
+          if (parts[i].type === 'minute') min = parseInt(parts[i].value, 10) || 0;
+        }
+        return h + min / 60;
       }
       const cur = pack && pack.weather && pack.weather.current;
-      // Open-Meteo local times are often "YYYY-MM-DDTHH:mm" without offset — parse hour digit
       if (cur && cur.time && typeof cur.time === 'string') {
-        const m = cur.time.match(/T(\d{2})/);
-        if (m) return parseInt(m[1], 10);
+        const m = cur.time.match(/T(\d{2})(?::(\d{2}))?/);
+        if (m) return parseInt(m[1], 10) + (parseInt(m[2] || '0', 10) / 60);
       }
     } catch (e) {}
-    return new Date().getHours();
+    const now = new Date();
+    return now.getHours() + now.getMinutes() / 60;
   }
 
   /** Sun (or moon) position on a day arc from local hour. Returns CSS % left/top + size. */
@@ -1144,7 +1149,10 @@
       noOrnaments: true,
       timeZone: cityTimeZone(pack, c),
       precipMm: cur.precipitation,
-      windDeg: cur.wind_direction_10m
+      windDeg: cur.wind_direction_10m,
+      windMs: cur.wind_speed_10m,
+      humidity: cur.relative_humidity_2m,
+      visibility: cur.visibility
     });
 
     const alert = alertsApi.topAlert(pack);
@@ -1622,18 +1630,22 @@
         hour, seed, isRow: false,
         timeZone: cityTimeZone(pack, c),
         precipMm: cur.precipitation,
-        windDeg: cur.wind_direction_10m
+        windDeg: cur.wind_direction_10m,
+        windMs: cur.wind_speed_10m,
+        humidity: cur.relative_humidity_2m,
+        visibility: cur.visibility,
+        uv: uvNowValue(pack, daily, dailyTodayIndex(daily, cityTimeZone(pack, c)), hourly, cityTimeZone(pack, c))
       };
       // Gradient on shell; ornaments/rain only on sky layer (avoid double rain)
       applySky(detailEl, cur.weather_code, cur.time, Object.assign({}, skyOpts, { noOrnaments: true }));
       if (detailSky) {
         applySky(detailSky, cur.weather_code, cur.time, skyOpts);
         // Mirror mode class on shell so any host-scoped CSS still matches
-        detailSky.classList.forEach((cls) => {
-          if (cls.indexOf('wx-sky--') === 0) {
-            detailEl.classList.remove('wx-sky--day', 'wx-sky--night', 'wx-sky--cloud', 'wx-sky--rain', 'wx-sky--storm', 'wx-sky--snow');
-            detailEl.classList.add(cls);
-          }
+        Array.from(detailEl.classList).forEach(function (cls) {
+          if (cls.indexOf('wx-sky--') === 0) detailEl.classList.remove(cls);
+        });
+        detailSky.classList.forEach(function (cls) {
+          if (cls.indexOf('wx-sky--') === 0) detailEl.classList.add(cls);
         });
         const base = detailSky.querySelector('.wx-layer-base');
         if (base) {

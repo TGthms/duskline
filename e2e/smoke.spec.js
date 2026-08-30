@@ -100,6 +100,16 @@ test('favorite persists across reload', async ({ page }) => {
   await expect(page.locator('#weatherFavoritesList .weather-row').first()).toBeVisible({ timeout: 15000 });
 });
 
+test('detail sky mounts layered weather ornaments', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherDetailSky .wx-ornaments')).toBeVisible();
+  await expect(page.locator('#weatherDetailFx .wx-rain-near')).toHaveCount(1);
+  await expect(page.locator('#weatherDetailSky .wx-fog')).toHaveCount(3);
+});
+
 test('French sun-sheet strings are translated', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('duskline-lang', 'fr'));
   await page.goto('/');

@@ -75,33 +75,42 @@
   }
 
   /**
-   * Wall-clock hour 0–23 for a timestamp.
-   * Bare Open-Meteo local ISO (`2026-08-30T14:00`) uses the embedded hour.
+   * Wall-clock hour 0–24 as a fraction (14.5 = 14:30).
+   * Bare Open-Meteo local ISO (`2026-08-30T14:00`) uses the embedded clock.
    * Offset/`Z` strings use `timeZone` when given, never the browser zone.
    */
   function hourFromIso(isoTime, timeZone) {
+    function frac(h, min) {
+      var hh = Number(h);
+      if (hh === 24) hh = 0;
+      var mm = Number(min) || 0;
+      if (!Number.isFinite(hh)) return 12;
+      return hh + (Number.isFinite(mm) ? mm / 60 : 0);
+    }
     if (isoTime && typeof isoTime === 'string') {
-      var m = isoTime.match(/T(\d{2})/);
+      var m = isoTime.match(/T(\d{2})(?::(\d{2}))?/);
       var hasOffset = /[zZ]$/.test(isoTime) || /[+-]\d{2}:\d{2}$/.test(isoTime);
-      if (m && !hasOffset) return parseInt(m[1], 10);
+      if (m && !hasOffset) return frac(m[1], m[2]);
       if (hasOffset && timeZone) {
         try {
           var parts = new Intl.DateTimeFormat('en-GB', {
             timeZone: timeZone,
             hour: 'numeric',
+            minute: 'numeric',
             hour12: false,
             hourCycle: 'h23'
           }).formatToParts(new Date(isoTime));
+          var h = 12;
+          var min = 0;
           for (var i = 0; i < parts.length; i++) {
-            if (parts[i].type === 'hour') {
-              var h = parseInt(parts[i].value, 10);
-              if (h === 24) h = 0;
-              if (Number.isFinite(h)) return h;
-            }
+            if (parts[i].type === 'hour') h = parseInt(parts[i].value, 10);
+            if (parts[i].type === 'minute') min = parseInt(parts[i].value, 10);
           }
+          if (h === 24) h = 0;
+          if (Number.isFinite(h)) return frac(h, min);
         } catch (e) { /* fall through */ }
       }
-      if (m) return parseInt(m[1], 10);
+      if (m) return frac(m[1], m[2]);
     }
     return 12;
   }
