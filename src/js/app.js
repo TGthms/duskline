@@ -4,7 +4,7 @@
 
    Load order (index.html, deferred):
    1. data/i18n.js, data/duskline-locales.js, data/dest-weather-cities.js
-   2. core/env.js, core/runtime.js
+   2. core/env.js, core/wx-math.js, core/runtime.js
    3. duskline-controls.js
    4. features/weather/{ns,sky,charts,alerts,data,app}.js
    5. app.js (this file) — apply saved prefs

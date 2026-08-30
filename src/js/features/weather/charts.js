@@ -6,6 +6,7 @@
 
   W.factories.charts = function createChartsModule(deps) {
     deps = deps || {};
+    /* Formatters: app.js is canonical; deps.xxx is a pass-through, fallbacks are last resort. */
     function t(k, f) { return typeof deps.t === 'function' ? deps.t(k, f) : (f || k); }
     function escapeHtml(s) { return typeof deps.escapeHtml === 'function' ? deps.escapeHtml(s) : String(s == null ? '' : s); }
     function fmtTemp(c) { return typeof deps.fmtTemp === 'function' ? deps.fmtTemp(c) : String(c); }
@@ -759,72 +760,20 @@
      * Offset-bearing strings use Date.parse.
      */
     function wallClockInZoneToUtcMs(iso, timeZone) {
-      const s = String(iso || '');
-      if (!s) return NaN;
-      if (/[zZ]$/.test(s) || /[+-]\d{2}:\d{2}$/.test(s)) {
-        const t = new Date(s).getTime();
-        return Number.isFinite(t) ? t : NaN;
+      if (global.DusklineWxMath && typeof global.DusklineWxMath.wallClockInZoneToUtcMs === 'function') {
+        return global.DusklineWxMath.wallClockInZoneToUtcMs(iso, timeZone);
       }
-      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
-      if (!m) {
-        const t = new Date(s).getTime();
-        return Number.isFinite(t) ? t : NaN;
-      }
-      const y = Number(m[1]);
-      const mo = Number(m[2]);
-      const d = Number(m[3]);
-      const h = Number(m[4]);
-      const mi = Number(m[5]);
-      const se = Number(m[6] || 0);
-      const tz = timeZone || 'UTC';
-      let guess = Date.UTC(y, mo - 1, d, h, mi, se);
-      for (let iter = 0; iter < 4; iter++) {
-        const parts = new Intl.DateTimeFormat('en-US', {
-          timeZone: tz,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hourCycle: 'h23'
-        }).formatToParts(new Date(guess));
-        const get = function (type) {
-          for (let i = 0; i < parts.length; i++) {
-            if (parts[i].type === type) return Number(parts[i].value);
-          }
-          return 0;
-        };
-        let hh = get('hour');
-        if (hh === 24) hh = 0;
-        const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), hh, get('minute'), get('second'));
-        const want = Date.UTC(y, mo - 1, d, h, mi, se);
-        guess += want - asUtc;
-      }
-      return guess;
+      const t = new Date(iso).getTime();
+      return Number.isFinite(t) ? t : NaN;
     }
 
     /** UTC ms of 00:00 on the calendar day of `ms` in `timeZone`. */
     function startOfLocalDayUtcMs(ms, timeZone) {
-      try {
-        const parts = new Intl.DateTimeFormat('en-CA', {
-          timeZone: timeZone || undefined,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).formatToParts(new Date(ms));
-        const get = function (type) {
-          for (let i = 0; i < parts.length; i++) {
-            if (parts[i].type === type) return parts[i].value;
-          }
-          return '01';
-        };
-        const ymd = get('year') + '-' + get('month') + '-' + get('day') + 'T00:00:00';
-        return wallClockInZoneToUtcMs(ymd, timeZone);
-      } catch (e) {
-        const d = new Date(ms);
-        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      if (global.DusklineWxMath && typeof global.DusklineWxMath.startOfLocalDayUtcMs === 'function') {
+        return global.DusklineWxMath.startOfLocalDayUtcMs(ms, timeZone);
       }
+      const d = new Date(ms);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     }
 
     /**

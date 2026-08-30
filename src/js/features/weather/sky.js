@@ -100,14 +100,17 @@
       opts = opts || {};
       let hour = opts.hour;
       if (hour == null) {
-        hour = 12;
-        try {
-          if (isoTime && typeof isoTime === 'string') {
-            const m = isoTime.match(/T(\d{2})/);
-            if (m) hour = parseInt(m[1], 10);
-            else hour = new Date(isoTime).getHours();
-          } else hour = new Date().getHours();
-        } catch (e) {}
+        if (window.DusklineWxMath && typeof window.DusklineWxMath.hourFromIso === 'function') {
+          hour = window.DusklineWxMath.hourFromIso(isoTime, opts.timeZone);
+        } else {
+          hour = 12;
+          try {
+            if (isoTime && typeof isoTime === 'string') {
+              const m = isoTime.match(/T(\d{2})/);
+              if (m) hour = parseInt(m[1], 10);
+            }
+          } catch (e) {}
+        }
       }
       const seed = opts.seed != null ? opts.seed : 0;
       const isRow = !!opts.isRow;
@@ -406,14 +409,17 @@
       opts = opts || {};
       let hour = opts.hour;
       if (hour == null) {
-        hour = 12;
-        try {
-          if (isoTime && typeof isoTime === 'string') {
-            const m = isoTime.match(/T(\d{2})/);
-            if (m) hour = parseInt(m[1], 10);
-            else hour = new Date(isoTime).getHours();
-          } else hour = new Date().getHours();
-        } catch (e) {}
+        if (window.DusklineWxMath && typeof window.DusklineWxMath.hourFromIso === 'function') {
+          hour = window.DusklineWxMath.hourFromIso(isoTime, opts.timeZone);
+        } else {
+          hour = 12;
+          try {
+            if (isoTime && typeof isoTime === 'string') {
+              const m = isoTime.match(/T(\d{2})/);
+              if (m) hour = parseInt(m[1], 10);
+            }
+          } catch (e) {}
+        }
       }
       const mode = skyModeFromCode(code, hour, !!(opts.staticFx || (WEATHER_STATIC_LIST_FX && opts.isRow)));
       host.classList.remove('wx-sky--day', 'wx-sky--night', 'wx-sky--cloud', 'wx-sky--rain', 'wx-sky--storm', 'wx-sky--snow');

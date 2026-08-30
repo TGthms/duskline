@@ -11,7 +11,7 @@ npm run serve
 
 The app is static and has no account or backend layer. Weather requests are made from the browser to Open-Meteo and, for U.S. locations, the National Weather Service. Favorites, preferences, and an intentionally approximate location are stored locally.
 
-Run syntax checks with `npm run check`. Playwright tests use mocked weather APIs and never consume live provider quotas.
+Run syntax checks with `npm run check` (every first-party JS file). Unit tests: `npm run test:unit`. Playwright smoke tests use mocked weather APIs and never consume live provider quotas (`npm test`).
 
 ## Deployment
 

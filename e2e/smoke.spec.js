@@ -77,3 +77,36 @@ test('non-US featured cities do not call NWS', async ({ page }) => {
   const tokyoHits = nws.filter((u) => /35\.67|139\.65/.test(u));
   expect(tokyoHits, nws.join('\n')).toEqual([]);
 });
+
+test('NWS outage still renders via Open-Meteo', async ({ page }) => {
+  await page.route(/api\.weather\.gov/, (route) => route.fulfill({ status: 500, body: 'unavailable' }));
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+});
+
+test('favorite persists across reload', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherDetailFav').click();
+  await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed', 'true');
+  const favRaw = await page.evaluate(() => localStorage.getItem('duskline-weather-favorites'));
+  expect(favRaw).toBeTruthy();
+  await page.addInitScript((raw) => {
+    try { localStorage.setItem('duskline-weather-favorites', raw); } catch (e) { /* ignore */ }
+  }, favRaw);
+  await page.reload();
+  await expect(page.locator('#weatherFavoritesList .weather-row').first()).toBeVisible({ timeout: 15000 });
+});
+
+test('French sun-sheet strings are translated', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('duskline-lang', 'fr'));
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('.weather-mod[data-sheet="sun"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheetBody')).toContainText(/Premières lueurs|Durée du jour|Lever du soleil/);
+});

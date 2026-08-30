@@ -6,6 +6,7 @@
 
   W.factories.alerts = function createAlertsModule(deps) {
     deps = deps || {};
+    /* Formatters: app.js is canonical; deps.xxx is a pass-through, fallbacks are last resort. */
     function t(k, f) { return typeof deps.t === 'function' ? deps.t(k, f) : (f || k); }
     function escapeHtml(s) { return typeof deps.escapeHtml === 'function' ? deps.escapeHtml(s) : String(s == null ? '' : s); }
     function lang() { return typeof deps.lang === 'function' ? deps.lang() : 'en'; }

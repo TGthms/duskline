@@ -66,6 +66,7 @@ window.I18N = {
     "weather.totalDaylight": "Luz diurna total",
     "weather.daylightRemaining": "Luz diurna restante",
     "weather.untilSunrise": "Hasta el amanecer",
+    "weather.uvMax": "Máx. de hoy",
     "legal.privacyLink": "Política de privacidad",
     "legal.termsLink": "Términos de uso"
   },
@@ -130,6 +131,7 @@ window.I18N = {
     "weather.totalDaylight": "日照总时长",
     "weather.daylightRemaining": "剩余日照",
     "weather.untilSunrise": "距日出",
+    "weather.uvMax": "今日最高",
     "legal.privacyLink": "隐私政策",
     "legal.termsLink": "使用条款"
   },
@@ -194,6 +196,7 @@ window.I18N = {
     "weather.totalDaylight": "日照時間",
     "weather.daylightRemaining": "残り日照",
     "weather.untilSunrise": "日の出まで",
+    "weather.uvMax": "今日の最大",
     "legal.privacyLink": "プライバシーポリシー",
     "legal.termsLink": "利用規約"
   }

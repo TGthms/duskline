@@ -111,9 +111,15 @@
       var light = appearance === 'system' ? isOsLight() : appearance === 'light';
       return light ? (style === 'classic' ? 'elegant' : 'minimal') : (style === 'classic' ? 'default' : 'glass');
     }
-    // Duskline follows the operating-system appearance; unknown systems use dark.
+    // Appearance × style from storage when set; otherwise OS + modern.
     var appearance = 'system';
     var style = 'modern';
+    try {
+      var savedA = localStorage.getItem('duskline-appearance');
+      if (savedA === 'system' || savedA === 'light' || savedA === 'dark') appearance = savedA;
+      var savedS = localStorage.getItem('duskline-style');
+      if (savedS === 'classic' || savedS === 'modern') style = savedS;
+    } catch (e0) { /* ignore */ }
     var t = 'default';
     if (appearance === 'system' || appearance === 'light' || appearance === 'dark') {
       t = resolveTheme(appearance, style);
@@ -260,6 +266,7 @@
 <script src="src/js/data/duskline-locales.js" defer></script>
 <script src="src/js/data/dest-weather-cities.js" defer></script>
 <script src="src/js/core/env.js" defer></script>
+<script src="src/js/core/wx-math.js" defer></script>
 <script src="src/js/core/runtime.js" defer></script>
 <script src="src/js/duskline-controls.js" defer></script>
 <script src="src/js/features/weather/ns.js" defer></script>

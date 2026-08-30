@@ -335,6 +335,73 @@
       hi: 'सूर्यास्त', th: 'พระอาทิตย์ตก', vi: 'Hoàng hôn', id: 'Matahari terbenam', ja: '日の入り',
       ko: '일몰', zh: '日落', 'zh-TW': '日落'
     },
+    'weather.firstLight': {
+      en: 'First Light', es: 'Primeras luces', fr: 'Premières lueurs', de: 'Erstes Licht', it: 'Prime luci',
+      'pt-BR': 'Primeira luz', 'pt-PT': 'Primeira luz', nl: 'Eerste licht', da: 'Første lys', sv: 'Första ljuset',
+      nb: 'Første lys', fi: 'Ensimmäinen valo', pl: 'Pierwsze światło', cs: 'První světlo', hu: 'Első fény',
+      ro: 'Prima lumină', el: 'Πρώτο φως', tr: 'İlk ışık', ru: 'Первый свет', uk: 'Перше світло',
+      ar: 'أول ضوء', he: 'אור ראשון', hi: 'पहली रोशनी', th: 'แสงแรก', vi: 'Ánh sáng đầu',
+      id: 'Cahaya pertama', ja: '薄明開始', ko: '첫빛', zh: '晨光', 'zh-TW': '晨光'
+    },
+    'weather.lastLight': {
+      en: 'Last Light', es: 'Últimas luces', fr: 'Dernières lueurs', de: 'Letztes Licht', it: 'Ultime luci',
+      'pt-BR': 'Última luz', 'pt-PT': 'Última luz', nl: 'Laatste licht', da: 'Sidste lys', sv: 'Sista ljuset',
+      nb: 'Siste lys', fi: 'Viimeinen valo', pl: 'Ostatnie światło', cs: 'Poslední světlo', hu: 'Utolsó fény',
+      ro: 'Ultima lumină', el: 'Τελευταίο φως', tr: 'Son ışık', ru: 'Последний свет', uk: 'Останнє світло',
+      ar: 'آخر ضوء', he: 'אור אחרון', hi: 'अंतिम रोशनी', th: 'แสงสุดท้าย', vi: 'Ánh sáng cuối',
+      id: 'Cahaya terakhir', ja: '薄明終了', ko: '마지막 빛', zh: '暮光', 'zh-TW': '暮光'
+    },
+    'weather.totalDaylight': {
+      en: 'Total Daylight', es: 'Luz diurna total', fr: 'Durée du jour', de: 'Gesamte Tageslänge',
+      it: 'Ore di luce', 'pt-BR': 'Luz do dia total', 'pt-PT': 'Luz do dia total', nl: 'Totale daglicht',
+      da: 'Samlet dagslys', sv: 'Total dagsljus', nb: 'Total dagslys', fi: 'Kokonaispäivänvalo',
+      pl: 'Całkowite światło dzienne', cs: 'Celkové denní světlo', hu: 'Teljes nappali fény',
+      ro: 'Lumină diurnă totală', el: 'Συνολικό φως ημέρας', tr: 'Toplam gün ışığı',
+      ru: 'Световой день', uk: 'Світловий день', ar: 'إجمالي ضوء النهار', he: 'סך אור יום',
+      hi: 'कुल दिन का प्रकाश', th: 'แสงกลางวันทั้งหมด', vi: 'Tổng thời gian ban ngày',
+      id: 'Total siang hari', ja: '日照時間', ko: '총 일조', zh: '日照总时长', 'zh-TW': '日照總時長'
+    },
+    'weather.daylightRemaining': {
+      en: 'Daylight remaining', es: 'Luz diurna restante', fr: 'Jour restant', de: 'Verbleibendes Tageslicht',
+      it: 'Luce rimanente', 'pt-BR': 'Luz do dia restante', 'pt-PT': 'Luz do dia restante',
+      nl: 'Resterend daglicht', da: 'Resterende dagslys', sv: 'Kvarvarande dagsljus',
+      nb: 'Gjenstående dagslys', fi: 'Jäljellä oleva päivänvalo', pl: 'Pozostałe światło dzienne',
+      cs: 'Zbývající denní světlo', hu: 'Hátralévő nappali fény', ro: 'Lumină diurnă rămasă',
+      el: 'Υπόλοιπο φως ημέρας', tr: 'Kalan gün ışığı', ru: 'Остаток светового дня',
+      uk: 'Залишок світлового дня', ar: 'الضوء المتبقي', he: 'אור יום שנותר',
+      hi: 'शेष दिन का प्रकाश', th: 'แสงกลางวันที่เหลือ', vi: 'Ban ngày còn lại',
+      id: 'Sisa siang hari', ja: '残り日照', ko: '남은 일조', zh: '剩余日照', 'zh-TW': '剩餘日照'
+    },
+    'weather.untilSunrise': {
+      en: 'Until sunrise', es: 'Hasta el amanecer', fr: 'Avant le lever du soleil', de: 'Bis Sonnenaufgang',
+      it: 'Fino all’alba', 'pt-BR': 'Até o nascer do sol', 'pt-PT': 'Até ao nascer do sol',
+      nl: 'Tot zonsopkomst', da: 'Til solopgang', sv: 'Till soluppgång', nb: 'Til soloppgang',
+      fi: 'Auringonnousuun', pl: 'Do wschodu słońca', cs: 'Do východu slunce', hu: 'Napkeltéig',
+      ro: 'Până la răsărit', el: 'Έως την ανατολή', tr: 'Gün doğumuna kadar', ru: 'До восхода',
+      uk: 'До сходу', ar: 'حتى الشروق', he: 'עד הזריחה', hi: 'सूर्योदय तक', th: 'จนถึงพระอาทิตย์ขึ้น',
+      vi: 'Đến bình minh', id: 'Hingga matahari terbit', ja: '日の出まで', ko: '일출까지',
+      zh: '距日出', 'zh-TW': '距日出'
+    },
+    'weather.untilSunset': {
+      en: 'Until sunset', es: 'Hasta el atardecer', fr: 'Avant le coucher du soleil', de: 'Bis Sonnenuntergang',
+      it: 'Fino al tramonto', 'pt-BR': 'Até o pôr do sol', 'pt-PT': 'Até ao pôr do sol',
+      nl: 'Tot zonsondergang', da: 'Til solnedgang', sv: 'Till solnedgång', nb: 'Til solnedgang',
+      fi: 'Auringonlaskuun', pl: 'Do zachodu słońca', cs: 'Do západu slunce', hu: 'Napnyugtáig',
+      ro: 'Până la apus', el: 'Έως τη δύση', tr: 'Gün batımına kadar', ru: 'До заката',
+      uk: 'До заходу', ar: 'حتى الغروب', he: 'עד השקיעה', hi: 'सूर्यास्त तक', th: 'จนถึงพระอาทิตย์ตก',
+      vi: 'Đến hoàng hôn', id: 'Hingga matahari terbenam', ja: '日没まで', ko: '일몰까지',
+      zh: '直到日落', 'zh-TW': '直到日落'
+    },
+    'weather.uvMax': {
+      en: 'Today’s max', es: 'Máx. de hoy', fr: 'Max. du jour', de: 'Heutiges Maximum',
+      it: 'Massimo di oggi', 'pt-BR': 'Máx. de hoje', 'pt-PT': 'Máx. de hoje', nl: 'Maximum vandaag',
+      da: 'Dagens maksimum', sv: 'Dagens max', nb: 'Dagens maksimum', fi: 'Tämän päivän maksimi',
+      pl: 'Maks. dziś', cs: 'Dnešní maximum', hu: 'Mai maximum', ro: 'Maximul de azi',
+      el: 'Μέγιστο σήμερα', tr: 'Bugünün en yükseği', ru: 'Макс. сегодня', uk: 'Макс. сьогодні',
+      ar: 'أقصى اليوم', he: 'המקסימום היום', hi: 'आज का अधिकतम', th: 'สูงสุดวันนี้',
+      vi: 'Tối đa hôm nay', id: 'Maks. hari ini', ja: '今日の最大', ko: '오늘의 최대',
+      zh: '今日最高', 'zh-TW': '今日最高'
+    },
     'weather.favorite': {
       en: 'Favorite', es: 'Favorito', fr: 'Favori', de: 'Favorit', it: 'Preferito', 'pt-BR': 'Favorito',
       'pt-PT': 'Favorito', nl: 'Favoriet', da: 'Favorit', sv: 'Favorit', nb: 'Favoritt', fi: 'Suosikki',

@@ -1,7 +1,12 @@
 'use strict';
 /* Duskline — core/runtime.js
+   Prefs / i18n / units / theme runtime for this weather app.
    Classic non-module script. Shared global scope with other src/js scripts.
    Canonical load order: see header of src/js/app.js
+
+   This file used to ship gallery-site chrome (cursor trail, hamburger drawer,
+   settings overlay, lightbox). Those DOM nodes do not exist here; the
+   corresponding code is omitted so the weather app does not parse or run it.
 */
 
 /* I18N dictionary: src/js/data/i18n.js → window.I18N */
@@ -438,14 +443,6 @@ function detectMotionModeDefault() {
   return 'full';
 }
 
-function detectCursorDefault() {
-  // No trail on touch-first / no-hover devices (phones, most tablets, watch).
-  if (ENV.constrained) return false;
-  if (safeMatchMedia('(hover: none)').matches) return false;
-  if (safeMatchMedia('(pointer: coarse)').matches && !safeMatchMedia('(pointer: fine)').matches) return false;
-  return true;
-}
-
 /** Migrate legacy on/off reduce-motion storage → full | reduced | off. */
 function loadMotionModePreference() {
   if (safeStorage.has('duskline-motion')) {
@@ -469,12 +466,12 @@ let currentLang = safeStorage.has('duskline-lang')
 if (!SUPPORTED_LANGS.includes(currentLang)) currentLang = 'en';
 
 /** Appearance: system | light | dark · Style: classic | modern */
-function migrateAppearanceStyleFromLegacyTheme() {
-  return { appearance: 'system', style: 'modern' };
-}
-const _as0 = migrateAppearanceStyleFromLegacyTheme();
-let prefAppearance = 'system';
-let prefStyle = 'modern';
+let prefAppearance = safeStorage.has('duskline-appearance')
+  ? safeStorage.get('duskline-appearance', 'system')
+  : 'system';
+let prefStyle = safeStorage.has('duskline-style')
+  ? safeStorage.get('duskline-style', 'modern')
+  : 'modern';
 if (prefAppearance !== 'system' && prefAppearance !== 'light' && prefAppearance !== 'dark') {
   prefAppearance = 'system';
 }
@@ -568,11 +565,6 @@ window.__dusklineUnits = function () {
 
 /** User preference: full | reduced | off */
 let motionMode = loadMotionModePreference();
-let cursorEffectEnabled = safeStorage.has('duskline-cursor-fx')
-  ? safeStorage.get('duskline-cursor-fx', 'on') !== 'off'
-  : detectCursorDefault();
-// Gallery lightbox quality: thumb | medium (default) | full
-let galleryQuality = safeStorage.get('duskline-gallery-quality', 'medium');
 
 // Guard against corrupt effective values
 if (!['default', 'minimal', 'elegant', 'glass'].includes(currentTheme)) currentTheme = 'default';
@@ -584,7 +576,6 @@ if (currentDistUnit !== 'mi' && currentDistUnit !== 'km') {
   const fixed = resolveUnitsFromPrefs();
   currentDistUnit = (fixed.dist === 'mi' || fixed.dist === 'km') ? fixed.dist : 'km';
 }
-if (!['thumb', 'medium', 'full'].includes(galleryQuality)) galleryQuality = 'medium';
 if (!['full', 'reduced', 'off'].includes(motionMode)) motionMode = 'full';
 
 function recomputeAutoPrefs({ paint = true } = {}) {
@@ -907,7 +898,7 @@ window.Duskline = Object.assign(window.Duskline || {}, {
   debugUnits: window.__dusklineUnits
 });
 
-/* ── ACCESSIBILITY PILLS (Animations: full / reduced / off · Cursor Effect) ── */
+/* ── ACCESSIBILITY PILLS (Animations: full / reduced / off) ── */
 const motionPills = document.querySelectorAll('#motionPillGroup .pill-btn');
 function updateMotionUI() {
   motionPills.forEach(p => p.classList.toggle('active', p.dataset.motionVal === motionMode));
@@ -918,34 +909,13 @@ function setMotionMode(next, { persist = true } = {}) {
   if (persist) safeStorage.set('duskline-motion', motionMode);
   applyMotionModeToDom();
   updateMotionUI();
-  if (typeof updateCursorUI === 'function') updateCursorUI();
 }
 motionPills.forEach(p => p.addEventListener('click', () => {
   setMotionMode(p.dataset.motionVal || 'full', { persist: true });
 }));
 updateMotionUI();
-
-const cursorPills = document.querySelectorAll('#cursorPillGroup .pill-btn');
-function updateCursorUI() {
-  cursorPills.forEach(p => p.classList.toggle('active', p.dataset.cursorVal === (cursorEffectEnabled ? 'on' : 'off')));
-  // Keep the overlay canvas in sync — trail is off in reduced/off modes.
-  const cursorCanvasEl = document.getElementById('cursorCanvas');
-  if (cursorCanvasEl) {
-    const off = !cursorEffectEnabled || motionActive();
-    cursorCanvasEl.classList.toggle('is-disabled', off);
-    cursorCanvasEl.setAttribute('aria-hidden', off ? 'true' : 'false');
-  }
-}
-cursorPills.forEach(p => p.addEventListener('click', () => {
-  cursorEffectEnabled = p.dataset.cursorVal === 'on';
-  safeStorage.set('duskline-cursor-fx', cursorEffectEnabled ? 'on' : 'off');
-  updateCursorUI();
-}));
-updateCursorUI();
-// If the OS reduced-motion preference flips mid-session, re-apply effective mode.
 function onOsMotionPreferenceChange() {
   applyMotionModeToDom();
-  updateCursorUI();
 }
 if (typeof prefersReducedMotionMQ.addEventListener === 'function') {
   prefersReducedMotionMQ.addEventListener('change', onOsMotionPreferenceChange);
@@ -953,85 +923,8 @@ if (typeof prefersReducedMotionMQ.addEventListener === 'function') {
   prefersReducedMotionMQ.addListener(onOsMotionPreferenceChange);
 }
 
-/* ── GALLERY QUALITY PILLS (thumb / medium / full) ── */
-const galleryQualityPills = document.querySelectorAll('#galleryQualityGroup .pill-btn');
-function updateGalleryQualityUI() {
-  galleryQualityPills.forEach(p => {
-    p.classList.toggle('active', p.dataset.galleryQuality === galleryQuality);
-  });
-}
-galleryQualityPills.forEach(p => p.addEventListener('click', () => {
-  const next = p.dataset.galleryQuality;
-  if (!['thumb', 'medium', 'full'].includes(next)) return;
-  galleryQuality = next;
-  safeStorage.set('duskline-gallery-quality', galleryQuality);
-  updateGalleryQualityUI();
-  dispatchPrefs('gallery-quality', { quality: galleryQuality });
-}));
-updateGalleryQualityUI();
-
-/* ── UTILITY: GET CSS VARIABLE ── */
-function getCssVar(name) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#e8a435';
-}
-
-// Sizes a canvas's backing store to the device pixel ratio so drawing stays
-// crisp on Retina / HiDPI / 4K+ screens instead of looking soft/blurry, while
-// letting the rest of the drawing code keep working in plain CSS-pixel units.
-// Capped lower on mobile so we don't allocate multi‑megapixel bitmaps.
-// Explicit CSS width/height keep clientX/clientY coordinates aligned with the
-// drawing buffer after the bitmap is scaled up for DPR.
-function fitCanvasToDPR(canvas, ctx) {
-  const maxDpr = ENV.mobile || ENV.constrained ? 1.5 : 3;
-  const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
-  const cssW = window.innerWidth;
-  const cssH = window.innerHeight;
-  canvas.style.width = cssW + 'px';
-  canvas.style.height = cssH + 'px';
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { width: cssW, height: cssH };
-}
-
-// Throttles a resize handler to at most once per animation frame so live
-// window drag-resizing doesn't repeatedly reallocate canvas buffers.
-// Ignores pure height-only visualViewport changes (mobile URL bar show/hide),
-// which used to thrash canvas rebuilds mid-scroll and could crash Safari.
-function onResizeRAF(fn) {
-  let pending = false;
-  let lastW = window.innerWidth || 0;
-  let lastH = window.innerHeight || 0;
-  const run = (force) => {
-    if (pending) return;
-    pending = true;
-    raf(() => {
-      pending = false;
-      try {
-        const w = window.innerWidth || 0;
-        const h = window.innerHeight || 0;
-        // Treat as meaningful only if width changed or height jumped a lot
-        // (orientation / keyboard), not the ~50–100px URL-bar collapse.
-        const dw = Math.abs(w - lastW);
-        const dh = Math.abs(h - lastH);
-        if (!force && dw < 40 && dh < 140) return;
-        lastW = w;
-        lastH = h;
-        fn();
-      } catch (e) { /* ignore */ }
-    });
-  };
-  try {
-    window.addEventListener('resize', () => run(false), { passive: true });
-    window.addEventListener('orientationchange', () => run(true), { passive: true });
-    // Intentionally NOT listening to visualViewport.resize — that fires on
-    // every iOS chrome show/hide and caused mid-scroll canvas reallocations.
-  } catch (e) { /* ignore */ }
-}
-
 /* ── SCROLL UI (navigation only) ── */
 let scrollUiPending = false;
-
 function updateScrollUi() {
   scrollUiPending = false;
   const y = window.scrollY || document.documentElement.scrollTop || 0;
@@ -1042,155 +935,6 @@ window.addEventListener('scroll', () => {
   scrollUiPending = true;
   raf(updateScrollUi);
 }, { passive: true });
-
-/* ── CURSOR TRAIL ──
-   Fine-pointer desktops only. Spawns particles only while the cursor is
-   actually moving (not a stationary fountain), keeps CSS/bitmap size in
-   lockstep for correct coordinates, and hard-caps particle count. */
-(function() {
-  const c = document.getElementById('cursorCanvas');
-  if (!c) return;
-
-  // Prefer devices that can hover with a fine pointer (mice / trackpads).
-  // pointer:coarse alone is wrong on hybrid convertibles that report both.
-  // Always off on constrained / wearable webviews (GPU + battery budget).
-  const canHoverFine = !ENV.constrained
-    && safeMatchMedia('(hover: hover) and (pointer: fine)').matches;
-  if (!canHoverFine) {
-    c.classList.add('is-disabled');
-    c.setAttribute('aria-hidden', 'true');
-    return;
-  }
-
-  const ctx = c.getContext('2d', { alpha: true });
-  if (!ctx) return;
-
-  const particles = [];
-  /* Toned-down editorial trail: fewer, smaller, shorter-lived sparks */
-  const MAX_PARTICLES = 22;
-  let mx = -999, my = -999;
-  let prevX = -999, prevY = -999;
-  let isMouseIn = false;
-  let movedThisFrame = false;
-  let cssW = 0, cssH = 0;
-  let rafId = 0;
-  let running = false;
-
-  function resize() { ({ width: cssW, height: cssH } = fitCanvasToDPR(c, ctx)); }
-  resize();
-  onResizeRAF(resize);
-
-  document.addEventListener('pointermove', e => {
-    // Ignore touch/pen so hybrid tablets don't paint trails from finger pans.
-    if (e.pointerType && e.pointerType !== 'mouse') return;
-    mx = e.clientX;
-    my = e.clientY;
-    isMouseIn = true;
-    // Only treat as "moving" when the cursor actually traveled a pixel.
-    if (Math.abs(mx - prevX) > 0.5 || Math.abs(my - prevY) > 0.5) {
-      movedThisFrame = true;
-      prevX = mx;
-      prevY = my;
-    }
-    if (!running && cursorEffectEnabled && !motionActive()) startLoop();
-  }, { passive: true });
-
-  // window/document "mouseleave" is unreliable; relatedTarget null means the
-  // pointer left the document (to chrome / another app).
-  document.addEventListener('mouseout', e => {
-    if (!e.relatedTarget && !e.toElement) {
-      isMouseIn = false;
-      movedThisFrame = false;
-    }
-  });
-  document.documentElement.addEventListener('mouseleave', () => {
-    isMouseIn = false;
-    movedThisFrame = false;
-  });
-  window.addEventListener('blur', () => {
-    isMouseIn = false;
-    movedThisFrame = false;
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      isMouseIn = false;
-      movedThisFrame = false;
-      particles.length = 0;
-      ctx.clearRect(0, 0, cssW, cssH);
-    }
-  });
-
-  function startLoop() {
-    if (running) return;
-    running = true;
-    rafId = raf(tick);
-  }
-  function stopLoop() {
-    running = false;
-    if (rafId) cancelRaf(rafId);
-    rafId = 0;
-    ctx.clearRect(0, 0, cssW, cssH);
-  }
-
-  function tick() {
-    if (!running) return;
-    rafId = raf(tick);
-    ctx.clearRect(0, 0, cssW, cssH);
-
-    // Respect the "Cursor Trail" Settings toggle and reduced-motion preference.
-    if (!cursorEffectEnabled || motionActive()) {
-      if (particles.length) particles.length = 0;
-      stopLoop();
-      return;
-    }
-
-    const themeAccent = getCssVar('--accent-1');
-
-    // Emit only while the pointer is moving — a quiet ink-trail, not a fountain.
-    if (isMouseIn && movedThisFrame) {
-      const burst = particles.length < MAX_PARTICLES / 3 ? 1 : (Math.random() > 0.45 ? 1 : 0);
-      for (let n = 0; n < burst; n++) {
-        if (particles.length >= MAX_PARTICLES) break;
-        particles.push({
-          x: mx + (Math.random() - 0.5) * 4,
-          y: my + (Math.random() - 0.5) * 4,
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: -Math.random() * 0.55 - 0.12,
-          life: 1,
-          size: Math.random() * 1.6 + 0.7,
-          color: themeAccent
-        });
-      }
-      movedThisFrame = false;
-    }
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.006;
-      p.life -= 0.045;
-      if (p.life <= 0) { particles.splice(i, 1); continue; }
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-      ctx.globalAlpha = p.life * 0.32;
-      ctx.fillStyle = p.color;
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // Idle with nothing left to draw — pause the RAF loop until next move.
-    if (!particles.length && !movedThisFrame) {
-      stopLoop();
-    }
-  }
-
-  // Kick once if the trail is enabled so resize state is warm.
-  if (cursorEffectEnabled && !motionActive()) {
-    // Loop starts on first pointermove; keep canvas ready and visible.
-    c.classList.remove('is-disabled');
-  }
-})();
 
 /* ── NAVBAR + ACTIVE LINK ── */
 const navbar = document.getElementById('navbar');
@@ -1273,172 +1017,6 @@ function onPageScroll(y) {
     try { onPageScroll(y0); } catch (e) { /* ignore */ }
   }
 }
-
-/* ── HAMBURGER (main guide only — gallery mini-app has no mobile drawer) ── */
-const hamburger = document.getElementById('hamburger');
-const navMobile = document.getElementById('navMobile');
-if (hamburger && navMobile) {
-  hamburger.addEventListener('click', () => {
-    const willOpen = !hamburger.classList.contains('open');
-    if (willOpen) {
-      lockBodyScroll();
-      hamburger.classList.add('open');
-      navMobile.classList.add('open');
-    } else {
-      hamburger.classList.remove('open');
-      navMobile.classList.remove('open');
-      unlockBodyScroll();
-    }
-    hamburger.setAttribute('aria-expanded', String(willOpen));
-  });
-}
-
-function closeMobileNav() {
-  if (!hamburger || !navMobile) return;
-  const wasOpen = navMobile.classList.contains('open');
-  navMobile.classList.remove('open');
-  hamburger.classList.remove('open');
-  hamburger.setAttribute('aria-expanded', 'false');
-  if (wasOpen) unlockBodyScroll();
-}
-
-/* ── SETTINGS DIALOG ── */
-const settingsOverlay = document.getElementById('settingsOverlay');
-const settingsOpenBtn = document.getElementById('settingsOpen');
-const mobileSettingsBtn = document.getElementById('mobileSettingsBtn'); // may be null on gallery mini-app
-const settingsCloseBtn = document.getElementById('settingsClose');
-let lastSettingsTrigger = null;
-// Nested-safe scroll lock: mobile nav, settings, tools, modals, and the
-// lightbox all share this so opening one over another never resets scroll to 0
-// or leaves body permanently fixed.
-let scrollLockCount = 0;
-let lockedScrollY = 0;
-
-/** True when any full-screen overlay that owns the scroll lock is open. */
-function isAnyScrollLockOverlayOpen() {
-  const lb = document.getElementById('lightbox');
-  if (lb && lb.classList.contains('open')) return true;
-  if (settingsOverlay && settingsOverlay.classList.contains('open')) return true;
-  const modal = document.getElementById('modal-overlay');
-  if (modal && modal.classList.contains('open')) return true;
-  const mobile = document.getElementById('navMobile');
-  if (mobile && mobile.classList.contains('open')) return true;
-  return false;
-}
-
-function clearBodyScrollLockStyles() {
-  const html = document.documentElement;
-  const y = lockedScrollY;
-  // Force instant scroll BEFORE releasing body lock — otherwise CSS
-  // `scroll-behavior: smooth` animates from the top to the saved offset.
-  const prevInline = html.style.scrollBehavior;
-  html.style.scrollBehavior = 'auto';
-  html.classList.add('scroll-instant');
-
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.left = '';
-  document.body.style.right = '';
-  document.body.style.width = '';
-  document.body.style.overflow = '';
-  html.style.overflow = '';
-
-  if (typeof window.scrollTo === 'function') {
-    try {
-      window.scrollTo({ top: y, left: 0, behavior: 'instant' });
-    } catch (e) {
-      window.scrollTo(0, y);
-    }
-  } else {
-    html.scrollTop = y;
-    document.body.scrollTop = y;
-  }
-
-  // Restore smooth anchors on the next frame (after paint settles).
-  raf(() => {
-    raf(() => {
-      html.style.scrollBehavior = prevInline;
-      html.classList.remove('scroll-instant');
-    });
-  });
-}
-
-function lockBodyScroll() {
-  if (scrollLockCount === 0) {
-    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${lockedScrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-    // Prevent iOS rubber-band from fighting the lock.
-    document.documentElement.style.overflow = 'hidden';
-  }
-  scrollLockCount++;
-}
-
-function unlockBodyScroll() {
-  scrollLockCount = Math.max(0, scrollLockCount - 1);
-  if (scrollLockCount > 0) return;
-  clearBodyScrollLockStyles();
-}
-
-/**
- * Safety net: if no overlay is open but the body is still locked (e.g. Enter
- * on role=button also synthesized a click and double-incremented the counter),
- * force a full release so mouse wheel / trackpad scrolling works again.
- */
-function ensureBodyScrollUnlocked() {
-  if (isAnyScrollLockOverlayOpen()) return;
-  if (scrollLockCount === 0
-      && !document.body.style.position
-      && !document.documentElement.style.overflow) {
-    return;
-  }
-  scrollLockCount = 0;
-  clearBodyScrollLockStyles();
-}
-
-function openSettings(trigger) {
-  if (!settingsOverlay || settingsOverlay.classList.contains('open')) return;
-  dispatchPrefs('gallery-close');
-  lastSettingsTrigger = trigger || document.activeElement;
-  closeMobileNav();
-  lockBodyScroll();
-  settingsOverlay.classList.add('open');
-  settingsOverlay.setAttribute('aria-hidden', 'false');
-  settingsOverlay.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
-  if (settingsCloseBtn) setTimeout(() => settingsCloseBtn.focus(), 100);
-}
-
-function closeSettings() {
-  if (!settingsOverlay || !settingsOverlay.classList.contains('open')) return;
-  const restoreY = lockedScrollY;
-  settingsOverlay.classList.remove('open');
-  settingsOverlay.setAttribute('aria-hidden', 'true');
-  unlockBodyScroll();
-  ensureBodyScrollUnlocked();
-  if (lastSettingsTrigger && typeof lastSettingsTrigger.focus === 'function') {
-    try { lastSettingsTrigger.focus({ preventScroll: true }); }
-    catch (e) { lastSettingsTrigger.focus(); }
-  }
-  try { window.scrollTo({ top: restoreY, left: 0, behavior: 'instant' }); }
-  catch (e) { window.scrollTo(0, restoreY); }
-}
-
-if (settingsOpenBtn) settingsOpenBtn.addEventListener('click', () => openSettings(settingsOpenBtn));
-if (mobileSettingsBtn) mobileSettingsBtn.addEventListener('click', () => openSettings(mobileSettingsBtn));
-if (settingsCloseBtn) settingsCloseBtn.addEventListener('click', closeSettings);
-if (settingsOverlay) settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) closeSettings(); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && settingsOverlay && settingsOverlay.classList.contains('open')) {
-    e.preventDefault();
-    closeSettings();
-    // Prevent the later modal / mobile-nav Escape handler from also firing.
-    e.stopImmediatePropagation();
-  }
-});
 
 /* ── SCROLL REVEAL (all pages) ──
    .reveal starts at opacity:0 until .visible is added. This used to live only

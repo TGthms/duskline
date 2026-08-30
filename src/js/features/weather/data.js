@@ -1,5 +1,6 @@
 'use strict';
-/* Duskline — weather/data.js */
+/* Duskline — weather/data.js
+   Formatters and city identity live in app.js; this factory receives them via deps. */
 (function (global) {
   var W = global.DusklineWeather;
   if (!W || !W.active) return;
@@ -83,7 +84,7 @@
     const NWS_POINTS_TTL = 7 * 24 * 60 * 60 * 1000;
     const nwsPointsMem = new Map();
 
-    function roundCoord(n) {
+    function roundCoordForNwsCache(n) {
       return Math.round(Number(n) * 10000) / 10000;
     }
 
@@ -118,7 +119,7 @@
     }
 
     function getCachedNwsPoints(lat, lon) {
-      const k = roundCoord(lat) + ',' + roundCoord(lon);
+      const k = roundCoordForNwsCache(lat) + ',' + roundCoordForNwsCache(lon);
       if (nwsPointsMem.has(k)) return nwsPointsMem.get(k);
       try {
         const raw = localStorage.getItem(NWS_POINTS_LS);
@@ -133,7 +134,7 @@
     }
 
     function setCachedNwsPoints(lat, lon, data) {
-      const k = roundCoord(lat) + ',' + roundCoord(lon);
+      const k = roundCoordForNwsCache(lat) + ',' + roundCoordForNwsCache(lon);
       nwsPointsMem.set(k, data);
       try {
         const raw = localStorage.getItem(NWS_POINTS_LS);
@@ -149,7 +150,7 @@
     }
 
     function clearCachedNwsPoints(lat, lon) {
-      const k = roundCoord(lat) + ',' + roundCoord(lon);
+      const k = roundCoordForNwsCache(lat) + ',' + roundCoordForNwsCache(lon);
       nwsPointsMem.delete(k);
       try {
         const raw = localStorage.getItem(NWS_POINTS_LS);
@@ -345,8 +346,8 @@
     }
 
     async function loadNwsCity(c, signal) {
-      const lat = roundCoord(c.lat);
-      const lon = roundCoord(c.lon);
+      const lat = roundCoordForNwsCache(c.lat);
+      const lon = roundCoordForNwsCache(c.lon);
       let points = getCachedNwsPoints(lat, lon);
       if (!points) {
         points = await nwsFetchJson(NWS_BASE + '/points/' + lat + ',' + lon, signal);

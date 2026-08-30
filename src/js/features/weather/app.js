@@ -189,7 +189,43 @@
   const sheetBody = $('weatherSheetBody');
   const sheetClose = $('weatherSheetClose');
 
-  let cache = new Map();
+  const CACHE_SOFT_MAX = 200;
+  const cacheStore = new Map();
+  function isPinnedCacheKey(key) {
+    if (myLocationCity && cityKey(myLocationCity) === key) return true;
+    if (MAJOR.some(function (c) { return cityKey(c) === key; })) return true;
+    try {
+      return loadFavorites().some(function (c) { return cityKey(c) === key; });
+    } catch (e) { return false; }
+  }
+  function evictWeatherCache() {
+    if (cacheStore.size <= CACHE_SOFT_MAX) return;
+    for (const k of cacheStore.keys()) {
+      if (cacheStore.size <= CACHE_SOFT_MAX) break;
+      if (isPinnedCacheKey(k)) continue;
+      cacheStore.delete(k);
+    }
+  }
+  const cache = {
+    get: function (k) {
+      if (!cacheStore.has(k)) return undefined;
+      const v = cacheStore.get(k);
+      cacheStore.delete(k);
+      cacheStore.set(k, v);
+      return v;
+    },
+    set: function (k, v) {
+      if (cacheStore.has(k)) cacheStore.delete(k);
+      cacheStore.set(k, v);
+      evictWeatherCache();
+      return cache;
+    },
+    has: function (k) { return cacheStore.has(k); },
+    delete: function (k) { return cacheStore.delete(k); },
+    clear: function () { cacheStore.clear(); },
+    forEach: function (fn, thisArg) { cacheStore.forEach(fn, thisArg); },
+    get size() { return cacheStore.size; }
+  };
   let autoRefreshTimer = null;
   let searchTimer = 0;
   let openCity = null;
@@ -684,6 +720,9 @@
   }
 
   function fmtTemp(c) {
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.fmtTempFromC === 'function') {
+      return window.DusklineWxMath.fmtTempFromC(c, useF());
+    }
     if (window.Duskline && typeof window.Duskline.formatTempFromC === 'function') {
       return window.Duskline.formatTempFromC(c, { unit: useF() ? 'f' : 'c' });
     }
@@ -692,6 +731,9 @@
     return Math.round(c) + '°';
   }
   function windMsTo(unit, ms) {
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.windMsTo === 'function') {
+      return window.DusklineWxMath.windMsTo(unit, ms);
+    }
     if (ms == null) return null;
     if (unit === 'mph') return ms * 2.23694;
     if (unit === 'kmh') return ms * 3.6;
@@ -704,6 +746,9 @@
   }
   function fmtWind(ms) {
     const u = windUnit();
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.fmtWind === 'function') {
+      return window.DusklineWxMath.fmtWind(ms, u);
+    }
     const v = windMsTo(u, ms);
     if (v == null) return '—';
     if (u === 'bft') return v + ' bft';
@@ -713,20 +758,29 @@
     return Number(v).toFixed(1) + ' m/s';
   }
   function fmtVis(m) {
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.fmtVis === 'function') {
+      return window.DusklineWxMath.fmtVis(m, useMi());
+    }
     if (m == null) return '—';
     if (useMi()) return (m / 1609.34).toFixed(1) + ' mi';
     return (m / 1000).toFixed(1) + ' km';
   }
   function fmtPrecip(mm) {
-    if (mm == null) return '—';
     const u = precipUnit();
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.fmtPrecip === 'function') {
+      return window.DusklineWxMath.fmtPrecip(mm, u);
+    }
+    if (mm == null) return '—';
     if (u === 'in') return (mm / 25.4).toFixed(2) + ' in';
     if (u === 'cm') return (mm / 10).toFixed(1) + ' cm';
     return mm.toFixed(1) + ' mm';
   }
   function fmtPress(hpa) {
-    if (hpa == null) return '—';
     const u = pressUnit();
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.fmtPress === 'function') {
+      return window.DusklineWxMath.fmtPress(hpa, u);
+    }
+    if (hpa == null) return '—';
     if (u === 'mbar') return Math.round(hpa) + ' mbar';
     if (u === 'inHg') return (hpa * 0.02953).toFixed(2) + ' inHg';
     if (u === 'mmHg') return Math.round(hpa * 0.75006) + ' mmHg';
@@ -824,7 +878,10 @@
     return `<div class="weather-mod-viz"><span class="weather-mod-viz-bar"></span><span class="weather-mod-viz-dot" style="left:${pct.toFixed(1)}%"></span></div>`;
   }
   function escapeHtml(s) {
-    return String(s || '').replace(/[&<>"']/g, (ch) => ({
+    if (window.DusklineWxMath && typeof window.DusklineWxMath.escapeHtml === 'function') {
+      return window.DusklineWxMath.escapeHtml(s);
+    }
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[ch]);
   }
@@ -1085,6 +1142,7 @@
     applySky(row, code, cur.time, {
       hour, seed, isRow: true,
       noOrnaments: true,
+      timeZone: cityTimeZone(pack, c),
       precipMm: cur.precipitation,
       windDeg: cur.wind_direction_10m
     });
@@ -1562,6 +1620,7 @@
       const seed = Math.abs(Math.round((c.lat || 0) * 100) + Math.round((c.lon || 0) * 10));
       const skyOpts = {
         hour, seed, isRow: false,
+        timeZone: cityTimeZone(pack, c),
         precipMm: cur.precipitation,
         windDeg: cur.wind_direction_10m
       };
