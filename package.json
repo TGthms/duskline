@@ -4,8 +4,8 @@
   "private": false,
   "description": "A clear, global weather app with enhanced U.S. forecasts and alerts.",
   "scripts": {
-    "serve": "python3 -m http.server 8000",
-    "check": "node --check src/js/data/duskline-locales.js && node --check src/js/core/runtime.js && node --check src/js/features/weather/*.js",
+    "serve": "node tools/static-server.js 8000",
+    "check": "node --check src/js/app.js && node --check src/js/duskline-controls.js && node --check src/js/legal.js && node --check src/js/data/i18n.js && node --check src/js/data/duskline-locales.js && node --check src/js/core/env.js && node --check src/js/core/runtime.js && node --check src/js/features/weather/*.js && node --check sw.js",
     "test": "playwright test"
   },
   "devDependencies": { "@playwright/test": "^1.55.0" },

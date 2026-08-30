@@ -61,6 +61,12 @@
     var headings = Array.prototype.slice.call(document.querySelectorAll('.legal-page h2'));
     (page === 'terms' ? S.terms : S.privacy).forEach(function (value, index) { if (headings[index]) headings[index].textContent = value; });
     var label = document.querySelector('[data-legal="language-label"]'); if (label) label.textContent = L.language;
+    var note = document.querySelector('[data-legal="english-note"]');
+    if (note) {
+      var pack = (window.I18N && (window.I18N[current] || window.I18N[key])) || {};
+      note.textContent = pack['weather.legalEnglishNote'] || 'The full legal text is provided in English.';
+      note.hidden = (current === 'en');
+    }
   }
   apply();
 })();

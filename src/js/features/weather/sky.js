@@ -69,9 +69,9 @@
       // Clear: palette follows local time (not one flat blue for every city)
       if (night) return { c1: shift('#0b1a3a', s), c2: shift('#050b18', s), fx: 'clear-night' };
       if (hour < 8) return { c1: shift('#e8926a', s), c2: shift('#5a7eb8', s), fx: 'clear-dawn' };
-      if (hour < 10) return { c1: shift('#6ec8f0', s), c2: shift('#3a8fd0', s), fx: 'clear' };
-      if (hour < 15) return { c1: shift('#4aa3e0', s), c2: shift('#1a6bb5', s), fx: 'clear' };
-      if (hour < 17.5) return { c1: shift('#5a9fd0', s), c2: shift('#2a6090', s), fx: 'clear' };
+      if (hour < 10) return { c1: shift('#5aaed8', s), c2: shift('#2d74b0', s), fx: 'clear' };
+      if (hour < 15) return { c1: shift('#3b8ec4', s), c2: shift('#155890', s), fx: 'clear' };
+      if (hour < 17.5) return { c1: shift('#4a8fbf', s), c2: shift('#245a88', s), fx: 'clear' };
       return { c1: shift('#e88858', s), c2: shift('#4a5a9a', s), fx: 'clear-dusk' };
     }
 
@@ -123,9 +123,11 @@
         } catch (e) { return 0.12; }
       }
       const lightSky = (luminance(s.c1) + luminance(s.c2)) / 2 > .22;
-      el.style.setProperty('--wx-content', lightSky ? '#10243e' : '#f4f8ff');
-      el.style.setProperty('--wx-content-muted', lightSky ? 'rgba(16,36,62,.72)' : 'rgba(244,248,255,.72)');
-      el.style.setProperty('--wx-content-shadow', lightSky ? 'rgba(255,255,255,.32)' : 'rgba(0,0,0,.5)');
+      // Tiles and detail copy stay light-on-glass even under a bright day sky.
+      el.style.setProperty('--wx-content', '#f4f8ff');
+      el.style.setProperty('--wx-content-muted', 'rgba(244,248,255,.78)');
+      el.style.setProperty('--wx-content-shadow', 'rgba(0,0,0,.42)');
+      el.style.setProperty('--wx-sky-bright', lightSky ? '1' : '0');
       const level = motionLevel();
       el.style.setProperty('--wx-sky-1', s.c1);
       el.style.setProperty('--wx-sky-2', s.c2);

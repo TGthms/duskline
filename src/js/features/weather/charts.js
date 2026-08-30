@@ -16,8 +16,8 @@
     function lang() { return typeof deps.lang === 'function' ? deps.lang() : 'en'; }
     function localeTag() { return typeof deps.localeTag === 'function' ? deps.localeTag() : 'en-US'; }
     function motionLevel() { return typeof deps.motionLevel === 'function' ? deps.motionLevel() : 'full'; }
-    function formatClock(iso) { return typeof deps.formatClock === 'function' ? deps.formatClock(iso) : ''; }
-    function formatChartAxisHour(iso) { return typeof deps.formatChartAxisHour === 'function' ? deps.formatChartAxisHour(iso) : ''; }
+    function formatClock(iso, zone) { return typeof deps.formatClock === 'function' ? deps.formatClock(iso, zone) : ''; }
+    function formatChartAxisHour(iso, zone) { return typeof deps.formatChartAxisHour === 'function' ? deps.formatChartAxisHour(iso, zone) : ''; }
     function useF() { return typeof deps.useF === 'function' ? deps.useF() : false; }
     function condIcon(code, night, cls) { return typeof deps.condIcon === 'function' ? deps.condIcon(code, night, cls) : ''; }
 
@@ -79,28 +79,6 @@
         }
         pops = times.map(function (t) { return byDay[String(t || '').slice(0, 10)]; });
       }
-      const n = Math.min(10, times.length, highs.length, lows.length);
-      let weekMin = Infinity;
-      let weekMax = -Infinity;
-      for (let i = 0; i < n; i++) {
-        if (lows[i] != null) weekMin = Math.min(weekMin, lows[i]);
-        if (highs[i] != null) weekMax = Math.max(weekMax, highs[i]);
-      }
-      if (!Number.isFinite(weekMin) || !Number.isFinite(weekMax) || weekMax <= weekMin) {
-        weekMin = 0; weekMax = 1;
-      }
-      // Small padding so edge bars aren't flush to the track ends
-      const pad = Math.max(1, (weekMax - weekMin) * 0.04);
-      weekMin -= pad;
-      weekMax += pad;
-      const span = weekMax - weekMin || 1;
-
-      // Current temp for "Today" marker (optional, Apple-style white dot)
-      let nowC = null;
-      if (opts.currentTemp != null && Number.isFinite(opts.currentTemp)) {
-        nowC = opts.currentTemp;
-      }
-
       const todayKey = (function () {
         try {
           const tz = opts.timeZone || undefined;
@@ -110,8 +88,34 @@
         }
       })();
 
+      let start = 0;
+      for (let i = 0; i < times.length; i++) {
+        if (String(times[i] || '').slice(0, 10) >= todayKey) { start = i; break; }
+      }
+      const sliceN = Math.min(10, Math.max(0, times.length - start), Math.max(0, highs.length - start), Math.max(0, lows.length - start));
+      let weekMin = Infinity;
+      let weekMax = -Infinity;
+      for (let j = 0; j < sliceN; j++) {
+        const i = start + j;
+        if (lows[i] != null) weekMin = Math.min(weekMin, lows[i]);
+        if (highs[i] != null) weekMax = Math.max(weekMax, highs[i]);
+      }
+      if (!Number.isFinite(weekMin) || !Number.isFinite(weekMax) || weekMax <= weekMin) {
+        weekMin = 0; weekMax = 1;
+      }
+      const pad = Math.max(1, (weekMax - weekMin) * 0.04);
+      weekMin -= pad;
+      weekMax += pad;
+      const span = weekMax - weekMin || 1;
+
+      let nowC = null;
+      if (opts.currentTemp != null && Number.isFinite(opts.currentTemp)) {
+        nowC = opts.currentTemp;
+      }
+
       let html = '<div class="weather-daily">';
-      for (let i = 0; i < n; i++) {
+      for (let j = 0; j < sliceN; j++) {
+        const i = start + j;
         const dayKey = String(times[i] || '').slice(0, 10);
         const isToday = dayKey === todayKey;
         let day = '';
@@ -162,20 +166,20 @@
      * Rolling window of up to `hours` samples centered to include recent past + next hours.
      * When past_days is present, prefer ~now−6h through now+18h so the line isn’t “from now only”.
      */
-    function hourlyWindow(hourly, hours) {
+    function hourlyWindow(hourly, hours, timeZone) {
       const times = hourly.time || [];
       if (!times.length) return { start: 0, end: 0, times: times };
       const n = hours || 24;
       const now = Date.now();
-      // Prefer starting ~6 hours before now so charts show history of the day
       const wantStartMs = now - 6 * 60 * 60 * 1000;
       let start = 0;
       for (let i = 0; i < times.length; i++) {
-        let tMs;
-        try { tMs = new Date(times[i]).getTime(); } catch (e) { continue; }
-        if (tMs >= wantStartMs - 30 * 60 * 1000) { start = i; break; }
+        let tMs = NaN;
+        try {
+          tMs = wallClockInZoneToUtcMs(times[i], timeZone);
+        } catch (e) { continue; }
+        if (Number.isFinite(tMs) && tMs >= wantStartMs - 30 * 60 * 1000) { start = i; break; }
       }
-      // If that would leave fewer than n points, slide start earlier
       if (times.length - start < n) {
         start = Math.max(0, times.length - n);
       }
@@ -239,7 +243,7 @@
       const dayLen = (start >= 0 && end > start) ? (end - start) : 0;
       // Sparse “today” (e.g. only 22:00–23:00 left) → prefer last 24 samples with data
       if (dayLen >= 12) return { start: start, end: end, times: times };
-      return hourlyWindow(hourly, 24);
+      return hourlyWindow(hourly, 24, timeZone);
     }
 
     /**
@@ -507,7 +511,7 @@
       })();
       axisPts.forEach(function (p, k) {
         if (!p) return;
-        const lab = formatChartAxisHour(p.t);
+        const lab = formatChartAxisHour(p.t, tz);
         if (!lab) return;
         const anchor = k === 0 ? 'start' : (k === axisPts.length - 1 ? 'end' : 'middle');
         labels += '<text class="wx-chart-axis" x="' + p.x.toFixed(1) + '" y="' + (H - 8) + '" fill="rgba(255,255,255,.48)" font-size="11" font-weight="500" letter-spacing="0.02em" text-anchor="' + anchor + '" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif" font-variant-numeric="tabular-nums">' + escapeHtml(lab) + '</text>';
@@ -533,7 +537,7 @@
 
       return '<div class="weather-chart-wrap weather-chart-card" data-chart="' + id + '" data-pts=\'' + JSON.stringify(payload).replace(/'/g, '&#39;') + '\' data-kind="' + key + '" data-tz="' + escapeHtml(tz || '') + '" data-now-idx="' + midIdx + '" data-vw="' + W + '" data-vh="' + H + '" data-padt="' + padT + '" data-padb="' + padB + '" data-padl="' + padL + '">' +
         '<div class="weather-chart-readout" data-readout>' + escapeHtml(unitFmt(mid.v)) + '</div>' +
-        '<div class="weather-chart-sub" data-sub>' + escapeHtml(formatClock(mid.t)) + '</div>' +
+        '<div class="weather-chart-sub" data-sub">' + escapeHtml(formatClock(mid.t, tz)) + '</div>' +
         // preserveAspectRatio=none: CSS size maps 1:1 to viewBox → scrub X/Y stay aligned
         '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img">' +
           '<defs>' +
@@ -653,7 +657,7 @@
             readout.textContent = formatVal(pt.v);
             displayNum = pt.v;
           }
-          if (sub) sub.textContent = formatClock(pt.t);
+          if (sub) sub.textContent = formatClock(pt.t, tz);
           curPt = pt;
         };
         const resetToNow = () => {
@@ -847,27 +851,31 @@
       const elevAt = function (tms) {
         if (tms >= rise && tms <= set) {
           const u = (tms - rise) / (set - rise);
-          return Math.sin(u * Math.PI); // 0→1→0 through day
+          return Math.sin(u * Math.PI);
         }
-        // Night: gentle dip below horizon
-        if (tms < rise) return -0.12 * Math.min(1, (rise - tms) / (4 * 3600000));
-        return -0.12 * Math.min(1, (tms - set) / (4 * 3600000));
+        if (tms < rise) return -0.18 * Math.min(1, (rise - tms) / (5 * 3600000));
+        return -0.18 * Math.min(1, (tms - set) / (5 * 3600000));
       };
       const elevToY = function (elev) {
         // elev -0.2 .. 1.0 maps to plot bottom..top
         return padT + (1 - (elev + 0.2) / 1.2) * plotH;
       };
-      const pts = [];
-      for (let i = 0; i <= 48; i++) {
-        const tms = day0 + (i / 48) * dayMs;
-        const elev = elevAt(tms);
-        pts.push({
-          x: padL + (i / 48) * plotW,
-          y: elevToY(elev),
-          tms: tms,
-          elev: elev
-        });
+      function samplePath(fromDay0, elevFn) {
+        const out = [];
+        const steps = 96;
+        for (let i = 0; i <= steps; i++) {
+          const tms = fromDay0 + (i / steps) * dayMs;
+          const elev = elevFn(tms);
+          out.push({
+            x: padL + (i / steps) * plotW,
+            y: elevToY(elev),
+            tms: tms,
+            elev: elev
+          });
+        }
+        return out;
       }
+      let pts = samplePath(day0, elevAt);
       const horizonY = elevToY(0);
       // Position “now” on this civil day; if after midnight next day, use next day0
       let plotNow = now;
@@ -897,24 +905,17 @@
             const u = (tms - pathRise) / (pathSet - pathRise);
             return Math.sin(u * Math.PI);
           }
-          if (tms < pathRise) return -0.12 * Math.min(1, (pathRise - tms) / (4 * 3600000));
-          return -0.12 * Math.min(1, (tms - pathSet) / (4 * 3600000));
+          if (tms < pathRise) return -0.18 * Math.min(1, (pathRise - tms) / (5 * 3600000));
+          return -0.18 * Math.min(1, (tms - pathSet) / (5 * 3600000));
         };
-        pts.length = 0;
-        for (let i = 0; i <= 48; i++) {
-          const tms = pathDay0 + (i / 48) * dayMs;
-          const elev = elevForPath(tms);
-          pts.push({
-            x: padL + (i / 48) * plotW,
-            y: elevToY(elev),
-            tms: tms,
-            elev: elev
-          });
-        }
+        pts = samplePath(pathDay0, elevForPath);
       }
       const curElev = elevForPath(plotNow);
       const curY = elevToY(curElev);
-      const line = smoothLinePath(pts);
+      let line = '';
+      pts.forEach(function (p, i) {
+        line += (i ? ' L' : 'M') + p.x.toFixed(2) + ',' + p.y.toFixed(2);
+      });
       // Day fill between rise–set above horizon
       const riseX = padL + Math.max(0, Math.min(1, (pathRise - pathDay0) / dayMs)) * plotW;
       const setX = padL + Math.max(0, Math.min(1, (pathSet - pathDay0) / dayMs)) * plotW;
@@ -1039,8 +1040,12 @@
         </svg>
       </div>`;
       const fmtMs = (ms) => {
-        try { return new Date(ms).toLocaleTimeString(localeTag(), { hour: 'numeric', minute: '2-digit' }); }
-        catch (e) { return '—'; }
+        if (!Number.isFinite(ms)) return '—';
+        try {
+          const opts = { hour: 'numeric', minute: '2-digit' };
+          if (timeZone) opts.timeZone = timeZone;
+          return new Date(ms).toLocaleTimeString(localeTag(), opts);
+        } catch (e) { return '—'; }
       };
       const rows = [
         [t('weather.firstLight', 'First Light'), fmtMs(firstLight)],
@@ -1090,6 +1095,7 @@
       dailyBarsHtml: dailyBarsHtml,
       hourlyWindow: hourlyWindow,
       localDateKey: localDateKey,
+      wallClockInZoneToUtcMs: wallClockInZoneToUtcMs,
       hourlyLocalDay: hourlyLocalDay,
       smoothLinePath: smoothLinePath,
       buildTempChart: buildTempChart,

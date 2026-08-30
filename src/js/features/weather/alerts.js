@@ -125,15 +125,18 @@
       return pack.alerts[0];
     }
 
-    function applyAlertsToPack(pack, alerts) {
+    function applyAlertsToPack(pack, alerts, meta) {
       if (!pack) return;
-      pack.alerts = Array.isArray(alerts) ? alerts : [];
+      const failed = !!(meta && meta.error);
+      pack.alertsError = failed;
+      pack.alerts = failed ? null : (Array.isArray(alerts) ? alerts : []);
       pack._alertsLoading = false;
       const key = pack.city ? cityKey(pack.city) : null;
       if (key) {
         const cached = cache.get(key);
         if (cached && cached.city && pack.city && sameCity(cached.city, pack.city)) {
           cached.alerts = pack.alerts;
+          cached.alertsError = pack.alertsError;
           cached._alertsLoading = false;
         }
       }
@@ -176,7 +179,7 @@
       var __ocA = getOpenCity(); if (__ocA) __ocA.alerts = pack.alerts;
       var openTitles = captureOpenAlertTitles();
       var existing = getDetailMods().querySelector('.weather-alerts');
-      var html = alertsBlockHtml(pack.alerts);
+      var html = alertsBlockHtml(pack);
       if (!html) {
         if (existing) existing.remove();
         return;
@@ -290,9 +293,10 @@
       if (!pack || !pack.city || pack.error) return;
       if (!isLikelyUs(pack.city)) {
         if (pack.alerts == null) pack.alerts = [];
+        pack.alertsError = false;
         return;
       }
-      if (Array.isArray(pack.alerts)) return;
+      if (Array.isArray(pack.alerts) && !pack.alertsError) return;
       if (pack._alertsLoading) return;
       pack._alertsLoading = true;
       const city = pack.city;
@@ -304,7 +308,7 @@
         patchDetailAlerts(pack);
         scheduleListPaintFromAlerts(pack);
       }).catch(function () {
-        applyAlertsToPack(pack, []);
+        applyAlertsToPack(pack, null, { error: true });
         patchDetailAlerts(pack);
         scheduleListPaintFromAlerts(pack);
       });
@@ -321,7 +325,7 @@
       cache.forEach(function (pack) {
         if (!pack || !pack.city || pack.error || !pack.weather) return;
         if (!isLikelyUs(pack.city)) return;
-        if (Array.isArray(pack.alerts) || pack._alertsLoading) return;
+        if ((Array.isArray(pack.alerts) && !pack.alertsError) || pack._alertsLoading) return;
         pending.push(pack);
       });
       if (!pending.length) return Promise.resolve(0);
@@ -357,7 +361,7 @@
               if (gen !== alertsPrefetchGen) { resolve(finished); return; }
             }
             const pack = pending[idx++];
-            if (!pack || Array.isArray(pack.alerts) || pack._alertsLoading) {
+            if (!pack || (Array.isArray(pack.alerts) && !pack.alertsError) || pack._alertsLoading) {
               oneDone();
               continue;
             }
@@ -371,14 +375,13 @@
                 return;
               }
               applyAlertsToPack(pack, alerts || []);
-              // Yield to UI between cities
               await new Promise(function (r) { window.setTimeout(r, 40); });
             } catch (e) {
               if (gen !== alertsPrefetchGen) {
                 resolve(finished);
                 return;
               }
-              applyAlertsToPack(pack, []);
+              applyAlertsToPack(pack, null, { error: true });
             }
             oneDone();
           }
@@ -423,7 +426,24 @@
       return '<p class="weather-alert-desc">' + escapeHtml(text) + '</p>';
     }
 
-    function alertsBlockHtml(alerts) {
+    function alertsBlockHtml(alertsOrPack) {
+      var alerts = alertsOrPack;
+      var failed = false;
+      if (alertsOrPack && !Array.isArray(alertsOrPack)) {
+        alerts = alertsOrPack.alerts;
+        failed = !!alertsOrPack.alertsError;
+      }
+      if (failed && !(alerts && alerts.length)) {
+        const title = t('weather.alerts', 'Weather Alerts');
+        return (
+          '<div class="weather-alerts weather-alerts--unavailable" role="status">' +
+            '<div class="weather-alerts-label">' + escapeHtml(title) + '</div>' +
+            '<p class="weather-alert-unavailable">' +
+              escapeHtml(t('weather.alertsUnavailable', 'Weather alerts could not be loaded.')) +
+            '</p>' +
+          '</div>'
+        );
+      }
       if (!alerts || !alerts.length) return '';
       const title = t('weather.alerts', 'Weather Alerts');
       const cards = alerts.map(function (a) {

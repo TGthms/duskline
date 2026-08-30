@@ -123,7 +123,14 @@ function applyLanguage(lang) {
    after any DOM change (language swap, modal open) since it always derives
    the label fresh from the stored raw value rather than parsing prior text. */
 function numberLocale() {
-  return currentLang === 'zh' ? 'zh-CN' : currentLang === 'ja' ? 'ja-JP' : currentLang === 'es' ? 'es-ES' : 'en-US';
+  if (window.DUSKLINE_LOCALE_TAGS && window.DUSKLINE_LOCALE_TAGS[currentLang]) {
+    return window.DUSKLINE_LOCALE_TAGS[currentLang];
+  }
+  if (currentLang === 'zh') return 'zh-CN';
+  if (currentLang === 'ja') return 'ja-JP';
+  if (currentLang === 'es') return 'es-ES';
+  if (currentLang && currentLang.indexOf('-') > 0) return currentLang;
+  return currentLang || 'en-US';
 }
 
 function paintUnitSpans() {
@@ -199,16 +206,23 @@ function detectLanguage() {
     if (resolved) candidates.push(resolved);
   } catch (_) { /* ignore */ }
 
+  const codes = window.DUSKLINE_LANG_CODES || SUPPORTED_LANGS;
   for (const raw of candidates) {
     const tag = String(raw || '').toLowerCase().replace(/_/g, '-');
     if (!tag) continue;
-    // Chinese: zh, zh-CN, zh-TW, zh-Hans, etc.
-    if (tag === 'zh' || tag.startsWith('zh-')) return 'zh';
+    if (tag === 'zh-tw' || tag === 'zh-hant' || tag.startsWith('zh-hant') || tag === 'zh-hk' || tag === 'zh-mo') return 'zh-TW';
+    if (tag === 'zh' || tag.startsWith('zh-hans') || tag.startsWith('zh-cn') || tag.startsWith('zh-sg') || tag === 'zh') return 'zh';
+    if (tag.startsWith('zh-')) return 'zh';
+    if (tag === 'pt-pt' || tag.indexOf('pt-pt') === 0) return 'pt-PT';
+    if (tag === 'pt' || tag === 'pt-br' || tag.startsWith('pt-')) return 'pt-BR';
+    const exact = codes.find(function (c) { return String(c).toLowerCase() === tag; });
+    if (exact) return exact;
     if (tag === 'ja' || tag.startsWith('ja-')) return 'ja';
     if (tag === 'es' || tag.startsWith('es-')) return 'es';
     if (tag === 'en' || tag.startsWith('en-')) return 'en';
     const primary = tag.split('-')[0];
-    if (SUPPORTED_LANGS.includes(primary)) return primary;
+    const primaryHit = codes.find(function (c) { return String(c).toLowerCase() === primary; });
+    if (primaryHit) return primaryHit;
   }
   return 'en';
 }
@@ -532,8 +546,8 @@ window.getEffectiveDistUnit = function getEffectiveDistUnit() {
   return currentDistUnit;
 };
 
-/** Debug helper — open console: __usaTravelUnits() */
-window.__usaTravelUnits = function () {
+/** Debug helper — open console: __dusklineUnits() */
+window.__dusklineUnits = function () {
   const d = detectUnits();
   const r = syncUnitGlobals();
   return {
@@ -890,7 +904,7 @@ window.Duskline = Object.assign(window.Duskline || {}, {
   detectUnits: detectUnits,
   resolveUnitsFromPrefs: resolveUnitsFromPrefs,
   dispatchPrefs: dispatchPrefs,
-  debugUnits: window.__usaTravelUnits
+  debugUnits: window.__dusklineUnits
 });
 
 /* ── ACCESSIBILITY PILLS (Animations: full / reduced / off · Cursor Effect) ── */

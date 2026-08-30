@@ -69,6 +69,32 @@
     '21.307,-157.858': { en: 'Honolulu', es: 'Honolulu', zh: '火奴鲁鲁', ja: 'ホノルル' },
     '61.218,-149.900': { en: 'Anchorage', es: 'Anchorage', zh: '安克雷奇', ja: 'アンカレッジ' }
   };
+  Object.assign(CITY_NAMES, {
+    '43.653,-79.383': { en: 'Toronto', es: 'Toronto', zh: '多伦多', ja: 'トロント' },
+    '49.283,-123.121': { en: 'Vancouver', es: 'Vancouver', zh: '温哥华', ja: 'バンクーバー' },
+    '19.433,-99.133': { en: 'Mexico City', es: 'Ciudad de México', zh: '墨西哥城', ja: 'メキシコシティ' },
+    '51.507,-0.128': { en: 'London', es: 'Londres', zh: '伦敦', ja: 'ロンドン' },
+    '48.857,2.352': { en: 'Paris', es: 'París', zh: '巴黎', ja: 'パリ' },
+    '40.417,-3.704': { en: 'Madrid', es: 'Madrid', zh: '马德里', ja: 'マドリード' },
+    '41.903,12.496': { en: 'Rome', es: 'Roma', zh: '罗马', ja: 'ローマ' },
+    '52.520,13.405': { en: 'Berlin', es: 'Berlín', zh: '柏林', ja: 'ベルリン' },
+    '41.008,28.978': { en: 'Istanbul', es: 'Estambul', zh: '伊斯坦布尔', ja: 'イスタンブール' },
+    '35.676,139.650': { en: 'Tokyo', es: 'Tokio', zh: '东京', ja: '東京' },
+    '37.567,126.978': { en: 'Seoul', es: 'Seúl', zh: '首尔', ja: 'ソウル' },
+    '39.904,116.407': { en: 'Beijing', es: 'Pekín', zh: '北京', ja: '北京' },
+    '22.319,114.169': { en: 'Hong Kong', es: 'Hong Kong', zh: '香港', ja: '香港' },
+    '1.352,103.820': { en: 'Singapore', es: 'Singapur', zh: '新加坡', ja: 'シンガポール' },
+    '13.756,100.502': { en: 'Bangkok', es: 'Bangkok', zh: '曼谷', ja: 'バンコク' },
+    '19.076,72.878': { en: 'Mumbai', es: 'Bombay', zh: '孟买', ja: 'ムンバイ' },
+    '28.614,77.209': { en: 'Delhi', es: 'Delhi', zh: '德里', ja: 'デリー' },
+    '-33.869,151.209': { en: 'Sydney', es: 'Sídney', zh: '悉尼', ja: 'シドニー' },
+    '-37.814,144.963': { en: 'Melbourne', es: 'Melbourne', zh: '墨尔本', ja: 'メルボルン' },
+    '-36.851,174.765': { en: 'Auckland', es: 'Auckland', zh: '奥克兰', ja: 'オークランド' },
+    '-23.551,-46.633': { en: 'São Paulo', es: 'São Paulo', zh: '圣保罗', ja: 'サンパウロ' },
+    '-34.604,-58.382': { en: 'Buenos Aires', es: 'Buenos Aires', zh: '布宜诺斯艾利斯', ja: 'ブエノスアイレス' },
+    '30.044,31.236': { en: 'Cairo', es: 'El Cairo', zh: '开罗', ja: 'カイロ' },
+    '-26.204,28.047': { en: 'Johannesburg', es: 'Johannesburgo', zh: '约翰内斯堡', ja: 'ヨハネスブルク' }
+  });
 
   /** Localized US state / region labels for list meta line */
   const ADMIN1_NAMES = {
@@ -190,7 +216,13 @@
     return fallback || key;
   }
   function localeTag() {
-    return lang() === 'zh' ? 'zh-CN' : lang() === 'ja' ? 'ja-JP' : lang() === 'es' ? 'es-ES' : 'en-US';
+    const L = lang();
+    if (window.DUSKLINE_LOCALE_TAGS && window.DUSKLINE_LOCALE_TAGS[L]) return window.DUSKLINE_LOCALE_TAGS[L];
+    if (L === 'zh') return 'zh-CN';
+    if (L === 'ja') return 'ja-JP';
+    if (L === 'es') return 'es-ES';
+    if (L && L.indexOf('-') > 0) return L;
+    return L || 'en-US';
   }
   function useF() {
     if (typeof window.getEffectiveTempUnit === 'function') {
@@ -341,13 +373,96 @@
     return cityKey(a) === cityKey(b);
   }
 
+  function cityTimeZone(pack, city) {
+    return (pack && pack.weather && pack.weather.timezone)
+      || (city && city.tz)
+      || (pack && pack.city && pack.city.tz)
+      || undefined;
+  }
+
+  /** Index of the local calendar day in an Open-Meteo/NWS daily array (past_days=1 puts yesterday at [0]). */
+  function dailyTodayIndex(daily, timeZone) {
+    const times = (daily && daily.time) || [];
+    if (!times.length) return 0;
+    let today = '';
+    try {
+      if (chartsApi && typeof chartsApi.localDateKey === 'function') {
+        today = chartsApi.localDateKey(Date.now(), timeZone);
+      } else {
+        today = new Intl.DateTimeFormat('en-CA', {
+          timeZone: timeZone || undefined,
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        }).format(new Date());
+      }
+    } catch (e) {
+      today = new Date().toISOString().slice(0, 10);
+    }
+    for (let i = 0; i < times.length; i++) {
+      if (String(times[i] || '').slice(0, 10) === today) return i;
+    }
+    for (let i = 0; i < times.length; i++) {
+      if (String(times[i] || '').slice(0, 10) >= today) return i;
+    }
+    return 0;
+  }
+
+  function dailyFieldAt(daily, field, index) {
+    const arr = daily && daily[field];
+    if (!arr || index == null || index < 0) return null;
+    return arr[index] != null ? arr[index] : null;
+  }
+
+  function isBareWallClock(iso) {
+    const s = String(iso || '');
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) && !/[zZ]$/.test(s) && !/[+-]\d{2}:\d{2}$/.test(s);
+  }
+
+  function stampToMs(iso, timeZone) {
+    const s = String(iso || '');
+    if (!s) return NaN;
+    if (isBareWallClock(s) && chartsApi && typeof chartsApi.wallClockInZoneToUtcMs === 'function') {
+      return chartsApi.wallClockInZoneToUtcMs(s, timeZone);
+    }
+    if (isBareWallClock(s)) {
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    }
+    const t = new Date(s).getTime();
+    return Number.isFinite(t) ? t : NaN;
+  }
+
+  function wallHour(iso, timeZone) {
+    const s = String(iso || '');
+    if (isBareWallClock(s)) {
+      const m = s.match(/T(\d{2})/);
+      return m ? parseInt(m[1], 10) : 12;
+    }
+    try {
+      const opts = { hour: 'numeric', hourCycle: 'h23' };
+      if (timeZone) opts.timeZone = timeZone;
+      const parts = new Intl.DateTimeFormat('en-GB', opts).formatToParts(new Date(s));
+      const h = parts.find(function (p) { return p.type === 'hour'; });
+      return h ? parseInt(h.value, 10) % 24 : 12;
+    } catch (e) {
+      try { return new Date(s).getHours(); } catch (e2) { return 12; }
+    }
+  }
+
   function loadFavorites() {
     try {
       const raw = localStorage.getItem(FAV_KEY);
       const arr = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(arr)) return [];
       return arr.filter((c) => c && typeof c.lat === 'number' && typeof c.lon === 'number' && c.name)
-        .map((c) => ({ name: c.name, admin1: c.admin1 || '', lat: c.lat, lon: c.lon, tz: c.tz }));
+        .map((c) => ({
+          name: c.name,
+          admin1: c.admin1 || '',
+          lat: c.lat,
+          lon: c.lon,
+          tz: c.tz,
+          country: c.country || '',
+          country_code: c.country_code || ''
+        }));
     } catch (e) { return []; }
   }
   function saveFavorites(list) {
@@ -361,7 +476,10 @@
     if (list.some((f) => sameCity(f, c))) {
       list = list.filter((f) => !sameCity(f, c));
     } else {
-      list = [{ name: c.name, admin1: c.admin1 || '', lat: c.lat, lon: c.lon, tz: c.tz }, ...list.filter((f) => !sameCity(f, c))];
+      list = [{
+        name: c.name, admin1: c.admin1 || '', lat: c.lat, lon: c.lon, tz: c.tz,
+        country: c.country || '', country_code: c.country_code || ''
+      }, ...list.filter((f) => !sameCity(f, c))];
     }
     saveFavorites(list);
     return list;
@@ -376,6 +494,7 @@
       const locatedAt = (typeof c.locatedAt === 'number' && c.locatedAt > 0) ? c.locatedAt : 0;
       return {
         name: c.name, admin1: c.admin1 || '', lat: c.lat, lon: c.lon, tz: c.tz,
+        country: c.country || '', country_code: c.country_code || '',
         isMyLocation: true, locatedAt: locatedAt
       };
     } catch (e) { return null; }
@@ -399,6 +518,7 @@
     if (!locatedAt) locatedAt = Date.now();
     myLocationCity = {
       name: c.name, admin1: c.admin1 || '', lat: c.lat, lon: c.lon, tz: c.tz,
+      country: c.country || '', country_code: c.country_code || '',
       isMyLocation: true, locatedAt: locatedAt
     };
     try { localStorage.setItem(MYLOC_KEY, JSON.stringify(myLocationCity)); } catch (e) {}
@@ -413,7 +533,11 @@
       const name = data.city || data.locality || data.principalSubdivision || data.countryName;
       if (name) {
         const admin = [data.principalSubdivision, data.countryName].filter(Boolean).join(', ');
-        return { name, admin1: admin, lat, lon };
+        return {
+          name, admin1: admin, lat, lon,
+          country: data.countryName || '',
+          country_code: data.countryCode || ''
+        };
       }
     } catch (e) { /* fall through */ }
     // Nominatim fallback
@@ -424,7 +548,11 @@
       const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county || data.name;
       if (name) {
         const admin = [a.state, a.country].filter(Boolean).join(', ');
-        return { name, admin1: admin, lat, lon };
+        return {
+          name, admin1: admin, lat, lon,
+          country: a.country || '',
+          country_code: a.country_code || ''
+        };
       }
     } catch (e) { /* fall through */ }
     return {
@@ -559,12 +687,11 @@
     if (u === 'kPa') return (hpa / 10).toFixed(1) + ' kPa';
     return Math.round(hpa) + ' hPa';
   }
-  function formatClock(iso) {
+  function formatClock(iso, timeZone) {
     if (!iso) return '—';
     const s = String(iso);
-    // Open-Meteo wall-clock local (no Z / offset) — format without shifting TZ
     const bare = s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
-    if (bare && !/[zZ]$/.test(s) && !/[+-]\d{2}:\d{2}$/.test(s)) {
+    if (bare && isBareWallClock(s)) {
       try {
         const d = new Date(2000, 0, 1, Number(bare[2]), Number(bare[3]));
         return d.toLocaleTimeString(localeTag(), { hour: 'numeric', minute: '2-digit' });
@@ -572,22 +699,23 @@
         return bare[2] + ':' + bare[3];
       }
     }
-    try { return new Date(iso).toLocaleTimeString(localeTag(), { hour: 'numeric', minute: '2-digit' }); }
-    catch (e) { return '—'; }
+    try {
+      const opts = { hour: 'numeric', minute: '2-digit' };
+      const tz = timeZone || cityTimeZone(openCity, openCity && openCity.city);
+      if (tz) opts.timeZone = tz;
+      return new Date(iso).toLocaleTimeString(localeTag(), opts);
+    } catch (e) { return '—'; }
   }
   /** Sparse chart axis labels — Apple Weather style (00 / 06 / 12 / 18), not full “9:00 AM”. */
-  function formatChartAxisHour(iso) {
+  function formatChartAxisHour(iso, timeZone) {
     if (!iso) return '';
     const s = String(iso);
-    const bare = s.match(/T(\d{2}):/);
-    if (bare && !/[zZ]$/.test(s) && !/[+-]\d{2}:\d{2}$/.test(s)) {
-      return bare[1];
+    if (isBareWallClock(s)) {
+      const bare = s.match(/T(\d{2}):/);
+      return bare ? bare[1] : '';
     }
     try {
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return '';
-      const h = d.getHours();
-      return String(h).padStart(2, '0');
+      return String(wallHour(s, timeZone)).padStart(2, '0');
     } catch (e) {
       return '';
     }
@@ -890,8 +1018,9 @@
     const cur = pack.weather.current;
     const daily = pack.weather.daily || {};
     const code = cur.weather_code;
-    const hi = daily.temperature_2m_max && daily.temperature_2m_max[0];
-    const lo = daily.temperature_2m_min && daily.temperature_2m_min[0];
+    const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
+    const hi = dailyFieldAt(daily, 'temperature_2m_max', dayIdx);
+    const lo = dailyFieldAt(daily, 'temperature_2m_min', dayIdx);
     let localTime = '';
     try {
       localTime = new Date().toLocaleTimeString(localeTag(), {
@@ -903,10 +1032,9 @@
     const night = hour < 6 || hour >= 20;
     const seed = Math.abs(Math.round((c.lat || 0) * 100) + Math.round((c.lon || 0) * 10));
 
-    const row = document.createElement('div');
+    const row = document.createElement('button');
+    row.type = 'button';
     row.className = 'weather-row';
-    row.setAttribute('role', 'button');
-    row.tabIndex = 0;
     applySky(row, code, cur.time, {
       hour, seed, isRow: true,
       noOrnaments: true,
@@ -944,32 +1072,36 @@
     const star = document.createElement('button');
     star.type = 'button';
     star.className = 'weather-row-star';
-    star.setAttribute('aria-pressed', fav ? 'true' : 'false');
-    star.setAttribute('aria-label', fav ? t('weather.unfavorite', 'Remove favorite') : t('weather.favorite', 'Favorite'));
-    star.innerHTML = starIcon(fav);
-    star.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleFavorite(c);
-      refreshListsFromCache();
-      if (openCity && openCity.city && sameCity(openCity.city, c)) syncDetailFav(c);
-    });
+    if (c.isMyLocation) {
+      star.setAttribute('aria-pressed', 'true');
+      star.setAttribute('aria-label', t('weather.clearLocation', 'Remove my location'));
+      star.title = t('weather.clearLocation', 'Remove my location');
+      star.innerHTML = starIcon(true);
+      star.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        saveMyLocation(null);
+        refreshListsFromCache();
+      });
+    } else {
+      star.setAttribute('aria-pressed', fav ? 'true' : 'false');
+      star.setAttribute('aria-label', fav ? t('weather.unfavorite', 'Remove favorite') : t('weather.favorite', 'Favorite'));
+      star.innerHTML = starIcon(fav);
+      star.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFavorite(c);
+        refreshListsFromCache();
+        if (openCity && openCity.city && sameCity(openCity.city, c)) syncDetailFav(c);
+      });
+    }
 
     const cityLab = displayCityName(c) || c.name || '';
     const tempLab = fmtTemp(cur.temperature_2m);
     row.setAttribute('aria-label', cityLab + (tempLab ? ', ' + tempLab : '') + (stampLine ? '. ' + stampLine : ''));
 
     const open = () => openDetail(pack);
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('.weather-row-star')) return;
-      open();
-    });
-    row.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        open();
-      }
-    });
+    row.addEventListener('click', open);
 
     if (c.isMyLocation) {
       row.classList.add('weather-row--myloc');
@@ -979,8 +1111,9 @@
 
     row.appendChild(main);
     row.appendChild(temps);
-    row.appendChild(star);
+    li.classList.add('weather-row-cluster');
     li.appendChild(row);
+    li.appendChild(star);
     return li;
   }
 
@@ -994,7 +1127,7 @@
         const heading = document.createElement('li');
         heading.className = 'weather-region-heading';
         heading.setAttribute('role', 'presentation');
-        heading.textContent = nextRegion;
+        heading.textContent = t('region.' + nextRegion, nextRegion);
         ul.appendChild(heading);
         region = nextRegion;
       }
@@ -1227,7 +1360,7 @@
         cache.forEach(function (p) { if (p && p.weather && !p.error) ok++; });
         if (ok) showError('');
         else if (!quiet) {
-          showError(t('weather.error', 'Could not load weather data. Pull to refresh or try again shortly.'));
+          showError(t('weather.error', 'Could not load weather data.'));
         }
       } catch (e) {
         if (e && e.name === 'AbortError') {
@@ -1410,11 +1543,12 @@
     }
 
     const night = localHourForPack(pack) < 6 || localHourForPack(pack) >= 20;
+    const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
     detailHero.innerHTML = `
       <h2>${escapeHtml(displayCityName(c))}</h2>
       <div class="weather-detail-temp">${fmtTemp(cur.temperature_2m)}</div>
       <div class="weather-detail-cond">${condIcon(cur.weather_code, night)} ${escapeHtml(condLabel(cur.weather_code))}</div>
-      <div class="weather-detail-hl">${t('weather.high', 'H')}:${fmtTemp(daily.temperature_2m_max && daily.temperature_2m_max[0])}  ${t('weather.low', 'L')}:${fmtTemp(daily.temperature_2m_min && daily.temperature_2m_min[0])}</div>
+      <div class="weather-detail-hl">${t('weather.high', 'H')}:${fmtTemp(dailyFieldAt(daily, 'temperature_2m_max', dayIdx))}  ${t('weather.low', 'L')}:${fmtTemp(dailyFieldAt(daily, 'temperature_2m_min', dayIdx))}</div>
       <div class="weather-detail-updated" id="weatherDetailUpdated"></div>`;
     {
       const detUp = $('weatherDetailUpdated');
@@ -1436,7 +1570,7 @@
     const aqi = pack.air && pack.air.current && pack.air.current.us_aqi;
     const mods = [];
     {
-      const alertHtml = alertsApi.alertsBlockHtml(pack.alerts);
+      const alertHtml = alertsApi.alertsBlockHtml(pack);
       if (alertHtml) mods.push(alertHtml);
     }
     mods.push(modHtml(
@@ -1478,7 +1612,7 @@
       ));
     }
     {
-      const uvv = daily.uv_index_max ? daily.uv_index_max[0] : null;
+      const uvv = dailyFieldAt(daily, 'uv_index_max', dayIdx);
       let uvLab = '';
       if (uvv != null) {
         if (uvv >= 11) uvLab = lang() === 'zh' ? '极高' : lang() === 'ja' ? '極端' : lang() === 'es' ? 'Extremo' : 'Extreme';
@@ -1501,15 +1635,17 @@
       mods.push(modHtml('vis', t('weather.visibility', 'Visibility'), fmtVis(cur.visibility), visSub, true));
     }
     {
-      // Simple pressure trend from hourly if available
+      // Simple pressure trend from hourly if available (city-local timestamps)
       let trend = '';
       try {
         const ht = hourly.time || [];
         const hp = hourly.surface_pressure || [];
+        const tz = cityTimeZone(pack, c);
         const now = Date.now();
         let idx = 0;
         for (let i = 0; i < ht.length; i++) {
-          if (new Date(ht[i]).getTime() >= now - 3600000) { idx = i; break; }
+          const ms = stampToMs(ht[i], tz);
+          if (Number.isFinite(ms) && ms >= now - 3600000) { idx = i; break; }
         }
         if (idx >= 3 && hp[idx] != null && hp[idx - 3] != null) {
           const d = hp[idx] - hp[idx - 3];
@@ -1521,29 +1657,58 @@
       mods.push(modHtml('pressure', t('weather.pressure', 'Pressure'), fmtPress(cur.surface_pressure), trend, true));
     }
     {
-      const dayPrecip = daily.precipitation_sum && daily.precipitation_sum[0];
+      const dayPrecip = dailyFieldAt(daily, 'precipitation_sum', dayIdx);
       const sub = dayPrecip != null
         ? (lang() === 'zh' ? '今日累计 ' : lang() === 'ja' ? '今日 ' : lang() === 'es' ? 'Hoy ' : 'Today ') + fmtPrecip(dayPrecip)
         : '';
       mods.push(modHtml('precip', t('weather.precip', 'Precipitation'), fmtPrecip(cur.precipitation), sub, true));
     }
 
-    // Hourly strip
+    const sr = dailyFieldAt(daily, 'sunrise', dayIdx);
+    const ss = dailyFieldAt(daily, 'sunset', dayIdx);
+    const sunTz = (pack.weather && pack.weather.timezone) || (c && c.tz) || undefined;
+    const sunViz = chartsApi.sunArcSvg(sr, ss, true, sunTz);
+    const sunTitle = (function () {
+      try {
+        if (chartsApi && typeof chartsApi.sunPathGeometry === 'function') {
+          const g = chartsApi.sunPathGeometry(sr, ss, 100, 40, 0, 0, 0, 0, sunTz);
+          if (g && g.isDay) return t('weather.sunset', 'Sunset');
+        }
+      } catch (eSun) { /* fall through */ }
+      return t('weather.sunrise', 'Sunrise');
+    })();
+    mods.push(modHtml('sun', sunTitle, '', sunViz, true, true));
+
+    // Hourly strip — Open-Meteo stamps are city wall-clock; do not Date.parse as the viewer zone.
     let hourlyHtml = '<div class="weather-hourly">';
     const times = hourly.time || [];
-    const now = Date.now();
+    const stripTz = cityTimeZone(pack, c);
+    const nowMs = Date.now();
     let start = 0;
     for (let i = 0; i < times.length; i++) {
-      if (new Date(times[i]).getTime() >= now - 3600000) { start = i; break; }
+      const ms = stampToMs(times[i], stripTz);
+      if (Number.isFinite(ms) && ms >= nowMs - 3600000) { start = i; break; }
     }
     for (let i = start; i < Math.min(start + 24, times.length); i++) {
       let lab = '';
-      try { lab = new Date(times[i]).toLocaleTimeString(localeTag(), { hour: 'numeric' }); } catch (e) { lab = ''; }
+      if (isBareWallClock(times[i])) {
+        try {
+          const h24 = wallHour(times[i], stripTz);
+          const d = new Date(2000, 0, 1, h24, 0);
+          lab = d.toLocaleTimeString(localeTag(), { hour: 'numeric' });
+        } catch (e) { lab = ''; }
+      } else {
+        try {
+          const opts = { hour: 'numeric' };
+          if (stripTz) opts.timeZone = stripTz;
+          lab = new Date(times[i]).toLocaleTimeString(localeTag(), opts);
+        } catch (e) { lab = ''; }
+      }
       const code = hourly.weather_code && hourly.weather_code[i];
-      const h = (() => { try { return new Date(times[i]).getHours(); } catch (e) { return 12; } })();
+      const h = wallHour(times[i], stripTz);
       const pop = hourly.precipitation_probability && hourly.precipitation_probability[i];
       hourlyHtml += `<div class="weather-hourly-item">
-        <div>${escapeHtml(i === start ? (lang() === 'zh' ? '现在' : lang() === 'ja' ? '現在' : lang() === 'es' ? 'Ahora' : 'Now') : lab)}</div>
+        <div>${escapeHtml(i === start ? t('weather.now', 'Now') : lab)}</div>
         <div class="ic">${condIcon(code || 0, h < 6 || h >= 20)}</div>
         <div class="t">${fmtTemp(hourly.temperature_2m && hourly.temperature_2m[i])}</div>
         ${pop != null ? `<div class="p">${Math.round(pop)}%</div>` : ''}
@@ -1558,27 +1723,11 @@
       hourly: hourly
     })}</div>`);
 
-    const sr = daily.sunrise && daily.sunrise[0];
-    const ss = daily.sunset && daily.sunset[0];
-    const sunTz = (pack.weather && pack.weather.timezone) || (c && c.tz) || undefined;
-    const sunViz = chartsApi.sunArcSvg(sr, ss, true, sunTz);
-    const sunTitle = (function () {
-      // Use city-local wall clock for day/night (same as sheet path)
-      try {
-        if (chartsApi && typeof chartsApi.sunPathGeometry === 'function') {
-          const g = chartsApi.sunPathGeometry(sr, ss, 100, 40, 0, 0, 0, 0, sunTz);
-          if (g && g.isDay) return t('weather.sunset', 'Sunset');
-        }
-      } catch (eSun) { /* fall through */ }
-      return t('weather.sunrise', 'Sunrise');
-    })();
-    mods.push(modHtml('sun', sunTitle, '', sunViz, true, true));
-
     // Apple-style location attribution
-    const placeBits = [displayCityName(c), displayAdmin1(c), c.country || (c.admin1 ? '' : '')].filter(Boolean);
-    // Majors are US — append country label when missing
-    if (!c.country && MAJOR.some((m) => sameCity(m, c))) {
-      placeBits.push(countryLabelUS());
+    const placeBits = [displayCityName(c), displayAdmin1(c), c.country || ''].filter(Boolean);
+    if (!c.country) {
+      const catalog = MAJOR.find((m) => sameCity(m, c));
+      if (catalog && catalog.country) placeBits.push(catalog.country);
     }
     const placeStr = placeBits.filter((x, i, a) => a.indexOf(x) === i).join(', ');
     const forLine = t('weather.forLocation', 'Weather for {place}').replace('{place}', placeStr);
@@ -1932,7 +2081,7 @@
       });
       body += '</div>';
     } else if (kind === 'uv') {
-      const uv = daily.uv_index_max ? daily.uv_index_max[0] : null;
+      const uv = dailyFieldAt(daily, 'uv_index_max', dailyTodayIndex(daily, chartTz));
       if (hourly.uv_index) {
         body += chartsApi.buildTempChart(hourly, 'uv_index', (v) => String(Math.round(v * 10) / 10), chartTz);
       } else {
@@ -1965,8 +2114,9 @@
       });
       body += '</div>';
     } else if (kind === 'sun') {
-      const sr = daily.sunrise && daily.sunrise[0];
-      const ss = daily.sunset && daily.sunset[0];
+      const sunIdx = dailyTodayIndex(daily, chartTz);
+      const sr = dailyFieldAt(daily, 'sunrise', sunIdx);
+      const ss = dailyFieldAt(daily, 'sunset', sunIdx);
       body += chartsApi.buildSunDaySheet(sr, ss, chartTz);
     } else if (kind === 'vis') {
       body += `<div class="wx-sheet-hero">
@@ -2467,12 +2617,33 @@
   }
   window.closeWeatherDetail = closeDetail;
 
+  let suggestIndex = -1;
   function closeSuggest() {
     if (!suggestEl || !searchEl) return;
     suggestEl.classList.remove('open');
     suggestEl.hidden = true;
     suggestEl.innerHTML = '';
     searchEl.setAttribute('aria-expanded', 'false');
+    searchEl.removeAttribute('aria-activedescendant');
+    suggestIndex = -1;
+  }
+  function suggestOptions() {
+    return suggestEl ? Array.prototype.slice.call(suggestEl.querySelectorAll('button[role="option"]')) : [];
+  }
+  function highlightSuggest(next) {
+    const opts = suggestOptions();
+    if (!opts.length) return;
+    suggestIndex = (next + opts.length) % opts.length;
+    opts.forEach(function (btn, i) {
+      const on = i === suggestIndex;
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.classList.toggle('is-active', on);
+      if (on) {
+        if (!btn.id) btn.id = 'wx-suggest-' + i;
+        searchEl.setAttribute('aria-activedescendant', btn.id);
+        try { btn.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+      }
+    });
   }
   function openSuggest() {
     if (!suggestEl || !searchEl) return;
@@ -2505,6 +2676,8 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.setAttribute('role', 'option');
+        btn.setAttribute('aria-selected', 'false');
+        btn.id = 'wx-suggest-' + suggestEl.children.length;
         const admin = [r.admin1, r.country].filter(Boolean).join(', ');
         btn.innerHTML = `<div class="s-name">${escapeHtml(r.name)}</div><div class="s-meta">${escapeHtml(admin)}</div>`;
         btn.addEventListener('click', async () => {
@@ -2515,7 +2688,9 @@
             admin1: r.admin1 || r.country || '',
             lat: r.latitude,
             lon: r.longitude,
-            tz: r.timezone
+            tz: r.timezone,
+            country: r.country || '',
+            country_code: r.country_code || ''
           };
           city.names[L] = r.name;
           city.names.en = r.name;
@@ -2715,7 +2890,7 @@
   if (locateBtn) {
     locateBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
-        showError(t('weather.error', 'Could not load weather data.'));
+        showError(t('weather.geoUnsupported', 'This browser does not support location.'));
         return;
       }
       locateBtn.disabled = true;
@@ -2733,6 +2908,8 @@
             admin1: place.admin1 || '',
             lat, lon,
             tz: undefined,
+            country: place.country || '',
+            country_code: place.country_code || '',
             isMyLocation: true,
             locatedAt: Date.now()
           };
@@ -2751,11 +2928,17 @@
           locateBtn.removeAttribute('aria-busy');
           locateBtn.setAttribute('title', prevTitle || t('weather.useLocation', 'Use my location'));
         }
-      }, () => {
+      }, (err) => {
         locateBtn.disabled = false;
         locateBtn.removeAttribute('aria-busy');
         locateBtn.setAttribute('title', prevTitle || t('weather.useLocation', 'Use my location'));
-        showError(t('weather.error', 'Could not load weather data.'));
+        const code = err && err.code;
+        const msg = code === 1
+          ? t('weather.geoDenied', 'Location permission was denied.')
+          : code === 3
+            ? t('weather.geoTimeout', 'Location request timed out.')
+            : t('weather.error', 'Could not load weather data.');
+        showError(msg);
       }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
     });
   }
@@ -2774,6 +2957,24 @@
       if (e.key === 'Escape') {
         closeSuggest();
         searchEl.blur();
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlightSuggest(suggestIndex + 1);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightSuggest(suggestIndex <= 0 ? suggestOptions().length - 1 : suggestIndex - 1);
+        return;
+      }
+      if (e.key === 'Enter') {
+        const opts = suggestOptions();
+        if (suggestIndex >= 0 && opts[suggestIndex]) {
+          e.preventDefault();
+          opts[suggestIndex].click();
+        }
       }
     });
   }
@@ -2792,9 +2993,33 @@
     closeSuggest();
   });
 
+  function focusables(root) {
+    if (!root) return [];
+    return Array.prototype.filter.call(
+      root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+      function (el) { return !el.disabled && el.offsetParent !== null && !el.hidden; }
+    );
+  }
+  function trapTab(container, e) {
+    const list = focusables(container);
+    if (list.length < 2) return;
+    const first = list[0];
+    const last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      if (isSheetOpen() && sheetEl) trapTab(sheetEl, e);
+      else if (isDetailVisible() && detailEl) trapTab(detailEl, e);
+      return;
+    }
     if (e.key !== 'Escape') return;
-    // Dismiss overlays in order: suggest → sheet → detail
     if (suggestEl && !suggestEl.hidden && suggestEl.classList.contains('open')) {
       closeSuggest();
       e.preventDefault();

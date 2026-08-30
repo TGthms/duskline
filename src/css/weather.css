@@ -1,4 +1,4 @@
-/* USA Travel Guide — weather list/toolbar (early shell) */
+/* Duskline — weather list/toolbar (early shell) */
 /* ── Weather (Apple-inspired, project tokens) ── */
 .weather-page { max-width: var(--content-max); margin: 0 auto; }
 .weather-toolbar {

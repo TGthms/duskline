@@ -1,4 +1,4 @@
-/* USA Travel Guide — weather redesign, sky FX, detail, sheets */
+/* Duskline — weather redesign, sky FX, detail, sheets */
 /* ═══ Weather app redesign (Apple-inspired) ═══ */
 body.page-tools .weather-root.tools-page {
   max-width: min(720px, 100%);
@@ -13,7 +13,7 @@ body.page-tools .weather-root.tools-page {
   gap: 12px;
   margin-bottom: 10px;
   position: relative;
-  z-index: 5;
+  z-index: 30;
 }
 .weather-toolbar-actions {
   display: flex;
@@ -26,6 +26,7 @@ body.page-tools .weather-root.tools-page {
   position: relative;
   display: block;
   width: 100%;
+  z-index: 2;
 }
 .weather-search {
   width: 100%;
@@ -56,6 +57,7 @@ body.page-tools .weather-root.tools-page {
   font-size: 14px; line-height: 1; display: none; align-items: center; justify-content: center;
 }
 .weather-search-clear.show { display: inline-flex; }
+.weather-search::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 .weather-suggest {
   position: absolute; left: 0; right: 0; top: calc(100% + 6px);
   margin: 0; padding: 6px 0; list-style: none;
@@ -73,6 +75,7 @@ body.page-tools .weather-root.tools-page {
   border: 0; background: transparent; color: rgba(255,255,255,.92);
   padding: 12px 16px; font: inherit; cursor: pointer;
 }
+.weather-suggest button.is-active,
 .weather-suggest button:hover,
 .weather-suggest button:focus-visible {
   background: rgba(255,255,255,.1); outline: none;
@@ -122,9 +125,13 @@ body.page-tools .weather-root.tools-page {
   display: flex; flex-direction: column; gap: 12px;
   list-style: none; margin: 0; padding: 0;
 }
+.weather-list > li,
+.weather-row-cluster {
+  position: relative;
+}
 .weather-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   gap: 8px 12px;
   align-items: center;
   padding: 16px 18px;
@@ -142,6 +149,7 @@ body.page-tools .weather-root.tools-page {
   transition: transform .18s ease, box-shadow .18s ease;
   height: 132px;
   box-sizing: border-box;
+  padding-inline-end: 58px;
 }
 .weather-row::after {
   content: '';
@@ -189,9 +197,11 @@ html[data-motion-effective="off"] .weather-row:active { transform: none; }
   color: rgba(255, 200, 160, 0.88);
 }
 .weather-row-star {
-  grid-column: 3;
-  grid-row: 1 / span 2;
-  align-self: center;
+  position: absolute;
+  inset-inline-end: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
   width: 40px; height: 40px;
   border: 0; border-radius: 50%;
   background: rgba(0,0,0,.15);
@@ -486,9 +496,9 @@ html[data-motion-effective="off"] .weather-detail-sky .wx-layer {
 }
 .weather-mod {
   border: 1px solid rgba(255,255,255,.14);
-  background: rgba(20, 28, 44, 0.42);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  background: rgba(14, 26, 44, 0.58);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
   border-radius: 18px;
   padding: 12px 14px 14px;
   color: #fff;

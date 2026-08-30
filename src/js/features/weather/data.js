@@ -87,23 +87,33 @@
       return Math.round(Number(n) * 10000) / 10000;
     }
 
+    /**
+     * NWS coverage: US states + DC + named territories. Country/country_code wins.
+     * Never treat “in the featured catalog” as US — that list is global.
+     * Without a country, do not guess via a CONUS bbox (Toronto/Vancouver sit inside it).
+     */
+    function countryLooksUs(raw) {
+      const s = String(raw || '').trim();
+      if (!s) return false;
+      if (/^(us|usa|pr|gu|vi|as|mp)$/i.test(s)) return true;
+      if (/^u\.s\.a?\.?$/i.test(s)) return true;
+      if (/united states/i.test(s)) return true;
+      return false;
+    }
+
     function isLikelyUs(c) {
       if (!c || c.lat == null || c.lon == null) return false;
-      if (c.country && /united states|^usa$|^us$|u\.s\./i.test(String(c.country))) return true;
+      const direct = c.country_code || c.country;
+      if (direct) return countryLooksUs(direct);
       try {
-        if (MAJOR.some(function (m) { return sameCity(m, c); })) return true;
+        const hit = MAJOR.find(function (m) { return sameCity(m, c); });
+        if (hit && (hit.country_code || hit.country)) {
+          return countryLooksUs(hit.country_code || hit.country);
+        }
       } catch (e) {}
-      const lat = Number(c.lat);
-      const lon = Number(c.lon);
-      if (!(lat === lat) || !(lon === lon)) return false;
-      // Contiguous US
-      if (lat >= 24.4 && lat <= 49.5 && lon >= -125.0 && lon <= -66.8) return true;
-      // Alaska
-      if (lat >= 51 && lat <= 72 && lon >= -170 && lon <= -129) return true;
-      // Hawaii
-      if (lat >= 18.8 && lat <= 22.4 && lon >= -160.5 && lon <= -154.7) return true;
-      // Puerto Rico / USVI (rough)
-      if (lat >= 17.6 && lat <= 18.6 && lon >= -67.5 && lon <= -64.5) return true;
+      const admin = String(c.admin1 || '');
+      if (/canada/i.test(admin) || /mexico/i.test(admin)) return false;
+      // No country: Open-Meteo only. Locate/search persist country before loadCity.
       return false;
     }
 
@@ -296,13 +306,18 @@
       };
     }
 
-    async function nwsFetchJson(url, signal) {
+    async function nwsFetchJson(url, signal, retry) {
       const wrap = withTimeoutSignal(signal, FETCH_MS);
       try {
         const res = await fetch(url, {
           signal: wrap.signal,
           headers: { 'Accept': 'application/geo+json' }
         });
+        if (res.status === 429) {
+          const err = new Error('NWS 429');
+          err.name = 'RateLimitError';
+          throw err;
+        }
         if (res.status === 403) {
           const err = new Error('NWS 403');
           err.name = 'NwsForbidden';
@@ -315,6 +330,15 @@
         }
         if (!res.ok) throw new Error('NWS HTTP ' + res.status);
         return await res.json();
+      } catch (e) {
+        if (e && e.name === 'AbortError') throw e;
+        if (!retry && e && e.name === 'RateLimitError') {
+          wrap.cancel();
+          await new Promise(function (r) { window.setTimeout(r, 900); });
+          if (signal && signal.aborted) throw e;
+          return nwsFetchJson(url, signal, true);
+        }
+        throw e;
       } finally {
         wrap.cancel();
       }
@@ -421,10 +445,27 @@
 
         const d = pack.weather.daily || {};
         const od = om.weather.daily || {};
-        if (!d.sunrise && od.sunrise) d.sunrise = od.sunrise;
-        if (!d.sunset && od.sunset) d.sunset = od.sunset;
-        if (!d.uv_index_max && od.uv_index_max) d.uv_index_max = od.uv_index_max;
-        if (!d.precipitation_sum && od.precipitation_sum) d.precipitation_sum = od.precipitation_sum;
+        function mergeDailyByDate(field) {
+          if (!od[field] || !od.time) return;
+          const byDay = {};
+          for (let i = 0; i < od.time.length; i++) {
+            byDay[String(od.time[i] || '').slice(0, 10)] = od[field][i];
+          }
+          if (d.time && d.time.length) {
+            if (!d[field]) d[field] = [];
+            d.time.forEach(function (t, i) {
+              if (d[field][i] == null) d[field][i] = byDay[String(t || '').slice(0, 10)];
+            });
+          } else if (!d[field]) {
+            d[field] = od[field];
+            if (!d.time) d.time = od.time;
+          }
+        }
+        mergeDailyByDate('sunrise');
+        mergeDailyByDate('sunset');
+        mergeDailyByDate('uv_index_max');
+        mergeDailyByDate('precipitation_sum');
+        mergeDailyByDate('precipitation_probability_max');
         pack.weather.daily = d;
 
         const h = pack.weather.hourly || {};
@@ -497,17 +538,14 @@
 
       let pack = null;
       if (isLikelyUs(c)) {
-        // Start both providers together. NWS remains authoritative for the
-        // U.S. forecast/alert path; Open-Meteo supplies enrichment and air data.
+        // Forecast only here. Alerts load on detail / a later prefetch so list
+        // boot does not fire N× /alerts/active alongside NWS grid fetches.
         const results = await Promise.all([
           loadNwsCity(c, signal).catch(function (e) {
             if (e && e.name === 'AbortError') throw e;
             return null;
           }),
-          loadOpenMeteoCity(c, signal),
-          Promise.resolve().then(function () {
-            return loadNwsAlerts(roundCoord(c.lat), roundCoord(c.lon), null);
-          }).catch(function () { return []; })
+          loadOpenMeteoCity(c, signal)
         ]);
         const nws = results[0];
         const om = results[1];
@@ -516,8 +554,8 @@
         } else {
           pack = om;
         }
-        if (pack && pack.weather && !pack.error) {
-          pack.alerts = Array.isArray(results[2]) ? results[2] : [];
+        if (pack && pack.weather && !pack.error && pack.alerts === undefined) {
+          pack.alerts = null;
           pack._alertsLoading = false;
         }
       } else {
@@ -619,21 +657,15 @@
         }
       }
 
-      const usQueue = usIdx.slice();
-      await Promise.all([nwsWorker(usQueue), nwsWorker(usQueue), nwsWorker(usQueue)]);
-
-      const needOm = [];
-      for (let i = 0; i < cities.length; i++) {
-        if (!out[i] || out[i].error || !out[i].weather) needOm.push(i);
-      }
-      const omCities = needOm.map(function (i) { return cities[i]; });
-      if (omCities.length && !(signal && signal.aborted)) {
+      async function fillOm(indices) {
+        if (!indices.length || (signal && signal.aborted)) return;
+        const omCities = indices.map(function (i) { return cities[i]; });
         const CHUNK = 20;
         try {
           for (let start = 0; start < omCities.length; start += CHUNK) {
             if (signal && signal.aborted) break;
             const slice = omCities.slice(start, start + CHUNK);
-            const sliceIdx = needOm.slice(start, start + CHUNK);
+            const sliceIdx = indices.slice(start, start + CHUNK);
             let packs;
             try {
               packs = await loadCityBatchOm(slice, signal);
@@ -660,8 +692,8 @@
           }
         } catch (e) {
           if (e && e.name === 'AbortError') throw e;
-          for (let k = 0; k < needOm.length; k++) {
-            const idx = needOm[k];
+          for (let k = 0; k < indices.length; k++) {
+            const idx = indices[k];
             if (out[idx] && out[idx].weather) continue;
             out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
             cache.set(cityKey(cities[idx]), out[idx]);
@@ -670,6 +702,22 @@
           }
         }
       }
+
+      const omFirst = [];
+      for (let i = 0; i < cities.length; i++) {
+        if (!isLikelyUs(cities[i])) omFirst.push(i);
+      }
+      const usQueue = usIdx.slice();
+      await Promise.all([
+        Promise.all([nwsWorker(usQueue), nwsWorker(usQueue), nwsWorker(usQueue)]),
+        fillOm(omFirst)
+      ]);
+
+      const needOm = [];
+      for (let i = 0; i < cities.length; i++) {
+        if (!out[i] || out[i].error || !out[i].weather) needOm.push(i);
+      }
+      await fillOm(needOm);
 
       for (let i = 0; i < total; i++) {
         if (!out[i]) {

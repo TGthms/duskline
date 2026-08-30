@@ -1,4 +1,4 @@
-/* USA Travel Guide — tokens, themes, base, typography */
+/* Duskline — tokens, themes, base, typography */
 /* ═══════════════════════════════════════════
    TOKENS & BASE SETTINGS (THEME FRAMEWORK)
    Editorial travel-magazine system: each theme owns
@@ -300,6 +300,18 @@ html[data-theme="elegant"] body::before {
   body::before { display: none; }
 }
 html[data-mobile-lite="true"] body::before { display: none; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* Skip link — fully removed from the visual layout until keyboard focus.
    Uses the classic clip technique (not off-screen transform), so it never

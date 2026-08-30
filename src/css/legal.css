@@ -1,5 +1,15 @@
-/* USA Travel Guide — privacy / terms reading layout */
+/* Duskline — privacy / terms reading layout */
 /* ═══ LEGAL PAGES (Privacy / Terms) — Apple-like clean reading layout ═══ */
+.legal-english-note {
+  margin: 0 0 1.1rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+html[dir="rtl"] .legal-page p:not(.legal-intro):not(.legal-english-note):not(.legal-back):not(.legal-updated) {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
 body.page-legal {
   min-height: 100dvh;
   display: flex;

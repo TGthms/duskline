@@ -30,3 +30,50 @@ test('renders mocked weather and opens detail', async ({ page }) => {
   await page.locator('#weatherDetailBack').click();
   await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/);
 });
+
+test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#dusklineLanguage').selectOption('pt-BR');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
+  await page.locator('#dusklineLanguage').selectOption('zh-TW');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+});
+
+test('privacy page loads and can switch language chrome', async ({ page }) => {
+  await page.goto('/privacy.html');
+  await expect(page.locator('[data-legal="title"]')).toBeVisible();
+  await page.locator('#dusklineLegalLanguage').selectOption('fr');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+  await expect(page.locator('[data-legal="english-note"]')).toBeVisible();
+});
+
+test('units sheet opens', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#weatherUnitsBtn').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#wxTempUnits')).toBeVisible();
+  await page.locator('#weatherSheetClose').click();
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+});
+
+test('search suggestions are keyboardable', async ({ page }) => {
+  await page.goto('/');
+  const search = page.locator('#weatherSearch');
+  await search.fill('Bo');
+  await expect(page.locator('#weatherSuggest button[role="option"]').first()).toBeVisible({ timeout: 10000 });
+  await search.press('ArrowDown');
+  await expect(page.locator('#weatherSuggest button[role="option"]').first()).toHaveAttribute('aria-selected', 'true');
+});
+
+test('non-US featured cities do not call NWS', async ({ page }) => {
+  const nws = [];
+  page.on('request', (req) => {
+    if (req.url().includes('api.weather.gov')) nws.push(req.url());
+  });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.waitForTimeout(1500);
+  const tokyoHits = nws.filter((u) => /35\.67|139\.65/.test(u));
+  expect(tokyoHits, nws.join('\n')).toEqual([]);
+});

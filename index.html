@@ -7,24 +7,24 @@
 <link rel="canonical" href="https://duskline.pages.dev/">
 <meta name="theme-color" content="#08111f">
 <meta name="application-name" content="duskline">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="dark light">
 <title data-i18n="pageTitle.weather">duskline weather</title>
 <link rel="icon" type="image/jpeg" href="assets/duskline-icon.jpg">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="assets/duskline-icon.jpg">
+<link rel="apple-touch-icon" href="assets/duskline-icon-192.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="duskline">
 <meta property="og:title" content="duskline — Weather, wherever you are">
 <meta property="og:description" content="Clear, global forecasts, air quality, and severe-weather awareness.">
 <meta property="og:url" content="https://duskline.pages.dev/">
-<meta property="og:image" content="https://duskline.pages.dev/assets/duskline-og.svg">
+<meta property="og:image" content="https://duskline.pages.dev/assets/duskline-og.jpg">
 <meta property="og:image:alt" content="duskline — a twilight gradient over a deep-blue horizon">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="duskline — Weather, wherever you are">
 <meta name="twitter:description" content="Clear, global forecasts, air quality, and severe-weather awareness.">
-<meta name="twitter:image" content="https://duskline.pages.dev/assets/duskline-og.svg">
+<meta name="twitter:image" content="https://duskline.pages.dev/assets/duskline-og.jpg">
 <meta name="twitter:image:alt" content="duskline — a twilight gradient over a deep-blue horizon">
 <!-- FONTS_START -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,12 +50,18 @@
   function detectLang() {
     try {
       var s = localStorage.getItem('duskline-lang');
-      if (s === 'zh' || s === 'ja' || s === 'es' || s === 'en') return s;
+      if (s) return s;
     } catch (e) { /* ignore */ }
     try {
       var n = String(navigator.language || '').toLowerCase();
+      if (n.indexOf('zh-tw') === 0 || n.indexOf('zh-hant') === 0 || n.indexOf('zh-hk') === 0) return 'zh-TW';
       if (n.indexOf('zh') === 0) return 'zh';
       if (n.indexOf('ja') === 0) return 'ja';
+      if (n.indexOf('ko') === 0) return 'ko';
+      if (n.indexOf('ar') === 0) return 'ar';
+      if (n.indexOf('he') === 0) return 'he';
+      if (n.indexOf('th') === 0) return 'th';
+      if (n.indexOf('hi') === 0) return 'hi';
     } catch (e2) { /* ignore */ }
     return 'en';
   }
@@ -66,22 +72,19 @@
     return 'modern';
   }
   function apply() {
-    add('usa-font-sans', hrefFor(['family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400']));
-    var classic = false;
+    add('duskline-font-sans', hrefFor(['family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400']));
     var lang = detectLang();
-    if (lang === 'zh') {
-      add('usa-font-zh', hrefFor(classic
-        ? ['family=Noto+Sans+SC:wght@300;400;500;600;700', 'family=Noto+Serif+SC:wght@400;500;700;900']
-        : ['family=Noto+Sans+SC:wght@300;400;500;600;700']));
-    }
-    if (lang === 'ja') {
-      add('usa-font-ja', hrefFor(classic
-        ? ['family=Noto+Sans+JP:wght@300;400;500;600;700', 'family=Noto+Serif+JP:wght@400;500;700;900']
-        : ['family=Noto+Sans+JP:wght@300;400;500;600;700']));
-    }
+    if (lang === 'zh') add('duskline-font-zh', hrefFor(['family=Noto+Sans+SC:wght@300;400;500;600;700']));
+    if (lang === 'zh-TW') add('duskline-font-zh-tw', hrefFor(['family=Noto+Sans+TC:wght@300;400;500;600;700']));
+    if (lang === 'ja') add('duskline-font-ja', hrefFor(['family=Noto+Sans+JP:wght@300;400;500;600;700']));
+    if (lang === 'ko') add('duskline-font-ko', hrefFor(['family=Noto+Sans+KR:wght@300;400;500;600;700']));
+    if (lang === 'ar') add('duskline-font-ar', hrefFor(['family=Noto+Sans+Arabic:wght@300;400;500;600;700']));
+    if (lang === 'he') add('duskline-font-he', hrefFor(['family=Noto+Sans+Hebrew:wght@300;400;500;600;700']));
+    if (lang === 'th') add('duskline-font-th', hrefFor(['family=Noto+Sans+Thai:wght@300;400;500;600;700']));
+    if (lang === 'hi') add('duskline-font-hi', hrefFor(['family=Noto+Sans+Devanagari:wght@300;400;500;600;700']));
   }
   apply();
-  window.__usaTravelLoadFonts = apply;
+  window.__dusklineLoadFonts = apply;
   document.addEventListener('duskline:prefs', function (e) {
     var type = e && e.detail && e.detail.type;
     if (type === 'lang' || type === 'style') apply();
@@ -145,7 +148,7 @@
   </a>
   <div class="nav-actions gallery-app-actions">
     <label class="duskline-language-label" for="dusklineLanguage" data-i18n="settings.languageLabel">Language</label>
-    <select id="dusklineLanguage" aria-label="Language"></select>
+    <select id="dusklineLanguage" aria-label="Language" data-i18n-aria="settings.languageLabel"></select>
   </div>
 </header>
 <main id="main" tabindex="-1">
@@ -241,7 +244,7 @@
 </main>
 <footer class="gallery-app-footer">
   <div class="gallery-app-footer-row">
-    <p class="gallery-app-footer-copy">© <span id="dusklineYear"></span> duskline · Weather for the curious</p>
+    <p class="gallery-app-footer-copy">© <span id="dusklineYear"></span> duskline · <span data-i18n="weather.footerTagline">Weather for the curious</span></p>
   </div>
   <div class="footer-legal-links" role="navigation" aria-label="Legal">
     <a href="privacy.html" data-i18n="legal.privacyLink">Privacy Policy</a>

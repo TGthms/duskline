@@ -4,7 +4,20 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = process.cwd();
 const port = Number(process.argv[2] || 4173);
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.txt': 'text/plain' };
+const types = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.txt': 'text/plain',
+  '.webmanifest': 'application/manifest+json',
+  '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.xml': 'application/xml',
+  '.woff2': 'font/woff2'
+};
 const server = http.createServer((req, res) => {
   const requested = decodeURIComponent((req.url || '/').split('?')[0]);
   const file = path.resolve(root, '.' + (requested === '/' ? '/index.html' : requested));

@@ -1,2 +1,5 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://duskline.pages.dev/sitemap.xml
+
