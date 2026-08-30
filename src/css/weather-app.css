@@ -779,7 +779,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
 .wx-sheet-surface {
   position: relative;
   z-index: 1;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0; /* critical: allow flex child to scroll inside max-height panel */
   max-height: none;
   overflow-x: hidden;
@@ -802,9 +802,9 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
     background: rgba(0, 0, 0, calc(0.72 * var(--wx-sheet-backdrop, 1))) !important;
   }
   .weather-sheet-panel {
-    max-height: 96dvh;
-    min-height: 92dvh;
-    height: 92dvh;
+    max-height: 92dvh;
+    min-height: 0;
+    height: auto;
   }
 }
 .wx-sheet-surface .wx-sheet-about {
@@ -2073,6 +2073,18 @@ body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer a {
 body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
 body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer .footer-legal-links a {
   color: rgba(234, 243, 255, 0.62);
+}
+body.wx-page-canvas-light.page-tools:has(.weather-root) .gallery-app-footer {
+  color: #1a3348 !important;
+  border-top-color: rgba(26, 51, 72, 0.16) !important;
+}
+body.wx-page-canvas-light.page-tools:has(.weather-root) .gallery-app-footer a,
+body.wx-page-canvas-light.page-tools:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
+body.wx-page-canvas-light.page-tools:has(.weather-root) .gallery-app-footer .footer-legal-links a {
+  color: #1a3348 !important;
+}
+body.wx-page-canvas-light .weather-attribution {
+  color: rgba(26, 51, 72, 0.62) !important;
 }
 
 /* Detail sky layers — Full motion */

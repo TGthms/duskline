@@ -299,6 +299,9 @@
       sky.style.setProperty('--wx-page-fx-o', level === 'off' ? '0' : (level === 'reduced' ? String(op * 0.55) : String(op)));
       // Theme class for CSS light/dark text tuning
       document.body.classList.toggle('weather-sky-light', theme === 'minimal' || (theme === 'elegant' && period === 'day'));
+      // Pale page wash (minimal/elegant day+dawn) — footer/attribution need dark ink.
+      document.body.classList.toggle('wx-page-canvas-light',
+        (theme === 'minimal' || theme === 'elegant') && (period === 'day' || period === 'dawn'));
       // Full motion: living sun/moon/cloud ornaments. Reduced/off: static gradient only.
       let live = sky.querySelector('.wx-page-live');
       if (level === 'full') {

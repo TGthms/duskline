@@ -240,6 +240,19 @@ body.duskline #weatherDetailRefresh svg { width: 17px; height: 17px; stroke-widt
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer { color: rgba(234,243,255,.78) !important; background-color: transparent !important; }
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer-copy,
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .footer-legal-links a { color: rgba(234,243,255,.72) !important; }
+body.page-tools.duskline.wx-page-canvas-light:has(.weather-root) .gallery-app-footer {
+  color: #1a3348 !important;
+  border-top-color: rgba(26, 51, 72, 0.18) !important;
+}
+body.page-tools.duskline.wx-page-canvas-light:has(.weather-root) .gallery-app-footer-copy,
+body.page-tools.duskline.wx-page-canvas-light:has(.weather-root) .footer-legal-links a,
+body.page-tools.duskline.wx-page-canvas-light:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
+body.page-tools.duskline.wx-page-canvas-light:has(.weather-root) .gallery-app-footer .footer-legal-links a {
+  color: #1a3348 !important;
+}
+body.duskline.wx-page-canvas-light .weather-attribution {
+  color: rgba(26, 51, 72, 0.7) !important;
+}
 body.duskline .weather-detail-attrib { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
 body.duskline .weather-daily-pop { color: var(--wx-mod-ink, #fff) !important; text-shadow: var(--wx-mod-shadow, 0 1px 3px rgba(0,0,0,.52)) !important; }
 body.duskline .legal-page { max-width: 760px; margin: 0 auto; padding: 116px 24px 80px; color: var(--duskline-ink); }
