@@ -49,11 +49,44 @@ body.duskline .weather-root.tools-page { width: min(1180px, calc(100% - 48px)); 
 body.duskline .weather-page { max-width: none; width: 100%; }
 body.duskline .weather-shell { background: transparent; border: 0; box-shadow: none; }
 body.duskline .weather-mod {
-  background: rgba(14, 28, 50, 0.76);
-  border-color: rgba(125,211,252,.16);
+  background: rgba(14, 28, 50, 0.78) !important;
+  border-color: rgba(125,211,252,.18) !important;
+  backdrop-filter: blur(22px) saturate(115%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(115%) !important;
 }
-body.duskline.weather-sky-light .weather-mod {
-  background: rgba(18, 38, 66, 0.7);
+/* Daytime city sky: a real light tile (opaque frost), not sky-tinted glass. */
+body.duskline .weather-detail.wx-mods-light .weather-mod {
+  background: rgba(246, 250, 255, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(108%) !important;
+  box-shadow: 0 10px 28px rgba(18, 42, 72, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+html.has-fine-pointer body.duskline .weather-mod:hover {
+  background: rgba(16, 32, 56, 0.9) !important;
+  border-color: rgba(125,211,252,.3) !important;
+}
+html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
+  background: rgba(252, 254, 255, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
+}
+@media (hover: hover) {
+  body.duskline .weather-mod:hover {
+    background: rgba(16, 32, 56, 0.9) !important;
+    border-color: rgba(125,211,252,.3) !important;
+  }
+  body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
+    background: rgba(252, 254, 255, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.88) !important;
+  }
+}
+html[data-motion-effective="off"] body.duskline .weather-mod {
+  background: rgba(14, 26, 44, 0.94) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-motion-effective="off"] body.duskline .weather-detail.wx-mods-light .weather-mod {
+  background: #e8eef6 !important;
 }
 body.duskline .weather-row--loading { background: linear-gradient(135deg, rgba(34,58,86,.82), rgba(17,31,50,.82)); }
 body.duskline .weather-row-temp--loading { color: rgba(234,243,255,.58); letter-spacing: .18em; }
@@ -99,12 +132,13 @@ body.duskline.weather-sky-light .duskline-brand .duskline-logo { box-shadow: 0 0
 body.duskline.weather-sky-light .weather-btn { background: rgba(255,255,255,.68); border-color: rgba(31,74,109,.2); color: #15263b; }
 body.duskline.weather-sky-light .weather-search::placeholder { color: rgba(21,38,59,.55); }
 body.duskline.weather-sky-light .weather-search-icon { color: rgba(21,38,59,.55); }
-body.duskline.weather-sky-light .weather-region-heading { color: rgba(21,38,59,.68); }
-body.duskline.weather-sky-light .weather-row { color: #15263b; }
+body.duskline.weather-sky-light .weather-region-heading,
+body.duskline.weather-sky-light .weather-section-label { color: rgba(234,243,255,.78) !important; }
+body.duskline.weather-sky-light .weather-updated { color: rgba(234,243,255,.7) !important; }
+body.duskline.weather-sky-light .weather-row { color: #fff; }
 body.duskline.weather-sky-light .weather-row-meta,
-body.duskline.weather-sky-light .weather-row-updated { color: rgba(21,38,59,.62); }
-body.duskline.weather-sky-light .weather-mod { color: #15263b; }
-body.duskline.weather-sky-light .weather-detail-loading-panel { color: #15263b; }
+body.duskline.weather-sky-light .weather-row-updated { color: rgba(234,243,255,.72); }
+body.duskline.weather-sky-light .weather-detail-loading-panel { color: var(--wx-content, #fff); }
 /* Weather rows use atmospheric dark cards in both appearance modes. Keep
    secondary metadata bright enough against those cards, even when the page
    canvas is light. */
@@ -129,7 +163,7 @@ body.duskline .weather-detail-updated,
 body.duskline .weather-mod,
 body.duskline .weather-mod-label,
 body.duskline .weather-mod-value,
-body.duskline .weather-mod-sub { color: var(--wx-content, #fff) !important; text-shadow: 0 1px 3px var(--wx-content-shadow, rgba(0,0,0,.4)); }
+body.duskline .weather-mod-sub { color: var(--wx-mod-ink, var(--wx-content, #fff)) !important; text-shadow: var(--wx-mod-shadow, 0 1px 3px var(--wx-content-shadow, rgba(0,0,0,.4))); }
 body.duskline .weather-detail-hero .weather-detail-loading,
 body.duskline .weather-detail-loading-panel { color: var(--wx-content-muted, rgba(255,255,255,.72)) !important; }
 body.duskline .weather-hourly,
@@ -144,8 +178,8 @@ body.duskline .weather-daily-lo,
 body.duskline .wx-sun-mod-hero,
 body.duskline .wx-sun-mod-hero-label,
 body.duskline .wx-sun-mod-hero-time,
-body.duskline .wx-sun-mod-secondary { color: var(--wx-content, #fff) !important; text-shadow: 0 1px 3px var(--wx-content-shadow, rgba(0,0,0,.4)); }
-/* Weather surfaces are deliberately dark/atmospheric in both page modes. */
+body.duskline .wx-sun-mod-secondary { color: var(--wx-mod-ink, var(--wx-content, #fff)) !important; text-shadow: var(--wx-mod-shadow, 0 1px 3px var(--wx-content-shadow, rgba(0,0,0,.4))); }
+/* Hero and list rows sit on the sky gradient — always light type. */
 body.duskline .weather-row-city,
 body.duskline .weather-row-meta,
 body.duskline .weather-row-cond,
@@ -157,7 +191,8 @@ body.duskline .weather-detail-hero h2,
 body.duskline .weather-detail-temp,
 body.duskline .weather-detail-cond,
 body.duskline .weather-detail-hl,
-body.duskline .weather-detail-updated,
+body.duskline .weather-detail-updated { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
+/* Module type follows the city's tile (dark ink on day frost, light on night glass). */
 body.duskline .weather-mod,
 body.duskline .weather-mod-label,
 body.duskline .weather-mod-value,
@@ -172,7 +207,11 @@ body.duskline .weather-daily-lo,
 body.duskline .wx-sun-mod-hero,
 body.duskline .wx-sun-mod-hero-label,
 body.duskline .wx-sun-mod-hero-time,
-body.duskline .wx-sun-mod-secondary { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
+body.duskline .wx-sun-mod-secondary { color: var(--wx-mod-ink, #fff) !important; text-shadow: var(--wx-mod-shadow, 0 1px 3px rgba(0,0,0,.52)) !important; }
+body.duskline .weather-mod-label,
+body.duskline .weather-mod-sub,
+body.duskline .wx-sun-mod-hero-label,
+body.duskline .wx-sun-mod-secondary { color: var(--wx-mod-muted, var(--wx-mod-ink, #fff)) !important; }
 body.duskline .weather-detail-hero .weather-detail-loading,
 body.duskline .weather-detail-loading-panel { color: rgba(255,255,255,.78) !important; }
 body.duskline .weather-region-heading:first-child { margin-top: 4px; }
@@ -185,23 +224,24 @@ body.page-tools.duskline:has(.weather-root) .gallery-app-footer .gallery-app-foo
 body.page-tools.duskline:has(.weather-root) .gallery-app-footer .footer-legal-links a { color: rgba(234,243,255,.72) !important; }
 body.duskline.weather-sky-light .gallery-app-footer .gallery-app-footer-copy,
 body.duskline.weather-sky-light .gallery-app-footer .footer-legal-links a { color: rgba(21,38,59,.66) !important; }
+/* Weather list canvas is atmospheric even in OS light — keep footer ink light. */
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer {
   background-color: transparent !important;
-  color: #18324d !important;
-  border-top-color: rgba(24,50,77,.16) !important;
+  color: rgba(234,243,255,.78) !important;
+  border-top-color: rgba(234,243,255,.16) !important;
 }
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
-body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .footer-legal-links a { color: #18324d !important; }
-body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .footer-legal-links { border-top-color: rgba(24,50,77,.16) !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .footer-legal-links a { color: rgba(234,243,255,.72) !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer .footer-legal-links { border-top-color: rgba(234,243,255,.16) !important; }
 body.duskline #weatherRefresh,
 body.duskline #weatherDetailRefresh { appearance: none; -webkit-appearance: none; flex: 0 0 40px !important; width: 40px !important; min-width: 40px !important; height: 40px !important; min-height: 40px !important; padding: 0 !important; border-radius: 50% !important; }
 body.duskline #weatherRefresh svg,
 body.duskline #weatherDetailRefresh svg { width: 17px; height: 17px; stroke-width: 1.8; }
-body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer { color: #18324d !important; background-color: transparent !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer { color: rgba(234,243,255,.78) !important; background-color: transparent !important; }
 body.page-tools.duskline.weather-sky-light:has(.weather-root) .gallery-app-footer-copy,
-body.page-tools.duskline.weather-sky-light:has(.weather-root) .footer-legal-links a { color: #18324d !important; }
-body.duskline .weather-detail-attrib,
-body.duskline .weather-daily-pop { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
+body.page-tools.duskline.weather-sky-light:has(.weather-root) .footer-legal-links a { color: rgba(234,243,255,.72) !important; }
+body.duskline .weather-detail-attrib { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.52) !important; }
+body.duskline .weather-daily-pop { color: var(--wx-mod-ink, #fff) !important; text-shadow: var(--wx-mod-shadow, 0 1px 3px rgba(0,0,0,.52)) !important; }
 body.duskline .legal-page { max-width: 760px; margin: 0 auto; padding: 116px 24px 80px; color: var(--duskline-ink); }
 body.duskline .legal-back { margin: 0 0 48px; }
 body.duskline .legal-eyebrow { margin: 0 0 14px; color: var(--duskline-accent); font: 700 .72rem/1 'Public Sans', sans-serif; letter-spacing: .16em; }
@@ -231,6 +271,27 @@ html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-topbar {
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-brand,
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLegalLanguage { color: #15263b; }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLegalLanguage { background: rgba(255,255,255,.86); border-color: rgba(31,74,109,.2); }
+/* Legal reading surface follows OS light appearance (header + body together). */
+html[data-theme="minimal"] body.page-legal.duskline {
+  background: #eef5fb;
+  color: #15263b;
+}
+html[data-theme="minimal"] body.page-legal.duskline .legal-page,
+html[data-theme="minimal"] body.page-legal.duskline .legal-page h1,
+html[data-theme="minimal"] body.page-legal.duskline .legal-page h2,
+html[data-theme="minimal"] body.page-legal.duskline .legal-intro {
+  color: #10243e;
+}
+html[data-theme="minimal"] body.page-legal.duskline .legal-page p,
+html[data-theme="minimal"] body.page-legal.duskline .legal-updated {
+  color: #3d5570;
+}
+html[data-theme="minimal"] body.page-legal.duskline .legal-eyebrow { color: #1b6a9a; }
+html[data-theme="minimal"] body.page-legal.duskline .legal-page a { color: #0b6bcb; }
+html[data-theme="minimal"] body.page-legal.duskline .legal-topbar {
+  background: rgba(246,250,255,.92);
+  border-bottom-color: rgba(31,74,109,.15);
+}
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .gallery-app-bar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); box-shadow: 0 8px 24px rgba(31,74,109,.08); }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .duskline-brand { color: #15263b; }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLanguage { background: rgba(255,255,255,.86); color: #15263b; border-color: rgba(31,74,109,.2); }

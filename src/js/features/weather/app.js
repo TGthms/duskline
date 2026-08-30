@@ -412,6 +412,52 @@
     return arr[index] != null ? arr[index] : null;
   }
 
+  /** Expand the day's high/low so the current reading cannot sit outside it. */
+  function dayHiLo(daily, dayIdx, currentTemp) {
+    let hi = dailyFieldAt(daily, 'temperature_2m_max', dayIdx);
+    let lo = dailyFieldAt(daily, 'temperature_2m_min', dayIdx);
+    const cur = currentTemp != null ? Number(currentTemp) : NaN;
+    if (Number.isFinite(cur)) {
+      if (hi == null || !Number.isFinite(Number(hi)) || cur > Number(hi)) hi = cur;
+      if (lo == null || !Number.isFinite(Number(lo)) || cur < Number(lo)) lo = cur;
+    }
+    return { hi: hi, lo: lo };
+  }
+
+  function hourlyNowValue(hourly, field, timeZone) {
+    const times = (hourly && hourly.time) || [];
+    const arr = hourly && hourly[field];
+    if (!times.length || !arr) return null;
+    const now = Date.now();
+    let idx = 0;
+    let found = false;
+    for (let i = 0; i < times.length; i++) {
+      const ms = stampToMs(times[i], timeZone);
+      if (Number.isFinite(ms) && ms >= now - 3600000) { idx = i; found = true; break; }
+    }
+    if (!found) return null;
+    const v = arr[idx];
+    return v != null && Number.isFinite(Number(v)) ? Number(v) : null;
+  }
+
+  function uvLabelFor(v) {
+    if (v == null || !Number.isFinite(Number(v))) return '';
+    if (v >= 11) return lang() === 'zh' ? '极高' : lang() === 'ja' ? '極端' : lang() === 'es' ? 'Extremo' : 'Extreme';
+    if (v >= 8) return lang() === 'zh' ? '很高' : lang() === 'ja' ? '非常に高い' : lang() === 'es' ? 'Muy alto' : 'Very High';
+    if (v >= 6) return lang() === 'zh' ? '高' : lang() === 'ja' ? '高い' : lang() === 'es' ? 'Alto' : 'High';
+    if (v >= 3) return lang() === 'zh' ? '中等' : lang() === 'ja' ? '中' : lang() === 'es' ? 'Moderado' : 'Moderate';
+    return lang() === 'zh' ? '低' : lang() === 'ja' ? '低い' : lang() === 'es' ? 'Bajo' : 'Low';
+  }
+
+  /** Current UV when hourly exists; at night do not fall back to the daily max. */
+  function uvNowValue(pack, daily, dayIdx, hourly, timeZone) {
+    const nowUv = hourlyNowValue(hourly, 'uv_index', timeZone);
+    if (nowUv != null) return nowUv;
+    const hour = localHourForPack(pack);
+    if (hour < 6 || hour >= 20) return 0;
+    return dailyFieldAt(daily, 'uv_index_max', dayIdx);
+  }
+
   function isBareWallClock(iso) {
     const s = String(iso || '');
     return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) && !/[zZ]$/.test(s) && !/[+-]\d{2}:\d{2}$/.test(s);
@@ -1019,8 +1065,9 @@
     const daily = pack.weather.daily || {};
     const code = cur.weather_code;
     const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
-    const hi = dailyFieldAt(daily, 'temperature_2m_max', dayIdx);
-    const lo = dailyFieldAt(daily, 'temperature_2m_min', dayIdx);
+    const range = dayHiLo(daily, dayIdx, cur.temperature_2m);
+    const hi = range.hi;
+    const lo = range.lo;
     let localTime = '';
     try {
       localTime = new Date().toLocaleTimeString(localeTag(), {
@@ -1544,11 +1591,12 @@
 
     const night = localHourForPack(pack) < 6 || localHourForPack(pack) >= 20;
     const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
+    const heroRange = dayHiLo(daily, dayIdx, cur.temperature_2m);
     detailHero.innerHTML = `
       <h2>${escapeHtml(displayCityName(c))}</h2>
       <div class="weather-detail-temp">${fmtTemp(cur.temperature_2m)}</div>
       <div class="weather-detail-cond">${condIcon(cur.weather_code, night)} ${escapeHtml(condLabel(cur.weather_code))}</div>
-      <div class="weather-detail-hl">${t('weather.high', 'H')}:${fmtTemp(dailyFieldAt(daily, 'temperature_2m_max', dayIdx))}  ${t('weather.low', 'L')}:${fmtTemp(dailyFieldAt(daily, 'temperature_2m_min', dayIdx))}</div>
+      <div class="weather-detail-hl">${t('weather.high', 'H')}:${fmtTemp(heroRange.hi)}  ${t('weather.low', 'L')}:${fmtTemp(heroRange.lo)}</div>
       <div class="weather-detail-updated" id="weatherDetailUpdated"></div>`;
     {
       const detUp = $('weatherDetailUpdated');
@@ -1612,15 +1660,8 @@
       ));
     }
     {
-      const uvv = dailyFieldAt(daily, 'uv_index_max', dayIdx);
-      let uvLab = '';
-      if (uvv != null) {
-        if (uvv >= 11) uvLab = lang() === 'zh' ? '极高' : lang() === 'ja' ? '極端' : lang() === 'es' ? 'Extremo' : 'Extreme';
-        else if (uvv >= 8) uvLab = lang() === 'zh' ? '很高' : lang() === 'ja' ? '非常に高い' : lang() === 'es' ? 'Muy alto' : 'Very High';
-        else if (uvv >= 6) uvLab = lang() === 'zh' ? '高' : lang() === 'ja' ? '高い' : lang() === 'es' ? 'Alto' : 'High';
-        else if (uvv >= 3) uvLab = lang() === 'zh' ? '中等' : lang() === 'ja' ? '中' : lang() === 'es' ? 'Moderado' : 'Moderate';
-        else uvLab = lang() === 'zh' ? '低' : lang() === 'ja' ? '低い' : lang() === 'es' ? 'Bajo' : 'Low';
-      }
+      const uvv = uvNowValue(pack, daily, dayIdx, hourly, cityTimeZone(pack, c));
+      const uvLab = uvLabelFor(uvv);
       mods.push(modHtml(
         'uv', t('weather.uv', 'UV Index'),
         uvv != null ? String(Math.round(uvv * 10) / 10) : '—',
@@ -2081,13 +2122,18 @@
       });
       body += '</div>';
     } else if (kind === 'uv') {
-      const uv = dailyFieldAt(daily, 'uv_index_max', dailyTodayIndex(daily, chartTz));
+      const uvIdx = dailyTodayIndex(daily, chartTz);
+      const uvNow = uvNowValue(pack, daily, uvIdx, hourly, chartTz);
+      const uvMax = dailyFieldAt(daily, 'uv_index_max', uvIdx);
       if (hourly.uv_index) {
         body += chartsApi.buildTempChart(hourly, 'uv_index', (v) => String(Math.round(v * 10) / 10), chartTz);
       } else {
-        body += `<div class="wx-sheet-hero"><div class="weather-chart-readout">${uv != null ? Math.round(uv * 10) / 10 : '—'}</div></div>`;
+        body += `<div class="wx-sheet-hero"><div class="weather-chart-readout">${uvNow != null ? Math.round(uvNow * 10) / 10 : '—'}</div></div>`;
       }
-      body += chartsApi.uvGauge(uv);
+      body += chartsApi.uvGauge(uvNow);
+      if (uvMax != null && uvNow != null && Math.abs(uvMax - uvNow) >= 0.5) {
+        body += `<p class="wx-sheet-context">${escapeHtml(t('weather.uvMax', 'Today’s max'))} ${Math.round(uvMax * 10) / 10}</p>`;
+      }
     } else if (kind === 'aqi') {
       const aqi = pack.air && pack.air.current && pack.air.current.us_aqi;
       body += `<div class="wx-sheet-hero">
@@ -2239,6 +2285,7 @@
 
   function presentSheet() {
     if (!sheetEl || !sheetPanel) return;
+    closeSuggest();
     hoistOverlays();
     sheetGen += 1;
     const gen = sheetGen;
@@ -2721,6 +2768,7 @@
 
   function openUnitsSheet() {
     if (!sheetEl || !sheetBody) return;
+    closeSuggest();
     hoistOverlays();
     setSheetTitle(`
       <div class="wx-sheet-head" data-sheet-title>

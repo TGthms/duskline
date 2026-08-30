@@ -963,7 +963,7 @@
       const hourLabs = [0, 0.25, 0.5, 0.75, 1].map(function (f, i) {
         const labs = ['00', '06', '12', '18', '24'];
         const x = 8 + f * (W - 16);
-        return `<text x="${x.toFixed(1)}" y="${H - 1}" fill="rgba(255,255,255,.35)" font-size="8" text-anchor="middle" font-family="system-ui,sans-serif">${labs[i]}</text>`;
+        return `<text class="wx-sun-axis" x="${x.toFixed(1)}" y="${H - 1}" font-size="8" text-anchor="middle" font-family="system-ui,sans-serif">${labs[i]}</text>`;
       }).join('');
       return (
         `<div class="wx-sun-mod-hero">` +
@@ -971,10 +971,10 @@
           `<div class="wx-sun-mod-hero-time">${escapeHtml(formatClock(heroIso))}</div>` +
         `</div>` +
         `<svg class="weather-sun-arc${compact ? ' weather-sun-arc--compact' : ''}" viewBox="0 0 ${W} ${H}" aria-hidden="true">` +
-          `<line x1="8" y1="${g.horizonY.toFixed(1)}" x2="${W - 8}" y2="${g.horizonY.toFixed(1)}" stroke="rgba(255,255,255,.28)" stroke-width="1"/>` +
-          (g.area ? `<path d="${g.area}" fill="rgba(255,210,120,.14)"/>` : '') +
-          `<path d="${g.line}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linejoin="round"/>` +
-          `<circle cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="5.5" fill="#fff" stroke="rgba(255,220,140,.9)" stroke-width="2"/>` +
+          `<line class="wx-sun-horizon" x1="8" y1="${g.horizonY.toFixed(1)}" x2="${W - 8}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>` +
+          (g.area ? `<path class="wx-sun-area" d="${g.area}"/>` : '') +
+          `<path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2" stroke-linejoin="round"/>` +
+          `<circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="5.5" stroke-width="2"/>` +
           hourLabs +
         `</svg>` +
         `<div class="wx-sun-mod-secondary">${escapeHtml(secondaryLabel)}: ${escapeHtml(formatClock(secondaryIso))}</div>`

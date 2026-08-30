@@ -487,6 +487,11 @@ html[data-motion-effective="off"] .weather-detail-sky .wx-layer {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
   }
+  /* 8 small tiles fill two rows; sun would otherwise sit alone on row 3. */
+  .weather-mod[data-sheet="sun"] {
+    grid-column: 1 / -1;
+    min-height: 112px;
+  }
   .weather-detail-hero {
     max-width: min(1180px, 90vw);
   }
@@ -661,7 +666,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   pointer-events: auto !important;
   z-index: 10150 !important; /* above .weather-detail (10050) */
   /* Explicit dim so mobile never “forgets” backdrop when CSS var is 0/empty */
-  background: rgba(0, 0, 0, calc(0.48 * var(--wx-sheet-backdrop, 1))) !important;
+  background: rgba(0, 0, 0, calc(0.56 * var(--wx-sheet-backdrop, 1))) !important;
 }
 .weather-sheet:not(.open) {
   pointer-events: none !important;
@@ -674,7 +679,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   display: flex;
   flex-direction: column;
   width: min(480px, 100%);
-  max-height: min(88vh, 760px);
+  max-height: min(92dvh, 760px);
   /* Contain children so surface can scroll; ::after still paints below for drag rubber-band */
   overflow: hidden;
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
@@ -790,6 +795,16 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   .wx-sheet-surface {
     padding-left: 18px;
     padding-right: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .weather-sheet.open {
+    background: rgba(0, 0, 0, calc(0.72 * var(--wx-sheet-backdrop, 1))) !important;
+  }
+  .weather-sheet-panel {
+    max-height: 96dvh;
+    min-height: 92dvh;
+    height: 92dvh;
   }
 }
 .wx-sheet-surface .wx-sheet-about {
@@ -1251,6 +1266,36 @@ html.has-fine-pointer .region-card:hover .region-desc {
   height: 72px;
   display: block;
   margin: 6px 0;
+  color: rgba(255, 255, 255, 0.55);
+}
+.weather-sun-arc .wx-sun-horizon { stroke: rgba(255, 255, 255, 0.28); }
+.weather-sun-arc .wx-sun-area { fill: rgba(255, 210, 120, 0.16); }
+.weather-sun-arc .wx-sun-line { stroke: currentColor; }
+.weather-sun-arc .wx-sun-axis { fill: rgba(255, 255, 255, 0.35); }
+.weather-sun-arc .wx-sun-now { fill: #fff; stroke: rgba(255, 220, 140, 0.9); }
+.weather-detail.wx-mods-light .weather-sun-arc { color: rgba(22, 52, 79, 0.45); }
+.weather-detail.wx-mods-light .weather-sun-arc .wx-sun-horizon { stroke: rgba(22, 52, 79, 0.22); }
+.weather-detail.wx-mods-light .weather-sun-arc .wx-sun-axis { fill: rgba(22, 52, 79, 0.4); }
+.weather-detail.wx-mods-light .weather-sun-arc .wx-sun-now { fill: #f0c14a; stroke: rgba(180, 120, 40, 0.55); }
+.weather-detail.wx-mods-light .weather-daily-track { background: rgba(22, 52, 79, 0.14); }
+.weather-detail.wx-mods-light .weather-daily-now {
+  background: #16344f;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 1px 3px rgba(22, 52, 79, 0.28);
+}
+.weather-detail.wx-mods-light .weather-daily-pop { text-shadow: none; color: #0a84ff; }
+.weather-detail.wx-mods-light .weather-compass {
+  background: radial-gradient(circle at 50% 50%, rgba(22, 52, 79, 0.06) 0 38%, transparent 39%), rgba(22, 52, 79, 0.04);
+  border-color: rgba(22, 52, 79, 0.2);
+}
+.weather-detail.wx-mods-light .wx-compass-ring { border-color: rgba(22, 52, 79, 0.18); }
+.weather-detail.wx-mods-light .wx-compass-tick { color: rgba(22, 52, 79, 0.55); }
+.weather-detail.wx-mods-light .wx-compass-hub {
+  background: #16344f;
+  box-shadow: 0 0 0 2px rgba(22, 52, 79, 0.2);
+}
+.weather-detail.wx-mods-light .wx-metric-bar,
+.weather-detail.wx-mods-light .wx-aqi-scale-track {
+  background: rgba(22, 52, 79, 0.12);
 }
 .weather-mod { cursor: pointer; }
 .weather-mod[data-sheet] { cursor: pointer; }
@@ -1919,12 +1964,21 @@ body.page-tools:has(.weather-root) #main {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(6%, 3%, 0); }
 }
-/* Light sky: slightly stronger cloud contrast */
+/* Light OS + day page sky: slightly stronger cloud contrast */
 body.weather-sky-light .wx-page-blob { opacity: 0.65; }
 body.weather-sky-light .wx-page-cloud {
   background: rgba(255,255,255,.62);
   opacity: 0.7;
   filter: blur(6px);
+}
+/* Night canvas (even in OS light mode): keep clouds as faint haze, not white smears. */
+body.weather-sky-light .weather-page-sky.wx-page--night .wx-page-blob,
+.weather-page-sky.wx-page--night .wx-page-blob { opacity: 0.22; }
+body.weather-sky-light .weather-page-sky.wx-page--night .wx-page-cloud,
+.weather-page-sky.wx-page--night .wx-page-cloud {
+  background: rgba(255,255,255,.2);
+  opacity: 0.14;
+  filter: blur(10px);
 }
 body.weather-sky-light .wx-page-sun {
   opacity: 1;
@@ -2010,15 +2064,15 @@ body.page-tools:has(.weather-root) .gallery-app-footer .footer-legal-links {
   border-top-color: rgba(255,255,255,.12);
 }
 body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer {
-  color: rgba(0,0,0,.65);
-  border-top-color: rgba(0,0,0,.1);
+  color: rgba(234, 243, 255, 0.75);
+  border-top-color: rgba(255,255,255,.12);
 }
 body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer a {
-  color: rgba(0,0,0,.8);
+  color: rgba(234, 243, 255, 0.88);
 }
 body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer .gallery-app-footer-copy,
 body.weather-sky-light.page-tools:has(.weather-root) .gallery-app-footer .footer-legal-links a {
-  color: rgba(0,0,0,.45);
+  color: rgba(234, 243, 255, 0.62);
 }
 
 /* Detail sky layers — Full motion */
@@ -2103,27 +2157,45 @@ html[data-motion-effective="off"] .weather-detail-sky .wx-layer-base {
   text-shadow: 0 4px 40px rgba(0,0,0,.2);
 }
 .weather-mod {
-  background: rgba(255,255,255,0.14) !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,.12);
+  background: rgba(14, 28, 50, 0.82) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  backdrop-filter: blur(22px) saturate(115%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(115%) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.22);
   transition: transform .2s ease, background .2s ease, border-color .2s ease;
+}
+.weather-detail.wx-mods-light .weather-mod {
+  background: rgba(246, 250, 255, 0.82) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(108%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(108%) !important;
+  box-shadow: 0 10px 28px rgba(18, 42, 72, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 html[data-motion-effective="off"] .weather-mod {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  background: rgba(20, 32, 48, 0.88) !important;
+  background: rgba(16, 28, 46, 0.94) !important;
+}
+html[data-motion-effective="off"] .weather-detail.wx-mods-light .weather-mod {
+  background: #e8eef6 !important;
 }
 @media (hover: hover), (any-hover: hover) {
   .weather-mod:hover {
-    background: rgba(255,255,255,0.2) !important;
-    border-color: rgba(255,255,255,0.3) !important;
+    background: rgba(18, 34, 58, 0.88) !important;
+    border-color: rgba(255,255,255,0.28) !important;
+  }
+  .weather-detail.wx-mods-light .weather-mod:hover {
+    background: rgba(252, 254, 255, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.88) !important;
   }
 }
 html.has-fine-pointer .weather-mod:hover {
-  background: rgba(255,255,255,0.2) !important;
-  border-color: rgba(255,255,255,0.3) !important;
+  background: rgba(18, 34, 58, 0.88) !important;
+  border-color: rgba(255,255,255,0.28) !important;
+}
+html.has-fine-pointer .weather-detail.wx-mods-light .weather-mod:hover {
+  background: rgba(252, 254, 255, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.88) !important;
 }
 .weather-row {
   backdrop-filter: blur(12px) saturate(140%);
@@ -3064,15 +3136,17 @@ body.weather-sky-light .weather-search {
 }
 body.weather-sky-light .weather-search::placeholder { color: rgba(0,0,0,.48) !important; }
 body.weather-sky-light .weather-search-icon { color: rgba(0,0,0,.5) !important; }
+/* Weather canvas stays atmospheric (dark rows / night sky). Do not switch
+   in-canvas labels to dark ink just because OS appearance is light. */
 body.weather-sky-light .weather-section-label {
-  color: rgba(0,0,0,.62) !important;
+  color: rgba(234, 243, 255, 0.78) !important;
   letter-spacing: 0.05em;
 }
 body.weather-sky-light .weather-updated {
-  color: rgba(0,0,0,.58) !important;
+  color: rgba(234, 243, 255, 0.7) !important;
 }
 body.weather-sky-light .weather-attribution {
-  color: rgba(0,0,0,.55) !important;
+  color: rgba(234, 243, 255, 0.55) !important;
 }
 body.weather-sky-light .gallery-app-bar {
   background: color-mix(in srgb, #f5f5f7 78%, transparent) !important;
@@ -3080,9 +3154,7 @@ body.weather-sky-light .gallery-app-bar {
 }
 body.weather-sky-light .gallery-app-title,
 body.weather-sky-light .gallery-app-back,
-body.weather-sky-light .gallery-app-back-label,
-body.weather-sky-light a.gallery-app-footer-home,
-body.weather-sky-light .gallery-app-footer {
+body.weather-sky-light .gallery-app-back-label {
   color: #1d1d1f !important;
 }
 body.weather-sky-light .gallery-app-back {

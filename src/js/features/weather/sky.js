@@ -122,12 +122,26 @@
             .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
         } catch (e) { return 0.12; }
       }
-      const lightSky = (luminance(s.c1) + luminance(s.c2)) / 2 > .22;
-      // Tiles and detail copy stay light-on-glass even under a bright day sky.
+      const night = hour < 6 || hour >= 20;
+      const isStorm = (code || 0) >= 95;
+      // Detail tiles follow the city's sky — light frost by day, navy glass at
+      // night/storm. Hero type on the gradient stays light either way.
+      const modsLight = !opts.isRow && !night && !isStorm;
+      const lightSky = modsLight || (luminance(s.c1) + luminance(s.c2)) / 2 > .22;
+      el.classList.toggle('wx-mods-light', modsLight);
       el.style.setProperty('--wx-content', '#f4f8ff');
       el.style.setProperty('--wx-content-muted', 'rgba(244,248,255,.78)');
       el.style.setProperty('--wx-content-shadow', 'rgba(0,0,0,.42)');
       el.style.setProperty('--wx-sky-bright', lightSky ? '1' : '0');
+      if (modsLight) {
+        el.style.setProperty('--wx-mod-ink', '#16344f');
+        el.style.setProperty('--wx-mod-muted', 'rgba(22, 52, 79, 0.62)');
+        el.style.setProperty('--wx-mod-shadow', 'none');
+      } else {
+        el.style.setProperty('--wx-mod-ink', '#f4f8ff');
+        el.style.setProperty('--wx-mod-muted', 'rgba(244,248,255,.72)');
+        el.style.setProperty('--wx-mod-shadow', '0 1px 3px rgba(0,0,0,.42)');
+      }
       const level = motionLevel();
       el.style.setProperty('--wx-sky-1', s.c1);
       el.style.setProperty('--wx-sky-2', s.c2);

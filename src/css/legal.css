@@ -10,6 +10,10 @@ html[dir="rtl"] .legal-page p:not(.legal-intro):not(.legal-english-note):not(.le
   text-align: left;
   unicode-bidi: isolate;
 }
+html[dir="rtl"] .legal-updated {
+  direction: rtl;
+  unicode-bidi: plaintext;
+}
 body.page-legal {
   min-height: 100dvh;
   display: flex;

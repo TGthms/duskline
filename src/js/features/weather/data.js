@@ -466,6 +466,31 @@
         mergeDailyByDate('uv_index_max');
         mergeDailyByDate('precipitation_sum');
         mergeDailyByDate('precipitation_probability_max');
+        /* NWS daily max/min only cover remaining periods (evening list = H=L).
+           Union with Open-Meteo calendar-day range. */
+        function unionDailyByDate(field, prefer) {
+          if (!od[field] || !od.time) return;
+          const byDay = {};
+          for (let i = 0; i < od.time.length; i++) {
+            byDay[String(od.time[i] || '').slice(0, 10)] = od[field][i];
+          }
+          if (d.time && d.time.length) {
+            if (!d[field]) d[field] = [];
+            d.time.forEach(function (t, i) {
+              const omv = byDay[String(t || '').slice(0, 10)];
+              const cur = d[field][i];
+              if (omv == null) return;
+              if (cur == null || !Number.isFinite(Number(cur))) d[field][i] = omv;
+              else if (prefer === 'max') d[field][i] = Math.max(Number(cur), Number(omv));
+              else d[field][i] = Math.min(Number(cur), Number(omv));
+            });
+          } else if (!d[field]) {
+            d[field] = od[field];
+            if (!d.time) d.time = od.time;
+          }
+        }
+        unionDailyByDate('temperature_2m_max', 'max');
+        unionDailyByDate('temperature_2m_min', 'min');
         pack.weather.daily = d;
 
         const h = pack.weather.hourly || {};
@@ -528,12 +553,17 @@
       const key = cityKey(c);
       const hit = cache.get(key);
       if (!opts.forceFetch && hit && hit.weather && Date.now() - hit.fetchedAt < REFRESH_MS - 5000) {
-        if (opts.enrich && hit.needsEnrich) {
+        const wantsNws = opts.nwsUpgrade && isLikelyUs(c)
+          && hit.source !== 'nws' && hit.source !== 'nws+om';
+        if (wantsNws) {
+          /* fall through so a fast Open-Meteo list pack can be upgraded */
+        } else if (opts.enrich && hit.needsEnrich) {
           const en = await enrichWithOpenMeteo(hit, signal);
           cache.set(key, en);
           return en;
+        } else {
+          return hit;
         }
-        return hit;
       }
 
       let pack = null;
@@ -646,7 +676,9 @@
           if (signal && signal.aborted) return;
           const idx = queue.shift();
           try {
-            out[idx] = await loadCity(cities[idx], signal, { enrich: false, forceFetch: forceFetch });
+            out[idx] = await loadCity(cities[idx], signal, {
+              enrich: false, forceFetch: forceFetch, nwsUpgrade: true
+            });
           } catch (e) {
             if (e && e.name === 'AbortError') return;
             out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
@@ -703,15 +735,12 @@
         }
       }
 
-      const omFirst = [];
-      for (let i = 0; i < cities.length; i++) {
-        if (!isLikelyUs(cities[i])) omFirst.push(i);
-      }
+      const allIdx = [];
+      for (let i = 0; i < cities.length; i++) allIdx.push(i);
+      /* Open-Meteo batch first so the list fills in one pass (calendar-day H/L). */
+      await fillOm(allIdx);
       const usQueue = usIdx.slice();
-      await Promise.all([
-        Promise.all([nwsWorker(usQueue), nwsWorker(usQueue), nwsWorker(usQueue)]),
-        fillOm(omFirst)
-      ]);
+      await Promise.all([nwsWorker(usQueue), nwsWorker(usQueue), nwsWorker(usQueue)]);
 
       const needOm = [];
       for (let i = 0; i < cities.length; i++) {

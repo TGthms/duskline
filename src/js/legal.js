@@ -56,7 +56,10 @@
     document.querySelectorAll('[data-legal="back"]').forEach(function (el) { el.textContent = '‹ ' + L.back; });
     document.querySelectorAll('[data-legal="legal"]').forEach(function (el) { el.textContent = L.legal; });
     document.querySelectorAll('[data-legal="title"]').forEach(function (el) { el.textContent = page === 'terms' ? L.terms : L.privacy; });
-    document.querySelectorAll('[data-legal="effective"]').forEach(function (el) { el.textContent = L.effective; });
+    document.querySelectorAll('[data-legal="effective"]').forEach(function (el) {
+      el.textContent = L.effective;
+      el.setAttribute('dir', key === 'ar' || key === 'he' ? 'rtl' : 'ltr');
+    });
     document.querySelectorAll('.legal-intro').forEach(function (el) { el.textContent = page === 'terms' ? S.termsIntro : S.privacyIntro; });
     var headings = Array.prototype.slice.call(document.querySelectorAll('.legal-page h2'));
     (page === 'terms' ? S.terms : S.privacy).forEach(function (value, index) { if (headings[index]) headings[index].textContent = value; });
