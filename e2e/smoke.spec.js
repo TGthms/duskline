@@ -13,6 +13,17 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test('home page exposes Search Console verification and SEO head', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[name="google-site-verification"]')).toHaveAttribute(
+    'content',
+    '0rE0QD0vWPSfPxelCpS8qL2_n3JGrd_ZYPJBaGwnLZQ'
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://duskline.pages.dev/');
+  await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+  await expect(page.locator('h1')).toHaveCount(1);
+});
+
 test('loads the branded weather shell and all locales', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('body')).toHaveClass(/duskline/);

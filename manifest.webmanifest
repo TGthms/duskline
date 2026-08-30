@@ -1,7 +1,7 @@
 {
   "name": "duskline weather",
   "short_name": "duskline",
-  "description": "Clear, global weather forecasts, air quality, and public alerts.",
+  "description": "Free worldwide weather: city search, hourly and 10-day forecasts, air quality, and U.S. NWS alerts.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
