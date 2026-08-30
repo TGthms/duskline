@@ -61,18 +61,25 @@ test('long list location names stay on one line and keep high/low visible', asyn
 
 test('weather loading uses a sliding bar, not dashes', async ({ page }) => {
   await page.goto('/');
-  const row = page.locator('#weatherList .weather-row').first();
-  await expect(row).toBeVisible({ timeout: 15000 });
-  await row.evaluate((el) => {
-    el.classList.add('weather-row--loading');
-    const temps = el.querySelector('.weather-row-temps');
-    if (temps) {
-      temps.innerHTML = '<div class="weather-row-temp weather-row-temp--loading"><span class="loader" aria-hidden="true"></span></div>';
-    }
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+
+  const appJs = await page.request.get('/src/js/features/weather/app.js');
+  expect(appJs.ok()).toBeTruthy();
+  const src = await appJs.text();
+  expect(src).toMatch(/weather-row-temp--loading[\s\S]*?class="loader"/);
+  expect(src).not.toMatch(/weather-row-temp--loading[^>]*>--</);
+  expect(src).toMatch(/openDetailLoading[\s\S]*?class="loader"/);
+
+  // Measure CSS on a probe outside the list — live rows are replaced on refresh.
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.id = 'wx-loader-probe';
+    host.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;';
+    host.innerHTML = '<div class="weather-row-temp weather-row-temp--loading"><span class="loader" aria-hidden="true"></span></div>';
+    document.body.appendChild(host);
   });
-  const loader = row.locator('.loader');
+  const loader = page.locator('#wx-loader-probe .loader');
   await expect(loader).toBeVisible();
-  await expect(row.locator('.weather-row-temp--loading')).not.toContainText('--');
   const box = await loader.boundingBox();
   expect(box.width).toBeGreaterThan(80);
   expect(box.height).toBeGreaterThan(3);
