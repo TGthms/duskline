@@ -222,6 +222,79 @@ html[data-motion-effective="off"] .weather-row:active { transform: none; }
   color: #fff;
   white-space: nowrap;
 }
+.weather-row-temp--loading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 2.4rem;
+}
+
+/* Indeterminate weather loader (list, detail, hero) */
+.loader {
+  --color-1: color-mix(in srgb, var(--wx-content, #fff) 22%, transparent);
+  --color-2: var(--wx-content, #fff);
+  --size: 1px;
+  width: calc(160 * var(--size));
+  height: calc(8 * var(--size));
+  border-radius: calc(4 * var(--size));
+  display: block;
+  margin: calc(20 * var(--size)) auto;
+  position: relative;
+  background: var(--color-1);
+  overflow: hidden;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.loader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: calc(70 * var(--size));
+  border-radius: inherit;
+  background: var(--color-2);
+  box-sizing: border-box;
+  animation: wx-loader-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.weather-row-temp--loading .loader {
+  --size: 0.7px;
+  margin: 0;
+}
+.weather-detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+.weather-detail-loading .loader {
+  --size: 0.85px;
+  margin: 0;
+}
+.weather-detail-loading-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 180px;
+}
+.weather-detail-loading-panel .loader {
+  --size: 1px;
+  margin: 0 auto;
+}
+@keyframes wx-loader-slide {
+  0% { transform: translateX(calc(-70 * var(--size))); }
+  100% { transform: translateX(calc(160 * var(--size))); }
+}
+html[data-motion-effective="reduced"] .loader::after,
+html[data-motion-effective="off"] .loader::after {
+  animation: none;
+  left: 28%;
+  width: calc(44 * var(--size));
+  opacity: 0.85;
+}
 .weather-row-hl {
   font-size: 12px;
   color: rgba(255,255,255,.82);
@@ -3407,6 +3480,10 @@ body.weather-sky-light #weatherLoadHint {
 }
 body.weather-sky-light .weather-load-track {
   background: rgba(0, 0, 0, 0.1) !important;
+}
+body.weather-sky-light .weather-detail.wx-mods-light .loader {
+  --color-1: rgba(22, 52, 79, 0.16);
+  --color-2: #16344f;
 }
 /* Page sky: animate only when Full motion; otherwise static wash */
 html[data-motion-effective="reduced"] body.page-tools:has(.weather-root) .weather-page-sky,

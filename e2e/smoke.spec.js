@@ -59,6 +59,26 @@ test('long list location names stay on one line and keep high/low visible', asyn
   expect(hlBox.y + hlBox.height).toBeLessThanOrEqual(rowBox.y + rowBox.height + 1);
 });
 
+test('weather loading uses a sliding bar, not dashes', async ({ page }) => {
+  await page.goto('/');
+  const row = page.locator('#weatherList .weather-row').first();
+  await expect(row).toBeVisible({ timeout: 15000 });
+  await row.evaluate((el) => {
+    el.classList.add('weather-row--loading');
+    const temps = el.querySelector('.weather-row-temps');
+    if (temps) {
+      temps.innerHTML = '<div class="weather-row-temp weather-row-temp--loading"><span class="loader" aria-hidden="true"></span></div>';
+    }
+  });
+  const loader = row.locator('.loader');
+  await expect(loader).toBeVisible();
+  await expect(row.locator('.weather-row-temp--loading')).not.toContainText('--');
+  const box = await loader.boundingBox();
+  expect(box.width).toBeGreaterThan(80);
+  expect(box.height).toBeGreaterThan(3);
+  expect(box.height).toBeLessThan(16);
+});
+
 test('renders mocked weather and opens detail', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });

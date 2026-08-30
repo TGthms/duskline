@@ -88,7 +88,7 @@ html[data-motion-effective="off"] body.duskline .weather-detail.wx-mods-light .w
   background: rgba(232, 238, 246, 0.92) !important;
 }
 body.duskline .weather-row--loading { background: linear-gradient(135deg, rgba(34,58,86,.82), rgba(17,31,50,.82)); }
-body.duskline .weather-row-temp--loading { color: rgba(234,243,255,.58); letter-spacing: .18em; }
+body.duskline .weather-row-temp--loading { color: transparent; letter-spacing: 0; }
 body.duskline .weather-btn:hover, body.duskline .weather-btn:focus-visible { color: var(--duskline-accent); border-color: var(--duskline-accent); }
 body.duskline .weather-search { background: rgba(8,17,31,.72); border-color: rgba(125,211,252,.24); color: var(--duskline-ink); }
 body.duskline.weather-sky-light .weather-search { background: rgba(255,255,255,.72); border-color: rgba(31,74,109,.22); color: #15263b; }
@@ -278,12 +278,8 @@ body.duskline .legal-brand img { width: 30px; height: 30px; border-radius: 9px; 
 body.duskline .legal-topbar label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 body.duskline #dusklineLegalLanguage { min-height: 36px; border: 1px solid rgba(125,211,252,.25); border-radius: 999px; background: rgba(8,17,31,.92); color: var(--duskline-ink); padding: 0 12px; font: 600 12px 'Public Sans', sans-serif; }
 body.duskline.weather-detail-open .weather-detail-loading-panel,
-body.duskline .weather-detail-loading-panel { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 180px; color: var(--duskline-ink); }
+body.duskline .weather-detail-loading-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 180px; color: var(--duskline-ink); }
 body.duskline .weather-detail-loading { margin-top: 12px; color: var(--duskline-muted); font-size: 1rem; }
-body.duskline .weather-detail-spinner { width: 18px; height: 18px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: duskline-spin .8s linear infinite; }
-@keyframes duskline-spin { to { transform: rotate(360deg); } }
-html[data-motion-effective="reduced"] body.duskline .weather-detail-spinner,
-html[data-motion-effective="off"] body.duskline .weather-detail-spinner { animation: none; }
 body.duskline.weather-sky-light .legal-topbar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); }
 body.duskline.weather-sky-light .legal-brand,
 body.duskline.weather-sky-light #dusklineLegalLanguage { color: #15263b; }

@@ -1076,7 +1076,7 @@
       row.tabIndex = 0;
       row.setAttribute('aria-label', (displayCityName(c) || c.name || '') + '. ' + t('weather.loadingForecast', 'Loading forecast…'));
       row.setAttribute('aria-busy', 'true');
-      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c) || c.name || '?')}</span></div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">--</div></div>`;
+      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c) || c.name || '?')}</span></div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading"><span class="loader" aria-hidden="true"></span><span class="visually-hidden">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div></div>`;
       const openPending = async () => {
         if (isDetailVisible() && openCity && openCity.city && sameCity(openCity.city, c)) return;
         openDetailLoading(c);
@@ -1588,10 +1588,10 @@
     if (!detailEl || !city) return;
     openCity = { city: city, pending: true };
     if (detailHero) {
-      detailHero.innerHTML = `<h2>${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div>`;
+      detailHero.innerHTML = `<h2>${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
     }
     if (detailMods) {
-      detailMods.innerHTML = `<div class="weather-detail-loading-panel" role="status" aria-live="polite"><span class="weather-detail-spinner" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
+      detailMods.innerHTML = `<div class="weather-detail-loading-panel" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
     }
     if (detailBack) {
       detailBack.hidden = false;
