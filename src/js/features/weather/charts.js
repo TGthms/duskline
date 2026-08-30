@@ -894,7 +894,10 @@
       };
     }
 
-    /** Compact module tile — hero next event + path + daylight stats (fills wide layouts). */
+    /**
+     * Sun module: compact clock (normal tiles) + path/stats (wide tiles).
+     * CSS container queries pick which block is shown from card width.
+     */
     function sunArcSvg(sunriseIso, sunsetIso, compact, timeZone) {
       const W = compact ? 320 : 340;
       const H = compact ? 88 : 110;
@@ -904,6 +907,10 @@
       const heroLabel = heroIsSunset
         ? t('weather.sunset', 'Sunset')
         : t('weather.sunrise', 'Sunrise');
+      const otherLabel = heroIsSunset
+        ? t('weather.sunrise', 'Sunrise')
+        : t('weather.sunset', 'Sunset');
+      const otherIso = heroIsSunset ? sunriseIso : sunsetIso;
       const TW = 35 * 60 * 1000;
       const firstLight = g.rise - TW;
       const lastLight = g.set + TW;
@@ -943,8 +950,13 @@
         statsHtml += `<div class="wx-sun-tile-stat"><span>${escapeHtml(row[0])}</span><strong>${escapeHtml(row[1])}</strong></div>`;
       });
       statsHtml += '</div>';
-      return (
-        `<div class="wx-sun-tile">` +
+      const compactHtml =
+        `<div class="wx-sun-tile-compact">` +
+          `<div class="weather-mod-value">${escapeHtml(formatClock(heroIso, timeZone))}</div>` +
+          `<div class="weather-mod-sub">${escapeHtml(otherLabel)} · ${escapeHtml(formatClock(otherIso, timeZone))}</div>` +
+        `</div>`;
+      const wideHtml =
+        `<div class="wx-sun-tile-wide">` +
           `<div class="wx-sun-tile-hero">` +
             `<div class="wx-sun-mod-hero-label">${escapeHtml(heroLabel)}</div>` +
             `<div class="wx-sun-mod-hero-time">${escapeHtml(formatClock(heroIso, timeZone))}</div>` +
@@ -958,8 +970,8 @@
             hourLabs +
           `</svg>` +
           statsHtml +
-        `</div>`
-      );
+        `</div>`;
+      return `<div class="wx-sun-tile">${compactHtml}${wideHtml}</div>`;
     }
 
     function formatDurationMs(ms) {

@@ -33,6 +33,32 @@ test('loads the branded weather shell and all locales', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 });
 
+test('long list location names stay on one line and keep high/low visible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const row = page.locator('#weatherList .weather-row').first();
+  await expect(row).toBeVisible({ timeout: 15000 });
+  await row.evaluate((el) => {
+    const name = el.querySelector('.weather-row-city-name');
+    if (name) name.textContent = 'Livermore-Pleasanton';
+    const meta = el.querySelector('.weather-row-meta');
+    if (meta) meta.textContent = '3:29 PM · California, United States of America';
+  });
+  const city = row.locator('.weather-row-city');
+  const hl = row.locator('.weather-row-hl');
+  await expect(hl).toBeVisible();
+  const [rowBox, cityBox, nameBox, tempBox, hlBox] = await Promise.all([
+    row.boundingBox(),
+    city.boundingBox(),
+    row.locator('.weather-row-city-name').boundingBox(),
+    row.locator('.weather-row-temp').boundingBox(),
+    hl.boundingBox()
+  ]);
+  expect(nameBox.height).toBeLessThan(36);
+  expect(cityBox.x + cityBox.width).toBeLessThanOrEqual(tempBox.x + 2);
+  expect(hlBox.y + hlBox.height).toBeLessThanOrEqual(rowBox.y + rowBox.height + 1);
+});
+
 test('renders mocked weather and opens detail', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
@@ -119,6 +145,24 @@ test('detail sky mounts layered weather ornaments', async ({ page }) => {
   await expect(page.locator('#weatherDetailSky .wx-ornaments')).toBeVisible();
   await expect(page.locator('#weatherDetailFx .wx-rain-near')).toHaveCount(1);
   await expect(page.locator('#weatherDetailSky .wx-fog')).toHaveCount(3);
+});
+
+test('sun tile is compact on a normal card and rich when wide', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const sun = page.locator('.weather-mod[data-sheet="sun"]');
+  await expect(sun).toBeVisible();
+  await expect(sun.locator('.wx-sun-tile-compact')).toBeVisible();
+  await expect(sun.locator('.wx-sun-tile-wide')).toBeHidden();
+  await expect(sun.locator('.weather-mod-label')).toBeVisible();
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await expect(sun.locator('.wx-sun-tile-wide')).toBeVisible();
+  await expect(sun.locator('.wx-sun-tile-compact')).toBeHidden();
+  await expect(sun.locator('.weather-sun-arc--tile')).toBeVisible();
 });
 
 test('French sun-sheet strings are translated', async ({ page }) => {

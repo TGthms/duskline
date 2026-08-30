@@ -614,10 +614,11 @@
       const data = await dataApi.fetchJson(url);
       const name = data.city || data.locality || data.principalSubdivision || data.countryName;
       if (name) {
-        const admin = [data.principalSubdivision, data.countryName].filter(Boolean).join(', ');
         return {
-          name, admin1: admin, lat, lon,
-          country: data.countryName || '',
+          name,
+          admin1: data.principalSubdivision || '',
+          lat, lon,
+          country: shortCountryName(data.countryName, data.countryCode),
           country_code: data.countryCode || ''
         };
       }
@@ -629,10 +630,11 @@
       const a = data.address || {};
       const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county || data.name;
       if (name) {
-        const admin = [a.state, a.country].filter(Boolean).join(', ');
         return {
-          name, admin1: admin, lat, lon,
-          country: a.country || '',
+          name,
+          admin1: a.state || a.county || '',
+          lat, lon,
+          country: shortCountryName(a.country, a.country_code),
           country_code: a.country_code || ''
         };
       }
@@ -1074,7 +1076,7 @@
       row.tabIndex = 0;
       row.setAttribute('aria-label', (displayCityName(c) || c.name || '') + '. ' + t('weather.loadingForecast', 'Loading forecast…'));
       row.setAttribute('aria-busy', 'true');
-      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">--</div></div>`;
+      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c) || c.name || '?')}</span></div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated">${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</div></div><div class="weather-row-temps"><div class="weather-row-temp weather-row-temp--loading" aria-hidden="true">--</div></div>`;
       const openPending = async () => {
         if (isDetailVisible() && openCity && openCity.city && sameCity(openCity.city, c)) return;
         openDetailLoading(c);
@@ -1106,7 +1108,7 @@
         ? stamp
         : t('weather.tapRetry', 'Tap to retry');
       const failLines = [failMsg, locStamp].filter(Boolean).join(' · ');
-      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city">${escapeHtml(displayCityName(c) || c.name || '?')}</div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated weather-row-updated--fail">${escapeHtml(failLines)}</div></div><div class="weather-row-temps"><div class="weather-row-temp">—</div></div>`;
+      row.innerHTML = `<div class="weather-row-main"><div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c) || c.name || '?')}</span></div><div class="weather-row-meta">${escapeHtml(displayAdmin1(c) || c.admin1 || '')}</div><div class="weather-row-updated weather-row-updated--fail">${escapeHtml(failLines)}</div></div><div class="weather-row-temps"><div class="weather-row-temp">—</div></div>`;
       row.setAttribute('aria-label', (displayCityName(c) || c.name || '') + '. ' + failLines);
       const retry = async () => {
         try {
@@ -1171,8 +1173,8 @@
     const stampLine = [stamp, locStamp].filter(Boolean).join(' · ');
     main.className = 'weather-row-main';
     main.innerHTML = `
-        <div class="weather-row-city">${escapeHtml(displayCityName(c))}</div>
-        <div class="weather-row-meta">${escapeHtml(localTime)}${c.admin1 ? ' · ' + escapeHtml(displayAdmin1(c)) : ''}</div>
+        <div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c))}</span></div>
+        <div class="weather-row-meta">${escapeHtml(localTime)}${displayAdmin1(c) ? ' · ' + escapeHtml(displayAdmin1(c)) : ''}</div>
         ${statusLine}
         ${stampLine ? '<div class="weather-row-updated">' + escapeHtml(stampLine) + '</div>' : ''}`;
 
@@ -1990,6 +1992,28 @@
     return 'United States';
   }
 
+  function shortCountryName(name, code) {
+    const n = String(name || '').trim();
+    const cc = String(code || '').toUpperCase();
+    if (cc === 'US' || /^united states( of america)?$/i.test(n)) return countryLabelUS();
+    return n;
+  }
+
+  function regionWithoutCountry(raw, country) {
+    let region = String(raw || '').trim();
+    if (!region) return '';
+    const countries = [country, 'United States of America', 'United States', countryLabelUS()]
+      .map(function (x) { return String(x || '').trim(); })
+      .filter(Boolean);
+    countries.forEach(function (cName) {
+      const suffix = ', ' + cName;
+      if (region.length > suffix.length && region.slice(-suffix.length).toLowerCase() === suffix.toLowerCase()) {
+        region = region.slice(0, -suffix.length).trim();
+      }
+    });
+    return region;
+  }
+
   /** Display name for a city (localized majors when available). */
   function displayCityName(c) {
     if (!c) return '';
@@ -2012,7 +2036,7 @@
   /** Localized admin1 / state label when we have a mapping. */
   function displayAdmin1(c) {
     if (!c) return '';
-    const raw = c.admin1 || '';
+    const raw = regionWithoutCountry(c.admin1 || '', c.country || '');
     if (!raw) return '';
     const L = lang();
     if (L === 'en') return raw;
