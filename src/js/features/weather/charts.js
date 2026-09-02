@@ -61,6 +61,38 @@
       return 'rgb(255,210,60)';
     }
 
+    function dailyTodayKey(timeZone) {
+      try {
+        return new Intl.DateTimeFormat('en-CA', {
+          timeZone: timeZone || undefined,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).format(new Date());
+      } catch (e) {
+        return new Date().toISOString().slice(0, 10);
+      }
+    }
+
+    function dailySliceStart(times, timeZone) {
+      const todayKey = dailyTodayKey(timeZone);
+      let start = 0;
+      for (let i = 0; i < times.length; i++) {
+        if (String(times[i] || '').slice(0, 10) >= todayKey) { start = i; break; }
+      }
+      return start;
+    }
+
+    function dailySliceCount(daily, opts) {
+      opts = opts || {};
+      daily = daily || {};
+      const times = daily.time || [];
+      const highs = daily.temperature_2m_max || [];
+      const lows = daily.temperature_2m_min || [];
+      const start = dailySliceStart(times, opts.timeZone);
+      return Math.min(10, Math.max(0, times.length - start), Math.max(0, highs.length - start), Math.max(0, lows.length - start));
+    }
+
     function dailyBarsHtml(daily, opts) {
       opts = opts || {};
       const highs = daily.temperature_2m_max || [];
@@ -80,20 +112,9 @@
         }
         pops = times.map(function (t) { return byDay[String(t || '').slice(0, 10)]; });
       }
-      const todayKey = (function () {
-        try {
-          const tz = opts.timeZone || undefined;
-          return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-        } catch (e) {
-          return new Date().toISOString().slice(0, 10);
-        }
-      })();
-
-      let start = 0;
-      for (let i = 0; i < times.length; i++) {
-        if (String(times[i] || '').slice(0, 10) >= todayKey) { start = i; break; }
-      }
-      const sliceN = Math.min(10, Math.max(0, times.length - start), Math.max(0, highs.length - start), Math.max(0, lows.length - start));
+      const todayKey = dailyTodayKey(opts.timeZone);
+      const start = dailySliceStart(times, opts.timeZone);
+      const sliceN = dailySliceCount(daily, opts);
       let weekMin = Infinity;
       let weekMax = -Infinity;
       for (let j = 0; j < sliceN; j++) {
@@ -472,7 +493,7 @@
       let grids = '';
       for (let g = 0; g < 4; g++) {
         const gy = padT + (g / 3) * plotH;
-        grids += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="rgba(255,255,255,.1)" stroke-width="1"/>';
+        grids += '<line class="wx-chart-grid" x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke-width="1"/>';
       }
 
       let labels = '';
@@ -487,7 +508,7 @@
         if (nonNeg && tv < 0) tv = 0;
         const lab = axisTickLabel(tv, key, unitFmt);
         if (!lab) return;
-        labels += '<text class="wx-chart-axis wx-chart-axis-y" x="' + (padL - 8).toFixed(1) + '" y="' + tick.y.toFixed(1) + '" fill="rgba(255,255,255,.48)" font-size="10" font-weight="500" text-anchor="end" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif" font-variant-numeric="tabular-nums">' + escapeHtml(lab) + '</text>';
+        labels += '<text class="wx-chart-axis wx-chart-axis-y" x="' + (padL - 8).toFixed(1) + '" y="' + tick.y.toFixed(1) + '" font-size="10" font-weight="500" text-anchor="end" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif" font-variant-numeric="tabular-nums">' + escapeHtml(lab) + '</text>';
       });
 
       const axisPts = (function pickAxisPts() {
@@ -515,20 +536,20 @@
         const lab = formatChartAxisHour(p.t, tz);
         if (!lab) return;
         const anchor = k === 0 ? 'start' : (k === axisPts.length - 1 ? 'end' : 'middle');
-        labels += '<text class="wx-chart-axis" x="' + p.x.toFixed(1) + '" y="' + (H - 8) + '" fill="rgba(255,255,255,.48)" font-size="11" font-weight="500" letter-spacing="0.02em" text-anchor="' + anchor + '" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif" font-variant-numeric="tabular-nums">' + escapeHtml(lab) + '</text>';
+        labels += '<text class="wx-chart-axis" x="' + p.x.toFixed(1) + '" y="' + (H - 8) + '" font-size="11" font-weight="500" letter-spacing="0.02em" text-anchor="' + anchor + '" font-family="system-ui,-apple-system,BlinkMacSystemFont,sans-serif" font-variant-numeric="tabular-nums">' + escapeHtml(lab) + '</text>';
       });
 
       // Past = dashed (always when we have history). Future = solid only for remaining hours.
       // If now is the last sample (e.g. 11 PM), draw the whole day as dashed past — no solid overlay.
       const pastPath = pastLine
-        ? '<path d="' + pastLine + '" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 5"/>'
+        ? '<path class="wx-chart-past" d="' + pastLine + '" fill="none" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 5"/>'
         : '';
       let futurePath = '';
       if (futureLine) {
-        futurePath = '<path d="' + futureLine + '" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        futurePath = '<path class="wx-chart-future" d="' + futureLine + '" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
       } else if (!pastLine && fullLine) {
         // Only when we have no split at all (e.g. 2 points) draw a single solid line
-        futurePath = '<path d="' + fullLine + '" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        futurePath = '<path class="wx-chart-future" d="' + fullLine + '" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
       }
       // Fill: prefer whole-day soft fill when past dominates (evening); stronger future fill midday
       const fillPath = futureArea
@@ -543,12 +564,12 @@
         '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img">' +
           '<defs>' +
             '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="0" y2="1">' +
-              '<stop offset="0%" stop-color="#ffffff" stop-opacity="0.38"/>' +
-              '<stop offset="40%" stop-color="#7ec8ff" stop-opacity="0.2"/>' +
+              '<stop class="wx-chart-fill-a" offset="0%" stop-color="#ffffff" stop-opacity="0.38"/>' +
+              '<stop class="wx-chart-fill-b" offset="40%" stop-color="#7ec8ff" stop-opacity="0.2"/>' +
               '<stop offset="100%" stop-color="#3a7ab8" stop-opacity="0.02"/>' +
             '</linearGradient>' +
             '<linearGradient id="' + id + 'gpast" x1="0" y1="0" x2="0" y2="1">' +
-              '<stop offset="0%" stop-color="#ffffff" stop-opacity="0.14"/>' +
+              '<stop class="wx-chart-fill-a" offset="0%" stop-color="#ffffff" stop-opacity="0.14"/>' +
               '<stop offset="100%" stop-color="#3a7ab8" stop-opacity="0.02"/>' +
             '</linearGradient>' +
           '</defs>' +
@@ -556,8 +577,8 @@
           fillPath +
           pastPath +
           futurePath +
-          '<line data-guide x1="' + mid.x + '" y1="' + padT + '" x2="' + mid.x + '" y2="' + (H - padB) + '" stroke="rgba(255,255,255,.75)" stroke-width="1.25" stroke-dasharray="4 4"/>' +
-          '<circle data-dot cx="' + mid.x + '" cy="' + mid.y + '" r="6.5" fill="#fff" stroke="rgba(255,255,255,.35)" stroke-width="2"/>' +
+          '<line class="wx-chart-guide" data-guide x1="' + mid.x + '" y1="' + padT + '" x2="' + mid.x + '" y2="' + (H - padB) + '" stroke-width="1.25" stroke-dasharray="4 4"/>' +
+          '<circle class="wx-chart-dot" data-dot cx="' + mid.x + '" cy="' + mid.y + '" r="6.5" stroke-width="2"/>' +
           labels +
           '<rect data-hit x="0" y="0" width="' + W + '" height="' + H + '" fill="transparent"/>' +
         '</svg>' +
@@ -719,24 +740,113 @@
           const cx = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
           const cy = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
           if (cx == null) return;
-          if (e.cancelable) e.preventDefault();
+          if (e.cancelable && e.pointerType === 'touch') e.preventDefault();
           scrub(cx, cy);
         };
-        hit.style.touchAction = 'none';
+        hit.style.touchAction = 'pan-y';
         hit.style.cursor = 'ew-resize';
         // Bind to SVG (not only hit rect) so axis padding still scrubs
         const target = svg;
-        target.style.touchAction = 'none';
+        target.style.touchAction = 'pan-y';
         target.style.cursor = 'ew-resize';
+        let scrubArmed = false;
+        let armTimer = 0;
+        let activePointer = null;
+        let startX = 0;
+        let startY = 0;
+        let lastX = 0;
+        let lastY = 0;
+        const TOUCH_ARM_MS = 200;
+        const TOUCH_CANCEL_PX = 12;
+        function isMousePtr(e) {
+          return e.pointerType === 'mouse' || e.type === 'mousemove' || e.type === 'mouseleave';
+        }
+        function clearArmTimer() {
+          if (armTimer) {
+            window.clearTimeout(armTimer);
+            armTimer = 0;
+          }
+        }
+        function setPanY() {
+          target.style.touchAction = 'pan-y';
+          hit.style.touchAction = 'pan-y';
+        }
+        function setPanNone() {
+          target.style.touchAction = 'none';
+          hit.style.touchAction = 'none';
+        }
+        function endScrub() {
+          clearArmTimer();
+          const wasArmed = scrubArmed;
+          scrubArmed = false;
+          activePointer = null;
+          setPanY();
+          if (wasArmed) resetToNow();
+        }
         target.addEventListener('pointerdown', (e) => {
-          try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (err) {}
+          if (isMousePtr(e) || e.pointerType === 'pen') {
+            scrubArmed = true;
+            try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (err) {}
+            onMove(e);
+            return;
+          }
+          // Touch: wait ~0.2s before taking the gesture so vertical scroll still wins
+          scrubArmed = false;
+          activePointer = e.pointerId;
+          startX = lastX = e.clientX;
+          startY = lastY = e.clientY;
+          clearArmTimer();
+          armTimer = window.setTimeout(function () {
+            armTimer = 0;
+            if (activePointer == null) return;
+            scrubArmed = true;
+            setPanNone();
+            try { target.setPointerCapture && target.setPointerCapture(activePointer); } catch (err) {}
+            scrub(lastX, lastY);
+          }, TOUCH_ARM_MS);
+        });
+        target.addEventListener('pointermove', (e) => {
+          if (isMousePtr(e) || e.pointerType === 'pen') {
+            onMove(e);
+            return;
+          }
+          if (activePointer != null && e.pointerId !== activePointer) return;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          if (!scrubArmed) {
+            const dy = Math.abs(e.clientY - startY);
+            const dx = Math.abs(e.clientX - startX);
+            if (dy > TOUCH_CANCEL_PX && dy > dx) {
+              clearArmTimer();
+              activePointer = null;
+            }
+            return;
+          }
+          if (e.cancelable) e.preventDefault();
           onMove(e);
         });
-        target.addEventListener('pointermove', onMove);
-        target.addEventListener('pointerup', resetToNow);
-        target.addEventListener('pointercancel', resetToNow);
-        target.addEventListener('pointerleave', resetToNow);
-        target.addEventListener('lostpointercapture', resetToNow);
+        target.addEventListener('pointerup', (e) => {
+          if (isMousePtr(e) || e.pointerType === 'pen') {
+            resetToNow();
+            scrubArmed = false;
+            return;
+          }
+          endScrub();
+        });
+        target.addEventListener('pointercancel', (e) => {
+          if (isMousePtr(e) || e.pointerType === 'pen') {
+            resetToNow();
+            scrubArmed = false;
+            return;
+          }
+          endScrub();
+        });
+        target.addEventListener('pointerleave', (e) => {
+          if (isMousePtr(e)) resetToNow();
+        });
+        target.addEventListener('lostpointercapture', (e) => {
+          if (e.pointerType === 'mouse' || e.pointerType === 'pen') resetToNow();
+        });
         // Desktop hover scrub (no press required)
         target.addEventListener('mousemove', onMove);
         target.addEventListener('mouseleave', resetToNow);
@@ -937,22 +1047,31 @@
         const x = 8 + f * (W - 16);
         return `<text class="wx-sun-axis" x="${x.toFixed(1)}" y="${H - 2}" font-size="8" text-anchor="middle" font-family="system-ui,sans-serif">${labs[i]}</text>`;
       }).join('');
+      const solarNoonMs = g.rise + (g.set - g.rise) / 2;
       const stats = [
         [t('weather.sunrise', 'Sunrise'), formatClock(sunriseIso, timeZone)],
         [t('weather.sunset', 'Sunset'), formatClock(sunsetIso, timeZone)],
         [t('weather.firstLight', 'First Light'), fmtMs(firstLight)],
         [t('weather.lastLight', 'Last Light'), fmtMs(lastLight)],
         [remainLab, remainVal],
-        [t('weather.totalDaylight', 'Total Daylight'), formatDurationMs(daylight)]
+        [t('weather.totalDaylight', 'Total Daylight'), formatDurationMs(daylight)],
+        [t('weather.solarNoon', 'Solar Noon'), fmtMs(solarNoonMs), 'extra']
       ];
       let statsHtml = '<div class="wx-sun-tile-stats">';
       stats.forEach(function (row) {
-        statsHtml += `<div class="wx-sun-tile-stat"><span>${escapeHtml(row[0])}</span><strong>${escapeHtml(row[1])}</strong></div>`;
+        const extra = row[2] === 'extra' ? ' wx-sun-tile-stat--extra' : '';
+        statsHtml += `<div class="wx-sun-tile-stat${extra}"><span>${escapeHtml(row[0])}</span><strong>${escapeHtml(row[1])}</strong></div>`;
       });
       statsHtml += '</div>';
       const compactHtml =
         `<div class="wx-sun-tile-compact">` +
           `<div class="weather-mod-value">${escapeHtml(formatClock(heroIso, timeZone))}</div>` +
+          `<svg class="weather-sun-arc weather-sun-arc--compact" viewBox="0 0 ${W} ${H}" aria-hidden="true">` +
+            `<line class="wx-sun-horizon" x1="8" y1="${g.horizonY.toFixed(1)}" x2="${W - 8}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>` +
+            (g.area ? `<path class="wx-sun-area" d="${g.area}"/>` : '') +
+            `<path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2" stroke-linejoin="round"/>` +
+            `<circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="5" stroke-width="2"/>` +
+          `</svg>` +
           `<div class="weather-mod-sub">${escapeHtml(otherLabel)} · ${escapeHtml(formatClock(otherIso, timeZone))}</div>` +
         `</div>`;
       const wideHtml =
@@ -987,7 +1106,7 @@
 
     /** Full-day sun path chart + metrics (Apple-inspired). No Y-axis — path is symbolic. */
     function buildSunDaySheet(sunriseIso, sunsetIso, timeZone) {
-      const W = 340, H = 160, padL = 10, padR = 10, padT = 14, padB = 28;
+      const W = 340, H = 190, padL = 8, padR = 8, padT = 10, padB = 26;
       const g = sunPathGeometry(sunriseIso, sunsetIso, W, H, padL, padR, padT, padB, timeZone);
       const TW = 35 * 60 * 1000;
       const firstLight = g.rise - TW;
@@ -1015,7 +1134,7 @@
         { f: 0, lab: '00' }, { f: 0.25, lab: '06' }, { f: 0.5, lab: '12' }, { f: 0.75, lab: '18' }, { f: 1, lab: '24' }
       ].map(function (item) {
         const x = padL + item.f * (W - padL - padR);
-        return `<text x="${x.toFixed(1)}" y="${H - 8}" fill="rgba(255,255,255,.45)" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif">${item.lab}</text>`;
+        return `<text class="wx-chart-axis" x="${x.toFixed(1)}" y="${H - 8}" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif">${item.lab}</text>`;
       }).join('');
 
       let html = `<div class="wx-sheet-hero">
@@ -1025,10 +1144,11 @@
       </div>`;
       html += `<div class="weather-chart-card wx-sun-day-card">
         <svg class="weather-chart weather-sun-day" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-          <line x1="${padL}" y1="${g.horizonY.toFixed(1)}" x2="${W - padR}" y2="${g.horizonY.toFixed(1)}" stroke="rgba(255,255,255,.28)" stroke-width="1"/>
-          ${g.area ? `<path d="${g.area}" fill="rgba(255,210,120,.16)"/>` : ''}
-          <path d="${g.line}" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.25" stroke-linejoin="round"/>
-          <circle cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="7" fill="#fff" stroke="rgba(255,220,140,.95)" stroke-width="2"/>
+          <rect class="wx-sun-day-sky" x="0" y="0" width="${W}" height="${g.horizonY.toFixed(1)}"/>
+          <rect class="wx-sun-day-night" x="0" y="${g.horizonY.toFixed(1)}" width="${W}" height="${(H - g.horizonY).toFixed(1)}"/>
+          <line class="wx-sun-horizon" x1="0" y1="${g.horizonY.toFixed(1)}" x2="${W}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>
+          <path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2.4" stroke-linejoin="round"/>
+          <circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="7" stroke-width="2"/>
           ${hourLabs}
         </svg>
       </div>`;
@@ -1040,9 +1160,11 @@
           return new Date(ms).toLocaleTimeString(localeTag(), opts);
         } catch (e) { return '—'; }
       };
+      const solarNoonMs = g.rise + (g.set - g.rise) / 2;
       const rows = [
         [t('weather.firstLight', 'First Light'), fmtMs(firstLight)],
         [t('weather.sunrise', 'Sunrise'), formatClock(sunriseIso)],
+        [t('weather.solarNoon', 'Solar Noon'), fmtMs(solarNoonMs)],
         [t('weather.sunset', 'Sunset'), formatClock(sunsetIso)],
         [t('weather.lastLight', 'Last Light'), fmtMs(lastLight)],
         [t('weather.totalDaylight', 'Total Daylight'), formatDurationMs(daylight)]
@@ -1086,6 +1208,7 @@
     return {
       tempToBarColor: tempToBarColor,
       dailyBarsHtml: dailyBarsHtml,
+      dailySliceCount: dailySliceCount,
       hourlyWindow: hourlyWindow,
       localDateKey: localDateKey,
       wallClockInZoneToUtcMs: wallClockInZoneToUtcMs,

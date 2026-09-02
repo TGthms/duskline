@@ -446,53 +446,58 @@
 
         const d = pack.weather.daily || {};
         const od = om.weather.daily || {};
-        function mergeDailyByDate(field) {
-          if (!od[field] || !od.time) return;
+        /* Union NWS + Open-Meteo calendars. NWS is often 7 days; OM is 10.
+           Keep NWS temps when present, fill gaps, and append extra OM days. */
+        (function unionDailyCalendar() {
+          const fields = [
+            'weather_code',
+            'temperature_2m_max',
+            'temperature_2m_min',
+            'sunrise',
+            'sunset',
+            'uv_index_max',
+            'precipitation_sum',
+            'precipitation_probability_max'
+          ];
           const byDay = {};
-          for (let i = 0; i < od.time.length; i++) {
-            byDay[String(od.time[i] || '').slice(0, 10)] = od[field][i];
+          function ingest(src) {
+            if (!src || !src.time) return;
+            for (let i = 0; i < src.time.length; i++) {
+              const key = String(src.time[i] || '').slice(0, 10);
+              if (!key) continue;
+              if (!byDay[key]) byDay[key] = {};
+              const row = byDay[key];
+              for (let f = 0; f < fields.length; f++) {
+                const name = fields[f];
+                const arr = src[name];
+                if (!arr) continue;
+                const v = arr[i];
+                if (v == null || v === '') continue;
+                if (row[name] == null) {
+                  row[name] = v;
+                  continue;
+                }
+                if (name === 'temperature_2m_max' && Number.isFinite(Number(v))) {
+                  row[name] = Math.max(Number(row[name]), Number(v));
+                } else if (name === 'temperature_2m_min' && Number.isFinite(Number(v))) {
+                  row[name] = Math.min(Number(row[name]), Number(v));
+                }
+              }
+            }
           }
-          if (d.time && d.time.length) {
-            if (!d[field]) d[field] = [];
-            d.time.forEach(function (t, i) {
-              if (d[field][i] == null) d[field][i] = byDay[String(t || '').slice(0, 10)];
+          ingest(d);
+          ingest(od);
+          const keys = Object.keys(byDay).sort();
+          if (!keys.length) return;
+          const out = { time: keys };
+          fields.forEach(function (name) {
+            out[name] = keys.map(function (k) {
+              const v = byDay[k][name];
+              return v == null ? null : v;
             });
-          } else if (!d[field]) {
-            d[field] = od[field];
-            if (!d.time) d.time = od.time;
-          }
-        }
-        mergeDailyByDate('sunrise');
-        mergeDailyByDate('sunset');
-        mergeDailyByDate('uv_index_max');
-        mergeDailyByDate('precipitation_sum');
-        mergeDailyByDate('precipitation_probability_max');
-        /* NWS daily max/min only cover remaining periods (evening list = H=L).
-           Union with Open-Meteo calendar-day range. */
-        function unionDailyByDate(field, prefer) {
-          if (!od[field] || !od.time) return;
-          const byDay = {};
-          for (let i = 0; i < od.time.length; i++) {
-            byDay[String(od.time[i] || '').slice(0, 10)] = od[field][i];
-          }
-          if (d.time && d.time.length) {
-            if (!d[field]) d[field] = [];
-            d.time.forEach(function (t, i) {
-              const omv = byDay[String(t || '').slice(0, 10)];
-              const cur = d[field][i];
-              if (omv == null) return;
-              if (cur == null || !Number.isFinite(Number(cur))) d[field][i] = omv;
-              else if (prefer === 'max') d[field][i] = Math.max(Number(cur), Number(omv));
-              else d[field][i] = Math.min(Number(cur), Number(omv));
-            });
-          } else if (!d[field]) {
-            d[field] = od[field];
-            if (!d.time) d.time = od.time;
-          }
-        }
-        unionDailyByDate('temperature_2m_max', 'max');
-        unionDailyByDate('temperature_2m_min', 'min');
-        pack.weather.daily = d;
+          });
+          pack.weather.daily = out;
+        })();
 
         const h = pack.weather.hourly || {};
         const oh = om.weather.hourly || {};

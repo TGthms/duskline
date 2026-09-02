@@ -1831,11 +1831,18 @@
     hourlyHtml += '</div>';
     mods.push(`<button type="button" class="weather-mod weather-mod-wide is-tappable" data-sheet="conditions"><div class="weather-mod-label">${modLabelIcon('conditions')}<span>${escapeHtml(t('weather.hourly', 'Hourly Forecast'))}</span></div>${hourlyHtml}</button>`);
 
-    mods.push(`<div class="weather-mod weather-mod-wide"><div class="weather-mod-label">${escapeHtml(t('weather.daily', '10-Day Forecast'))}</div>${chartsApi.dailyBarsHtml(daily, {
+    const dailyOpts = {
       currentTemp: cur && cur.temperature_2m != null ? cur.temperature_2m : null,
       timeZone: (pack.weather && pack.weather.timezone) || (c && c.tz) || undefined,
       hourly: hourly
-    })}</div>`);
+    };
+    const dailyN = chartsApi.dailySliceCount ? chartsApi.dailySliceCount(daily, dailyOpts) : 10;
+    const dailyTitle = dailyN >= 10
+      ? t('weather.daily', '10-Day Forecast')
+      : dailyN === 7
+        ? t('weather.daily7', '7-Day Forecast')
+        : t('weather.dailyN', '{n}-Day Forecast').replace('{n}', String(dailyN));
+    mods.push(`<div class="weather-mod weather-mod-wide"><div class="weather-mod-label">${escapeHtml(dailyTitle)}</div>${chartsApi.dailyBarsHtml(daily, dailyOpts)}</div>`);
 
     // Apple-style location attribution
     const placeBits = [displayCityName(c), displayAdmin1(c), c.country || ''].filter(Boolean);
@@ -2187,6 +2194,15 @@
       || (pack.city && pack.city.tz)
       || undefined;
 
+    function unitsPickerHtml(id, pairs, current) {
+      let html = `<p class="weather-mod-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="${id}">`;
+      pairs.forEach(function (pair) {
+        html += `<button type="button" data-u="${pair[0]}" class="${current === pair[0] ? 'active' : ''}">${escapeHtml(pair[1])}</button>`;
+      });
+      html += '</div>';
+      return html;
+    }
+
     // Chart sheets: Apple pattern = title → large live value lives in chart readout → scrub chart → about
     if (kind === 'conditions') {
       // Chart owns the big readout (scrub updates it). Secondary context line above.
@@ -2194,9 +2210,11 @@
       body += chartsApi.buildTempChart(hourly, 'temperature_2m', (v) => fmtTemp(v), chartTz);
       body += `<p class="weather-mod-label" style="margin-top:16px">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</p>`;
       body += chartsApi.buildTempChart(hourly, 'apparent_temperature', (v) => fmtTemp(v), chartTz);
+      body += unitsPickerHtml('wxTempUnitsSheet', [['c', '°C'], ['f', '°F']], useF() ? 'f' : 'c');
     } else if (kind === 'feels') {
       body += `<p class="wx-sheet-context">${escapeHtml(condLabel(cur.weather_code))}</p>`;
       body += chartsApi.buildTempChart(hourly, 'apparent_temperature', (v) => fmtTemp(v), chartTz);
+      body += unitsPickerHtml('wxTempUnitsSheet', [['c', '°C'], ['f', '°F']], useF() ? 'f' : 'c');
     } else if (kind === 'humidity') {
       body += chartsApi.buildTempChart(hourly, 'relative_humidity_2m', (v) => Math.round(v) + '%', chartTz);
     } else if (kind === 'wind') {
@@ -2264,6 +2282,7 @@
         <div class="weather-chart-readout">${escapeHtml(fmtVis(cur.visibility))}</div>
         <div class="weather-chart-sub">${escapeHtml(t('weather.visibility', 'Visibility'))}</div>
       </div>`;
+      body += unitsPickerHtml('wxVisUnits', [['km', 'km'], ['mi', 'mi']], useMi() ? 'mi' : 'km');
     }
 
     const blurb = about[kind];
@@ -2297,6 +2316,12 @@
     bind('wxWindUnits', setWindUnit);
     bind('wxPrecipUnits', setPrecipUnit);
     bind('wxPressUnits', setPressUnit);
+    bind('wxTempUnitsSheet', function (u) {
+      if (typeof window.setTempUnitPreference === 'function') window.setTempUnitPreference(u);
+    });
+    bind('wxVisUnits', function (u) {
+      if (typeof window.setDistUnitPreference === 'function') window.setDistUnitPreference(u);
+    });
 
     presentSheet();
   }
@@ -2312,6 +2337,17 @@
   function sheetReduceMotion() {
     return motionLevel() === 'off' || motionLevel() === 'reduced'
       || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function sheetCentered() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(min-width: 720px)').matches);
+    } catch (e) { return false; }
+  }
+
+  function sheetHiddenTransform() {
+    /* Mobile drag-to-dismiss still uses a Y translate. Desktop open/close is CSS. */
+    return 'translate3d(0, 100%, 0)';
   }
 
   function sheetHeight() {
@@ -2346,7 +2382,7 @@
   /** Instantly inert sheet — no animation. Use when opening detail or recovering stuck UI. */
   function inertSheet() {
     if (!sheetEl) return;
-    sheetEl.classList.remove('open', 'is-raised');
+    sheetEl.classList.remove('open', 'is-raised', 'is-leaving');
     sheetEl.setAttribute('aria-hidden', 'true');
     sheetEl.style.pointerEvents = 'none';
     sheetEl.style.opacity = '';
@@ -2382,50 +2418,40 @@
     if (!sheetEl || !sheetPanel) return;
     closeSuggest();
     hoistOverlays();
+    const alreadyOpen = sheetEl.classList.contains('open') && !sheetEl.classList.contains('is-leaving');
     sheetGen += 1;
     const gen = sheetGen;
     sheetOpen = true;
-    resetSheetInline();
-    sheetEl.classList.remove('open', 'is-raised');
     try { sheetEl.inert = false; } catch (e) { /* older browsers */ }
     sheetEl.setAttribute('aria-hidden', 'false');
     sheetEl.style.pointerEvents = 'auto';
-    // Always full dim when opening (drag may have left --wx-sheet-backdrop at 0)
+    sheetEl.classList.toggle('wx-sheet-light', !!(detailEl && detailEl.classList.contains('wx-mods-light')));
+    sheetEl.classList.toggle('wx-sheet-centered', sheetCentered());
     try {
       sheetEl.style.removeProperty('--wx-sheet-backdrop');
       sheetEl.style.opacity = '';
       sheetEl.style.visibility = '';
       sheetEl.style.background = '';
     } catch (eBg) { /* ignore */ }
-    // Force start below, then pop up next frames (snappy open)
-    sheetPanel.style.transition = 'none';
-    sheetPanel.style.transform = 'translate3d(0,100%,0)';
-    sheetEl.classList.add('open');
-    // Scroll body to top so About section isn’t half-hidden from a prior sheet
     try {
       if (sheetBody) sheetBody.scrollTop = 0;
     } catch (eScr) { /* ignore */ }
+    if (alreadyOpen) {
+      sheetEl.classList.add('open', 'is-raised');
+      sheetEl.classList.remove('is-leaving');
+      return;
+    }
+    resetSheetInline();
+    sheetEl.classList.remove('open', 'is-raised', 'is-leaving');
+    const reduce = sheetReduceMotion();
+    if (reduce) {
+      sheetEl.classList.add('open', 'is-raised');
+      return;
+    }
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (gen !== sheetGen) return;
-        // Re-assert open + dim (mobile WebKit can drop opacity mid-frame)
-        sheetEl.classList.add('open');
-        try { sheetEl.style.removeProperty('--wx-sheet-backdrop'); } catch (e2) { /* ignore */ }
-        const reduce = sheetReduceMotion();
-        if (reduce) {
-          sheetPanel.style.transition = '';
-          sheetPanel.style.transform = '';
-          sheetEl.classList.add('is-raised');
-          return;
-        }
-        sheetPanel.style.transition = 'transform .38s cubic-bezier(0.32, 0.72, 0, 1)';
-        sheetPanel.style.transform = 'translate3d(0,0,0)';
-        sheetEl.classList.add('is-raised');
-        window.setTimeout(function () {
-          if (gen !== sheetGen) return;
-          sheetPanel.style.transition = '';
-          sheetPanel.style.transform = '';
-        }, 400);
+        sheetEl.classList.add('open', 'is-raised');
       });
     });
   }
@@ -2442,16 +2468,16 @@
     sheetOpen = false;
     sheetPanel.classList.remove('is-dragging');
     const reduce = sheetReduceMotion();
-    const closeMs = reduce ? 0 : 280;
+    const centered = sheetCentered();
+    const closeMs = reduce ? 0 : (centered ? 320 : 380);
 
-    if (!reduce) {
-      sheetPanel.style.transition = 'transform ' + closeMs + 'ms cubic-bezier(0.32, 0.72, 0, 1)';
-      sheetPanel.style.transform = 'translate3d(0,100%,0)';
-    }
+    sheetEl.classList.add('open', 'is-leaving');
     sheetEl.classList.remove('is-raised');
-    // Drop backdrop immediately so modules/list stay tappable even if
-    // the panel slide-out is still finishing.
     sheetEl.style.pointerEvents = 'none';
+    if (reduce) {
+      inertSheet();
+      return;
+    }
     window.setTimeout(function () {
       if (gen !== sheetGen) return;
       inertSheet();

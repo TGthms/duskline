@@ -9,7 +9,16 @@ test.beforeEach(async ({ page }) => {
     if (url.includes('points')) return route.fulfill({ json: { properties: { gridId: 'OKX', gridX: 33, gridY: 37, timeZone: 'America/New_York', forecast: 'https://api.weather.gov/gridpoints/OKX/33,37/forecast', forecastHourly: 'https://api.weather.gov/gridpoints/OKX/33,37/forecast/hourly' } } });
     if (url.includes('air-quality')) return route.fulfill({ json: { current: { us_aqi: 42, pm2_5: 8, pm10: 12, european_aqi: 30 } } });
     const times = Array.from({ length: 24 }, (_, i) => new Date(Date.now() + i * 3600000).toISOString());
-    return route.fulfill({ json: { latitude: 42.36, longitude: -71.06, timezone: 'America/New_York', current: { time: times[0], temperature_2m: 22, apparent_temperature: 21, relative_humidity_2m: 55, weather_code: 2, wind_speed_10m: 3.5, wind_direction_10m: 220, surface_pressure: 1012, visibility: 10000, precipitation: 0 }, hourly: { time: times, temperature_2m: times.map(() => 22), apparent_temperature: times.map(() => 21), weather_code: times.map(() => 2), precipitation_probability: times.map(() => 10), precipitation: times.map(() => 0), wind_speed_10m: times.map(() => 3), wind_direction_10m: times.map(() => 200), relative_humidity_2m: times.map(() => 50), surface_pressure: times.map(() => 1012), uv_index: times.map(() => 3) }, daily: { time: times.slice(0, 10).map(t => t.slice(0, 10)), weather_code: times.slice(0, 10).map(() => 2), temperature_2m_max: times.slice(0, 10).map(() => 26), temperature_2m_min: times.slice(0, 10).map(() => 14), sunrise: times.slice(0, 10), sunset: times.slice(0, 10), uv_index_max: times.slice(0, 10).map(() => 6), precipitation_sum: times.slice(0, 10).map(() => 0), precipitation_probability_max: times.slice(0, 10).map(() => 20) } } });
+    const days = Array.from({ length: 11 }, (_, i) => {
+      const d = new Date(Date.now() + (i - 1) * 86400000);
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(d);
+    });
+    return route.fulfill({ json: { latitude: 42.36, longitude: -71.06, timezone: 'America/New_York', current: { time: times[0], temperature_2m: 22, apparent_temperature: 21, relative_humidity_2m: 55, weather_code: 2, wind_speed_10m: 3.5, wind_direction_10m: 220, surface_pressure: 1012, visibility: 10000, precipitation: 0 }, hourly: { time: times, temperature_2m: times.map(() => 22), apparent_temperature: times.map(() => 21), weather_code: times.map(() => 2), precipitation_probability: times.map(() => 10), precipitation: times.map(() => 0), wind_speed_10m: times.map(() => 3), wind_direction_10m: times.map(() => 200), relative_humidity_2m: times.map(() => 50), surface_pressure: times.map(() => 1012), uv_index: times.map(() => 3) }, daily: { time: days, weather_code: days.map(() => 2), temperature_2m_max: days.map(() => 26), temperature_2m_min: days.map(() => 14), sunrise: days.map((d) => d + 'T06:16:00'), sunset: days.map((d) => d + 'T19:24:00'), uv_index_max: days.map(() => 6), precipitation_sum: days.map(() => 0), precipitation_probability_max: days.map(() => 20) } } });
   });
 });
 
@@ -118,7 +127,7 @@ test('units sheet opens', async ({ page }) => {
   await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
   await expect(page.locator('#wxTempUnits')).toBeVisible();
   await page.locator('#weatherSheetClose').click();
-  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
 });
 
 test('search suggestions are keyboardable', async ({ page }) => {
@@ -175,7 +184,7 @@ test('detail sky mounts layered weather ornaments', async ({ page }) => {
 });
 
 test('sun tile is compact on a normal card and rich when wide', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1100, height: 900 });
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
   await page.locator('#weatherList .weather-row').first().click();
@@ -190,6 +199,48 @@ test('sun tile is compact on a normal card and rich when wide', async ({ page })
   await expect(sun.locator('.wx-sun-tile-wide')).toBeVisible();
   await expect(sun.locator('.wx-sun-tile-compact')).toBeHidden();
   await expect(sun.locator('.weather-sun-arc--tile')).toBeVisible();
+  await expect(sun.locator('.wx-sun-tile-stats')).toBeVisible();
+});
+
+test('daily forecast is 10 days when the API provides them', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('.weather-daily-row')).toHaveCount(10);
+  await expect(page.locator('.weather-mod-wide .weather-mod-label').filter({ hasText: /10-Day Forecast/ })).toBeVisible();
+});
+
+test('mobile sheet close is top-right and chart sheets share UV height', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+
+  await page.locator('.weather-mod[data-sheet="uv"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  const close = page.locator('#weatherSheetClose');
+  const panel = page.locator('#weatherSheetPanel');
+  const [closeBox, panelBox] = await Promise.all([close.boundingBox(), panel.boundingBox()]);
+  expect(closeBox.x).toBeGreaterThan(panelBox.x + panelBox.width / 2);
+  const uvH = panelBox.height;
+
+  await page.locator('#weatherSheetClose').click();
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
+
+  await page.locator('.weather-mod[data-sheet="feels"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  const feelsH = (await panel.boundingBox()).height;
+  expect(Math.abs(feelsH - uvH)).toBeLessThan(8);
+
+  await page.locator('#weatherSheetClose').click();
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
+
+  await page.locator('.weather-mod[data-sheet="vis"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  const visH = (await panel.boundingBox()).height;
+  expect(visH).toBeLessThanOrEqual(uvH + 1);
 });
 
 test('French sun-sheet strings are translated', async ({ page }) => {

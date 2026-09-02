@@ -252,7 +252,7 @@
       ja: '1時間ごと', ko: '시간별 예보', zh: '小时预报', 'zh-TW': '每小時預報'
     },
     'weather.daily': {
-      en: '10-Day Forecast', es: 'Próximos días', fr: 'Prévisions sur 10 jours', de: '10-Tage-Vorhersage',
+      en: '10-Day Forecast', es: 'Próximos 10 días', fr: 'Prévisions sur 10 jours', de: '10-Tage-Vorhersage',
       it: 'Previsione a 10 giorni', 'pt-BR': 'Previsão de 10 dias', 'pt-PT': 'Previsão de 10 dias',
       nl: '10-daagse verwachting', da: '10-døgnsprognose', sv: '10-dygnsprognos', nb: '10-dagersvarsel',
       fi: '10 vuorokauden ennuste', pl: 'Prognoza 10-dniowa', cs: '10denní předpověď', hu: '10 napos előrejelzés',
@@ -260,6 +260,35 @@
       uk: 'Прогноз на 10 днів', ar: 'توقعات 10 أيام', he: 'תחזית ל־10 ימים', hi: '10-दिन का पूर्वानुमान',
       th: 'พยากรณ์ 10 วัน', vi: 'Dự báo 10 ngày', id: 'Prakiraan 10 hari', ja: '10日間予報',
       ko: '10일 예보', zh: '10日预报', 'zh-TW': '10 天預報'
+    },
+    'weather.daily7': {
+      en: '7-Day Forecast', es: 'Próximos 7 días', fr: 'Prévisions sur 7 jours', de: '7-Tage-Vorhersage',
+      it: 'Previsione a 7 giorni', 'pt-BR': 'Previsão de 7 dias', 'pt-PT': 'Previsão de 7 dias',
+      nl: '7-daagse verwachting', da: '7-døgnsprognose', sv: '7-dygnsprognos', nb: '7-dagersvarsel',
+      fi: '7 vuorokauden ennuste', pl: 'Prognoza 7-dniowa', cs: '7denní předpověď', hu: '7 napos előrejelzés',
+      ro: 'Prognoză pe 7 zile', el: 'Πρόγνωση 7 ημερών', tr: '7 günlük tahmin', ru: 'Прогноз на 7 дней',
+      uk: 'Прогноз на 7 днів', ar: 'توقعات 7 أيام', he: 'תחזית ל־7 ימים', hi: '7-दिन का पूर्वानुमान',
+      th: 'พยากรณ์ 7 วัน', vi: 'Dự báo 7 ngày', id: 'Prakiraan 7 hari', ja: '7日間予報',
+      ko: '7일 예보', zh: '7日预报', 'zh-TW': '7 天預報'
+    },
+    'weather.dailyN': {
+      en: '{n}-Day Forecast', es: 'Próximos {n} días', fr: 'Prévisions sur {n} jours', de: '{n}-Tage-Vorhersage',
+      it: 'Previsione a {n} giorni', 'pt-BR': 'Previsão de {n} dias', 'pt-PT': 'Previsão de {n} dias',
+      nl: '{n}-daagse verwachting', da: '{n}-døgnsprognose', sv: '{n}-dygnsprognos', nb: '{n}-dagersvarsel',
+      fi: '{n} vuorokauden ennuste', pl: 'Prognoza {n}-dniowa', cs: '{n}denní předpověď', hu: '{n} napos előrejelzés',
+      ro: 'Prognoză pe {n} zile', el: 'Πρόγνωση {n} ημερών', tr: '{n} günlük tahmin', ru: 'Прогноз на {n} дней',
+      uk: 'Прогноз на {n} днів', ar: 'توقعات {n} أيام', he: 'תחזית ל־{n} ימים', hi: '{n}-दिन का पूर्वानुमान',
+      th: 'พยากรณ์ {n} วัน', vi: 'Dự báo {n} ngày', id: 'Prakiraan {n} hari', ja: '{n}日間予報',
+      ko: '{n}일 예보', zh: '{n}日预报', 'zh-TW': '{n} 天預報'
+    },
+    'weather.solarNoon': {
+      en: 'Solar Noon', es: 'Mediodía solar', fr: 'Midi solaire', de: 'Sonnenmittag', it: 'Mezzogiorno solare',
+      'pt-BR': 'Meio-dia solar', 'pt-PT': 'Meio-dia solar', nl: 'Zonnemiddag', da: 'Solmiddag', sv: 'Solmiddag',
+      nb: 'Solmiddag', fi: 'Auringon keskipäivä', pl: 'Południe słoneczne', cs: 'Sluneční poledne',
+      hu: 'Napdelelés', ro: 'Amiaza solară', el: 'Ηλιακό μεσημέρι', tr: 'Güneş öğlesi',
+      ru: 'Солнечный полдень', uk: 'Сонячна полудень', ar: 'الظهيرة الشمسية', he: 'צהרי שמש',
+      hi: 'सौर दोपहर', th: 'เที่ยงสุริยะ', vi: 'Buổi trưa mặt trời', id: 'Tengah hari matahari',
+      ja: '南中', ko: '태양 정오', zh: '太阳正午', 'zh-TW': '太陽正午'
     },
     'weather.feelsLike': {
       en: 'Feels like', es: 'Sensación', fr: 'Ressenti', de: 'Gefühlt', it: 'Percepita', 'pt-BR': 'Sensação',
