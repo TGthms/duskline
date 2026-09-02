@@ -646,16 +646,21 @@
           if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return 1;
           return b > a ? 1 : -1;
         };
+        const flattenRoll = function (el, text) {
+          el.textContent = text;
+          el.classList.remove('wx-roll');
+          el.removeAttribute('data-dir');
+        };
         /* Scritto-style glyph roll: keep matching characters, roll the rest. */
         const rollReadoutTo = function (toV, motion) {
           if (!readout) return;
           const next = formatVal(toV);
           const prev = readout.getAttribute('data-roll-val');
+          if (prev === next) return;
           readout.setAttribute('data-roll-val', next);
           displayNum = toV;
-          if (!motion || motionLevel() !== 'full' || prev == null || prev === next) {
-            readout.textContent = next;
-            readout.classList.remove('wx-roll');
+          if (!motion || motionLevel() !== 'full' || prev == null) {
+            flattenRoll(readout, next);
             return;
           }
           const a = glyphsOf(prev);
@@ -674,7 +679,6 @@
             if (fromG === toG) {
               cell.textContent = toG;
             } else {
-              cell.classList.add('is-rolling');
               const fromEl = document.createElement('span');
               fromEl.className = 'wx-roll-from';
               fromEl.textContent = fromG;
@@ -683,17 +687,22 @@
               toEl.textContent = toG;
               cell.appendChild(fromEl);
               cell.appendChild(toEl);
+              cell.classList.add('is-rolling');
             }
             readout.appendChild(cell);
           }
+          /* Restart CSS animations after insert (some engines skip if class is present on first paint). */
+          try { void readout.offsetWidth; } catch (eReflow) { /* ignore */ }
+          readout.querySelectorAll('.wx-roll-ch.is-rolling').forEach(function (cell) {
+            cell.classList.remove('is-rolling');
+            void cell.offsetWidth;
+            cell.classList.add('is-rolling');
+          });
           if (rollTimer) window.clearTimeout(rollTimer);
           rollTimer = window.setTimeout(function () {
             rollTimer = 0;
-            if (readout.getAttribute('data-roll-val') === next) {
-              readout.textContent = next;
-              readout.classList.remove('wx-roll');
-            }
-          }, 340);
+            if (readout.getAttribute('data-roll-val') === next) flattenRoll(readout, next);
+          }, 360);
         };
         const paintImmediate = (x, y, pt, animateNum) => {
           if (guide) {

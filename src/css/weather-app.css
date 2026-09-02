@@ -3798,11 +3798,11 @@ html[data-theme="glass"] .weather-page-sky {
   font-variant-numeric: tabular-nums;
 }
 /* Scritto-style glyph roll on chart values */
-.wx-roll {
-  display: inline-flex;
+.weather-chart-readout.wx-roll {
+  display: inline-flex !important;
   align-items: baseline;
+  overflow: hidden;
   white-space: nowrap;
-  font: inherit;
   font-variant-numeric: tabular-nums;
   line-height: 1.05;
 }
@@ -3811,6 +3811,7 @@ html[data-theme="glass"] .weather-page-sky {
   position: relative;
   overflow: hidden;
   height: 1.05em;
+  min-width: 0.55ch;
   vertical-align: baseline;
 }
 .wx-roll-from,
