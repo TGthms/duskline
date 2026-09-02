@@ -815,7 +815,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   flex-direction: column;
   width: 100%;
   max-width: none;
-  max-height: min(92dvh, 760px);
+  max-height: min(92svh, 760px);
   overflow: hidden;
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
   background: linear-gradient(180deg, rgba(28, 34, 48, 0.94), rgba(12, 16, 26, 0.97));
@@ -925,6 +925,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   max-height: none;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   /* Bottom pad so last About line isn’t clipped under home indicator / panel edge */
@@ -943,7 +944,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
     background: rgba(0, 0, 0, calc(0.72 * var(--wx-sheet-backdrop, 1))) !important;
   }
   .weather-sheet-panel {
-    max-height: min(92dvh, 100%);
+    max-height: min(92svh, 100%);
     min-height: 0;
     height: auto;
     width: 100% !important;
@@ -3207,6 +3208,17 @@ html:has(#weatherSheet.open) .wx-sheet-dragzone,
 html:has(#weatherSheet.open) .wx-sheet-surface {
   pointer-events: auto !important;
 }
+/* Phones: freeze covered sky FX while a sheet is up (compositor still otherwise). */
+@media (max-width: 900px), (pointer: coarse) {
+  html.wx-sheet-open #weatherDetailFx,
+  html.wx-sheet-open #weatherDetailFx *,
+  html.wx-sheet-open #weatherDetailSky .wx-ornaments,
+  html.wx-sheet-open #weatherDetailSky .wx-ornaments *,
+  html.wx-sheet-open #weatherDetailSky .wx-layer-a,
+  html.wx-sheet-open #weatherDetailSky .wx-layer-b {
+    animation-play-state: paused !important;
+  }
+}
 
 /* Detail attribution footer (Apple “Weather for …”) */
 .weather-detail-attrib {
@@ -3793,68 +3805,12 @@ html[data-theme="glass"] .weather-page-sky {
   font-size: clamp(2.75rem, 12vw, 3.6rem) !important;
   font-weight: 300 !important;
   letter-spacing: -0.03em;
-  line-height: 1.02;
+  line-height: 1.05;
+  min-height: 1.1em;
   margin: 0 0 2px !important;
   font-variant-numeric: tabular-nums;
-}
-/* Scritto-style glyph roll on chart values */
-.weather-chart-readout.wx-roll {
-  display: inline-flex !important;
-  align-items: baseline;
-  overflow: hidden;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.05;
-}
-.wx-roll-ch {
-  display: inline-block;
-  position: relative;
   overflow: hidden;
-  height: 1.05em;
-  min-width: 0.55ch;
-  vertical-align: baseline;
-}
-.wx-roll-from,
-.wx-roll-to {
-  display: block;
-  line-height: 1.05em;
-}
-.wx-roll-ch.is-rolling .wx-roll-to {
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-.wx-roll[data-dir="1"] .wx-roll-ch.is-rolling .wx-roll-from {
-  animation: wx-roll-out-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.wx-roll[data-dir="1"] .wx-roll-ch.is-rolling .wx-roll-to {
-  animation: wx-roll-in-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.wx-roll[data-dir="-1"] .wx-roll-ch.is-rolling .wx-roll-from {
-  animation: wx-roll-out-down 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.wx-roll[data-dir="-1"] .wx-roll-ch.is-rolling .wx-roll-to {
-  animation: wx-roll-in-down 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes wx-roll-out-up {
-  to { transform: translateY(-108%); opacity: 0.2; }
-}
-@keyframes wx-roll-in-up {
-  from { transform: translateY(108%); }
-  to { transform: translateY(0); }
-}
-@keyframes wx-roll-out-down {
-  to { transform: translateY(108%); opacity: 0.2; }
-}
-@keyframes wx-roll-in-down {
-  from { transform: translateY(-108%); }
-  to { transform: translateY(0); }
-}
-html[data-motion-effective="reduced"] .wx-roll-ch.is-rolling .wx-roll-from,
-html[data-motion-effective="reduced"] .wx-roll-ch.is-rolling .wx-roll-to,
-html[data-motion-effective="off"] .wx-roll-ch.is-rolling .wx-roll-from,
-html[data-motion-effective="off"] .wx-roll-ch.is-rolling .wx-roll-to {
-  animation: none !important;
 }
 html[data-motion-effective="reduced"] .wx-units-pill,
 html[data-motion-effective="off"] .wx-units-pill {
@@ -3864,14 +3820,15 @@ html[data-motion-effective="off"] .wx-units-pill {
   font-size: 13px;
   opacity: .72;
   margin-bottom: 8px !important;
+  min-height: 1.35em;
 }
 .weather-chart {
   width: 100% !important;
-  /* Match viewBox 400×200 — keeps scrub coords + text from non-uniform stretch */
+  /* Fixed plot height so mobile chrome / scrubbing cannot resize the sheet. */
   aspect-ratio: 400 / 200;
-  height: auto !important;
-  min-height: 180px;
-  max-height: min(248px, 34vh);
+  height: 200px !important;
+  min-height: 200px;
+  max-height: 200px;
   display: block;
   touch-action: pan-y;
   cursor: ew-resize;
@@ -3900,6 +3857,8 @@ html[data-motion-effective="off"] .wx-units-pill {
   max-width: 100%;
   overflow-x: auto;
   padding: 3px;
+  min-height: 38px;
+  box-sizing: border-box;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -3968,7 +3927,7 @@ html[data-motion-effective="off"] .wx-units-pill {
   .weather-sheet-panel {
     width: min(540px, 92vw) !important;
     max-width: 540px;
-    max-height: min(86dvh, 720px);
+    max-height: min(86svh, 720px);
     border-radius: 26px !important;
     border: 1px solid rgba(255, 255, 255, 0.16) !important;
     transform: scale(0.96);

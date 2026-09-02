@@ -629,82 +629,7 @@
           if (kind === 'uv_index') return String(Math.round(v * 10) / 10);
           return String(Math.round(v * 10) / 10);
         };
-        let displayNum = defaultPt.v;
-        let rollTimer = 0;
-        const glyphsOf = function (s) {
-          const str = String(s == null ? '' : s);
-          try {
-            if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-              return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(str), function (x) { return x.segment; });
-            }
-          } catch (eSeg) { /* fall through */ }
-          return Array.from(str);
-        };
-        const numericDir = function (fromS, toS) {
-          const a = parseFloat(String(fromS).replace(/[^\d.+-]/g, ''));
-          const b = parseFloat(String(toS).replace(/[^\d.+-]/g, ''));
-          if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return 1;
-          return b > a ? 1 : -1;
-        };
-        const flattenRoll = function (el, text) {
-          el.textContent = text;
-          el.classList.remove('wx-roll');
-          el.removeAttribute('data-dir');
-        };
-        /* Scritto-style glyph roll: keep matching characters, roll the rest. */
-        const rollReadoutTo = function (toV, motion) {
-          if (!readout) return;
-          const next = formatVal(toV);
-          const prev = readout.getAttribute('data-roll-val');
-          if (prev === next) return;
-          readout.setAttribute('data-roll-val', next);
-          displayNum = toV;
-          if (!motion || motionLevel() !== 'full' || prev == null) {
-            flattenRoll(readout, next);
-            return;
-          }
-          const a = glyphsOf(prev);
-          const b = glyphsOf(next);
-          while (a.length < b.length) a.unshift('\u200b');
-          while (b.length < a.length) b.unshift('\u200b');
-          const dir = numericDir(prev, next);
-          readout.classList.add('wx-roll');
-          readout.setAttribute('data-dir', String(dir));
-          readout.textContent = '';
-          for (let i = 0; i < b.length; i++) {
-            const cell = document.createElement('span');
-            cell.className = 'wx-roll-ch';
-            const fromG = a[i] === '\u200b' ? '' : a[i];
-            const toG = b[i] === '\u200b' ? '' : b[i];
-            if (fromG === toG) {
-              cell.textContent = toG;
-            } else {
-              const fromEl = document.createElement('span');
-              fromEl.className = 'wx-roll-from';
-              fromEl.textContent = fromG;
-              const toEl = document.createElement('span');
-              toEl.className = 'wx-roll-to';
-              toEl.textContent = toG;
-              cell.appendChild(fromEl);
-              cell.appendChild(toEl);
-              cell.classList.add('is-rolling');
-            }
-            readout.appendChild(cell);
-          }
-          /* Restart CSS animations after insert (some engines skip if class is present on first paint). */
-          try { void readout.offsetWidth; } catch (eReflow) { /* ignore */ }
-          readout.querySelectorAll('.wx-roll-ch.is-rolling').forEach(function (cell) {
-            cell.classList.remove('is-rolling');
-            void cell.offsetWidth;
-            cell.classList.add('is-rolling');
-          });
-          if (rollTimer) window.clearTimeout(rollTimer);
-          rollTimer = window.setTimeout(function () {
-            rollTimer = 0;
-            if (readout.getAttribute('data-roll-val') === next) flattenRoll(readout, next);
-          }, 360);
-        };
-        const paintImmediate = (x, y, pt, animateNum) => {
+        const paintImmediate = (x, y, pt) => {
           if (guide) {
             guide.setAttribute('x1', x);
             guide.setAttribute('x2', x);
@@ -715,15 +640,14 @@
             dot.setAttribute('cx', x);
             dot.setAttribute('cy', y);
           }
-          if (animateNum) rollReadoutTo(pt.v, true);
-          else rollReadoutTo(pt.v, false);
+          if (readout) readout.textContent = formatVal(pt.v);
           if (sub) sub.textContent = formatClock(pt.t, tz);
           curPt = pt;
         };
         const resetToNow = () => {
-          paintImmediate(defaultPt.x, defaultPt.y, defaultPt, true);
+          paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
         };
-        paintImmediate(defaultPt.x, defaultPt.y, defaultPt, false);
+        paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
 
         /** Map pointer → SVG viewBox coords (handles CSS scale; requires none or CTM). */
         function clientToViewBox(clientX, clientY) {
@@ -770,8 +694,7 @@
           // Snap cursor to the curve (X along pointer, Y on the line between samples)
           const px = a.x + (b.x - a.x) * u;
           const py = a.y + (b.y - a.y) * u;
-          const hourChanged = !curPt || curPt.t !== best.t;
-          paintImmediate(px, py, best, hourChanged);
+          paintImmediate(px, py, best);
         };
         // Immediate scrub (no rAF lag) so the guide stays under the pointer
         const onMove = (e) => {

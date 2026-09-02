@@ -2428,6 +2428,7 @@
     sheetEl.style.opacity = '';
     try { sheetEl.inert = true; } catch (e) { /* older browsers */ }
     setDetailBehindSheet(false);
+    try { document.documentElement.classList.remove('wx-sheet-open'); } catch (eCls) { /* ignore */ }
     resetSheetInline();
   }
 
@@ -2467,6 +2468,7 @@
     sheetEl.setAttribute('aria-hidden', 'false');
     sheetEl.style.pointerEvents = 'auto';
     setDetailBehindSheet(true);
+    try { document.documentElement.classList.add('wx-sheet-open'); } catch (eOpen) { /* ignore */ }
     sheetEl.classList.toggle('wx-sheet-light', !!(detailEl && detailEl.classList.contains('wx-mods-light')));
     sheetEl.classList.toggle('wx-sheet-centered', sheetCentered());
     try {

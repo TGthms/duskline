@@ -135,6 +135,12 @@
       if (!host.classList.contains('wx-sky--storm')) return;
       const fire = function () {
         if (!host.classList.contains('wx-sky--storm')) return;
+        /* Covered by a sheet on a phone — skip the bolt paint, keep the timer. */
+        if (document.documentElement.classList.contains('wx-sheet-open')
+            && typeof isMobileOrCoarsePointer === 'function' && isMobileOrCoarsePointer()) {
+          host._wxBolt = window.setTimeout(fire, 1600);
+          return;
+        }
         const wrap = host.querySelector('.wx-lightning');
         if (!wrap) return;
         let svg = wrap.querySelector('.wx-lightning-bolt');
