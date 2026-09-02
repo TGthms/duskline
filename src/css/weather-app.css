@@ -943,20 +943,11 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
     background: rgba(0, 0, 0, calc(0.72 * var(--wx-sheet-backdrop, 1))) !important;
   }
   .weather-sheet-panel {
-    --wx-sheet-mobile-h: min(92dvh, 100%);
-    max-height: var(--wx-sheet-mobile-h);
+    max-height: min(92dvh, 100%);
     min-height: 0;
     height: auto;
     width: 100% !important;
     max-width: none !important;
-  }
-  /* Chart sheets (UV, temp, wind, sun, …) share UV’s drawer height.
-     Short sheets without a plot stay content-sized. */
-  .weather-sheet-panel:has(.weather-chart) {
-    height: var(--wx-sheet-mobile-h);
-  }
-  .weather-sheet-panel:has(.weather-chart) .wx-sheet-surface {
-    flex: 1 1 auto;
   }
 }
 .wx-sheet-surface .wx-sheet-about {
@@ -3201,6 +3192,20 @@ body.weather-detail-open {
   z-index: 10150 !important;
   pointer-events: auto !important;
   visibility: visible !important;
+  isolation: isolate;
+}
+/* Sheet is a modal over city detail — hero/title must not steal taps
+   (children with pointer-events:auto otherwise punch through a none parent). */
+html:has(#weatherSheet.open) .weather-detail.open,
+html:has(#weatherSheet.open) .weather-detail.open * {
+  pointer-events: none !important;
+}
+html:has(#weatherSheet.open) .weather-sheet.open,
+html:has(#weatherSheet.open) .weather-sheet-panel,
+html:has(#weatherSheet.open) .weather-sheet-close,
+html:has(#weatherSheet.open) .wx-sheet-dragzone,
+html:has(#weatherSheet.open) .wx-sheet-surface {
+  pointer-events: auto !important;
 }
 
 /* Detail attribution footer (Apple “Weather for …”) */
@@ -3792,6 +3797,68 @@ html[data-theme="glass"] .weather-page-sky {
   margin: 0 0 2px !important;
   font-variant-numeric: tabular-nums;
 }
+/* Scritto-style glyph roll on chart values */
+.wx-roll {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+.wx-roll-ch {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  height: 1.05em;
+  vertical-align: baseline;
+}
+.wx-roll-from,
+.wx-roll-to {
+  display: block;
+  line-height: 1.05em;
+}
+.wx-roll-ch.is-rolling .wx-roll-to {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.wx-roll[data-dir="1"] .wx-roll-ch.is-rolling .wx-roll-from {
+  animation: wx-roll-out-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.wx-roll[data-dir="1"] .wx-roll-ch.is-rolling .wx-roll-to {
+  animation: wx-roll-in-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.wx-roll[data-dir="-1"] .wx-roll-ch.is-rolling .wx-roll-from {
+  animation: wx-roll-out-down 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.wx-roll[data-dir="-1"] .wx-roll-ch.is-rolling .wx-roll-to {
+  animation: wx-roll-in-down 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes wx-roll-out-up {
+  to { transform: translateY(-108%); opacity: 0.2; }
+}
+@keyframes wx-roll-in-up {
+  from { transform: translateY(108%); }
+  to { transform: translateY(0); }
+}
+@keyframes wx-roll-out-down {
+  to { transform: translateY(108%); opacity: 0.2; }
+}
+@keyframes wx-roll-in-down {
+  from { transform: translateY(-108%); }
+  to { transform: translateY(0); }
+}
+html[data-motion-effective="reduced"] .wx-roll-ch.is-rolling .wx-roll-from,
+html[data-motion-effective="reduced"] .wx-roll-ch.is-rolling .wx-roll-to,
+html[data-motion-effective="off"] .wx-roll-ch.is-rolling .wx-roll-from,
+html[data-motion-effective="off"] .wx-roll-ch.is-rolling .wx-roll-to {
+  animation: none !important;
+}
+html[data-motion-effective="reduced"] .wx-units-pill,
+html[data-motion-effective="off"] .wx-units-pill {
+  transition: none !important;
+}
 .weather-chart-wrap .weather-chart-sub {
   font-size: 13px;
   opacity: .72;
@@ -3824,24 +3891,42 @@ html[data-theme="glass"] .weather-page-sky {
 }
 /* Units row under charts — compact, not stealing vertical space from the plot */
 .wx-sheet-surface .weather-units-row {
+  position: relative;
   margin: 8px 0 14px !important;
   gap: 3px !important;
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
   padding: 3px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
 }
+.wx-units-pill {
+  position: absolute;
+  top: 3px;
+  height: calc(100% - 6px);
+  left: 0;
+  width: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+  z-index: 0;
+  transition: left 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+              width 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+}
 .wx-sheet-surface .weather-units-row button {
+  position: relative;
+  z-index: 1;
   border: none;
-  background: transparent;
+  background: transparent !important;
   border-radius: 9px;
   padding: 7px 12px;
   font-size: 12px;
   font-weight: 600;
 }
 .wx-sheet-surface .weather-units-row button.active {
-  background: rgba(255, 255, 255, 0.18);
+  background: transparent !important;
   border-color: transparent;
 }
 .wx-sheet-surface .wx-sheet-about {
@@ -3983,13 +4068,18 @@ html[data-theme="glass"] .weather-page-sky {
 .weather-sheet.wx-sheet-light .wx-sheet-surface .weather-units-row {
   background: rgba(22, 52, 79, 0.08);
 }
+.weather-sheet.wx-sheet-light .wx-units-pill {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(18, 42, 72, 0.1);
+}
 .weather-sheet.wx-sheet-light .wx-sheet-surface .weather-units-row button {
   color: #16344f;
+  background: transparent !important;
 }
 .weather-sheet.wx-sheet-light .wx-sheet-surface .weather-units-row button.active {
-  background: rgba(255, 255, 255, 0.88);
+  background: transparent !important;
   color: #16344f;
-  box-shadow: 0 1px 4px rgba(18, 42, 72, 0.1);
+  box-shadow: none;
 }
 .weather-sheet.wx-sheet-light .weather-sheet-panel {
   --wx-chart-line: #16344f;

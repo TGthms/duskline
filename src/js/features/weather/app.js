@@ -2195,7 +2195,7 @@
       || undefined;
 
     function unitsPickerHtml(id, pairs, current) {
-      let html = `<p class="weather-mod-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="${id}">`;
+      let html = `<p class="weather-mod-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="${id}"><span class="wx-units-pill" aria-hidden="true"></span>`;
       pairs.forEach(function (pair) {
         html += `<button type="button" data-u="${pair[0]}" class="${current === pair[0] ? 'active' : ''}">${escapeHtml(pair[1])}</button>`;
       });
@@ -2222,14 +2222,14 @@
       body += `<p class="wx-sheet-context">${escapeHtml(degToCompass(cur.wind_direction_10m))}${cur.wind_direction_10m != null ? ' · ' + Math.round(cur.wind_direction_10m) + '°' : ''}</p>`;
       body += chartsApi.buildTempChart(hourly, 'wind_speed_10m', (v) => fmtWind(v), chartTz);
       body += `<div class="wx-sheet-compass-row">${chartsApi.windCompass(cur.wind_direction_10m)}</div>`;
-      body += `<p class="weather-mod-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="wxWindUnits">`;
+      body += `<p class="weather-mod-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="wxWindUnits"><span class="wx-units-pill" aria-hidden="true"></span>`;
       [['mph', 'mph'], ['kmh', 'km/h'], ['ms', 'm/s'], ['bft', 'bft'], ['kn', 'kn']].forEach(([u, lab]) => {
         body += `<button type="button" data-u="${u}" class="${windUnit() === u ? 'active' : ''}">${lab}</button>`;
       });
       body += '</div>';
     } else if (kind === 'pressure') {
       body += chartsApi.buildTempChart(hourly, 'surface_pressure', (v) => fmtPress(v), chartTz);
-      body += `<div class="weather-units-row" id="wxPressUnits">`;
+      body += `<div class="weather-units-row" id="wxPressUnits"><span class="wx-units-pill" aria-hidden="true"></span>`;
       ['hPa', 'mbar', 'inHg', 'mmHg', 'kPa'].forEach((u) => {
         body += `<button type="button" data-u="${u}" class="${pressUnit() === u ? 'active' : ''}">${u}</button>`;
       });
@@ -2267,7 +2267,7 @@
       else {
         body += `<div class="wx-sheet-hero"><div class="weather-chart-readout">${escapeHtml(fmtPrecip(cur.precipitation))}</div></div>`;
       }
-      body += `<div class="weather-units-row" id="wxPrecipUnits">`;
+      body += `<div class="weather-units-row" id="wxPrecipUnits"><span class="wx-units-pill" aria-hidden="true"></span>`;
       [['in', 'in'], ['mm', 'mm'], ['cm', 'cm']].forEach(([u, lab]) => {
         body += `<button type="button" data-u="${u}" class="${precipUnit() === u ? 'active' : ''}">${lab}</button>`;
       });
@@ -2300,16 +2300,25 @@
     const bind = (id, setter) => {
       const row = document.getElementById(id);
       if (!row) return;
+      requestAnimationFrame(function () {
+        slideUnitsPill(row, row.querySelector('button.active') || row.querySelector('button'));
+      });
       row.querySelectorAll('button').forEach((b) => {
         b.addEventListener('click', () => {
+          if (b.classList.contains('active')) return;
+          row.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+          slideUnitsPill(row, b);
           setter(b.getAttribute('data-u'));
-          const pack = openCity && openCity.city
-            ? (cache.get(cityKey(openCity.city)) || openCity)
-            : openCity;
-          if (pack && pack.weather) {
-            openDetail(pack);
-            openSheet(kind, pack);
-          }
+          window.clearTimeout(bind._rebuild);
+          bind._rebuild = window.setTimeout(function () {
+            const pack = openCity && openCity.city
+              ? (cache.get(cityKey(openCity.city)) || openCity)
+              : openCity;
+            if (pack && pack.weather) {
+              openDetail(pack);
+              openSheet(kind, pack);
+            }
+          }, 380);
         });
       });
     };
@@ -2324,6 +2333,30 @@
     });
 
     presentSheet();
+  }
+
+  function slideUnitsPill(row, btn) {
+    if (!row) return;
+    let pill = row.querySelector('.wx-units-pill');
+    if (!pill) {
+      pill = document.createElement('span');
+      pill.className = 'wx-units-pill';
+      pill.setAttribute('aria-hidden', 'true');
+      row.insertBefore(pill, row.firstChild);
+    }
+    const target = btn || row.querySelector('button.active') || row.querySelector('button');
+    if (!target) return;
+    const left = target.offsetLeft;
+    const width = target.offsetWidth;
+    if (!width) return;
+    const first = !pill.getAttribute('data-ready');
+    if (first) pill.style.transition = 'none';
+    pill.style.left = left + 'px';
+    pill.style.width = width + 'px';
+    if (first) {
+      pill.setAttribute('data-ready', '1');
+      requestAnimationFrame(function () { pill.style.transition = ''; });
+    }
   }
 
   /* ── Bottom sheet presentation (iOS-style pop + drag dismiss) ──
@@ -2380,6 +2413,13 @@
   }
 
   /** Instantly inert sheet — no animation. Use when opening detail or recovering stuck UI. */
+  function setDetailBehindSheet(behind) {
+    if (!detailEl) return;
+    try { detailEl.inert = !!behind; } catch (e) { /* older browsers */ }
+    if (behind) detailEl.style.pointerEvents = 'none';
+    else detailEl.style.pointerEvents = '';
+  }
+
   function inertSheet() {
     if (!sheetEl) return;
     sheetEl.classList.remove('open', 'is-raised', 'is-leaving');
@@ -2387,6 +2427,7 @@
     sheetEl.style.pointerEvents = 'none';
     sheetEl.style.opacity = '';
     try { sheetEl.inert = true; } catch (e) { /* older browsers */ }
+    setDetailBehindSheet(false);
     resetSheetInline();
   }
 
@@ -2425,6 +2466,7 @@
     try { sheetEl.inert = false; } catch (e) { /* older browsers */ }
     sheetEl.setAttribute('aria-hidden', 'false');
     sheetEl.style.pointerEvents = 'auto';
+    setDetailBehindSheet(true);
     sheetEl.classList.toggle('wx-sheet-light', !!(detailEl && detailEl.classList.contains('wx-mods-light')));
     sheetEl.classList.toggle('wx-sheet-centered', sheetCentered());
     try {
@@ -2937,6 +2979,10 @@
     const fill = function (id, units, current, onPick) {
       const row = document.getElementById(id);
       if (!row) return;
+      const pill = document.createElement('span');
+      pill.className = 'wx-units-pill';
+      pill.setAttribute('aria-hidden', 'true');
+      row.appendChild(pill);
       units.forEach(function (pair) {
         const u = pair[0];
         const lab = pair[1];
@@ -2946,12 +2992,17 @@
         b.setAttribute('data-unit', u);
         if (current === u) b.classList.add('active');
         b.addEventListener('click', function () {
+          if (b.classList.contains('active')) return;
           onPick(u);
           row.querySelectorAll('button').forEach(function (x) {
             x.classList.toggle('active', x === b);
           });
+          slideUnitsPill(row, b);
         });
         row.appendChild(b);
+      });
+      requestAnimationFrame(function () {
+        slideUnitsPill(row, row.querySelector('button.active') || row.querySelector('button'));
       });
     };
 

@@ -603,10 +603,10 @@
         const padT = Number(wrap.getAttribute('data-padt')) || 12;
         const padB = Number(wrap.getAttribute('data-padb')) || 26;
         const vh = Number(wrap.getAttribute('data-vh')) || 200;
+        const tz = wrap.getAttribute('data-tz') || undefined;
         // Default = “now” in location TZ (same rules as buildTempChart — no wrap to 00:00)
         let idxNow = Number(wrap.getAttribute('data-now-idx'));
         if (!Number.isFinite(idxNow) || idxNow < 0 || idxNow >= pts.length) {
-          const tz = wrap.getAttribute('data-tz') || undefined;
           const nowH = nowLocalHour(tz);
           idxNow = 0;
           let bestNow = Infinity;
@@ -630,38 +630,70 @@
           return String(Math.round(v * 10) / 10);
         };
         let displayNum = defaultPt.v;
-        let tweenRaf = 0;
-        const animateReadoutTo = (toV) => {
-          if (!readout) return;
-          if (motionLevel() !== 'full') {
-            readout.textContent = formatVal(toV);
-            displayNum = toV;
-            return;
-          }
-          if (tweenRaf) {
-            try { cancelAnimationFrame(tweenRaf); } catch (e) {}
-            tweenRaf = 0;
-          }
-          const fromV = displayNum;
-          displayNum = toV;
-          if (!Number.isFinite(fromV) || !Number.isFinite(toV) || fromV === toV) {
-            readout.textContent = formatVal(toV);
-            return;
-          }
-          const t0 = performance.now();
-          const dur = 160;
-          const step = (now) => {
-            const u = Math.min(1, (now - t0) / dur);
-            const e = 1 - Math.pow(1 - u, 3);
-            const v = fromV + (toV - fromV) * e;
-            readout.textContent = formatVal(v);
-            if (u < 1) tweenRaf = requestAnimationFrame(step);
-            else {
-              tweenRaf = 0;
-              readout.textContent = formatVal(toV);
+        let rollTimer = 0;
+        const glyphsOf = function (s) {
+          const str = String(s == null ? '' : s);
+          try {
+            if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+              return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(str), function (x) { return x.segment; });
             }
-          };
-          tweenRaf = requestAnimationFrame(step);
+          } catch (eSeg) { /* fall through */ }
+          return Array.from(str);
+        };
+        const numericDir = function (fromS, toS) {
+          const a = parseFloat(String(fromS).replace(/[^\d.+-]/g, ''));
+          const b = parseFloat(String(toS).replace(/[^\d.+-]/g, ''));
+          if (!Number.isFinite(a) || !Number.isFinite(b) || a === b) return 1;
+          return b > a ? 1 : -1;
+        };
+        /* Scritto-style glyph roll: keep matching characters, roll the rest. */
+        const rollReadoutTo = function (toV, motion) {
+          if (!readout) return;
+          const next = formatVal(toV);
+          const prev = readout.getAttribute('data-roll-val');
+          readout.setAttribute('data-roll-val', next);
+          displayNum = toV;
+          if (!motion || motionLevel() !== 'full' || prev == null || prev === next) {
+            readout.textContent = next;
+            readout.classList.remove('wx-roll');
+            return;
+          }
+          const a = glyphsOf(prev);
+          const b = glyphsOf(next);
+          while (a.length < b.length) a.unshift('\u200b');
+          while (b.length < a.length) b.unshift('\u200b');
+          const dir = numericDir(prev, next);
+          readout.classList.add('wx-roll');
+          readout.setAttribute('data-dir', String(dir));
+          readout.textContent = '';
+          for (let i = 0; i < b.length; i++) {
+            const cell = document.createElement('span');
+            cell.className = 'wx-roll-ch';
+            const fromG = a[i] === '\u200b' ? '' : a[i];
+            const toG = b[i] === '\u200b' ? '' : b[i];
+            if (fromG === toG) {
+              cell.textContent = toG;
+            } else {
+              cell.classList.add('is-rolling');
+              const fromEl = document.createElement('span');
+              fromEl.className = 'wx-roll-from';
+              fromEl.textContent = fromG;
+              const toEl = document.createElement('span');
+              toEl.className = 'wx-roll-to';
+              toEl.textContent = toG;
+              cell.appendChild(fromEl);
+              cell.appendChild(toEl);
+            }
+            readout.appendChild(cell);
+          }
+          if (rollTimer) window.clearTimeout(rollTimer);
+          rollTimer = window.setTimeout(function () {
+            rollTimer = 0;
+            if (readout.getAttribute('data-roll-val') === next) {
+              readout.textContent = next;
+              readout.classList.remove('wx-roll');
+            }
+          }, 340);
         };
         const paintImmediate = (x, y, pt, animateNum) => {
           if (guide) {
@@ -674,11 +706,8 @@
             dot.setAttribute('cx', x);
             dot.setAttribute('cy', y);
           }
-          if (animateNum) animateReadoutTo(pt.v);
-          else if (readout) {
-            readout.textContent = formatVal(pt.v);
-            displayNum = pt.v;
-          }
+          if (animateNum) rollReadoutTo(pt.v, true);
+          else rollReadoutTo(pt.v, false);
           if (sub) sub.textContent = formatClock(pt.t, tz);
           curPt = pt;
         };

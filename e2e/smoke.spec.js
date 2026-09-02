@@ -211,7 +211,7 @@ test('daily forecast is 10 days when the API provides them', async ({ page }) =>
   await expect(page.locator('.weather-mod-wide .weather-mod-label').filter({ hasText: /10-Day Forecast/ })).toBeVisible();
 });
 
-test('mobile sheet close is top-right and chart sheets share UV height', async ({ page }) => {
+test('mobile sheet close is top-right and short sheets stay short', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
@@ -219,28 +219,27 @@ test('mobile sheet close is top-right and chart sheets share UV height', async (
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
 
   await page.locator('.weather-mod[data-sheet="uv"]').click();
-  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  const sheet = page.locator('#weatherSheet');
   const close = page.locator('#weatherSheetClose');
   const panel = page.locator('#weatherSheetPanel');
+  await expect(sheet).toHaveClass(/open/);
+  await expect(close).toBeVisible();
+  await expect.poll(async () => {
+    const box = await close.boundingBox();
+    return box && box.y > 8 && box.y < 400;
+  }).toBeTruthy();
   const [closeBox, panelBox] = await Promise.all([close.boundingBox(), panel.boundingBox()]);
   expect(closeBox.x).toBeGreaterThan(panelBox.x + panelBox.width / 2);
   const uvH = panelBox.height;
+  expect(uvH).toBeLessThan(page.viewportSize().height * 0.95);
 
-  await page.locator('#weatherSheetClose').click();
-  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
-
-  await page.locator('.weather-mod[data-sheet="feels"]').click();
-  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
-  const feelsH = (await panel.boundingBox()).height;
-  expect(Math.abs(feelsH - uvH)).toBeLessThan(8);
-
-  await page.locator('#weatherSheetClose').click();
-  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
+  await close.click({ force: true });
+  await expect(sheet).not.toHaveClass(/open/, { timeout: 4000 });
 
   await page.locator('.weather-mod[data-sheet="vis"]').click();
-  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(sheet).toHaveClass(/open/);
   const visH = (await panel.boundingBox()).height;
-  expect(visH).toBeLessThanOrEqual(uvH + 1);
+  expect(visH).toBeLessThan(uvH);
 });
 
 test('French sun-sheet strings are translated', async ({ page }) => {
