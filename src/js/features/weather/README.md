@@ -1,5 +1,7 @@
 # Weather modules
 
+Contributor notes for the forecast runtime. Project overview, privacy, and localized READMEs: [`README.md`](../../../../README.md) and [`docs/i18n/`](../../../../docs/i18n/README.md).
+
 Classic (non-module) scripts loaded by `index.html` in this order:
 
 | File | Role |

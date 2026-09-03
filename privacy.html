@@ -1,5 +1,15 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="duskline privacy policy: what stays in your browser, how location is used for forecasts, and which weather providers receive requests."><meta name="robots" content="index, follow"><title>duskline — Privacy Policy</title><link rel="icon" type="image/jpeg" href="assets/duskline-icon.jpg"><meta name="theme-color" content="#08111f"><meta name="color-scheme" content="dark light"><link rel="canonical" href="https://duskline.pages.dev/privacy.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="duskline privacy policy: what stays in your browser, how location is used for forecasts, and which weather providers receive requests.">
+<meta name="robots" content="index, follow">
+<title>duskline — Privacy Policy</title>
+<link rel="icon" type="image/jpeg" href="assets/duskline-icon.jpg">
+<meta name="theme-color" content="#08111f">
+<meta name="color-scheme" content="dark light">
+<link rel="canonical" href="https://duskline.pages.dev/privacy.html">
 <script>
 (function () {
   try {
@@ -12,8 +22,97 @@
   }
 })();
 </script>
-<link rel="stylesheet" href="src/css/styles.css"></head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script>
+(function () {
+  var loaded = {};
+  function hrefFor(parts) {
+    return 'https://fonts.googleapis.com/css2?' + parts.join('&') + '&display=swap';
+  }
+  function add(id, href) {
+    if (loaded[id] || document.getElementById(id)) { loaded[id] = true; return; }
+    var l = document.createElement('link');
+    l.id = id; l.rel = 'stylesheet'; l.href = href;
+    document.head.appendChild(l);
+    loaded[id] = true;
+  }
+  function detectLang() {
+    try { var s = localStorage.getItem('duskline-lang'); if (s) return s; } catch (e) { /* ignore */ }
+    try {
+      var n = String(navigator.language || '').toLowerCase();
+      if (n.indexOf('zh-tw') === 0 || n.indexOf('zh-hant') === 0 || n.indexOf('zh-hk') === 0) return 'zh-TW';
+      if (n.indexOf('zh') === 0) return 'zh';
+      if (n.indexOf('ja') === 0) return 'ja';
+      if (n.indexOf('ko') === 0) return 'ko';
+      if (n.indexOf('ar') === 0) return 'ar';
+      if (n.indexOf('he') === 0) return 'he';
+      if (n.indexOf('th') === 0) return 'th';
+      if (n.indexOf('hi') === 0) return 'hi';
+    } catch (e2) { /* ignore */ }
+    return 'en';
+  }
+  function apply() {
+    add('duskline-font-sans', hrefFor(['family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400']));
+    var lang = detectLang();
+    if (lang === 'zh') add('duskline-font-zh', hrefFor(['family=Noto+Sans+SC:wght@300;400;500;600;700']));
+    if (lang === 'zh-TW') add('duskline-font-zh-tw', hrefFor(['family=Noto+Sans+TC:wght@300;400;500;600;700']));
+    if (lang === 'ja') add('duskline-font-ja', hrefFor(['family=Noto+Sans+JP:wght@300;400;500;600;700']));
+    if (lang === 'ko') add('duskline-font-ko', hrefFor(['family=Noto+Sans+KR:wght@300;400;500;600;700']));
+    if (lang === 'ar') add('duskline-font-ar', hrefFor(['family=Noto+Sans+Arabic:wght@300;400;500;600;700']));
+    if (lang === 'he') add('duskline-font-he', hrefFor(['family=Noto+Sans+Hebrew:wght@300;400;500;600;700']));
+    if (lang === 'th') add('duskline-font-th', hrefFor(['family=Noto+Sans+Thai:wght@300;400;500;600;700']));
+    if (lang === 'hi') add('duskline-font-hi', hrefFor(['family=Noto+Sans+Devanagari:wght@300;400;500;600;700']));
+  }
+  apply();
+  window.__dusklineLoadFonts = apply;
+  document.addEventListener('duskline:prefs', function (e) {
+    var type = e && e.detail && e.detail.type;
+    if (type === 'lang' || type === 'style') apply();
+  });
+})();
+</script>
+<link rel="stylesheet" href="src/css/styles.css">
+</head>
 <body class="page-legal duskline" data-legal-page="privacy">
-<header class="legal-topbar"><a class="legal-brand" href="index.html"><img src="assets/duskline-icon.jpg" alt=""><span>duskline</span></a><label for="dusklineLegalLanguage" data-legal="language-label">Language</label><select id="dusklineLegalLanguage" aria-label="Language"></select></header>
-<main class="legal-page"><p class="legal-back"><a href="index.html" data-legal="back">‹ Back to duskline</a></p><p class="legal-eyebrow" data-legal="legal">DUSKLINE · LEGAL</p><h1 data-legal="title">Privacy Policy</h1><p class="legal-intro">A clear explanation of what stays in your browser and what is sent to weather providers.</p><p class="legal-english-note" data-legal="english-note" hidden></p><p class="legal-updated" data-legal="effective">Effective August 27, 2026</p><h2>What duskline stores</h2><p>duskline has no accounts, profiles, advertising identifiers, or private dashboard. Your language, unit preference, favorites, cached responses, and an approximate saved location may be stored locally in your browser. This information is not uploaded to duskline.</p><h2>Location and weather requests</h2><p>If you choose “Use my location,” your browser asks for permission. duskline uses the result to request a forecast and rounds saved coordinates to reduce precision. Reverse geocoding is requested from BigDataCloud and, if that fails, OpenStreetMap Nominatim, so those services receive the rounded coordinates. You can deny permission, remove the saved pin in the app, clear favorites, or clear site data at any time.</p><p>Weather requests are made directly by your browser to Open-Meteo and, for eligible U.S. forecasts and alerts, the U.S. National Weather Service. Those services receive the request information required to answer it and maintain their own privacy policies.</p><h2>Hosting and third parties</h2><p>duskline is a static site hosted through deployment infrastructure. Hosting providers may process ordinary technical information such as an IP address, browser details, and request time for security and delivery. The app also loads fonts from Google Fonts. duskline does not sell that information.</p><h2>Changes and contact</h2><p>This policy may be updated when the app or its providers change. The effective date above identifies the current version. For questions about this policy, contact the duskline maintainer through the project’s public repository: <a href="https://github.com/TGthms/duskline" rel="noreferrer">github.com/TGthms/duskline</a>.</p></main>
-<script src="src/js/data/duskline-locales.js"></script><script src="src/js/legal.js"></script></body></html>
+<a class="skip-link" href="#legalMain" data-i18n="aria.skipToMain">Skip to main content</a>
+<header class="legal-topbar" role="banner">
+  <a class="legal-brand" href="index.html" aria-label="duskline">
+    <img src="assets/duskline-icon.jpg" alt="">
+    <span>duskline</span>
+  </a>
+  <div class="nav-actions">
+    <label class="duskline-language-label" for="dusklineLanguage" data-i18n="settings.languageLabel">Language</label>
+    <select id="dusklineLanguage" aria-label="Language" data-i18n-aria="settings.languageLabel"></select>
+  </div>
+</header>
+<main id="legalMain" class="legal-page" tabindex="-1">
+  <p class="legal-back"><a href="index.html" data-i18n="legal.back">Back to duskline</a></p>
+  <p class="legal-eyebrow" data-i18n="legal.eyebrow">DUSKLINE · LEGAL</p>
+  <h1 data-i18n="legal.privacy.title">Privacy Policy</h1>
+  <p class="legal-intro" data-i18n="legal.privacy.intro">A clear explanation of what stays in your browser and what is sent to weather providers.</p>
+  <p class="legal-updated" data-i18n="legal.effective">Effective {date}</p>
+  <h2 data-i18n="legal.privacy.h1">What duskline stores</h2>
+  <p data-i18n="legal.privacy.p1">duskline has no accounts, profiles, advertising identifiers, or private dashboard. Your language, unit preference, favorites, cached responses, and an approximate saved location may be stored locally in your browser. This information is not uploaded to duskline.</p>
+  <h2 data-i18n="legal.privacy.h2">Location and weather requests</h2>
+  <p data-i18n="legal.privacy.p2">If you choose “Use my location,” your browser asks for permission. duskline uses the result to request a forecast and rounds saved coordinates to reduce precision. Reverse geocoding is requested from BigDataCloud and, if that fails, OpenStreetMap Nominatim, so those services receive the rounded coordinates. You can deny permission, remove the saved pin in the app, clear favorites, or clear site data at any time.</p>
+  <p data-i18n="legal.privacy.p3">Weather requests are made directly by your browser to Open-Meteo and, for eligible U.S. forecasts and alerts, the U.S. National Weather Service. Those services receive the request information required to answer it and maintain their own privacy policies.</p>
+  <h2 data-i18n="legal.privacy.h3">Hosting and third parties</h2>
+  <p data-i18n="legal.privacy.p4">duskline is a static site hosted through deployment infrastructure. Hosting providers may process ordinary technical information such as an IP address, browser details, and request time for security and delivery. The app also loads fonts from Google Fonts. duskline does not sell that information.</p>
+  <h2 data-i18n="legal.privacy.h4">Changes and contact</h2>
+  <p data-i18n-html="legal.privacy.p5">This policy may be updated when the app or its providers change. The effective date above identifies the current version. For questions about this policy, contact the duskline maintainer through the project’s public repository: <a href="https://github.com/TGthms/duskline" rel="noreferrer">github.com/TGthms/duskline</a>.</p>
+</main>
+<footer class="legal-site-footer">
+  <div class="legal-site-footer-inner">
+    <a class="legal-footer-home" href="index.html">duskline</a>
+    <nav class="legal-footer-nav" data-i18n-aria="legal.nav" aria-label="Legal">
+      <a href="privacy.html" data-i18n="legal.privacyLink" aria-current="page">Privacy Policy</a>
+      <a href="terms.html" data-i18n="legal.termsLink">Terms of Use</a>
+    </nav>
+  </div>
+</footer>
+<script src="src/js/data/duskline-locales.js"></script>
+<script src="src/js/data/legal-i18n.js"></script>
+<script src="src/js/legal.js"></script>
+</body>
+</html>

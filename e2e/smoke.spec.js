@@ -113,12 +113,33 @@ test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
 });
 
-test('privacy page loads and can switch language chrome', async ({ page }) => {
+test('privacy page uses the home language picker and full translations', async ({ page }) => {
   await page.goto('/privacy.html');
-  await expect(page.locator('[data-legal="title"]')).toBeVisible();
-  await page.locator('#dusklineLegalLanguage').selectOption('fr');
-  await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
-  await expect(page.locator('[data-legal="english-note"]')).toBeVisible();
+  await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
+  await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('Privacy Policy');
+  await page.locator('#dusklineLanguage').selectOption('fr');
+  await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('Politique de confidentialité');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr-FR');
+  await expect(page.locator('[data-i18n="legal.privacy.p1"]')).toContainText('ni comptes');
+  await expect(page.locator('[data-legal="english-note"]')).toHaveCount(0);
+  await page.locator('#dusklineLanguage').selectOption('ar');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('سياسة الخصوصية');
+});
+
+test('terms page translates body copy for every picker language', async ({ page }) => {
+  await page.goto('/terms.html');
+  await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
+  const codes = await page.locator('#dusklineLanguage option').evaluateAll((opts) => opts.map((el) => el.value));
+  for (const code of codes) {
+    await page.locator('#dusklineLanguage').selectOption(code);
+    const title = (await page.locator('[data-i18n="legal.terms.title"]').textContent() || '').trim();
+    const body = (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim();
+    expect(title.length, `terms title empty for ${code}`).toBeGreaterThan(2);
+    expect(body.length, `terms body empty for ${code}`).toBeGreaterThan(20);
+  }
+  await page.locator('#dusklineLanguage').selectOption('ja');
+  await expect(page.locator('[data-i18n="legal.terms.title"]')).toHaveText('利用規約');
 });
 
 test('units sheet opens', async ({ page }) => {

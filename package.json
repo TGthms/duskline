@@ -8,7 +8,8 @@
     "check": "node tools/check-js.js",
     "test:unit": "node --test test/*.test.js",
     "test": "playwright test",
-    "test:all": "node --test test/*.test.js && playwright test"
+    "test:all": "node --test test/*.test.js && playwright test",
+    "readme:i18n": "node tools/render-readme-i18n.js"
   },
   "devDependencies": { "@playwright/test": "^1.55.0" },
   "license": "MIT",

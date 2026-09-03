@@ -712,23 +712,7 @@
       id: 'Lewati ke konten utama', ja: 'メインコンテンツへスキップ', ko: '본문으로 건너뛰기',
       zh: '跳到主要内容', 'zh-TW': '跳至主要內容'
     },
-    'weather.legalEnglishNote': {
-      en: 'The full legal text is provided in English.', es: 'El texto legal completo está en inglés.',
-      fr: 'Le texte juridique intégral est fourni en anglais.', de: 'Der vollständige Rechtstext liegt auf Englisch vor.',
-      it: 'Il testo legale completo è in inglese.', 'pt-BR': 'O texto legal completo está em inglês.',
-      'pt-PT': 'O texto legal completo está em inglês.', nl: 'De volledige juridische tekst staat in het Engels.',
-      da: 'Den fulde juridiske tekst er på engelsk.', sv: 'Den fullständiga juridiska texten är på engelska.',
-      nb: 'Den fullstendige juridiske teksten er på engelsk.', fi: 'Täydellinen oikeudellinen teksti on englanniksi.',
-      pl: 'Pełny tekst prawny jest po angielsku.', cs: 'Úplný právní text je v angličtině.',
-      hu: 'A teljes jogi szöveg angolul érhető el.', ro: 'Textul juridic complet este în engleză.',
-      el: 'Το πλήρες νομικό κείμενο είναι στα αγγλικά.', tr: 'Tam yasal metin İngilizcedir.',
-      ru: 'Полный юридический текст приведён на английском.', uk: 'Повний юридичний текст подано англійською.',
-      ar: 'النص القانوني الكامل متوفر بالإنجليزية.', he: 'הטקסט המשפטי המלא מופיע באנגלית.',
-      hi: 'पूर्ण कानूनी पाठ अंग्रेज़ी में है।', th: 'ข้อความทางกฎหมายฉบับเต็มเป็นภาษาอังกฤษ',
-      vi: 'Toàn bộ văn bản pháp lý được cung cấp bằng tiếng Anh.', id: 'Teks hukum lengkap disediakan dalam bahasa Inggris.',
-      ja: '全文の法的文書は英語です。', ko: '전체 법률 문구는 영어로 제공됩니다.', zh: '完整法律文本以英文提供。',
-      'zh-TW': '完整法律文本以英文提供。'
-    },
+
     'region.North America': {
       en: 'North America', es: 'Norteamérica', fr: 'Amérique du Nord', de: 'Nordamerika', it: 'Nord America',
       'pt-BR': 'América do Norte', 'pt-PT': 'América do Norte', nl: 'Noord-Amerika', da: 'Nordamerika',

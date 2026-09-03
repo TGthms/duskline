@@ -275,19 +275,28 @@ body.duskline .legal-page a { color: var(--duskline-accent); }
 body.duskline .legal-topbar { position: fixed; inset: 0 0 auto; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px clamp(20px, 4vw, 56px); background: rgba(8,17,31,.88); border-bottom: 1px solid rgba(125,211,252,.14); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 body.duskline .legal-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--duskline-ink); font: 700 1.05rem/1 'Public Sans', sans-serif; letter-spacing: .12em; text-decoration: none; text-transform: lowercase; }
 body.duskline .legal-brand img { width: 30px; height: 30px; border-radius: 9px; object-fit: cover; }
-body.duskline .legal-topbar label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-body.duskline #dusklineLegalLanguage { min-height: 36px; border: 1px solid rgba(125,211,252,.25); border-radius: 999px; background: rgba(8,17,31,.92); color: var(--duskline-ink); padding: 0 12px; font: 600 12px 'Public Sans', sans-serif; }
+body.duskline .legal-topbar .nav-actions { display: flex; align-items: center; flex-shrink: 0; }
+body.duskline .legal-site-footer {
+  border-top: 1px solid rgba(125,211,252,.14);
+  background: transparent;
+  padding: 28px clamp(20px, 4vw, 56px) 40px;
+}
+body.duskline .legal-footer-home { color: var(--duskline-ink); }
+body.duskline .legal-footer-nav a { color: var(--duskline-muted); text-transform: none; letter-spacing: -0.01em; }
+body.duskline .legal-footer-nav a:hover,
+body.duskline .legal-footer-nav a[aria-current="page"] { color: var(--duskline-accent); }
 body.duskline.weather-detail-open .weather-detail-loading-panel,
 body.duskline .weather-detail-loading-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 180px; color: var(--duskline-ink); }
 body.duskline .weather-detail-loading { margin-top: 12px; color: var(--duskline-muted); font-size: 1rem; }
 body.duskline.weather-sky-light .legal-topbar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); }
-body.duskline.weather-sky-light .legal-brand,
-body.duskline.weather-sky-light #dusklineLegalLanguage { color: #15263b; }
-body.duskline.weather-sky-light #dusklineLegalLanguage { background: rgba(255,255,255,.86); border-color: rgba(31,74,109,.2); }
+body.duskline.weather-sky-light .legal-brand { color: #15263b; }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-topbar { background: rgba(246,250,255,.9); border-bottom-color: rgba(31,74,109,.15); }
-html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-brand,
-html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLegalLanguage { color: #15263b; }
-html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLegalLanguage { background: rgba(255,255,255,.86); border-color: rgba(31,74,109,.2); }
+html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .legal-brand { color: #15263b; }
+html[data-theme="minimal"] body.page-legal.duskline .legal-site-footer { border-top-color: rgba(31,74,109,.15); }
+html[data-theme="minimal"] body.page-legal.duskline .legal-footer-home { color: #10243e; }
+html[data-theme="minimal"] body.page-legal.duskline .legal-footer-nav a { color: #3d5570; }
+html[data-theme="minimal"] body.page-legal.duskline .legal-footer-nav a:hover,
+html[data-theme="minimal"] body.page-legal.duskline .legal-footer-nav a[aria-current="page"] { color: #0b6bcb; }
 /* Legal reading surface follows OS light appearance (header + body together). */
 html[data-theme="minimal"] body.page-legal.duskline {
   background: #eef5fb;

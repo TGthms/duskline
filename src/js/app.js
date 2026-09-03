@@ -9,7 +9,8 @@
    4. features/weather/{ns,sky,charts,alerts,data,app}.js
    5. app.js (this file) — apply saved prefs
 
-   Legal pages load duskline-locales.js + legal.js only.
+   Legal pages load duskline-locales.js + legal-i18n.js + legal.js.
+   Policy copy is fetched per locale from src/js/data/legal/packs/.
 */
 
 if (typeof applyLanguage === 'function') applyLanguage(currentLang);
