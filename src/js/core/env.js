@@ -31,7 +31,6 @@ function isMobileOrCoarsePointer() {
     if (safeMatchMedia('(pointer: coarse)').matches) return true;
     if (typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1
         && safeMatchMedia('(max-width: 1200px)').matches) return true;
-    if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0 && navigator.deviceMemory <= 4) return true;
   } catch (e) { /* ignore */ }
   return false;
 }

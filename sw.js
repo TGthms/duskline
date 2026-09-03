@@ -1,7 +1,10 @@
-const CACHE = 'duskline-shell-v17';
+const CACHE = 'duskline-shell-v18';
 const SHELL = [
   './',
   './index.html',
+  './privacy.html',
+  './terms.html',
+  './src/js/data/legal/packs/en.json',
   './manifest.webmanifest',
   './assets/duskline-icon.jpg',
   './assets/duskline-icon-192.png',
@@ -40,7 +43,9 @@ const SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) => Promise.all(
+      SHELL.map((url) => cache.add(url).catch(function () {}))
+    )).then(() => self.skipWaiting())
   );
 });
 
@@ -74,6 +79,15 @@ self.addEventListener('fetch', (event) => {
       const cached = await caches.match(request);
       if (cached) return cached;
       if (isNav) {
+        const path = url.pathname || '';
+        if (/privacy\.html$/i.test(path)) {
+          const privacy = await caches.match('./privacy.html');
+          if (privacy) return privacy;
+        }
+        if (/terms\.html$/i.test(path)) {
+          const terms = await caches.match('./terms.html');
+          if (terms) return terms;
+        }
         const shell = await caches.match('./index.html');
         if (shell) return shell;
       }

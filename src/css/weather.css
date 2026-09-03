@@ -23,7 +23,8 @@
   color: var(--text-main); font: 600 12px/1 var(--ff-body); letter-spacing: .04em;
   cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
 }
-.weather-btn:hover, .weather-btn:focus-visible { border-color: var(--accent-1); color: var(--accent-1); outline: none; }
+.weather-btn:hover { border-color: var(--accent-1); color: var(--accent-1); }
+.weather-btn:focus-visible { outline: 2px solid var(--accent-1); outline-offset: 3px; }
 .weather-btn:disabled { opacity: .55; cursor: default; }
 .weather-updated { font-size: 12px; color: var(--text-mute); }
 .weather-list { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; padding: 0; }
@@ -44,9 +45,13 @@
   font: inherit;
   transition: border-color .2s ease, transform .2s ease;
 }
-.weather-row:hover, .weather-row:focus-visible {
+.weather-row:hover {
   border-color: color-mix(in srgb, var(--accent-1) 50%, transparent);
-  outline: none;
+}
+.weather-row:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  border-color: #fff;
 }
 .weather-row-city { font-family: var(--ff-display); font-size: 1.25rem; font-weight: 600; color: #fff; }
 .weather-row-meta { font-size: 12px; color: rgba(255,255,255,.78); margin-top: 2px; }

@@ -23,4 +23,4 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 - API + hybrid NWS/OM → `data.js`
 - List, detail, units sheet, refresh → `app.js`
 
-After edits: `node --check src/js/features/weather/*.js` and Playwright `weather` smokes.
+After edits: `npm run check` and Playwright `e2e/smoke.spec.js`.

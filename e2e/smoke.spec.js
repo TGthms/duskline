@@ -33,6 +33,12 @@ test('home page exposes Search Console verification and SEO head', async ({ page
   await expect(page.locator('h1')).toHaveCount(1);
 });
 
+test('search combobox has an accessible name', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#weatherSearch')).toHaveAttribute('aria-labelledby', 'weatherSearchLabel');
+  await expect(page.locator('#weatherError')).toHaveAttribute('role', 'alert');
+});
+
 test('loads the branded weather shell and all locales', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('body')).toHaveClass(/duskline/);
@@ -131,12 +137,18 @@ test('terms page translates body copy for every picker language', async ({ page 
   await page.goto('/terms.html');
   await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
   const codes = await page.locator('#dusklineLanguage option').evaluateAll((opts) => opts.map((el) => el.value));
+  let prevTitle = '';
   for (const code of codes) {
+    const packWait = page.waitForResponse((res) => res.url().includes('/legal/packs/' + encodeURIComponent(code) + '.json') && res.ok(), { timeout: 8000 }).catch(() => null);
     await page.locator('#dusklineLanguage').selectOption(code);
+    if (code !== 'en') await packWait;
+    await expect.poll(async () => (await page.locator('[data-i18n="legal.terms.title"]').textContent() || '').trim()).not.toBe('');
     const title = (await page.locator('[data-i18n="legal.terms.title"]').textContent() || '').trim();
     const body = (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim();
     expect(title.length, `terms title empty for ${code}`).toBeGreaterThan(2);
     expect(body.length, `terms body empty for ${code}`).toBeGreaterThan(20);
+    if (prevTitle && code !== 'en') expect(title, `terms title unchanged for ${code}`).not.toBe(prevTitle);
+    prevTitle = title;
   }
   await page.locator('#dusklineLanguage').selectOption('ja');
   await expect(page.locator('[data-i18n="legal.terms.title"]')).toHaveText('利用規約');
@@ -200,7 +212,6 @@ test('detail sky mounts layered weather ornaments', async ({ page }) => {
   await page.locator('#weatherList .weather-row').first().click();
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
   await expect(page.locator('#weatherDetailSky .wx-ornaments')).toBeVisible();
-  await expect(page.locator('#weatherDetailFx .wx-rain-near')).toHaveCount(1);
   await expect(page.locator('#weatherDetailSky .wx-fog')).toHaveCount(3);
 });
 

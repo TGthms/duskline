@@ -561,7 +561,7 @@
         '<div class="weather-chart-readout" data-readout>' + escapeHtml(unitFmt(mid.v)) + '</div>' +
         '<div class="weather-chart-sub" data-sub">' + escapeHtml(formatClock(mid.t, tz)) + '</div>' +
         // preserveAspectRatio=none: CSS size maps 1:1 to viewBox → scrub X/Y stay aligned
-        '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img">' +
+        '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + escapeHtml(t('weather.hourly', 'Hourly Forecast')) + '">' +
           '<defs>' +
             '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="0" y2="1">' +
               '<stop class="wx-chart-fill-a" offset="0%" stop-color="#ffffff" stop-opacity="0.38"/>' +
@@ -817,11 +817,11 @@
     function uvGauge(v) {
       if (v == null) return '';
       const pct = Math.max(0, Math.min(100, (v / 12) * 100));
-      let lab = 'Low';
-      if (v >= 11) lab = 'Extreme';
-      else if (v >= 8) lab = 'Very High';
-      else if (v >= 6) lab = 'High';
-      else if (v >= 3) lab = 'Moderate';
+      let lab = t('weather.uvLow', 'Low');
+      if (v >= 11) lab = t('weather.uvExtreme', 'Extreme');
+      else if (v >= 8) lab = t('weather.uvVeryHigh', 'Very High');
+      else if (v >= 6) lab = t('weather.uvHigh', 'High');
+      else if (v >= 3) lab = t('weather.uvModerate', 'Moderate');
       return `<div class="weather-gauge"><span class="weather-gauge-dot" style="left:${pct.toFixed(1)}%"></span></div>
         <div class="weather-mod-sub">${escapeHtml(lab)}</div>`;
     }
@@ -1059,10 +1059,7 @@
       const totalMin = Math.round(ms / 60000);
       const h = Math.floor(totalMin / 60);
       const m = totalMin % 60;
-      if (lang() === 'zh') return h + ' 小时 ' + m + ' 分钟';
-      if (lang() === 'ja') return h + '時間' + m + '分';
-      if (lang() === 'es') return h + ' h ' + m + ' min';
-      return h + ' hr ' + m + ' min';
+      return t('weather.durationHm', '{h} hr {m} min').replace('{h}', String(h)).replace('{m}', String(m));
     }
 
     /** Full-day sun path chart + metrics (Apple-inspired). No Y-axis — path is symbolic. */

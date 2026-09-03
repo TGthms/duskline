@@ -1,10 +1,10 @@
 "use strict";
 /**
- * Weather UI translations (es / zh / ja).
- * English lives in the HTML; runtime.js snapshots it for the en locale.
- * duskline-locales.js overlays all 30 picker languages on top of this pack.
+ * Legacy stub. All weather UI strings live in duskline-locales.js (30 locales).
+ * Keep window.I18N as an object so later scripts can merge into it.
  */
-window.I18N = {
+window.I18N = window.I18N || {};
+window.I18N._legacy = {
   "es": {
     "aria.skipToMain": "Saltar al contenido principal",
     "settings.auto": "Auto",

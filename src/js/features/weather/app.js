@@ -144,6 +144,8 @@
     51: { en: 'Light drizzle', es: 'Llovizna ligera', zh: '小毛毛雨', ja: '弱い霧雨' },
     53: { en: 'Drizzle', es: 'Llovizna', zh: '毛毛雨', ja: '霧雨' },
     55: { en: 'Heavy drizzle', es: 'Llovizna intensa', zh: '强毛毛雨', ja: '強い霧雨' },
+    56: { en: 'Light freezing drizzle', es: 'Llovizna helada ligera', zh: '轻度冻毛毛雨', ja: '弱い着氷性の霧雨' },
+    57: { en: 'Freezing drizzle', es: 'Llovizna helada', zh: '冻毛毛雨', ja: '着氷性の霧雨' },
     61: { en: 'Light rain', es: 'Lluvia ligera', zh: '小雨', ja: '弱い雨' },
     63: { en: 'Rain', es: 'Lluvia', zh: '雨', ja: '雨' },
     65: { en: 'Heavy rain', es: 'Lluvia intensa', zh: '大雨', ja: '強い雨' },
@@ -152,9 +154,12 @@
     71: { en: 'Light snow', es: 'Nieve ligera', zh: '小雪', ja: '弱い雪' },
     73: { en: 'Snow', es: 'Nieve', zh: '雪', ja: '雪' },
     75: { en: 'Heavy snow', es: 'Nieve intensa', zh: '大雪', ja: '大雪' },
+    77: { en: 'Snow grains', es: 'Granos de nieve', zh: '雪粒', ja: '雪あられ' },
     80: { en: 'Rain showers', es: 'Chubascos', zh: '阵雨', ja: 'にわか雨' },
     81: { en: 'Rain showers', es: 'Chubascos', zh: '阵雨', ja: 'にわか雨' },
     82: { en: 'Violent rain showers', es: 'Chubascos fuertes', zh: '强阵雨', ja: '激しいにわか雨' },
+    85: { en: 'Snow showers', es: 'Chubascos de nieve', zh: '阵雪', ja: 'にわか雪' },
+    86: { en: 'Heavy snow showers', es: 'Chubascos de nieve intensos', zh: '强阵雪', ja: '激しいにわか雪' },
     95: { en: 'Thunderstorm', es: 'Tormenta', zh: '雷暴', ja: '雷雨' },
     96: { en: 'Thunderstorm with hail', es: 'Tormenta con granizo', zh: '雷暴伴冰雹', ja: '雷雨（ひょう）' },
     99: { en: 'Thunderstorm with hail', es: 'Tormenta con granizo', zh: '雷暴伴冰雹', ja: '雷雨（ひょう）' }
@@ -246,10 +251,48 @@
   function lang() {
     return (typeof currentLang === 'string' && currentLang) || 'en';
   }
+  function langFallbacks() {
+    const L = lang();
+    const keys = [L];
+    if (L === 'zh-TW') keys.push('zh');
+    if (L === 'pt-BR') keys.push('pt-PT');
+    if (L === 'pt-PT') keys.push('pt-BR');
+    if (L.indexOf('-') > 0) keys.push(L.split('-')[0]);
+    keys.push('en');
+    return keys;
+  }
+  function pickLangMap(map, fallback) {
+    if (!map) return fallback || '';
+    const keys = langFallbacks();
+    for (let i = 0; i < keys.length; i++) {
+      if (map[keys[i]]) return map[keys[i]];
+    }
+    return fallback || map.en || '';
+  }
   function t(key, fallback) {
-    const dict = typeof getI18nDict === 'function' ? getI18nDict(lang()) : null;
-    if (dict && dict[key]) return dict[key];
+    const get = typeof getI18nDict === 'function' ? getI18nDict : null;
+    const keys = langFallbacks();
+    if (get) {
+      for (let i = 0; i < keys.length; i++) {
+        const dict = get(keys[i]);
+        if (dict && dict[key]) return dict[key];
+      }
+    }
+    try {
+      const pack = window.I18N;
+      if (pack) {
+        for (let j = 0; j < keys.length; j++) {
+          if (pack[keys[j]] && pack[keys[j]][key]) return pack[keys[j]][key];
+        }
+      }
+    } catch (e) { /* ignore */ }
     return fallback || key;
+  }
+  function geocodeLangParam() {
+    const L = lang();
+    if (L === 'zh-TW') return 'zh-TW';
+    if (window.DUSKLINE_LANG_CODES && window.DUSKLINE_LANG_CODES.indexOf(L) !== -1) return L;
+    return L.split('-')[0] || 'en';
   }
   function localeTag() {
     const L = lang();
@@ -478,11 +521,11 @@
 
   function uvLabelFor(v) {
     if (v == null || !Number.isFinite(Number(v))) return '';
-    if (v >= 11) return lang() === 'zh' ? '极高' : lang() === 'ja' ? '極端' : lang() === 'es' ? 'Extremo' : 'Extreme';
-    if (v >= 8) return lang() === 'zh' ? '很高' : lang() === 'ja' ? '非常に高い' : lang() === 'es' ? 'Muy alto' : 'Very High';
-    if (v >= 6) return lang() === 'zh' ? '高' : lang() === 'ja' ? '高い' : lang() === 'es' ? 'Alto' : 'High';
-    if (v >= 3) return lang() === 'zh' ? '中等' : lang() === 'ja' ? '中' : lang() === 'es' ? 'Moderado' : 'Moderate';
-    return lang() === 'zh' ? '低' : lang() === 'ja' ? '低い' : lang() === 'es' ? 'Bajo' : 'Low';
+    if (v >= 11) return t('weather.uvExtreme', 'Extreme');
+    if (v >= 8) return t('weather.uvVeryHigh', 'Very High');
+    if (v >= 6) return t('weather.uvHigh', 'High');
+    if (v >= 3) return t('weather.uvModerate', 'Moderate');
+    return t('weather.uvLow', 'Low');
   }
 
   /** Current UV when hourly exists; at night do not fall back to the daily max. */
@@ -505,9 +548,8 @@
     if (isBareWallClock(s) && chartsApi && typeof chartsApi.wallClockInZoneToUtcMs === 'function') {
       return chartsApi.wallClockInZoneToUtcMs(s, timeZone);
     }
-    if (isBareWallClock(s)) {
-      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-      if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    if (isBareWallClock(s) && window.DusklineWxMath && typeof window.DusklineWxMath.wallClockInZoneToUtcMs === 'function') {
+      return window.DusklineWxMath.wallClockInZoneToUtcMs(s, timeZone);
     }
     const t = new Date(s).getTime();
     return Number.isFinite(t) ? t : NaN;
@@ -535,12 +577,12 @@
       const raw = localStorage.getItem(FAV_KEY);
       const arr = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(arr)) return [];
-      return arr.filter((c) => c && typeof c.lat === 'number' && typeof c.lon === 'number' && c.name)
+      return arr.filter((c) => c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lon)) && c.name)
         .map((c) => ({
           name: c.name,
           admin1: c.admin1 || '',
-          lat: c.lat,
-          lon: c.lon,
+          lat: Number(c.lat),
+          lon: Number(c.lon),
           tz: c.tz,
           country: c.country || '',
           country_code: c.country_code || ''
@@ -572,10 +614,10 @@
       const raw = localStorage.getItem(MYLOC_KEY);
       if (!raw) return null;
       const c = JSON.parse(raw);
-      if (!c || typeof c.lat !== 'number' || typeof c.lon !== 'number' || !c.name) return null;
+      if (!c || !Number.isFinite(Number(c.lat)) || !Number.isFinite(Number(c.lon)) || !c.name) return null;
       const locatedAt = (typeof c.locatedAt === 'number' && c.locatedAt > 0) ? c.locatedAt : 0;
       return {
-        name: c.name, admin1: c.admin1 || '', lat: c.lat, lon: c.lon, tz: c.tz,
+        name: c.name, admin1: c.admin1 || '', lat: Number(c.lat), lon: Number(c.lon), tz: c.tz,
         country: c.country || '', country_code: c.country_code || '',
         isMyLocation: true, locatedAt: locatedAt
       };
@@ -607,7 +649,7 @@
   }
 
   async function reverseGeocode(lat, lon) {
-    const langParam = lang() === 'zh' ? 'zh' : lang() === 'ja' ? 'ja' : lang() === 'es' ? 'es' : 'en';
+    const langParam = geocodeLangParam();
     // BigDataCloud client reverse geocode (browser-safe, no API key)
     try {
       const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${langParam}`;
@@ -647,8 +689,10 @@
   }
 
   function condLabel(code) {
+    const packed = t('weather.wmo.' + code, '');
+    if (packed && packed !== 'weather.wmo.' + code) return packed;
     const row = WMO[code] || WMO[3];
-    return row[lang()] || row.en;
+    return pickLangMap(row, row.en);
   }
 
   /* SF Symbols–inspired stroke glyphs (24×24, consistent optical weight) */
@@ -829,12 +873,12 @@
   }
   function aqiLabel(v) {
     if (v == null) return '';
-    if (v <= 50) return lang() === 'zh' ? '优' : lang() === 'ja' ? '良好' : lang() === 'es' ? 'Buena' : 'Good';
-    if (v <= 100) return lang() === 'zh' ? '良' : lang() === 'ja' ? '普通' : lang() === 'es' ? 'Moderada' : 'Moderate';
-    if (v <= 150) return lang() === 'zh' ? '轻度污染' : lang() === 'ja' ? '敏感者に有害' : lang() === 'es' ? 'Dañina (SG)' : 'Unhealthy (SG)';
-    if (v <= 200) return lang() === 'zh' ? '中度污染' : lang() === 'ja' ? '有害' : lang() === 'es' ? 'Dañina' : 'Unhealthy';
-    if (v <= 300) return lang() === 'zh' ? '重度污染' : lang() === 'ja' ? '非常に有害' : lang() === 'es' ? 'Muy dañina' : 'Very unhealthy';
-    return lang() === 'zh' ? '严重污染' : lang() === 'ja' ? '危険' : lang() === 'es' ? 'Peligrosa' : 'Hazardous';
+    if (v <= 50) return t('weather.aqiGood', 'Good');
+    if (v <= 100) return t('weather.aqiModerate', 'Moderate');
+    if (v <= 150) return t('weather.aqiUnhealthySG', 'Unhealthy (SG)');
+    if (v <= 200) return t('weather.aqiUnhealthy', 'Unhealthy');
+    if (v <= 300) return t('weather.aqiVeryUnhealthy', 'Very unhealthy');
+    return t('weather.aqiHazardous', 'Hazardous');
   }
   function aqiColor(v) {
     if (v == null) return '#8e8e93';
@@ -1061,6 +1105,7 @@
     if (!errorEl) return;
     if (!msg) { errorEl.hidden = true; errorEl.textContent = ''; return; }
     errorEl.hidden = false;
+    errorEl.setAttribute('role', 'alert');
     errorEl.textContent = msg;
   }
 
@@ -1424,8 +1469,12 @@
     });
     const seen = new Set(cities.map(cityKey));
     MAJOR.forEach((c) => { if (!seen.has(cityKey(c))) cities.push(c); });
-    cities.forEach((c) => pendingCityKeys.add(cityKey(c)));
-    refreshListsFromCache({ force: true, skipAmbient: true });
+    cities.forEach((c) => {
+      const k = cityKey(c);
+      const hit = cache.get(k);
+      if (!quiet || !hit || !hit.weather) pendingCityKeys.add(k);
+    });
+    if (!quiet) refreshListsFromCache({ force: true, skipAmbient: true });
 
     const run = (async () => {
       try {
@@ -1588,7 +1637,7 @@
     if (!detailEl || !city) return;
     openCity = { city: city, pending: true };
     if (detailHero) {
-      detailHero.innerHTML = `<h2>${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
+      detailHero.innerHTML = `<h2 id="weatherDetailTitle">${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
     }
     if (detailMods) {
       detailMods.innerHTML = `<div class="weather-detail-loading-panel" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
@@ -1607,6 +1656,7 @@
     detailEl.style.opacity = '';
     detailEl.style.pointerEvents = '';
     if (detailScroll) detailScroll.scrollTop = 0;
+    try { detailEl.setAttribute('aria-labelledby', 'weatherDetailTitle'); } catch (eLab) { /* ignore */ }
     try { detailBack.focus({ preventScroll: true }); } catch (e) {}
   }
 
@@ -1666,11 +1716,12 @@
     const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
     const heroRange = dayHiLo(daily, dayIdx, cur.temperature_2m);
     detailHero.innerHTML = `
-      <h2>${escapeHtml(displayCityName(c))}</h2>
+      <h2 id="weatherDetailTitle">${escapeHtml(displayCityName(c))}</h2>
       <div class="weather-detail-temp">${fmtTemp(cur.temperature_2m)}</div>
       <div class="weather-detail-cond">${condIcon(cur.weather_code, night)} ${escapeHtml(condLabel(cur.weather_code))}</div>
       <div class="weather-detail-hl">${t('weather.high', 'H')}:${fmtTemp(heroRange.hi)}  ${t('weather.low', 'L')}:${fmtTemp(heroRange.lo)}</div>
       <div class="weather-detail-updated" id="weatherDetailUpdated"></div>`;
+    try { detailEl.setAttribute('aria-labelledby', 'weatherDetailTitle'); } catch (eLab2) { /* ignore */ }
     {
       const detUp = $('weatherDetailUpdated');
       if (detUp) {
@@ -1706,9 +1757,9 @@
       let feelsSub = '';
       if (delta != null) {
         const abs = Math.abs(Math.round(delta));
-        if (abs < 1) feelsSub = lang() === 'zh' ? '与气温相近' : lang() === 'ja' ? '気温に近い' : lang() === 'es' ? 'Similar a la temperatura' : 'Similar to actual';
-        else if (delta > 0) feelsSub = (lang() === 'zh' ? '比气温高 ' : lang() === 'ja' ? '気温より ' : lang() === 'es' ? 'Más cálido ' : 'Warmer by ') + abs + '°';
-        else feelsSub = (lang() === 'zh' ? '比气温低 ' : lang() === 'ja' ? '気温より ' : lang() === 'es' ? 'Más fresco ' : 'Cooler by ') + abs + '°';
+        if (abs < 1) feelsSub = t('weather.feelsSimilar', 'Similar to actual');
+        else if (delta > 0) feelsSub = t('weather.feelsWarmer', 'Warmer by {n}°').replace('{n}', String(abs));
+        else feelsSub = t('weather.feelsCooler', 'Cooler by {n}°').replace('{n}', String(abs));
       }
       mods.push(modHtml('feels', t('weather.feelsLike', 'Feels like'), fmtTemp(feels), feelsSub, true));
     }
@@ -1744,7 +1795,7 @@
     }
     {
       const visSub = cur.visibility != null && cur.visibility < 5000
-        ? (lang() === 'zh' ? '能见度偏低' : lang() === 'ja' ? '視程が低い' : lang() === 'es' ? 'Visibilidad reducida' : 'Reduced visibility')
+        ? t('weather.visReduced', 'Reduced visibility')
         : '';
       mods.push(modHtml('vis', t('weather.visibility', 'Visibility'), fmtVis(cur.visibility), visSub, true));
     }
@@ -1763,9 +1814,9 @@
         }
         if (idx >= 3 && hp[idx] != null && hp[idx - 3] != null) {
           const d = hp[idx] - hp[idx - 3];
-          if (d > 0.8) trend = lang() === 'zh' ? '上升' : lang() === 'ja' ? '上昇' : lang() === 'es' ? 'Subiendo' : 'Rising';
-          else if (d < -0.8) trend = lang() === 'zh' ? '下降' : lang() === 'ja' ? '低下' : lang() === 'es' ? 'Bajando' : 'Falling';
-          else trend = lang() === 'zh' ? '稳定' : lang() === 'ja' ? '安定' : lang() === 'es' ? 'Estable' : 'Steady';
+          if (d > 0.8) trend = t('weather.pressureRising', 'Rising');
+          else if (d < -0.8) trend = t('weather.pressureFalling', 'Falling');
+          else trend = t('weather.pressureSteady', 'Steady');
         }
       } catch (e) {}
       mods.push(modHtml('pressure', t('weather.pressure', 'Pressure'), fmtPress(cur.surface_pressure), trend, true));
@@ -1773,7 +1824,7 @@
     {
       const dayPrecip = dailyFieldAt(daily, 'precipitation_sum', dayIdx);
       const sub = dayPrecip != null
-        ? (lang() === 'zh' ? '今日累计 ' : lang() === 'ja' ? '今日 ' : lang() === 'es' ? 'Hoy ' : 'Today ') + fmtPrecip(dayPrecip)
+        ? t('weather.todayPrecip', 'Today {n}').replace('{n}', fmtPrecip(dayPrecip))
         : '';
       mods.push(modHtml('precip', t('weather.precip', 'Precipitation'), fmtPrecip(cur.precipitation), sub, true));
     }
@@ -1829,7 +1880,7 @@
       </div>`;
     }
     hourlyHtml += '</div>';
-    mods.push(`<button type="button" class="weather-mod weather-mod-wide is-tappable" data-sheet="conditions"><div class="weather-mod-label">${modLabelIcon('conditions')}<span>${escapeHtml(t('weather.hourly', 'Hourly Forecast'))}</span></div>${hourlyHtml}</button>`);
+    mods.push(`<div class="weather-mod weather-mod-wide"><button type="button" class="weather-mod-label is-tappable" data-sheet="conditions">${modLabelIcon('conditions')}<span>${escapeHtml(t('weather.hourly', 'Hourly Forecast'))}</span></button>${hourlyHtml}</div>`);
 
     const dailyOpts = {
       currentTemp: cur && cur.temperature_2m != null ? cur.temperature_2m : null,
@@ -1993,10 +2044,7 @@
   }
 
   function countryLabelUS() {
-    if (lang() === 'zh') return '美国';
-    if (lang() === 'ja') return 'アメリカ合衆国';
-    if (lang() === 'es') return 'Estados Unidos';
-    return 'United States';
+    return t('weather.countryUS', 'United States');
   }
 
   function shortCountryName(name, code) {
@@ -2031,8 +2079,8 @@
     const key = cityKey(c);
     const staticNames = CITY_NAMES[key];
     if (staticNames) {
-      if (staticNames[L]) return staticNames[L];
-      if (staticNames.en) return staticNames.en;
+      const picked = pickLangMap(staticNames, '');
+      if (picked) return picked;
     }
     // Geocode cache fallback (search results / sparse fills)
     const cached = nameCache.get(L + ':' + key);
@@ -2180,7 +2228,7 @@
       conditions: t('weather.hourly', 'Hourly Forecast')
     };
 
-    const aboutTitle = lang() === 'zh' ? '说明' : lang() === 'ja' ? '説明' : lang() === 'es' ? 'Acerca de' : 'About';
+    const aboutTitle = t('weather.about', 'About');
     // Title row is rendered into the drag zone (grabber + icon + title) like about hub Preferences
     const sheetTitleHtml = `
       <div class="wx-sheet-head" data-sheet-title>
@@ -2195,9 +2243,10 @@
       || undefined;
 
     function unitsPickerHtml(id, pairs, current) {
-      let html = `<p class="weather-mod-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="${id}"><span class="wx-units-pill" aria-hidden="true"></span>`;
+      let html = `<p class="weather-mod-label" id="${id}-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="${id}" role="radiogroup" aria-labelledby="${id}-label"><span class="wx-units-pill" aria-hidden="true"></span>`;
       pairs.forEach(function (pair) {
-        html += `<button type="button" data-u="${pair[0]}" class="${current === pair[0] ? 'active' : ''}">${escapeHtml(pair[1])}</button>`;
+        const on = current === pair[0];
+        html += `<button type="button" role="radio" aria-checked="${on ? 'true' : 'false'}" data-u="${pair[0]}" class="${on ? 'active' : ''}">${escapeHtml(pair[1])}</button>`;
       });
       html += '</div>';
       return html;
@@ -2289,7 +2338,7 @@
     if (blurb) {
       body += `<div class="wx-sheet-about">
         <div class="wx-sheet-about-title">${escapeHtml(aboutTitle)} ${escapeHtml(titleMap[kind] || '')}</div>
-        <p>${escapeHtml(blurb[lang()] || blurb.en)}</p>
+        <p>${escapeHtml(t('weather.about.' + kind, '') || pickLangMap(blurb, blurb.en))}</p>
       </div>`;
     }
 
@@ -2306,7 +2355,10 @@
       row.querySelectorAll('button').forEach((b) => {
         b.addEventListener('click', () => {
           if (b.classList.contains('active')) return;
-          row.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+          row.querySelectorAll('button').forEach((x) => {
+            x.classList.toggle('active', x === b);
+            x.setAttribute('aria-checked', x === b ? 'true' : 'false');
+          });
           slideUnitsPill(row, b);
           setter(b.getAttribute('data-u'));
           window.clearTimeout(bind._rebuild);
@@ -2483,6 +2535,14 @@
     if (alreadyOpen) {
       sheetEl.classList.add('open', 'is-raised');
       sheetEl.classList.remove('is-leaving');
+      try {
+        const title = sheetPanel.querySelector('.wx-sheet-title');
+        if (title) {
+          title.setAttribute('id', 'weatherSheetTitle');
+          sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
+        }
+        if (sheetClose) sheetClose.focus({ preventScroll: true });
+      } catch (eFocus) { /* ignore */ }
       return;
     }
     resetSheetInline();
@@ -2490,12 +2550,28 @@
     const reduce = sheetReduceMotion();
     if (reduce) {
       sheetEl.classList.add('open', 'is-raised');
+      try {
+        const titleR = sheetPanel.querySelector('.wx-sheet-title');
+        if (titleR) {
+          titleR.setAttribute('id', 'weatherSheetTitle');
+          sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
+        }
+        if (sheetClose) sheetClose.focus({ preventScroll: true });
+      } catch (eRed) { /* ignore */ }
       return;
     }
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (gen !== sheetGen) return;
         sheetEl.classList.add('open', 'is-raised');
+        try {
+          const title = sheetPanel.querySelector('.wx-sheet-title');
+          if (title) {
+            title.setAttribute('id', 'weatherSheetTitle');
+            sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
+          }
+          if (sheetClose) sheetClose.focus({ preventScroll: true });
+        } catch (eFocus2) { /* ignore */ }
       });
     });
   }
@@ -2630,6 +2706,7 @@
 
     function onDragStart(e) {
       if (!sheetOpen || !sheetEl.classList.contains('open')) return;
+      if (sheetCentered()) return;
       cancelSheetSpring();
       sheetPanel.style.transition = 'none';
       sheetPanel.classList.add('is-dragging');
@@ -2873,13 +2950,13 @@
     }
     const gen = ++searchGen;
     try {
-      const langParam = lang() === 'zh' ? 'zh' : lang() === 'ja' ? 'ja' : lang() === 'es' ? 'es' : 'en';
-      const data = await dataApi.fetchJson(`${GEOCODE}?name=${encodeURIComponent(q)}&count=8&language=${langParam}&format=json`);
+      const langParam = geocodeLangParam();
+      const data = await dataApi.fetchJson(`${GEOCODE}?name=${encodeURIComponent(q)}&count=8&language=${encodeURIComponent(langParam)}&format=json`);
       if (gen !== searchGen) return;
       const results = data.results || [];
       suggestEl.innerHTML = '';
       if (!results.length) {
-        suggestEl.innerHTML = `<li class="s-empty">${escapeHtml(t('weather.emptySearch', 'No cities found.'))}</li>`;
+        suggestEl.innerHTML = `<li role="presentation"><div role="option" aria-disabled="true" class="s-empty">${escapeHtml(t('weather.emptySearch', 'No cities found.'))}</div></li>`;
         openSuggest();
         return;
       }
@@ -2926,7 +3003,7 @@
       openSuggest();
     } catch (e) {
       if (gen !== searchGen) return;
-      suggestEl.innerHTML = `<li class="s-empty">${escapeHtml(t('weather.error', 'Could not load weather data.'))}</li>`;
+      suggestEl.innerHTML = `<li role="presentation"><div role="option" aria-disabled="true" class="s-empty">${escapeHtml(t('weather.error', 'Could not load weather data.'))}</div></li>`;
       openSuggest();
     }
   }
@@ -2960,8 +3037,7 @@
       `<p class="weather-mod-label">${escapeHtml(distLab)}</p>` +
       `<div class="weather-units-row" id="wxDistUnits"></div>` +
       `<p class="wx-sheet-context" id="wxUnitsResolvedHint">${escapeHtml(
-        (lang() === 'zh' ? '当前：' : lang() === 'ja' ? '現在：' : lang() === 'es' ? 'Ahora: ' : 'Using ') +
-        resolvedHint
+        t('weather.usingUnits', 'Using {hint}').replace('{hint}', resolvedHint)
       )}</p>` +
       `<p class="weather-mod-label">${escapeHtml(t('weather.wind', 'Wind'))}</p>` +
       `<div class="weather-units-row" id="wxWindUnits2"></div>` +
@@ -2974,13 +3050,13 @@
       const el = document.getElementById('wxUnitsResolvedHint');
       if (!el) return;
       const tip = (useF() ? '°F' : '°C') + ' · ' + (useMi() ? 'mi' : 'km');
-      el.textContent =
-        (lang() === 'zh' ? '当前：' : lang() === 'ja' ? '現在：' : lang() === 'es' ? 'Ahora: ' : 'Using ') + tip;
+      el.textContent = t('weather.usingUnits', 'Using {hint}').replace('{hint}', tip);
     };
 
     const fill = function (id, units, current, onPick) {
       const row = document.getElementById(id);
       if (!row) return;
+      row.setAttribute('role', 'radiogroup');
       const pill = document.createElement('span');
       pill.className = 'wx-units-pill';
       pill.setAttribute('aria-hidden', 'true');
@@ -2992,12 +3068,15 @@
         b.type = 'button';
         b.textContent = lab;
         b.setAttribute('data-unit', u);
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', current === u ? 'true' : 'false');
         if (current === u) b.classList.add('active');
         b.addEventListener('click', function () {
           if (b.classList.contains('active')) return;
           onPick(u);
           row.querySelectorAll('button').forEach(function (x) {
             x.classList.toggle('active', x === b);
+            x.setAttribute('aria-checked', x === b ? 'true' : 'false');
           });
           slideUnitsPill(row, b);
         });
@@ -3329,7 +3408,10 @@
           admin1: p.get('admin1') || '',
           lat: lat,
           lon: lon,
-          tz: p.get('tz') || undefined
+          tz: p.get('tz') || undefined,
+          country: p.get('country') || '',
+          country_code: p.get('country_code') || p.get('cc') || '',
+          tryNws: !(p.get('country_code') || p.get('cc') || p.get('country'))
         };
       }
       if (slug && typeof DEST_WEATHER_CITIES !== 'undefined' && DEST_WEATHER_CITIES[slug]) {

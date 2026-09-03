@@ -36,6 +36,7 @@ body.page-tools .weather-root.tools-page {
   background: color-mix(in srgb, #0a1628 55%, transparent);
   color: #fff;
   padding: 12px 40px 12px 42px;
+  padding-inline: 42px 40px;
   font-size: 16px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -47,11 +48,11 @@ body.page-tools .weather-root.tools-page {
   box-shadow: 0 0 0 3px rgba(120,180,255,.2);
 }
 .weather-search-icon {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  position: absolute; inset-inline-start: 14px; top: 50%; transform: translateY(-50%);
   color: rgba(255,255,255,.55); pointer-events: none; z-index: 1;
 }
 .weather-search-clear {
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  position: absolute; inset-inline-end: 10px; top: 50%; transform: translateY(-50%);
   width: 28px; height: 28px; border-radius: 50%; border: 0;
   background: rgba(255,255,255,.14); color: #fff; cursor: pointer;
   font-size: 14px; line-height: 1; display: none; align-items: center; justify-content: center;
@@ -95,8 +96,13 @@ body.page-tools .weather-root.tools-page {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
-.weather-btn:hover, .weather-btn:focus-visible {
-  border-color: rgba(255,255,255,.4); outline: none;
+.weather-btn:hover {
+  border-color: rgba(255,255,255,.4);
+}
+.weather-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  border-color: #fff;
 }
 .weather-btn:disabled { opacity: .55; cursor: default; }
 .weather-btn-icon {
@@ -649,6 +655,24 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   text-transform: uppercase; opacity: .72; margin-bottom: 6px;
   flex-shrink: 0;
 }
+button.weather-mod-label {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+  width: 100%;
+}
+button.weather-mod-label:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
 .weather-mod-value {
   font-family: var(--ff-display);
   font-size: clamp(1.55rem, 5.5vw, 1.9rem);
@@ -862,6 +886,7 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   width: 100%;
   /* Keep title clear of the close control (44px hit target + margin) */
   padding: 0 52px 8px 18px;
+  padding-inline: 18px 52px;
   margin: 0;
   border: none;
   background: transparent;
@@ -965,14 +990,16 @@ button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px;
   position: absolute;
   top: 12px;
   right: 14px;
+  inset-inline-end: 14px;
+  inset-inline-start: auto;
   z-index: 20;
   float: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   margin: 0;
   border: none;
@@ -4048,13 +4075,16 @@ html[data-motion-effective="off"] .wx-units-pill {
   --wx-chart-guide: rgba(22, 52, 79, 0.55);
   --wx-chart-dot: #16344f;
   --wx-chart-dot-ring: rgba(22, 52, 79, 0.28);
-  --wx-chart-axis: rgba(22, 52, 79, 0.5);
+  --wx-chart-axis: #16344f;
   --wx-chart-fill-top: #16344f;
   --wx-chart-fill-mid: #4d7ea8;
 }
 .weather-sheet.wx-sheet-light .weather-chart text.wx-chart-axis {
   fill: var(--wx-chart-axis) !important;
-  stroke: rgba(255, 255, 255, 0.65);
+  stroke: rgba(255, 255, 255, 0.85);
+}
+.weather-sheet.wx-sheet-light .weather-chart text.wx-chart-axis-y {
+  stroke: rgba(255, 255, 255, 0.85);
 }
 .weather-sheet.wx-sheet-light .weather-sheet-panel p {
   color: rgba(22, 52, 79, 0.78);
@@ -4161,17 +4191,17 @@ body.page-tools:has(.weather-root) .weather-row .wx-lightning {
   display: none !important;
   animation: none !important;
 }
-body.page-tools:has(.weather-root) .weather-detail .wx-rain,
-body.page-tools:has(.weather-root) .weather-detail-sky .wx-rain,
-body.page-tools:has(.weather-root) .weather-detail .wx-snow,
-body.page-tools:has(.weather-root) .weather-detail-sky .wx-snow,
-body.page-tools:has(.weather-root) .weather-detail .wx-snow-haze,
-body.page-tools:has(.weather-root) .weather-detail-sky .wx-snow-haze,
-body.page-tools:has(.weather-root) .weather-detail .wx-fog,
-body.page-tools:has(.weather-root) .weather-detail-sky .wx-fog,
-body.page-tools:has(.weather-root) .weather-detail .wx-rain-splash,
-body.page-tools:has(.weather-root) .weather-detail-sky .wx-rain-splash,
-body.page-tools:has(.weather-root) .weather-detail .wx-lightning,
-body.page-tools:has(.weather-root) .weather-detail-sky .wx-lightning {
-  display: block !important;
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail .wx-rain,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail-sky .wx-rain,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail .wx-snow,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail-sky .wx-snow,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail .wx-snow-haze,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail-sky .wx-snow-haze,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail .wx-fog,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail-sky .wx-fog,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail .wx-rain-splash,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail-sky .wx-rain-splash,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail .wx-lightning,
+html:not([data-motion-effective="off"]) body.page-tools:has(.weather-root) .weather-detail-sky .wx-lightning {
+  display: block;
 }

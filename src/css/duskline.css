@@ -29,7 +29,7 @@ body.duskline #dusklineLanguage {
   background-repeat: no-repeat;
   background-position: right 13px center;
   color: var(--duskline-ink);
-  font: 600 13px/1 'Public Sans', sans-serif;
+  font: 600 16px/1.1 'Public Sans', sans-serif;
   letter-spacing: .01em;
   cursor: pointer;
   color-scheme: dark;
@@ -132,8 +132,8 @@ body.duskline.weather-sky-light .weather-btn { background: rgba(255,255,255,.68)
 body.duskline.weather-sky-light .weather-search::placeholder { color: rgba(21,38,59,.55); }
 body.duskline.weather-sky-light .weather-search-icon { color: rgba(21,38,59,.55); }
 body.duskline.weather-sky-light .weather-region-heading,
-body.duskline.weather-sky-light .weather-section-label { color: rgba(234,243,255,.78) !important; }
-body.duskline.weather-sky-light .weather-updated { color: rgba(234,243,255,.7) !important; }
+body.duskline.weather-sky-light .weather-section-label { color: #1a3348 !important; }
+body.duskline.weather-sky-light .weather-updated { color: rgba(26, 51, 72, 0.72) !important; }
 body.duskline.weather-sky-light .weather-row { color: #fff; }
 body.duskline.weather-sky-light .weather-row-meta,
 body.duskline.weather-sky-light .weather-row-updated { color: rgba(234,243,255,.72); }

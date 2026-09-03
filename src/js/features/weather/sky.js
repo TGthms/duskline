@@ -360,7 +360,7 @@
         el.style.setProperty('--wx-cloud-drift', '1');
       }
 
-      // List rows: static (no rain particles). Detail view: full animated FX.
+      // List rows: static (no rain particles or precip veils). Detail view: full animated FX.
       const listStatic = WEATHER_STATIC_LIST_FX && isRow;
       const intensity = precipIntensity(code || 0, opts.precipMm);
       const rowScale = isRow ? 0.55 : 1;
@@ -410,9 +410,15 @@
       else if (s.fx === 'clear-night') { fx = nightFx; fx2 = cloud; op = 0.48; }
       else if (s.fx === 'clear-dawn') { fx = dawn; fx2 = cloud; op = 0.55; }
       else if (s.fx === 'clear-dusk') { fx = dusk; fx2 = cloud; op = 0.55; }
-      el.style.setProperty('--wx-fx-bg', fx);
-      el.style.setProperty('--wx-fx-bg-2', fx2);
-      el.style.setProperty('--wx-fx-opacity', level === 'reduced' ? String(op * 0.55) : String(op));
+      if (listStatic && (s.fx === 'rain' || s.fx === 'snow' || s.fx === 'storm')) {
+        el.style.setProperty('--wx-fx-bg', cloud);
+        el.style.setProperty('--wx-fx-bg-2', 'none');
+        el.style.setProperty('--wx-fx-opacity', String(op * 0.45));
+      } else {
+        el.style.setProperty('--wx-fx-bg', fx);
+        el.style.setProperty('--wx-fx-bg-2', fx2);
+        el.style.setProperty('--wx-fx-opacity', level === 'reduced' ? String(op * 0.55) : String(op));
+      }
       // List rows: mode class + CSS vars only (no ornament DOM — major battery win)
       // Detail: full ornaments + rain when not noOrnaments
       if (isRow || opts.noOrnaments) {
@@ -568,25 +574,35 @@
       return box;
     }
 
-    function ensurePrecip(host) {
+    function ensurePrecip(host, mode) {
       if (!host) return null;
       let box = host.querySelector('.wx-precip');
+      const needRain = mode === 'rain' || mode === 'storm';
+      const needSnow = mode === 'snow';
+      const needBolt = mode === 'storm';
       if (!box) {
+        if (!needRain && !needSnow && !needBolt) return null;
         box = document.createElement('div');
         box.className = 'wx-precip';
         box.setAttribute('aria-hidden', 'true');
-        box.innerHTML = `
-          <div class="wx-ornament wx-rain wx-rain-far"></div>
-          <div class="wx-ornament wx-rain"></div>
-          <div class="wx-ornament wx-rain wx-rain-near"></div>
-          <div class="wx-ornament wx-rain-splash"></div>
-          <div class="wx-ornament wx-snow wx-snow-far"></div>
-          <div class="wx-ornament wx-snow"></div>
-          <div class="wx-ornament wx-lightning">
-            <div class="wx-lightning-flash"></div>
-            <svg class="wx-lightning-bolt" viewBox="0 0 240 90" preserveAspectRatio="xMidYMin meet"></svg>
-          </div>`;
         host.appendChild(box);
+      }
+      function ensureChild(sel, html) {
+        if (box.querySelector(sel)) return;
+        box.insertAdjacentHTML('beforeend', html);
+      }
+      if (needRain) {
+        ensureChild('.wx-rain-far', '<div class="wx-ornament wx-rain wx-rain-far"></div>');
+        ensureChild('.wx-rain:not(.wx-rain-far):not(.wx-rain-near)', '<div class="wx-ornament wx-rain"></div>');
+        ensureChild('.wx-rain-near', '<div class="wx-ornament wx-rain wx-rain-near"></div>');
+        ensureChild('.wx-rain-splash', '<div class="wx-ornament wx-rain-splash"></div>');
+      }
+      if (needSnow) {
+        ensureChild('.wx-snow-far', '<div class="wx-ornament wx-snow wx-snow-far"></div>');
+        ensureChild('.wx-snow:not(.wx-snow-far):not(.wx-snow-haze)', '<div class="wx-ornament wx-snow"></div>');
+      }
+      if (needBolt) {
+        ensureChild('.wx-lightning', '<div class="wx-ornament wx-lightning"><div class="wx-lightning-flash"></div><svg class="wx-lightning-bolt" viewBox="0 0 240 90" preserveAspectRatio="xMidYMin meet"></svg></div>');
       }
       return box;
     }
@@ -640,8 +656,6 @@
     function paintSkyMode(host, code, isoTime, opts) {
       if (!host) return;
       ensureOrnaments(host);
-      const fx = precipHostFor(host);
-      if (fx) ensurePrecip(fx);
       opts = opts || {};
       let hour = opts.hour;
       if (hour == null) {
@@ -658,6 +672,8 @@
         }
       }
       const mode = skyModeFromCode(code, hour, !!(opts.staticFx || (WEATHER_STATIC_LIST_FX && opts.isRow)));
+      const fx = precipHostFor(host);
+      if (fx) ensurePrecip(fx, mode);
       clearSkyModeClasses(host);
       host.classList.add('wx-sky--' + mode);
       if (opts.isRow) host.classList.add('wx-sky--row');

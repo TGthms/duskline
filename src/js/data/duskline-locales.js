@@ -713,6 +713,249 @@
       zh: '跳到主要内容', 'zh-TW': '跳至主要內容'
     },
 
+    'weather.uvLow': {
+      en: 'Low', es: 'Bajo', fr: 'Faible', de: 'Niedrig', it: 'Basso', 'pt-BR': 'Baixo', 'pt-PT': 'Baixo',
+      nl: 'Laag', da: 'Lav', sv: 'Låg', nb: 'Lav', fi: 'Matala', pl: 'Niski', cs: 'Nízký', hu: 'Alacsony',
+      ro: 'Scăzut', el: 'Χαμηλός', tr: 'Düşük', ru: 'Низкий', uk: 'Низький', ar: 'منخفض', he: 'נמוך',
+      hi: 'कम', th: 'ต่ำ', vi: 'Thấp', id: 'Rendah', ja: '低い', ko: '낮음', zh: '低', 'zh-TW': '低'
+    },
+    'weather.uvModerate': {
+      en: 'Moderate', es: 'Moderado', fr: 'Modéré', de: 'Mäßig', it: 'Moderato', 'pt-BR': 'Moderado', 'pt-PT': 'Moderado',
+      nl: 'Matig', da: 'Moderat', sv: 'Måttlig', nb: 'Moderat', fi: 'Kohtalainen', pl: 'Umiarkowany', cs: 'Mírný',
+      hu: 'Közepes', ro: 'Moderat', el: 'Μέτριος', tr: 'Orta', ru: 'Умеренный', uk: 'Помірний', ar: 'متوسط',
+      he: 'מתון', hi: 'मध्यम', th: 'ปานกลาง', vi: 'Trung bình', id: 'Sedang', ja: '中', ko: '보통', zh: '中等', 'zh-TW': '中等'
+    },
+    'weather.uvHigh': {
+      en: 'High', es: 'Alto', fr: 'Élevé', de: 'Hoch', it: 'Alto', 'pt-BR': 'Alto', 'pt-PT': 'Alto',
+      nl: 'Hoog', da: 'Høj', sv: 'Hög', nb: 'Høy', fi: 'Korkea', pl: 'Wysoki', cs: 'Vysoký', hu: 'Magas',
+      ro: 'Ridicat', el: 'Υψηλός', tr: 'Yüksek', ru: 'Высокий', uk: 'Високий', ar: 'مرتفع', he: 'גבוה',
+      hi: 'उच्च', th: 'สูง', vi: 'Cao', id: 'Tinggi', ja: '高い', ko: '높음', zh: '高', 'zh-TW': '高'
+    },
+    'weather.uvVeryHigh': {
+      en: 'Very High', es: 'Muy alto', fr: 'Très élevé', de: 'Sehr hoch', it: 'Molto alto', 'pt-BR': 'Muito alto',
+      'pt-PT': 'Muito alto', nl: 'Zeer hoog', da: 'Meget høj', sv: 'Mycket hög', nb: 'Svært høy', fi: 'Erittäin korkea',
+      pl: 'Bardzo wysoki', cs: 'Velmi vysoký', hu: 'Nagyon magas', ro: 'Foarte ridicat', el: 'Πολύ υψηλός',
+      tr: 'Çok yüksek', ru: 'Очень высокий', uk: 'Дуже високий', ar: 'مرتفع جداً', he: 'גבוה מאוד',
+      hi: 'बहुत उच्च', th: 'สูงมาก', vi: 'Rất cao', id: 'Sangat tinggi', ja: '非常に高い', ko: '매우 높음',
+      zh: '很高', 'zh-TW': '很高'
+    },
+    'weather.uvExtreme': {
+      en: 'Extreme', es: 'Extremo', fr: 'Extrême', de: 'Extrem', it: 'Estremo', 'pt-BR': 'Extremo', 'pt-PT': 'Extremo',
+      nl: 'Extreem', da: 'Ekstrem', sv: 'Extrem', nb: 'Ekstrem', fi: 'Äärimmäinen', pl: 'Ekstremalny', cs: 'Extrémní',
+      hu: 'Extrém', ro: 'Extrem', el: 'Ακραίος', tr: 'Aşırı', ru: 'Экстремальный', uk: 'Екстремальний',
+      ar: 'متطرف', he: 'קיצוני', hi: 'अत्यधिक', th: 'รุนแรง', vi: 'Cực đoan', id: 'Ekstrem', ja: '極端',
+      ko: '극심', zh: '极高', 'zh-TW': '極高'
+    },
+    'weather.aqiGood': {
+      en: 'Good', es: 'Buena', fr: 'Bonne', de: 'Gut', it: 'Buona', 'pt-BR': 'Boa', 'pt-PT': 'Boa',
+      nl: 'Goed', da: 'God', sv: 'Bra', nb: 'God', fi: 'Hyvä', pl: 'Dobra', cs: 'Dobrá', hu: 'Jó',
+      ro: 'Bună', el: 'Καλή', tr: 'İyi', ru: 'Хорошо', uk: 'Добре', ar: 'جيد', he: 'טוב',
+      hi: 'अच्छा', th: 'ดี', vi: 'Tốt', id: 'Baik', ja: '良好', ko: '좋음', zh: '优', 'zh-TW': '良好'
+    },
+    'weather.aqiModerate': {
+      en: 'Moderate', es: 'Moderada', fr: 'Modérée', de: 'Mäßig', it: 'Moderata', 'pt-BR': 'Moderada', 'pt-PT': 'Moderada',
+      nl: 'Matig', da: 'Moderat', sv: 'Måttlig', nb: 'Moderat', fi: 'Kohtalainen', pl: 'Umiarkowana', cs: 'Mírná',
+      hu: 'Közepes', ro: 'Moderată', el: 'Μέτρια', tr: 'Orta', ru: 'Умеренно', uk: 'Помірна', ar: 'متوسط',
+      he: 'מתון', hi: 'मध्यम', th: 'ปานกลาง', vi: 'Trung bình', id: 'Sedang', ja: '普通', ko: '보통', zh: '良', 'zh-TW': '普通'
+    },
+    'weather.aqiUnhealthySG': {
+      en: 'Unhealthy (SG)', es: 'Dañina (SG)', fr: 'Malsaine (GS)', de: 'Ungesund (SG)', it: 'Nociva (GS)',
+      'pt-BR': 'Insalubre (GS)', 'pt-PT': 'Insalubre (GS)', nl: 'Ongezond (RG)', da: 'Usund (SG)', sv: 'Ohälsosam (SG)',
+      nb: 'Usunn (SG)', fi: 'Epäterveellinen (RH)', pl: 'Niezdrowa (WG)', cs: 'Nezdravá (CS)', hu: 'Egészségtelen (ÉC)',
+      ro: 'Nesănătoasă (GS)', el: 'Ανθυγιεινή (ΟΟ)', tr: 'Sağlıksız (HG)', ru: 'Вредно (ЧГ)', uk: 'Шкідливо (ЧГ)',
+      ar: 'غير صحي (فئات حساسة)', he: 'לא בריא (רגישים)', hi: 'अस्वस्थ (संवेदनशील)', th: 'ไม่ดีต่อสุขภาพ (กลุ่มเสี่ยง)',
+      vi: 'Không lành (nhóm nhạy)', id: 'Tidak sehat (KS)', ja: '敏感者に有害', ko: '민감군에 나쁨', zh: '轻度污染', 'zh-TW': '對敏感族群不健康'
+    },
+    'weather.aqiUnhealthy': {
+      en: 'Unhealthy', es: 'Dañina', fr: 'Malsaine', de: 'Ungesund', it: 'Nociva', 'pt-BR': 'Insalubre', 'pt-PT': 'Insalubre',
+      nl: 'Ongezond', da: 'Usund', sv: 'Ohälsosam', nb: 'Usunn', fi: 'Epäterveellinen', pl: 'Niezdrowa', cs: 'Nezdravá',
+      hu: 'Egészségtelen', ro: 'Nesănătoasă', el: 'Ανθυγιεινή', tr: 'Sağlıksız', ru: 'Вредно', uk: 'Шкідливо',
+      ar: 'غير صحي', he: 'לא בריא', hi: 'अस्वस्थ', th: 'ไม่ดีต่อสุขภาพ', vi: 'Không lành', id: 'Tidak sehat',
+      ja: '有害', ko: '나쁨', zh: '中度污染', 'zh-TW': '不健康'
+    },
+    'weather.aqiVeryUnhealthy': {
+      en: 'Very unhealthy', es: 'Muy dañina', fr: 'Très malsaine', de: 'Sehr ungesund', it: 'Molto nociva',
+      'pt-BR': 'Muito insalubre', 'pt-PT': 'Muito insalubre', nl: 'Zeer ongezond', da: 'Meget usund', sv: 'Mycket ohälsosam',
+      nb: 'Svært usunn', fi: 'Erittäin epäterveellinen', pl: 'Bardzo niezdrowa', cs: 'Velmi nezdravá', hu: 'Nagyon egészségtelen',
+      ro: 'Foarte nesănătoasă', el: 'Πολύ ανθυγιεινή', tr: 'Çok sağlıksız', ru: 'Очень вредно', uk: 'Дуже шкідливо',
+      ar: 'غير صحي جداً', he: 'לא בריא מאוד', hi: 'बहुत अस्वस्थ', th: 'แย่มากต่อสุขภาพ', vi: 'Rất không lành',
+      id: 'Sangat tidak sehat', ja: '非常に有害', ko: '매우 나쁨', zh: '重度污染', 'zh-TW': '非常不健康'
+    },
+    'weather.aqiHazardous': {
+      en: 'Hazardous', es: 'Peligrosa', fr: 'Dangereuse', de: 'Gefährlich', it: 'Pericolosa', 'pt-BR': 'Perigosa',
+      'pt-PT': 'Perigosa', nl: 'Gevaarlijk', da: 'Farlig', sv: 'Farlig', nb: 'Farlig', fi: 'Vaarallinen',
+      pl: 'Niebezpieczna', cs: 'Nebezpečná', hu: 'Veszélyes', ro: 'Periculoasă', el: 'Επικίνδυνη', tr: 'Tehlikeli',
+      ru: 'Опасно', uk: 'Небезпечно', ar: 'خطر', he: 'מסוכן', hi: 'खतरनाक', th: 'อันตราย', vi: 'Nguy hiểm',
+      id: 'Berbahaya', ja: '危険', ko: '위험', zh: '严重污染', 'zh-TW': '危害'
+    },
+    'weather.feelsSimilar': {
+      en: 'Similar to actual', es: 'Similar a la temperatura', fr: 'Proche de la température', de: 'Ähnlich der Temperatur',
+      it: 'Simile alla temperatura', 'pt-BR': 'Semelhante à temperatura', 'pt-PT': 'Semelhante à temperatura',
+      nl: 'Vergelijkbaar met de temperatuur', da: 'Tæt på temperaturen', sv: 'Lik den faktiska', nb: 'Lik den faktiske',
+      fi: 'Lähellä lämpötilaa', pl: 'Zbliżona do temperatury', cs: 'Podobná teplotě', hu: 'Hasonló a hőmérséklethez',
+      ro: 'Similară temperaturii', el: 'Κοντά στη θερμοκρασία', tr: 'Sıcaklığa yakın', ru: 'Близко к температуре',
+      uk: 'Близько до температури', ar: 'قريب من درجة الحرارة', he: 'דומה לטמפרטורה', hi: 'तापमान के समान',
+      th: 'ใกล้เคียงอุณหภูมิจริง', vi: 'Gần với nhiệt độ', id: 'Mirip suhu aktual', ja: '気温に近い', ko: '기온과 비슷',
+      zh: '与气温相近', 'zh-TW': '與氣溫相近'
+    },
+    'weather.feelsWarmer': {
+      en: 'Warmer by {n}°', es: 'Más cálido {n}°', fr: 'Plus chaud de {n}°', de: '{n}° wärmer', it: 'Più caldo di {n}°',
+      'pt-BR': 'Mais quente {n}°', 'pt-PT': 'Mais quente {n}°', nl: '{n}° warmer', da: '{n}° varmere', sv: '{n}° varmare',
+      nb: '{n}° varmere', fi: '{n}° lämpimämpi', pl: 'Cieplej o {n}°', cs: 'Tepleji o {n}°', hu: '{n}°-kal melegebb',
+      ro: 'Mai cald cu {n}°', el: 'Πιο ζεστό κατά {n}°', tr: '{n}° daha sıcak', ru: 'На {n}° теплее', uk: 'На {n}° тепліше',
+      ar: 'أدفأ بـ {n}°', he: 'חם ב־{n}°', hi: '{n}° अधिक गर्म', th: 'อุ่นกว่า {n}°', vi: 'Ấm hơn {n}°',
+      id: 'Lebih hangat {n}°', ja: '気温より {n}°', ko: '{n}° 더 따뜻', zh: '比气温高 {n}°', 'zh-TW': '比氣溫高 {n}°'
+    },
+    'weather.feelsCooler': {
+      en: 'Cooler by {n}°', es: 'Más fresco {n}°', fr: 'Plus frais de {n}°', de: '{n}° kühler', it: 'Più fresco di {n}°',
+      'pt-BR': 'Mais fresco {n}°', 'pt-PT': 'Mais fresco {n}°', nl: '{n}° koeler', da: '{n}° køligere', sv: '{n}° svalare',
+      nb: '{n}° kjøligere', fi: '{n}° viileämpi', pl: 'Chłodniej o {n}°', cs: 'Chladněji o {n}°', hu: '{n}°-kal hűvösebb',
+      ro: 'Mai răcoros cu {n}°', el: 'Πιο δροσερό κατά {n}°', tr: '{n}° daha serin', ru: 'На {n}° холоднее',
+      uk: 'На {n}° холодніше', ar: 'أبرد بـ {n}°', he: 'קריר ב־{n}°', hi: '{n}° अधिक ठंडा', th: 'เย็นกว่า {n}°',
+      vi: 'Mát hơn {n}°', id: 'Lebih sejuk {n}°', ja: '気温より {n}°', ko: '{n}° 더 서늘', zh: '比气温低 {n}°', 'zh-TW': '比氣溫低 {n}°'
+    },
+    'weather.visReduced': {
+      en: 'Reduced visibility', es: 'Visibilidad reducida', fr: 'Visibilité réduite', de: 'Eingeschränkte Sicht',
+      it: 'Visibilità ridotta', 'pt-BR': 'Visibilidade reduzida', 'pt-PT': 'Visibilidade reduzida', nl: 'Verminderd zicht',
+      da: 'Nedsat sigtbarhed', sv: 'Nedsatt sikt', nb: 'Redusert sikt', fi: 'Heikentynyt näkyvyys', pl: 'Ograniczona widoczność',
+      cs: 'Snížená dohlednost', hu: 'Csökkent látótávolság', ro: 'Vizibilitate redusă', el: 'Μειωμένη ορατότητα',
+      tr: 'Görüş azalmış', ru: 'Плохая видимость', uk: 'Погіршена видимість', ar: 'رؤية منخفضة', he: 'ראות מופחתת',
+      hi: 'दृश्यता कम', th: 'ทัศนวิสัยต่ำ', vi: 'Tầm nhìn giảm', id: 'Jarak pandang berkurang', ja: '視程が低い',
+      ko: '가시거리 낮음', zh: '能见度偏低', 'zh-TW': '能見度偏低'
+    },
+    'weather.pressureRising': {
+      en: 'Rising', es: 'Subiendo', fr: 'En hausse', de: 'Steigend', it: 'In aumento', 'pt-BR': 'Subindo', 'pt-PT': 'A subir',
+      nl: 'Stijgend', da: 'Stigende', sv: 'Stigande', nb: 'Stigende', fi: 'Nouseva', pl: 'Rosnące', cs: 'Stoupá',
+      hu: 'Emelkedő', ro: 'În creștere', el: 'Ανερχόμενη', tr: 'Yükseliyor', ru: 'Растёт', uk: 'Зростає', ar: 'مرتفع',
+      he: 'עולה', hi: 'बढ़ रहा', th: 'เพิ่มขึ้น', vi: 'Tăng', id: 'Naik', ja: '上昇', ko: '상승', zh: '上升', 'zh-TW': '上升'
+    },
+    'weather.pressureFalling': {
+      en: 'Falling', es: 'Bajando', fr: 'En baisse', de: 'Fallend', it: 'In calo', 'pt-BR': 'Caindo', 'pt-PT': 'A descer',
+      nl: 'Dalend', da: 'Faldende', sv: 'Fallande', nb: 'Fallende', fi: 'Laskeva', pl: 'Spadające', cs: 'Klesá',
+      hu: 'Csökkenő', ro: 'În scădere', el: 'Πτωτική', tr: 'Düşüyor', ru: 'Падает', uk: 'Падає', ar: 'منخفض',
+      he: 'יורד', hi: 'गिर रहा', th: 'ลดลง', vi: 'Giảm', id: 'Turun', ja: '低下', ko: '하강', zh: '下降', 'zh-TW': '下降'
+    },
+    'weather.pressureSteady': {
+      en: 'Steady', es: 'Estable', fr: 'Stable', de: 'Stabil', it: 'Stabile', 'pt-BR': 'Estável', 'pt-PT': 'Estável',
+      nl: 'Stabiel', da: 'Stabil', sv: 'Stabil', nb: 'Stabil', fi: 'Vakaa', pl: 'Stabilne', cs: 'Stabilní',
+      hu: 'Stabil', ro: 'Stabilă', el: 'Σταθερή', tr: 'Sabit', ru: 'Стабильно', uk: 'Стабільно', ar: 'مستقر',
+      he: 'יציב', hi: 'स्थिर', th: 'คงที่', vi: 'Ổn định', id: 'Stabil', ja: '安定', ko: '안정', zh: '稳定', 'zh-TW': '穩定'
+    },
+    'weather.todayPrecip': {
+      en: 'Today {n}', es: 'Hoy {n}', fr: 'Aujourd’hui {n}', de: 'Heute {n}', it: 'Oggi {n}', 'pt-BR': 'Hoje {n}',
+      'pt-PT': 'Hoje {n}', nl: 'Vandaag {n}', da: 'I dag {n}', sv: 'I dag {n}', nb: 'I dag {n}', fi: 'Tänään {n}',
+      pl: 'Dziś {n}', cs: 'Dnes {n}', hu: 'Ma {n}', ro: 'Azi {n}', el: 'Σήμερα {n}', tr: 'Bugün {n}', ru: 'Сегодня {n}',
+      uk: 'Сьогодні {n}', ar: 'اليوم {n}', he: 'היום {n}', hi: 'आज {n}', th: 'วันนี้ {n}', vi: 'Hôm nay {n}',
+      id: 'Hari ini {n}', ja: '今日 {n}', ko: '오늘 {n}', zh: '今日累计 {n}', 'zh-TW': '今日累計 {n}'
+    },
+    'weather.usingUnits': {
+      en: 'Using {hint}', es: 'Ahora: {hint}', fr: 'Actuellement : {hint}', de: 'Aktuell: {hint}', it: 'In uso: {hint}',
+      'pt-BR': 'Usando {hint}', 'pt-PT': 'A usar {hint}', nl: 'Gebruikt {hint}', da: 'Bruger {hint}', sv: 'Använder {hint}',
+      nb: 'Bruker {hint}', fi: 'Käytössä {hint}', pl: 'Używane: {hint}', cs: 'Používá se {hint}', hu: 'Használatban: {hint}',
+      ro: 'Se folosește {hint}', el: 'Σε χρήση {hint}', tr: 'Kullanılan: {hint}', ru: 'Сейчас: {hint}', uk: 'Зараз: {hint}',
+      ar: 'يُستخدم {hint}', he: 'בשימוש {hint}', hi: 'उपयोग: {hint}', th: 'ใช้ {hint}', vi: 'Đang dùng {hint}',
+      id: 'Menggunakan {hint}', ja: '現在：{hint}', ko: '사용 중: {hint}', zh: '当前：{hint}', 'zh-TW': '目前：{hint}'
+    },
+    'weather.backToList': {
+      en: 'Back to city list', es: 'Volver a la lista', fr: 'Retour à la liste', de: 'Zurück zur Liste',
+      it: 'Torna all’elenco', 'pt-BR': 'Voltar à lista', 'pt-PT': 'Voltar à lista', nl: 'Terug naar de lijst',
+      da: 'Tilbage til listen', sv: 'Tillbaka till listan', nb: 'Tilbake til listen', fi: 'Takaisin listaan',
+      pl: 'Powrót do listy', cs: 'Zpět na seznam', hu: 'Vissza a listához', ro: 'Înapoi la listă',
+      el: 'Πίσω στη λίστα', tr: 'Listeye dön', ru: 'К списку городов', uk: 'До списку міст', ar: 'العودة إلى القائمة',
+      he: 'חזרה לרשימה', hi: 'सूची पर वापस', th: 'กลับไปที่รายการ', vi: 'Quay lại danh sách', id: 'Kembali ke daftar',
+      ja: '都市一覧に戻る', ko: '목록으로', zh: '返回城市列表', 'zh-TW': '返回城市列表'
+    },
+    'weather.clearSearch': {
+      en: 'Clear search', es: 'Borrar búsqueda', fr: 'Effacer la recherche', de: 'Suche löschen', it: 'Cancella ricerca',
+      'pt-BR': 'Limpar busca', 'pt-PT': 'Limpar pesquisa', nl: 'Zoekopdracht wissen', da: 'Ryd søgning', sv: 'Rensa sökning',
+      nb: 'Tøm søk', fi: 'Tyhjennä haku', pl: 'Wyczyść wyszukiwanie', cs: 'Vymazat hledání', hu: 'Keresés törlése',
+      ro: 'Șterge căutarea', el: 'Καθαρισμός αναζήτησης', tr: 'Aramayı temizle', ru: 'Очистить поиск', uk: 'Очистити пошук',
+      ar: 'مسح البحث', he: 'ניקוי החיפוש', hi: 'खोज साफ़ करें', th: 'ล้างการค้นหา', vi: 'Xóa tìm kiếm',
+      id: 'Hapus pencarian', ja: '検索をクリア', ko: '검색 지우기', zh: '清除搜索', 'zh-TW': '清除搜尋'
+    },
+    'weather.homeAria': {
+      en: 'Duskline home', es: 'Inicio de duskline', fr: 'Accueil duskline', de: 'duskline-Startseite',
+      it: 'Home duskline', 'pt-BR': 'Início duskline', 'pt-PT': 'Início duskline', nl: 'duskline-start',
+      da: 'duskline-start', sv: 'duskline-startsida', nb: 'duskline-hjem', fi: 'duskline-etusivu',
+      pl: 'Strona główna duskline', cs: 'Domů duskline', hu: 'duskline kezdőlap', ro: 'Acasă duskline',
+      el: 'Αρχική duskline', tr: 'duskline ana sayfa', ru: 'Главная duskline', uk: 'Головна duskline',
+      ar: 'الرئيسية duskline', he: 'דף הבית של duskline', hi: 'duskline होम', th: 'หน้าแรก duskline',
+      vi: 'Trang chủ duskline', id: 'Beranda duskline', ja: 'duskline ホーム', ko: 'duskline 홈',
+      zh: 'duskline 首页', 'zh-TW': 'duskline 首頁'
+    },
+    'weather.countryUS': {
+      en: 'United States', es: 'Estados Unidos', fr: 'États-Unis', de: 'Vereinigte Staaten', it: 'Stati Uniti',
+      'pt-BR': 'Estados Unidos', 'pt-PT': 'Estados Unidos', nl: 'Verenigde Staten', da: 'USA', sv: 'USA', nb: 'USA',
+      fi: 'Yhdysvallat', pl: 'Stany Zjednoczone', cs: 'Spojené státy', hu: 'Egyesült Államok', ro: 'Statele Unite',
+      el: 'Ηνωμένες Πολιτείες', tr: 'Amerika Birleşik Devletleri', ru: 'США', uk: 'США', ar: 'الولايات المتحدة',
+      he: 'ארצות הברית', hi: 'संयुक्त राज्य', th: 'สหรัฐอเมริกา', vi: 'Hoa Kỳ', id: 'Amerika Serikat',
+      ja: 'アメリカ合衆国', ko: '미국', zh: '美国', 'zh-TW': '美國'
+    },
+    'weather.wmo.56': {
+      en: 'Light freezing drizzle', es: 'Llovizna helada ligera', fr: 'Bruine verglaçante légère', de: 'Leichter gefrierender Nieselregen',
+      it: 'Pioviggine gelata leggera', 'pt-BR': 'Garoa congelante fraca', 'pt-PT': 'Chuvisco gelado fraco',
+      nl: 'Lichte onderkoelde motregen', da: 'Let underafkølet støvregn', sv: 'Lätt underkylt duggregn',
+      nb: 'Lett underkjølt yr', fi: 'Heikko jäätävä tihkusade', pl: 'Lekka marznąca mżawka', cs: 'Slabé mrznoucí mrholení',
+      hu: 'Enyhe ónos szitálás', ro: 'Burniță înghețată ușoară', el: 'Ελαφρύ παγωμένο ψιλόβροχο', tr: 'Hafif donan çisenti',
+      ru: 'Слабая ледяная морось', uk: 'Слабка крижана мряка', ar: 'رذاذ متجمد خفيف', he: 'טפטוף קפוא קל',
+      hi: 'हल्की जमने वाली फुहार', th: 'ฝนละอองเยือกแข็งเล็กน้อย', vi: 'Mưa phùn đóng băng nhẹ', id: 'Gerimis beku ringan',
+      ja: '弱い着氷性の霧雨', ko: '약한 어는 이슬비', zh: '轻度冻毛毛雨', 'zh-TW': '輕度凍毛毛雨'
+    },
+    'weather.wmo.57': {
+      en: 'Freezing drizzle', es: 'Llovizna helada', fr: 'Bruine verglaçante', de: 'Gefrierender Nieselregen',
+      it: 'Pioviggine gelata', 'pt-BR': 'Garoa congelante', 'pt-PT': 'Chuvisco gelado', nl: 'Onderkoelde motregen',
+      da: 'Underafkølet støvregn', sv: 'Underkylt duggregn', nb: 'Underkjølt yr', fi: 'Jäätävä tihkusade',
+      pl: 'Marznąca mżawka', cs: 'Mrznoucí mrholení', hu: 'Ónos szitálás', ro: 'Burniță înghețată',
+      el: 'Παγωμένο ψιλόβροχο', tr: 'Donan çisenti', ru: 'Ледяная морось', uk: 'Крижана мряка', ar: 'رذاذ متجمد',
+      he: 'טפטוף קפוא', hi: 'जमने वाली फुहार', th: 'ฝนละอองเยือกแข็ง', vi: 'Mưa phùn đóng băng', id: 'Gerimis beku',
+      ja: '着氷性の霧雨', ko: '어는 이슬비', zh: '冻毛毛雨', 'zh-TW': '凍毛毛雨'
+    },
+    'weather.wmo.77': {
+      en: 'Snow grains', es: 'Granos de nieve', fr: 'Grains de neige', de: 'Schneegriesel', it: 'Neve granulosa',
+      'pt-BR': 'Grãos de neve', 'pt-PT': 'Grãos de neve', nl: 'Sneeuwkorrels', da: 'Snekorn', sv: 'Snökorn',
+      nb: 'Snøkorn', fi: 'Lumijyväset', pl: 'Ziarna śniegu', cs: 'Sněhová zrna', hu: 'Hókristály', ro: 'Boabe de zăpadă',
+      el: 'Κόκκοι χιονιού', tr: 'Kar taneleri', ru: 'Снежные зёрна', uk: 'Снігові зерна', ar: 'حبيبات ثلج',
+      he: 'גרגרי שלג', hi: 'हिम कण', th: 'เกล็ดหิมะ', vi: 'Hạt tuyết', id: 'Butir salju', ja: '雪あられ',
+      ko: '싸락눈', zh: '雪粒', 'zh-TW': '雪粒'
+    },
+    'weather.wmo.85': {
+      en: 'Snow showers', es: 'Chubascos de nieve', fr: 'Averses de neige', de: 'Schneeschauer', it: 'Rovesci di neve',
+      'pt-BR': 'Pancadas de neve', 'pt-PT': 'Aguaceiros de neve', nl: 'Sneeuwbuien', da: 'Snebyger', sv: 'Snöbyar',
+      nb: 'Snøbyger', fi: 'Lumikuurot', pl: 'Przelotne opady śniegu', cs: 'Sněhové přeháňky', hu: 'Hózápor',
+      ro: 'Averse de zăpadă', el: 'Χιονόνερο', tr: 'Kar sağanağı', ru: 'Снегопад ливнями', uk: 'Снігові зливи',
+      ar: 'زخات ثلج', he: 'ממטרי שלג', hi: 'हिम बौछारें', th: 'ฝนหิมะเป็นช่วง', vi: 'Mưa tuyết rào',
+      id: 'Hujan salju', ja: 'にわか雪', ko: '소낙눈', zh: '阵雪', 'zh-TW': '陣雪'
+    },
+    'weather.durationHm': {
+      en: '{h} hr {m} min', es: '{h} h {m} min', fr: '{h} h {m} min', de: '{h} Std. {m} Min.',
+      it: '{h} h {m} min', 'pt-BR': '{h} h {m} min', 'pt-PT': '{h} h {m} min', nl: '{h} u {m} min',
+      da: '{h} t {m} min', sv: '{h} t {m} min', nb: '{h} t {m} min', fi: '{h} t {m} min',
+      pl: '{h} godz. {m} min', cs: '{h} h {m} min', hu: '{h} ó {m} p', ro: '{h} h {m} min',
+      el: '{h} ώ {m} λ', tr: '{h} sa {m} dk', ru: '{h} ч {m} мин', uk: '{h} год {m} хв',
+      ar: '{h} س {m} د', he: '{h} שע׳ {m} דק׳', hi: '{h} घं {m} मि', th: '{h} ชม. {m} น.',
+      vi: '{h} giờ {m} phút', id: '{h} j {m} mnt', ja: '{h}時間{m}分', ko: '{h}시간 {m}분',
+      zh: '{h} 小时 {m} 分钟', 'zh-TW': '{h} 小時 {m} 分鐘'
+    },
+    'weather.alertWhatToDo': {
+      en: 'What to do', es: 'Instrucciones', fr: 'Que faire', de: 'Was tun', it: 'Cosa fare',
+      'pt-BR': 'O que fazer', 'pt-PT': 'O que fazer', nl: 'Wat te doen', da: 'Hvad du kan gøre',
+      sv: 'Vad du kan göra', nb: 'Hva du kan gjøre', fi: 'Mitä tehdä', pl: 'Co robić',
+      cs: 'Co dělat', hu: 'Teendők', ro: 'Ce să faci', el: 'Τι να κάνετε', tr: 'Ne yapılmalı',
+      ru: 'Что делать', uk: 'Що робити', ar: 'ماذا تفعل', he: 'מה לעשות', hi: 'क्या करें',
+      th: 'ควรทำอย่างไร', vi: 'Nên làm gì', id: 'Yang harus dilakukan', ja: '対応', ko: '대처',
+      zh: '应对建议', 'zh-TW': '應對建議'
+    },
+    'weather.wmo.86': {
+      en: 'Heavy snow showers', es: 'Chubascos de nieve intensos', fr: 'Fortes averses de neige', de: 'Starke Schneeschauer',
+      it: 'Forti rovesci di neve', 'pt-BR': 'Pancadas de neve intensas', 'pt-PT': 'Aguaceiros de neve fortes',
+      nl: 'Zware sneeuwbuien', da: 'Kraftige snebyger', sv: 'Kraftiga snöbyar', nb: 'Kraftige snøbyger',
+      fi: 'Runsaat lumikuurot', pl: 'Silne przelotne opady śniegu', cs: 'Silné sněhové přeháňky', hu: 'Erős hózápor',
+      ro: 'Averse de zăpadă puternice', el: 'Ισχυρές χιονοπτώσεις', tr: 'Şiddetli kar sağanağı', ru: 'Сильный ливневый снег',
+      uk: 'Сильні снігові зливи', ar: 'زخات ثلج غزيرة', he: 'ממטרי שלג כבדים', hi: 'तेज़ हिम बौछारें',
+      th: 'ฝนหิมะหนักเป็นช่วง', vi: 'Mưa tuyết rào mạnh', id: 'Hujan salju lebat', ja: '激しいにわか雪',
+      ko: '강한 소낙눈', zh: '强阵雪', 'zh-TW': '強陣雪'
+    },
+
     'region.North America': {
       en: 'North America', es: 'Norteamérica', fr: 'Amérique du Nord', de: 'Nordamerika', it: 'Nord America',
       'pt-BR': 'América do Norte', 'pt-PT': 'América do Norte', nl: 'Noord-Amerika', da: 'Nordamerika',

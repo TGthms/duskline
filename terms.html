@@ -13,12 +13,37 @@
 <script>
 (function () {
   try {
-    var light = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches);
-    var t = light ? "minimal" : "glass";
-    document.documentElement.setAttribute("data-theme", t);
-    document.documentElement.style.colorScheme = light ? "light" : "dark";
+    var VALID = ['default', 'minimal', 'elegant', 'glass'];
+    function isOsLight() {
+      return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    }
+    function resolveTheme(appearance, style) {
+      var light = appearance === 'system' ? isOsLight() : appearance === 'light';
+      return light ? (style === 'classic' ? 'elegant' : 'minimal') : (style === 'classic' ? 'default' : 'glass');
+    }
+    var appearance = 'system';
+    var style = 'modern';
+    try {
+      var savedA = localStorage.getItem('duskline-appearance');
+      if (savedA === 'system' || savedA === 'light' || savedA === 'dark') appearance = savedA;
+      var savedS = localStorage.getItem('duskline-style');
+      if (savedS === 'classic' || savedS === 'modern') style = savedS;
+    } catch (e0) { /* ignore */ }
+    var t = resolveTheme(appearance, style);
+    if (VALID.indexOf(t) < 0) t = 'default';
+    document.documentElement.setAttribute('data-theme', t);
+    document.documentElement.style.colorScheme = (t === 'minimal' || t === 'elegant') ? 'light' : 'dark';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', (t === 'minimal') ? '#f5f5f7' : (t === 'elegant') ? '#f6f1e8' : (t === 'glass') ? '#000000' : '#08111f');
+    var m = localStorage.getItem('duskline-motion');
+    if (!m && localStorage.getItem('duskline-reduce-motion') === 'on') m = 'reduced';
+    if (m !== 'full' && m !== 'reduced' && m !== 'off') m = null;
+    var osReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (m) document.documentElement.setAttribute('data-motion', m);
+    var eff = m === 'off' ? 'off' : (m === 'full' ? 'full' : (m === 'reduced' ? 'reduced' : (osReduce ? 'reduced' : null)));
+    if (eff) document.documentElement.setAttribute('data-motion-effective', eff);
   } catch (e) {
-    document.documentElement.setAttribute("data-theme", "default");
+    document.documentElement.setAttribute('data-theme', 'default');
   }
 })();
 </script>

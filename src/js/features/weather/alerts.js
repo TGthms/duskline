@@ -352,12 +352,13 @@
             if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
               await new Promise(function (r) {
                 function onVis() {
-                  if (document.visibilityState === 'visible') {
+                  if (document.visibilityState === 'visible' || gen !== alertsPrefetchGen) {
                     document.removeEventListener('visibilitychange', onVis);
                     r();
                   }
                 }
                 document.addEventListener('visibilitychange', onVis);
+                window.setTimeout(onVis, 30000);
               });
               if (gen !== alertsPrefetchGen) { resolve(finished); return; }
             }
@@ -470,7 +471,7 @@
           bodyParts.push(
             '<div class="weather-alert-action">' +
               '<div class="weather-alert-action-label">' +
-                escapeHtml(lang() === 'zh' ? '应对建议' : lang() === 'ja' ? '対応' : lang() === 'es' ? 'Instrucciones' : 'What to do') +
+                escapeHtml(t('weather.alertWhatToDo', 'What to do')) +
               '</div>' +
               '<p class="weather-alert-instruction">' + escapeHtml(inst) + '</p>' +
             '</div>'

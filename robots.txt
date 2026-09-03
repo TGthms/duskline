@@ -5,9 +5,6 @@ Disallow: /test/
 Disallow: /tools/
 Disallow: /node_modules/
 
-User-agent: Googlebot
-Allow: /
-
 Sitemap: https://duskline.pages.dev/sitemap.xml
 
 

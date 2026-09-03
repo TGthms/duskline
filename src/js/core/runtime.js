@@ -49,8 +49,8 @@ function withCopyrightYear(text) {
 }
 
 /**
- * Safe lookup into window.I18N (es/zh/ja packs). English has no pack — returns null.
- * Never throws if i18n.js failed to load (site still works in English from HTML).
+ * Safe lookup into window.I18N. English HTML snapshots still win in applyLanguage;
+ * weather t() may read the English pack as a last resort.
  */
 function getI18nDict(lang) {
   let pack = null;
@@ -60,8 +60,11 @@ function getI18nDict(lang) {
   } catch (_) {
     pack = null;
   }
-  if (!lang || lang === 'en') return null;
+  if (!lang) return null;
   var base = pack && pack[lang] ? pack[lang] : null;
+  if (!base && lang === 'zh-TW' && pack && pack.zh) base = pack.zh;
+  if (!base && lang.indexOf('-') > 0 && pack && pack[lang.split('-')[0]]) base = pack[lang.split('-')[0]];
+  if (!base && lang === 'en') return pack && pack.en ? pack.en : null;
   var extra = null;
   try {
     if (typeof window !== 'undefined' && window.GALLERY_I18N) extra = window.GALLERY_I18N[lang] || null;

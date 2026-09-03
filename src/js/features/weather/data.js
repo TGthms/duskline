@@ -114,6 +114,8 @@
       } catch (e) {}
       const admin = String(c.admin1 || '');
       if (/canada/i.test(admin) || /mexico/i.test(admin)) return false;
+      // Deeplink ?lat=&lon= without a country: probe NWS (404 → Open-Meteo).
+      if (c.tryNws) return true;
       // No country: Open-Meteo only. Locate/search persist country before loadCity.
       return false;
     }
@@ -169,10 +171,16 @@
     function shortForecastToCode(text, isNight) {
       const s = String(text || '').toLowerCase();
       if (/thunder|t-?storm|lightning/.test(s)) return 95;
-      if (/blizzard|heavy snow|snow shower|flurries|snow|wintry/.test(s)) return 73;
-      if (/sleet|ice pellet|freezing rain|freezing drizzle/.test(s)) return 66;
+      if (/blizzard|heavy snow/.test(s)) return 75;
+      if (/snow shower|flurries/.test(s)) return 85;
+      if (/snow|wintry/.test(s)) return 73;
+      if (/sleet|ice pellet/.test(s)) return 66;
+      if (/freezing drizzle/.test(s)) return 56;
+      if (/freezing rain/.test(s)) return 66;
       if (/heavy rain|torrential/.test(s)) return 65;
-      if (/rain shower|showers|rain|drizzle/.test(s)) return 63;
+      if (/rain shower|showers/.test(s)) return 80;
+      if (/drizzle/.test(s)) return 53;
+      if (/rain/.test(s)) return 63;
       if (/fog|mist|haze/.test(s)) return 45;
       if (/overcast/.test(s)) return 3;
       if (/mostly cloudy|partly cloudy|partly sunny|mostly sunny|partly clear/.test(s)) return 2;
@@ -542,7 +550,8 @@
         pack.needsEnrich = false;
         pack.enrichedAt = Date.now();
       } catch (e) {
-        pack.needsEnrich = false;
+        if (e && e.name === 'AbortError') throw e;
+        pack.needsEnrich = true;
       }
       return pack;
     }
@@ -576,12 +585,17 @@
       if (isLikelyUs(c)) {
         // Forecast only here. Alerts load on detail / a later prefetch so list
         // boot does not fire N× /alerts/active alongside NWS grid fetches.
+        const cachedOm = (!opts.forceFetch && hit && hit.weather && !hit.error
+          && (hit.source === 'open-meteo' || hit.source === 'nws+om')) ? hit : null;
+        const omPromise = (opts.prefetchedOm && opts.prefetchedOm.weather && !opts.prefetchedOm.error)
+          ? Promise.resolve(opts.prefetchedOm)
+          : (cachedOm ? Promise.resolve(cachedOm) : loadOpenMeteoCity(c, signal));
         const results = await Promise.all([
           loadNwsCity(c, signal).catch(function (e) {
             if (e && e.name === 'AbortError') throw e;
             return null;
           }),
-          loadOpenMeteoCity(c, signal)
+          omPromise
         ]);
         const nws = results[0];
         const om = results[1];
@@ -683,7 +697,10 @@
           const idx = queue.shift();
           try {
             out[idx] = await loadCity(cities[idx], signal, {
-              enrich: false, forceFetch: forceFetch, nwsUpgrade: true
+              enrich: false,
+              forceFetch: forceFetch,
+              nwsUpgrade: true,
+              prefetchedOm: cache.get(cityKey(cities[idx]))
             });
           } catch (e) {
             if (e && e.name === 'AbortError') return;

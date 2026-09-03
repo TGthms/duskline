@@ -343,6 +343,7 @@ html[data-mobile-lite="true"] body::before { display: none; }
   position: fixed;
   top: max(10px, env(safe-area-inset-top, 0px));
   left: max(12px, env(safe-area-inset-left, 0px));
+  inset-inline-start: max(12px, env(safe-area-inset-inline-start, env(safe-area-inset-left, 0px)));
   width: auto;
   height: auto;
   margin: 0;
@@ -363,6 +364,7 @@ html[data-mobile-lite="true"] body::before { display: none; }
     position: fixed;
     top: max(10px, env(safe-area-inset-top, 0px));
     left: max(12px, env(safe-area-inset-left, 0px));
+  inset-inline-start: max(12px, env(safe-area-inset-inline-start, env(safe-area-inset-left, 0px)));
     width: auto;
     height: auto;
     margin: 0;
