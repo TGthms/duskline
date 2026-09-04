@@ -283,4 +283,20 @@ test('French sun-sheet strings are translated', async ({ page }) => {
   await page.locator('.weather-mod[data-sheet="sun"]').click();
   await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
   await expect(page.locator('#weatherSheetBody')).toContainText(/Premières lueurs|Durée du jour|Lever du soleil/);
+  await expect(page.locator('#weatherSheetBody .wx-sheet-about p')).toContainText(/crépuscule civil|bord supérieur/);
+  await expect(page.locator('#weatherSheetBody .wx-sheet-about p')).not.toContainText('weather.about');
+});
+
+test('hourly forecast tile opens the temperature chart', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const hourly = page.locator('.weather-mod[data-sheet="conditions"]');
+  await expect(hourly).toBeVisible();
+  await hourly.locator('.weather-hourly-item').first().click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheetBody .weather-chart').first()).toBeVisible();
+  await expect(page.locator('#weatherSheetBody .wx-sheet-about p')).toContainText(/calendar day|temperature through/i);
+  await expect(page.locator('#weatherSheetBody .wx-sheet-about p')).not.toContainText('weather.about');
 });

@@ -2,6 +2,8 @@
 
 Contributor notes for the forecast runtime. Project overview, privacy, and localized READMEs: [`README.md`](../../../../README.md) and [`docs/i18n/`](../../../../docs/i18n/README.md).
 
+Sheet “About” blurbs for every picker language live in `src/js/data/weather-about-i18n.js` (`weather.about.*`).
+
 Classic (non-module) scripts loaded by `index.html` in this order:
 
 | File | Role |

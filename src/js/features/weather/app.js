@@ -286,7 +286,10 @@
         }
       }
     } catch (e) { /* ignore */ }
-    return fallback || key;
+    // Empty-string fallback must win. `fallback || key` turned missing
+    // `weather.about.*` lookups into the key itself ("weather.about.uv").
+    if (fallback !== undefined && fallback !== null) return fallback;
+    return key;
   }
   function geocodeLangParam() {
     const L = lang();
@@ -1880,7 +1883,8 @@
       </div>`;
     }
     hourlyHtml += '</div>';
-    mods.push(`<div class="weather-mod weather-mod-wide"><button type="button" class="weather-mod-label is-tappable" data-sheet="conditions">${modLabelIcon('conditions')}<span>${escapeHtml(t('weather.hourly', 'Hourly Forecast'))}</span></button>${hourlyHtml}</div>`);
+    const hourlyTitle = t('weather.hourly', 'Hourly Forecast');
+    mods.push(`<button type="button" class="weather-mod weather-mod-wide is-tappable" data-sheet="conditions" aria-label="${escapeHtml(hourlyTitle)}"><div class="weather-mod-label">${modLabelIcon('conditions')}<span>${escapeHtml(hourlyTitle)}</span></div>${hourlyHtml}</button>`);
 
     const dailyOpts = {
       currentTemp: cur && cur.temperature_2m != null ? cur.temperature_2m : null,
@@ -2153,68 +2157,6 @@
     const cur = pack.weather.current || {};
     const hourly = pack.weather.hourly || {};
     const daily = pack.weather.daily || {};
-    const about = {
-      humidity: {
-        en: 'The relative humidity is the amount of moisture in the air compared to the maximum the air can hold at that temperature. High humidity can make warm air feel stickier and cooler air feel colder.',
-        es: 'La humedad relativa es el vapor de agua en el aire respecto al máximo a esa temperatura. Una humedad alta hace que el calor se sienta más sofocante.',
-        zh: '相对湿度是空气中水汽含量相对于当前温度下最大可容纳量的比例。湿度高时，炎热更闷、寒冷更刺骨。',
-        ja: '相対湿度は、その気温で空気が保持できる最大の水蒸気量に対する実際の量の割合です。高いと蒸し暑く感じやすくなります。'
-      },
-      uv: {
-        en: 'The UV Index measures the strength of ultraviolet radiation from the sun. 0–2 low, 3–5 moderate, 6–7 high, 8–10 very high, 11+ extreme. Use sun protection when the index is 3 or higher.',
-        es: 'El índice UV mide la radiación ultravioleta. 0–2 bajo, 3–5 moderado, 6–7 alto, 8–10 muy alto, 11+ extremo. Usa protección solar a partir de 3.',
-        zh: '紫外线指数衡量太阳紫外线强度。0–2 低，3–5 中等，6–7 高，8–10 很高，11+ 极高。指数≥3 时请注意防晒。',
-        ja: 'UV指数は紫外線の強さの目安です。0–2低、3–5中、6–7高、8–10非常に高い、11+極端。3以上では対策を。'
-      },
-      aqi: {
-        en: 'The U.S. Air Quality Index (AQI) is a measure of air pollution. Lower values are healthier. Sensitive groups should take care when AQI is above 100, and everyone when it is above 150.',
-        es: 'El AQI de EE. UU. resume la contaminación del aire. Valores más bajos son mejores. Grupos sensibles deben cuidar por encima de 100.',
-        zh: '美国空气质量指数（AQI）综合反映污染水平。数值越低越好。超过 100 时敏感人群需注意，超过 150 时所有人都应减少户外活动。',
-        ja: '米国AQIは大気汚染の目安です。低いほど健康的です。100超で敏感な方は注意、150超では屋外活動を控えましょう。'
-      },
-      wind: {
-        en: 'Wind speed and direction describe how air is moving. Direction is where the wind comes from. Gusts can be significantly stronger than sustained wind.',
-        es: 'La velocidad y dirección del viento describen el movimiento del aire. La dirección indica de dónde sopla. Las rachas pueden ser mucho más fuertes.',
-        zh: '风速与风向描述空气如何流动。风向指风的来向。阵风可能明显高于平均风速。',
-        ja: '風速と風向は空気の流れを示します。風向は風の吹いてくる方向です。突風は平均よりかなり強くなることがあります。'
-      },
-      pressure: {
-        en: 'Atmospheric pressure is the weight of air above you. Significant, rapid changes often precede weather shifts — falling pressure can mean rain is on the way; rising pressure often means clearing skies.',
-        es: 'La presión atmosférica es el peso del aire. Cambios rápidos predicen el tiempo: bajar suele anticipar lluvia; subir, mejoría.',
-        zh: '气压是头顶空气柱的重量。快速变化常预示天气转折：下降可能带来降雨，上升常表示转晴。',
-        ja: '気圧は上空の空気の重さです。急変は天気の転換を示しやすく、低下は雨、上昇は回復の兆しになりがちです。'
-      },
-      vis: {
-        en: 'Visibility is the distance at which objects can be clearly seen. Fog, heavy rain, snow, dust, and smoke reduce it — especially important when driving.',
-        es: 'La visibilidad es la distancia a la que se ven objetos con claridad. Niebla, lluvia o humo la reducen — importante al conducir.',
-        zh: '能见度是肉眼能清晰看见物体的距离。雾、大雨、雪、沙尘和烟雾都会降低能见度，驾车时尤其要注意。',
-        ja: '視程は物体をはっきり見られる距離です。霧・大雨・雪・煙で低下し、運転時に特に重要です。'
-      },
-      precip: {
-        en: 'Precipitation is any form of water — rain, snow, sleet, or hail — falling from clouds. Amounts may be shown for the current hour and totals for the day.',
-        es: 'La precipitación es agua líquida o congelada que cae de las nubes. Puede mostrarse por hora y el total del día.',
-        zh: '降水指从云中落下的雨、雪、霰或冰雹等。可查看当前小时降水量与全天累计。',
-        ja: '降水は雲から降る雨・雪・みぞれ・ひょうなどの水です。時間ごとの量と日合計で示されます。'
-      },
-      sun: {
-        en: 'Sunrise and sunset times depend on your location and the date. Day length changes through the seasons; the sun is highest near solar noon.',
-        es: 'La salida y puesta del sol dependen de la ubicación y la fecha. La duración del día cambia con las estaciones.',
-        zh: '日出日落时间取决于地点和日期。昼长随季节变化，太阳通常在正午前后最高。',
-        ja: '日の出・日の入りは場所と日付で変わります。日照時間は季節で変化し、太陽は南中頃に最も高くなります。'
-      },
-      feels: {
-        en: 'Feels Like accounts for humidity, wind, and sunlight so you know how the temperature will actually feel outdoors.',
-        es: 'La sensación térmica tiene en cuenta humedad, viento y sol para indicar cómo se siente realmente la temperatura.',
-        zh: '体感温度综合了湿度、风和日照，更贴近你在户外实际感受到的冷暖。',
-        ja: '体感温度は湿度・風・日差しを加味し、屋外で実際にどう感じるかを示します。'
-      },
-      conditions: {
-        en: 'Temperature through the day. Drag the chart to inspect any hour.',
-        es: 'Temperatura a lo largo del día. Arrastra el gráfico para ver cada hora.',
-        zh: '全天气温变化。拖动图表可查看任意时刻。',
-        ja: '一日の気温の推移。グラフをなぞると各時刻を確認できます。'
-      }
-    };
     const titleMap = {
       humidity: t('weather.humidity', 'Humidity'),
       uv: t('weather.uv', 'UV Index'),
@@ -2334,11 +2276,14 @@
       body += unitsPickerHtml('wxVisUnits', [['km', 'km'], ['mi', 'mi']], useMi() ? 'mi' : 'km');
     }
 
-    const blurb = about[kind];
-    if (blurb) {
+    const aboutText = t('weather.about.' + kind, '');
+    if (aboutText) {
+      const aboutHead = titleMap[kind]
+        ? aboutTitle + ' ' + titleMap[kind]
+        : aboutTitle;
       body += `<div class="wx-sheet-about">
-        <div class="wx-sheet-about-title">${escapeHtml(aboutTitle)} ${escapeHtml(titleMap[kind] || '')}</div>
-        <p>${escapeHtml(t('weather.about.' + kind, '') || pickLangMap(blurb, blurb.en))}</p>
+        <div class="wx-sheet-about-title">${escapeHtml(aboutHead)}</div>
+        <p>${escapeHtml(aboutText)}</p>
       </div>`;
     }
 
@@ -3163,11 +3108,18 @@
   // Delegated module taps — stable across openDetail re-renders and node hoist
   if (detailMods && !detailMods._wxSheetBound) {
     detailMods._wxSheetBound = true;
+    let sheetPtr = null;
+    detailMods.addEventListener('pointerdown', function (e) {
+      sheetPtr = { x: e.clientX, y: e.clientY };
+    });
     detailMods.addEventListener('click', function (e) {
       const btn = e.target && e.target.closest ? e.target.closest('[data-sheet]') : null;
       if (!btn || !detailMods.contains(btn)) return;
       const kind = btn.getAttribute('data-sheet');
       if (!kind || !openCity) return;
+      if (sheetPtr && e.target.closest && e.target.closest('.weather-hourly')) {
+        if (Math.abs(e.clientX - sheetPtr.x) > 12 || Math.abs(e.clientY - sheetPtr.y) > 12) return;
+      }
       e.preventDefault();
       openSheet(kind, openCity);
     });

@@ -644,8 +644,13 @@ body.weather-detail-open .weather-page {
   overflow: hidden;
   box-sizing: border-box;
 }
-button.weather-mod { cursor: pointer; }
+button.weather-mod {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
 button.weather-mod:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+button.weather-mod .weather-hourly { width: 100%; }
 .weather-mod-wide { grid-column: 1 / -1; }
 .weather-mod-label {
   display: flex;

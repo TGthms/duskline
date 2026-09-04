@@ -3,7 +3,7 @@
    Classic non-module script. Shared global scope with other src/js scripts.
 
    Load order (index.html, deferred):
-   1. data/i18n.js, data/duskline-locales.js, data/dest-weather-cities.js
+   1. data/i18n.js, data/duskline-locales.js, data/weather-about-i18n.js, data/dest-weather-cities.js
    2. core/env.js, core/wx-math.js, core/runtime.js
    3. duskline-controls.js
    4. features/weather/{ns,sky,charts,alerts,data,app}.js
