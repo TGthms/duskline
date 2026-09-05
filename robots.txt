@@ -1,3 +1,8 @@
+User-agent: Googlebot-Image
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /assets/
+
 User-agent: *
 Allow: /
 Disallow: /e2e/

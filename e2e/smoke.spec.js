@@ -30,6 +30,12 @@ test('home page exposes Search Console verification and SEO head', async ({ page
   );
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://dusklineweather.pages.dev/');
   await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', 'duskline');
+  await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1);
+  const favicon = await page.request.get('/favicon.ico');
+  expect(favicon.ok()).toBeTruthy();
+  expect(favicon.headers()['content-type']).toMatch(/image\/(x-icon|vnd\.microsoft\.icon|png)/);
+  const bytes = Buffer.from(await favicon.body());
+  expect(bytes.subarray(0, 4).toString('hex')).toBe('00000100');
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
   const jsonLd = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
   const nodes = Array.isArray(jsonLd['@graph']) ? jsonLd['@graph'] : [jsonLd];

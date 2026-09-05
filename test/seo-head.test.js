@@ -35,6 +35,24 @@ test('homepage WebSite JSON-LD names duskline at the live origin', () => {
   assert.equal(app.url, ORIGIN + '/');
 });
 
+test('search favicon is a square image at a stable root URL', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /rel="icon" href="\/favicon\.ico"/);
+  assert.match(html, /rel="icon" type="image\/png" sizes="192x192" href="\/favicon\.png"/);
+  assert.doesNotMatch(html, /rel="icon"[^>]+duskline-icon\.jpg/);
+
+  const ico = fs.readFileSync(path.join(root, 'favicon.ico'));
+  assert.equal(ico.subarray(0, 4).toString('hex'), '00000100', 'favicon.ico is not an ICO file');
+  assert.ok(ico.length > 1000);
+
+  const png = fs.readFileSync(path.join(root, 'favicon.png'));
+  assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  const width = png.readUInt32BE(16);
+  const height = png.readUInt32BE(20);
+  assert.equal(width, height);
+  assert.ok(width >= 48, 'Google recommends a favicon larger than 48px');
+});
+
 test('sitemap, robots, and legal canonicals use the live origin', () => {
   const sitemap = fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
   const robots = fs.readFileSync(path.join(root, 'robots.txt'), 'utf8');

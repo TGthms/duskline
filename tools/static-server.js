@@ -15,6 +15,7 @@ const types = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
+  '.ico': 'image/x-icon',
   '.xml': 'application/xml',
   '.woff2': 'font/woff2'
 };
