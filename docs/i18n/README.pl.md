@@ -4,7 +4,7 @@
 
 Darmowa, wyłącznie przeglądarkowa aplikacja pogodowa do sprawdzania i odkrywania pogody: światowe wyszukiwanie miast, widoki godzinowe i 10-dniowe, jakość powietrza, animowane warunki oraz rozszerzone prognozy i alerty U.S. National Weather Service.
 
-[Otwórz duskline](https://duskline.pages.dev/) · [Polityka prywatności](../../privacy.html) · [Warunki korzystania](../../terms.html)
+[Otwórz duskline](https://dusklineweather.pages.dev/) · [Polityka prywatności](../../privacy.html) · [Warunki korzystania](../../terms.html)
 
 Bez konta, bez własnego backendu, bez identyfikatora reklamowego. Język, jednostki, ulubione i celowo przybliżona zapisana lokalizacja zostają w przeglądarce.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Wdrożenie
 
-Korzeń repozytorium jest witryną. [Cloudflare Pages](https://duskline.pages.dev/) to planowany główny host; GitHub Pages to kopia zapasowa. Oba publikują pliki statyczne bez zmian.
+Korzeń repozytorium jest witryną. [Cloudflare Pages](https://dusklineweather.pages.dev/) to planowany główny host; GitHub Pages to kopia zapasowa. Oba publikują pliki statyczne bez zmian.
 
 ## Licencja
 

@@ -5,6 +5,6 @@ Disallow: /test/
 Disallow: /tools/
 Disallow: /node_modules/
 
-Sitemap: https://duskline.pages.dev/sitemap.xml
+Sitemap: https://dusklineweather.pages.dev/sitemap.xml
 
 

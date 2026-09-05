@@ -4,7 +4,7 @@
 
 Een gratis, alleen-in-de-browser weer-app om het weer te checken en te verkennen: wereldwijde stedenzoek, uur- en 10-daagse verwachtingen, luchtkwaliteit, geanimeerde omstandigheden en uitgebreide Amerikaanse National Weather Service-verwachtingen en -waarschuwingen.
 
-[duskline openen](https://duskline.pages.dev/) · [Privacybeleid](../../privacy.html) · [Gebruiksvoorwaarden](../../terms.html)
+[duskline openen](https://dusklineweather.pages.dev/) · [Privacybeleid](../../privacy.html) · [Gebruiksvoorwaarden](../../terms.html)
 
 Geen account, geen eigen backend, geen advertentie-identificatie. Taal, eenheden, favorieten en een expres benaderde opgeslagen locatie blijven in je browser.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Publicatie
 
-De repositorywortel is de site. [Cloudflare Pages](https://duskline.pages.dev/) is de beoogde primaire host; GitHub Pages de back-up. Beide publiceren de statische bestanden ongewijzigd.
+De repositorywortel is de site. [Cloudflare Pages](https://dusklineweather.pages.dev/) is de beoogde primaire host; GitHub Pages de back-up. Beide publiceren de statische bestanden ongewijzigd.
 
 ## Licentie
 

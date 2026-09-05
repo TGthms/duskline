@@ -4,7 +4,7 @@
 
 Una app del tiempo gratuita, solo en el navegador, para consultar y explorar el clima: búsqueda mundial de ciudades, vistas horarias y a 10 días, calidad del aire, condiciones animadas y previsiones y alertas mejoradas del Servicio Meteorológico Nacional de EE. UU.
 
-[Abrir duskline](https://duskline.pages.dev/) · [Política de privacidad](../../privacy.html) · [Términos de uso](../../terms.html)
+[Abrir duskline](https://dusklineweather.pages.dev/) · [Política de privacidad](../../privacy.html) · [Términos de uso](../../terms.html)
 
 No hay cuenta, no hay un backend propio ni identificador publicitario. El idioma, las unidades, los favoritos y una ubicación guardada deliberadamente aproximada permanecen en tu navegador.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Despliegue
 
-La raíz del repositorio es el sitio. [Cloudflare Pages](https://duskline.pages.dev/) es el alojamiento principal previsto; GitHub Pages es la copia de seguridad. Ambos publican los archivos estáticos tal cual.
+La raíz del repositorio es el sitio. [Cloudflare Pages](https://dusklineweather.pages.dev/) es el alojamiento principal previsto; GitHub Pages es la copia de seguridad. Ambos publican los archivos estáticos tal cual.
 
 ## Licencia
 

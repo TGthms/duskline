@@ -4,7 +4,7 @@
 
 Bezplatná, pouze prohlížečová meteorologická aplikace ke kontrole a zkoumání počasí: celosvětové hledání měst, hodinové a 10denní výhledy, kvalita ovzduší, animované podmínky a rozšířené předpovědi a výstrahy U.S. National Weather Service.
 
-[Otevřít duskline](https://duskline.pages.dev/) · [Zásady ochrany soukromí](../../privacy.html) · [Podmínky použití](../../terms.html)
+[Otevřít duskline](https://dusklineweather.pages.dev/) · [Zásady ochrany soukromí](../../privacy.html) · [Podmínky použití](../../terms.html)
 
 Žádný účet, žádný vlastní backend, žádný reklamní identifikátor. Jazyk, jednotky, oblíbené položky a záměrně přibližná uložená poloha zůstanou v prohlížeči.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Nasazení
 
-Kořen repozitáře je web. [Cloudflare Pages](https://duskline.pages.dev/) je zamýšlený hlavní hostitel; GitHub Pages je záloha. Oba publikují statické soubory beze změny.
+Kořen repozitáře je web. [Cloudflare Pages](https://dusklineweather.pages.dev/) je zamýšlený hlavní hostitel; GitHub Pages je záloha. Oba publikují statické soubory beze změny.
 
 ## Licence
 

@@ -9,7 +9,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'docs/i18n');
-const APP = 'https://duskline.pages.dev/';
+const APP = 'https://dusklineweather.pages.dev/';
 
 const LOCALES = [
   ['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['de', 'Deutsch'],
@@ -122,7 +122,7 @@ C.es = {
   unit: 'Pruebas unitarias: `npm run test:unit`',
   e2e: 'Las pruebas Playwright simulan las APIs meteorológicas y no consumen cuotas reales: `npm test`',
   deployH: 'Despliegue',
-  deployBody: 'La raíz del repositorio es el sitio. [Cloudflare Pages](https://duskline.pages.dev/) es el alojamiento principal previsto; GitHub Pages es la copia de seguridad. Ambos publican los archivos estáticos tal cual.',
+  deployBody: 'La raíz del repositorio es el sitio. [Cloudflare Pages](https://dusklineweather.pages.dev/) es el alojamiento principal previsto; GitHub Pages es la copia de seguridad. Ambos publican los archivos estáticos tal cual.',
   licenseH: 'Licencia',
   licenseBody: 'El código es [MIT](../../LICENSE). Los datos meteorológicos pertenecen a los proveedores anteriores y siguen sus términos. No sirve para seguridad vital ni emergencias.'
 };
@@ -153,7 +153,7 @@ C.fr = {
   unit: 'Tests unitaires : `npm run test:unit`',
   e2e: 'Les smokes Playwright simulent les API météo et ne consomment pas les quotas réels : `npm test`',
   deployH: 'Déploiement',
-  deployBody: 'La racine du dépôt est le site. [Cloudflare Pages](https://duskline.pages.dev/) est l’hébergeur principal prévu ; GitHub Pages est la sauvegarde. Les deux publient les fichiers statiques tels quels.',
+  deployBody: 'La racine du dépôt est le site. [Cloudflare Pages](https://dusklineweather.pages.dev/) est l’hébergeur principal prévu ; GitHub Pages est la sauvegarde. Les deux publient les fichiers statiques tels quels.',
   licenseH: 'Licence',
   licenseBody: 'Le code est sous [MIT](../../LICENSE). Les données météo appartiennent aux fournisseurs ci-dessus et restent soumises à leurs conditions. Pas pour la sécurité des personnes ni les urgences.'
 };
@@ -184,7 +184,7 @@ C.de = {
   unit: 'Unit-Tests: `npm run test:unit`',
   e2e: 'Playwright-Smokes mocken Wetter-APIs und verbrauchen keine Live-Kontingente: `npm test`',
   deployH: 'Bereitstellung',
-  deployBody: 'Die Repository-Wurzel ist die Website. [Cloudflare Pages](https://duskline.pages.dev/) ist der vorgesehene Haupthost; GitHub Pages die Absicherung. Beide veröffentlichen die statischen Dateien unverändert.',
+  deployBody: 'Die Repository-Wurzel ist die Website. [Cloudflare Pages](https://dusklineweather.pages.dev/) ist der vorgesehene Haupthost; GitHub Pages die Absicherung. Beide veröffentlichen die statischen Dateien unverändert.',
   licenseH: 'Lizenz',
   licenseBody: 'Der Code steht unter [MIT](../../LICENSE). Wetterdaten gehören den genannten Drittanbietern und unterliegen deren Bedingungen. Nicht für Lebenssicherheit oder Notfälle.'
 };
@@ -222,7 +222,7 @@ C.it = {
   unit: 'Test unitari: `npm run test:unit`',
   e2e: 'Gli smoke Playwright simulano le API meteo e non consumano quote reali: `npm test`',
   deployH: 'Pubblicazione',
-  deployBody: 'La radice del repository è il sito. [Cloudflare Pages](https://duskline.pages.dev/) è l’host principale previsto; GitHub Pages è il backup. Entrambi pubblicano i file statici così come sono.',
+  deployBody: 'La radice del repository è il sito. [Cloudflare Pages](https://dusklineweather.pages.dev/) è l’host principale previsto; GitHub Pages è il backup. Entrambi pubblicano i file statici così come sono.',
   licenseH: 'Licenza',
   licenseBody: 'Il codice è [MIT](../../LICENSE). I dati meteo appartengono ai fornitori sopra e restano soggetti ai loro termini. Non per sicurezza della vita o emergenze.'
 };
@@ -253,7 +253,7 @@ C['pt-BR'] = {
   unit: 'Testes unitários: `npm run test:unit`',
   e2e: 'Os smokes do Playwright simulam as APIs de clima e não consomem cotas reais: `npm test`',
   deployH: 'Publicação',
-  deployBody: 'A raiz do repositório é o site. [Cloudflare Pages](https://duskline.pages.dev/) é o host principal previsto; GitHub Pages é o backup. Ambos publicam os arquivos estáticos como estão.',
+  deployBody: 'A raiz do repositório é o site. [Cloudflare Pages](https://dusklineweather.pages.dev/) é o host principal previsto; GitHub Pages é o backup. Ambos publicam os arquivos estáticos como estão.',
   licenseH: 'Licença',
   licenseBody: 'O código é [MIT](../../LICENSE). Os dados de clima pertencem aos provedores acima e seguem os termos deles. Não serve para segurança da vida nem emergências.'
 };
@@ -284,7 +284,7 @@ C['pt-PT'] = {
   unit: 'Testes unitários: `npm run test:unit`',
   e2e: 'Os smokes do Playwright simulam as API meteorológicas e não consomem quotas reais: `npm test`',
   deployH: 'Publicação',
-  deployBody: 'A raiz do repositório é o sítio. [Cloudflare Pages](https://duskline.pages.dev/) é o anfitrião principal previsto; o GitHub Pages é a cópia de segurança. Ambos publicam os ficheiros estáticos tal como estão.',
+  deployBody: 'A raiz do repositório é o sítio. [Cloudflare Pages](https://dusklineweather.pages.dev/) é o anfitrião principal previsto; o GitHub Pages é a cópia de segurança. Ambos publicam os ficheiros estáticos tal como estão.',
   licenseH: 'Licença',
   licenseBody: 'O código é [MIT](../../LICENSE). Os dados meteorológicos pertencem aos fornecedores acima e continuam sujeitos aos respetivos termos. Não se destina a segurança de vida nem a emergências.'
 };
@@ -315,7 +315,7 @@ C.nl = {
   unit: 'Unittests: `npm run test:unit`',
   e2e: 'Playwright-smokes mocken weer-API’s en verbruiken geen live quota: `npm test`',
   deployH: 'Publicatie',
-  deployBody: 'De repositorywortel is de site. [Cloudflare Pages](https://duskline.pages.dev/) is de beoogde primaire host; GitHub Pages de back-up. Beide publiceren de statische bestanden ongewijzigd.',
+  deployBody: 'De repositorywortel is de site. [Cloudflare Pages](https://dusklineweather.pages.dev/) is de beoogde primaire host; GitHub Pages de back-up. Beide publiceren de statische bestanden ongewijzigd.',
   licenseH: 'Licentie',
   licenseBody: 'De code is [MIT](../../LICENSE). Weergegevens horen bij de genoemde derden en vallen onder hun voorwaarden. Niet voor levensveiligheid of noodgevallen.'
 };
@@ -346,7 +346,7 @@ C.ja = {
   unit: 'ユニットテスト: `npm run test:unit`',
   e2e: 'Playwright のスモークは天気 API をモックし、本番枠を消費しません: `npm test`',
   deployH: '公開',
-  deployBody: 'リポジトリのルートがサイトです。想定の主ホストは [Cloudflare Pages](https://duskline.pages.dev/)、GitHub Pages は予備です。どちらも静的ファイルをそのまま公開します。',
+  deployBody: 'リポジトリのルートがサイトです。想定の主ホストは [Cloudflare Pages](https://dusklineweather.pages.dev/)、GitHub Pages は予備です。どちらも静的ファイルをそのまま公開します。',
   licenseH: 'ライセンス',
   licenseBody: 'コードは [MIT](../../LICENSE) です。天気データは上記の第三者に帰属し、各規約に従います。生命の安全や緊急用途ではありません。'
 };
@@ -377,7 +377,7 @@ C.ko = {
   unit: '단위 테스트: `npm run test:unit`',
   e2e: 'Playwright 스모크는 날씨 API를 모의하며 실제 할당량을 쓰지 않습니다: `npm test`',
   deployH: '배포',
-  deployBody: '저장소 루트가 사이트입니다. 주 호스트는 [Cloudflare Pages](https://duskline.pages.dev/), GitHub Pages는 백업입니다. 둘 다 정적 파일을 그대로 게시합니다.',
+  deployBody: '저장소 루트가 사이트입니다. 주 호스트는 [Cloudflare Pages](https://dusklineweather.pages.dev/), GitHub Pages는 백업입니다. 둘 다 정적 파일을 그대로 게시합니다.',
   licenseH: '라이선스',
   licenseBody: '코드는 [MIT](../../LICENSE)입니다. 날씨 데이터는 위 제공업체의 것이며 해당 약관을 따릅니다. 생명 안전이나 긴급 용도가 아닙니다.'
 };
@@ -408,7 +408,7 @@ C.zh = {
   unit: '单元测试：`npm run test:unit`',
   e2e: 'Playwright 冒烟测试会模拟天气 API，不消耗线上配额：`npm test`',
   deployH: '部署',
-  deployBody: '仓库根目录就是站点。预定的主托管是 [Cloudflare Pages](https://duskline.pages.dev/)；GitHub Pages 为备份。两者都按原样发布静态文件。',
+  deployBody: '仓库根目录就是站点。预定的主托管是 [Cloudflare Pages](https://dusklineweather.pages.dev/)；GitHub Pages 为备份。两者都按原样发布静态文件。',
   licenseH: '许可',
   licenseBody: '代码为 [MIT](../../LICENSE)。天气数据属于上述第三方，并受其条款约束。不用于生命安全或紧急用途。'
 };
@@ -439,7 +439,7 @@ C['zh-TW'] = {
   unit: '單元測試：`npm run test:unit`',
   e2e: 'Playwright 煙霧測試會模擬天氣 API，不消耗線上配額：`npm test`',
   deployH: '部署',
-  deployBody: '儲存庫根目錄就是網站。預定的主要託管是 [Cloudflare Pages](https://duskline.pages.dev/)；GitHub Pages 為備份。兩者都按原樣發布靜態檔案。',
+  deployBody: '儲存庫根目錄就是網站。預定的主要託管是 [Cloudflare Pages](https://dusklineweather.pages.dev/)；GitHub Pages 為備份。兩者都按原樣發布靜態檔案。',
   licenseH: '授權',
   licenseBody: '程式碼為 [MIT](../../LICENSE)。天氣資料屬於上述第三方，並受其條款約束。不用於生命安全或緊急用途。'
 };
@@ -478,7 +478,7 @@ C.da = cloneFrom('nl', {
   check: 'Syntakstjek af hver egen JS-fil: `npm run check`',
   unit: 'Enhedstest: `npm run test:unit`',
   e2e: 'Playwright-smokes mocker vejr-API’er og bruger ikke live-kvoter: `npm test`',
-  deployBody: 'Lagerets rod er sitet. [Cloudflare Pages](https://duskline.pages.dev/) er den tilsigtede primære vært; GitHub Pages er backup. Begge udgiver de statiske filer som de er.',
+  deployBody: 'Lagerets rod er sitet. [Cloudflare Pages](https://dusklineweather.pages.dev/) er den tilsigtede primære vært; GitHub Pages er backup. Begge udgiver de statiske filer som de er.',
   licenseBody: 'Koden er [MIT](../../LICENSE). Vejrdata tilhører tredjepartsudbyderne ovenfor og er underlagt deres vilkår. Ikke til livssikkerhed eller nødsituationer.'
 });
 
@@ -509,7 +509,7 @@ C.sv = cloneFrom('da', {
   check: 'Syntaxkontroll av varje egen JS-fil: `npm run check`',
   unit: 'Enhetstester: `npm run test:unit`',
   e2e: 'Playwright-smokes mockar väder-API:er och förbrukar inte livekvoter: `npm test`',
-  deployBody: 'Förrådets rot är webbplatsen. [Cloudflare Pages](https://duskline.pages.dev/) är den avsedda primära värden; GitHub Pages är backup. Båda publicerar de statiska filerna som de är.',
+  deployBody: 'Förrådets rot är webbplatsen. [Cloudflare Pages](https://dusklineweather.pages.dev/) är den avsedda primära värden; GitHub Pages är backup. Båda publicerar de statiska filerna som de är.',
   licenseBody: 'Koden är [MIT](../../LICENSE). Väderdata tillhör tredjepartsleverantörerna ovan och följer deras villkor. Inte för livssäkerhet eller nödsituationer.'
 });
 
@@ -540,7 +540,7 @@ C.nb = cloneFrom('da', {
   check: 'Syntakssjekk av hver egen JS-fil: `npm run check`',
   unit: 'Enhetstester: `npm run test:unit`',
   e2e: 'Playwright-smokes mocker vær-API-er og bruker ikke livekvoter: `npm test`',
-  deployBody: 'Lagerets rot er nettstedet. [Cloudflare Pages](https://duskline.pages.dev/) er den tiltenkte primære verten; GitHub Pages er sikkerhetskopi. Begge publiserer de statiske filene som de er.',
+  deployBody: 'Lagerets rot er nettstedet. [Cloudflare Pages](https://dusklineweather.pages.dev/) er den tiltenkte primære verten; GitHub Pages er sikkerhetskopi. Begge publiserer de statiske filene som de er.',
   licenseBody: 'Koden er [MIT](../../LICENSE). Værdata tilhører tredjepartsleverandørene over og er underlagt vilkårene deres. Ikke for livssikkerhet eller nødsituasjoner.'
 });
 
@@ -571,7 +571,7 @@ C.fi = cloneFrom('nl', {
   check: 'Jokaisen oman JS-tiedoston syntaksin tarkistus: `npm run check`',
   unit: 'Yksikkötestit: `npm run test:unit`',
   e2e: 'Playwright-savutestit simuloivat säärajapintoja eivätkä kuluta live-kiintiöitä: `npm test`',
-  deployBody: 'Tietovaraston juuri on sivusto. [Cloudflare Pages](https://duskline.pages.dev/) on tarkoitettu pääisäntä; GitHub Pages on varmuuskopio. Molemmat julkaisevat staattiset tiedostot sellaisinaan.',
+  deployBody: 'Tietovaraston juuri on sivusto. [Cloudflare Pages](https://dusklineweather.pages.dev/) on tarkoitettu pääisäntä; GitHub Pages on varmuuskopio. Molemmat julkaisevat staattiset tiedostot sellaisinaan.',
   licenseBody: 'Koodi on [MIT](../../LICENSE). Säätiedot kuuluvat yllä oleville kolmansille osapuolille ja noudattavat heidän ehtojaan. Ei henkeä uhkaaviin tai hätätilanteisiin.'
 });
 
@@ -602,7 +602,7 @@ C.pl = cloneFrom('es', {
   check: 'Sprawdzenie składni każdego własnego JS: `npm run check`',
   unit: 'Testy jednostkowe: `npm run test:unit`',
   e2e: 'Smoke Playwright mockuje API pogodowe i nie zużywa żywych limitów: `npm test`',
-  deployBody: 'Korzeń repozytorium jest witryną. [Cloudflare Pages](https://duskline.pages.dev/) to planowany główny host; GitHub Pages to kopia zapasowa. Oba publikują pliki statyczne bez zmian.',
+  deployBody: 'Korzeń repozytorium jest witryną. [Cloudflare Pages](https://dusklineweather.pages.dev/) to planowany główny host; GitHub Pages to kopia zapasowa. Oba publikują pliki statyczne bez zmian.',
   licenseBody: 'Kod jest na licencji [MIT](../../LICENSE). Dane pogodowe należą do wymienionych dostawców i podlegają ich warunkom. Nie do bezpieczeństwa życia ani sytuacji awaryjnych.'
 });
 
@@ -633,7 +633,7 @@ C.cs = cloneFrom('pl', {
   check: 'Kontrola syntaxe každého vlastního JS: `npm run check`',
   unit: 'Jednotkové testy: `npm run test:unit`',
   e2e: 'Playwright smoke testy mockují meteorologická API a nespotřebovávají živé kvóty: `npm test`',
-  deployBody: 'Kořen repozitáře je web. [Cloudflare Pages](https://duskline.pages.dev/) je zamýšlený hlavní hostitel; GitHub Pages je záloha. Oba publikují statické soubory beze změny.',
+  deployBody: 'Kořen repozitáře je web. [Cloudflare Pages](https://dusklineweather.pages.dev/) je zamýšlený hlavní hostitel; GitHub Pages je záloha. Oba publikují statické soubory beze změny.',
   licenseBody: 'Kód je [MIT](../../LICENSE). Data o počasí patří výše uvedeným poskytovatelům a podléhají jejich podmínkám. Ne pro životní bezpečnost ani nouzové použití.'
 });
 
@@ -664,7 +664,7 @@ C.hu = cloneFrom('pl', {
   check: 'Minden saját JS szintaxisellenőrzése: `npm run check`',
   unit: 'Egységtesztek: `npm run test:unit`',
   e2e: 'A Playwright füsttesztek mockolják az időjárási API-kat, és nem fogyasztanak élő kvótát: `npm test`',
-  deployBody: 'A tároló gyökere a webhely. A [Cloudflare Pages](https://duskline.pages.dev/) a tervezett elsődleges host; a GitHub Pages a biztonsági másolat. Mindkettő változatlanul közzéteszi a statikus fájlokat.',
+  deployBody: 'A tároló gyökere a webhely. A [Cloudflare Pages](https://dusklineweather.pages.dev/) a tervezett elsődleges host; a GitHub Pages a biztonsági másolat. Mindkettő változatlanul közzéteszi a statikus fájlokat.',
   licenseBody: 'A kód [MIT](../../LICENSE). Az időjárási adatok a fenti harmadik feleké, és az ő feltételeik vonatkoznak rájuk. Nem életbiztonsági vagy vészhelyzeti használatra.'
 });
 
@@ -695,7 +695,7 @@ C.ro = cloneFrom('es', {
   check: 'Verificarea sintaxei fiecărui JS propriu: `npm run check`',
   unit: 'Teste unitare: `npm run test:unit`',
   e2e: 'Smoke-urile Playwright simulează API-urile meteo și nu consumă cote reale: `npm test`',
-  deployBody: 'Rădăcina depozitului este situl. [Cloudflare Pages](https://duskline.pages.dev/) este gazda principală prevăzută; GitHub Pages este copia de rezervă. Ambele publică fișierele statice ca atare.',
+  deployBody: 'Rădăcina depozitului este situl. [Cloudflare Pages](https://dusklineweather.pages.dev/) este gazda principală prevăzută; GitHub Pages este copia de rezervă. Ambele publică fișierele statice ca atare.',
   licenseBody: 'Codul este [MIT](../../LICENSE). Datele meteo aparțin furnizorilor de mai sus și rămân supuse termenilor lor. Nu pentru siguranța vieții sau urgențe.'
 });
 
@@ -726,7 +726,7 @@ C.el = cloneFrom('es', {
   check: 'Έλεγχος σύνταξης κάθε δικού μας JS: `npm run check`',
   unit: 'Μοναδιαίες δοκιμές: `npm run test:unit`',
   e2e: 'Τα smoke του Playwright προσομοιώνουν τα API καιρού και δεν καταναλώνουν ζωντανές ποσοστώσεις: `npm test`',
-  deployBody: 'Η ρίζα του αποθετηρίου είναι ο ιστότοπος. Το [Cloudflare Pages](https://duskline.pages.dev/) είναι ο προβλεπόμενος κύριος οικοδεσπότης· το GitHub Pages είναι το αντίγραφο ασφαλείας. Και τα δύο δημοσιεύουν τα στατικά αρχεία ως έχουν.',
+  deployBody: 'Η ρίζα του αποθετηρίου είναι ο ιστότοπος. Το [Cloudflare Pages](https://dusklineweather.pages.dev/) είναι ο προβλεπόμενος κύριος οικοδεσπότης· το GitHub Pages είναι το αντίγραφο ασφαλείας. Και τα δύο δημοσιεύουν τα στατικά αρχεία ως έχουν.',
   licenseBody: 'Ο κώδικας είναι [MIT](../../LICENSE). Τα δεδομένα καιρού ανήκουν στους παραπάνω τρίτους και υπόκεινται στους όρους τους. Όχι για ασφάλεια ζωής ή έκτακτη ανάγκη.'
 });
 
@@ -758,7 +758,7 @@ C.tr = cloneFrom('es', {
   check: 'Her birinci taraf JS dosyasının sözdizimi denetimi: `npm run check`',
   unit: 'Birim testleri: `npm run test:unit`',
   e2e: 'Playwright duman testleri hava API’lerini sahteleyerek canlı kotayı tüketmez: `npm test`',
-  deployBody: 'Depo kökü sitedir. [Cloudflare Pages](https://duskline.pages.dev/) amaçlanan birincil barındırıcıdır; GitHub Pages yedektir. İkisi de statik dosyaları olduğu gibi yayımlar.',
+  deployBody: 'Depo kökü sitedir. [Cloudflare Pages](https://dusklineweather.pages.dev/) amaçlanan birincil barındırıcıdır; GitHub Pages yedektir. İkisi de statik dosyaları olduğu gibi yayımlar.',
   licenseBody: 'Kod [MIT](../../LICENSE) lisanslıdır. Hava verileri yukarıdaki üçüncü taraflara aittir ve onların koşullarına tabidir. Can güvenliği veya acil kullanım için değildir.'
 });
 
@@ -789,7 +789,7 @@ C.ru = cloneFrom('es', {
   check: 'Проверка синтаксиса каждого своего JS: `npm run check`',
   unit: 'Модульные тесты: `npm run test:unit`',
   e2e: 'Smoke Playwright подменяют погодные API и не расходуют живые квоты: `npm test`',
-  deployBody: 'Корень репозитория и есть сайт. [Cloudflare Pages](https://duskline.pages.dev/) — основной хост; GitHub Pages — запасной. Оба публикуют статические файлы как есть.',
+  deployBody: 'Корень репозитория и есть сайт. [Cloudflare Pages](https://dusklineweather.pages.dev/) — основной хост; GitHub Pages — запасной. Оба публикуют статические файлы как есть.',
   licenseBody: 'Код под [MIT](../../LICENSE). Погодные данные принадлежат указанным поставщикам и подчиняются их условиям. Не для безопасности жизни и не для чрезвычайных ситуаций.'
 });
 
@@ -820,7 +820,7 @@ C.uk = cloneFrom('ru', {
   check: 'Перевірка синтаксису кожного власного JS: `npm run check`',
   unit: 'Модульні тести: `npm run test:unit`',
   e2e: 'Smoke Playwright підміняють погодні API й не витрачають живі квоти: `npm test`',
-  deployBody: 'Корінь репозиторію і є сайт. [Cloudflare Pages](https://duskline.pages.dev/) — основний хост; GitHub Pages — запасний. Обидва публікують статичні файли як є.',
+  deployBody: 'Корінь репозиторію і є сайт. [Cloudflare Pages](https://dusklineweather.pages.dev/) — основний хост; GitHub Pages — запасний. Обидва публікують статичні файли як є.',
   licenseBody: 'Код під [MIT](../../LICENSE). Погодні дані належать зазначеним постачальникам і підлягають їхнім умовам. Не для безпеки життя й не для надзвичайних ситуацій.'
 });
 
@@ -851,7 +851,7 @@ C.ar = cloneFrom('es', {
   check: 'فحص صياغة كل ملف JS خاص: `npm run check`',
   unit: 'اختبارات الوحدة: `npm run test:unit`',
   e2e: 'اختبارات Playwright تحاكي واجهات الطقس ولا تستهلك الحصص الحيّة: `npm test`',
-  deployBody: 'جذر المستودع هو الموقع. [Cloudflare Pages](https://duskline.pages.dev/) هو المضيف الأساسي المقصود؛ GitHub Pages للنسخ الاحتياطي. كلاهما ينشر الملفات الثابتة كما هي.',
+  deployBody: 'جذر المستودع هو الموقع. [Cloudflare Pages](https://dusklineweather.pages.dev/) هو المضيف الأساسي المقصود؛ GitHub Pages للنسخ الاحتياطي. كلاهما ينشر الملفات الثابتة كما هي.',
   licenseBody: 'الرمز مرخّص [MIT](../../LICENSE). بيانات الطقس تخصّ المزوّدين أعلاه وتخضع لشروطهم. ليست لسلامة الأرواح أو الطوارئ.'
 });
 
@@ -882,7 +882,7 @@ C.he = cloneFrom('es', {
   check: 'בדיקת תחביר לכל JS פנימי: `npm run check`',
   unit: 'בדיקות יחידה: `npm run test:unit`',
   e2e: 'בדיקות Playwright מדמות את ממשקי מזג האוויר ואינן צורכות מכסות חיות: `npm test`',
-  deployBody: 'שורש המאגר הוא האתר. [Cloudflare Pages](https://duskline.pages.dev/) הוא המארח העיקרי המיועד; GitHub Pages הוא הגיבוי. שניהם מפרסמים את הקבצים הסטטיים כפי שהם.',
+  deployBody: 'שורש המאגר הוא האתר. [Cloudflare Pages](https://dusklineweather.pages.dev/) הוא המארח העיקרי המיועד; GitHub Pages הוא הגיבוי. שניהם מפרסמים את הקבצים הסטטיים כפי שהם.',
   licenseBody: 'הקוד ברישיון [MIT](../../LICENSE). נתוני מזג האוויר שייכים לספקים שלמעלה וכפופים לתנאיהם. לא לבטיחות חיים ולא לחירום.'
 });
 
@@ -913,7 +913,7 @@ C.hi = cloneFrom('es', {
   check: 'प्रत्येक अपने JS की सिंटैक्स जाँच: `npm run check`',
   unit: 'यूनिट परीक्षण: `npm run test:unit`',
   e2e: 'Playwright स्मोक मौसम API का मॉक करते हैं और लाइव कोटा नहीं खर्च करते: `npm test`',
-  deployBody: 'रिपॉज़िटरी रूट ही साइट है। [Cloudflare Pages](https://duskline.pages.dev/) मुख्य होस्ट है; GitHub Pages बैकअप है। दोनों स्थैतिक फ़ाइलें ज्यों की त्यों प्रकाशित करते हैं।',
+  deployBody: 'रिपॉज़िटरी रूट ही साइट है। [Cloudflare Pages](https://dusklineweather.pages.dev/) मुख्य होस्ट है; GitHub Pages बैकअप है। दोनों स्थैतिक फ़ाइलें ज्यों की त्यों प्रकाशित करते हैं।',
   licenseBody: 'कोड [MIT](../../LICENSE) है। मौसम डेटा उपरोक्त तृतीय पक्षों का है और उनकी शर्तों के अधीन है। जीवन-सुरक्षा या आपातकाल के लिए नहीं।'
 });
 
@@ -944,7 +944,7 @@ C.th = cloneFrom('es', {
   check: 'ตรวจไวยากรณ์ JS ของเราทุกไฟล์: `npm run check`',
   unit: 'การทดสอบหน่วย: `npm run test:unit`',
   e2e: 'ควันทดสอบ Playwright จำลอง API สภาพอากาศและไม่ใช้โควตาจริง: `npm test`',
-  deployBody: 'รากของที่เก็บคือเว็บไซต์ [Cloudflare Pages](https://duskline.pages.dev/) เป็นโฮสต์หลักที่ตั้งใจไว้ GitHub Pages เป็นสำรอง ทั้งคู่เผยแพร่ไฟล์สถิตตามเดิม',
+  deployBody: 'รากของที่เก็บคือเว็บไซต์ [Cloudflare Pages](https://dusklineweather.pages.dev/) เป็นโฮสต์หลักที่ตั้งใจไว้ GitHub Pages เป็นสำรอง ทั้งคู่เผยแพร่ไฟล์สถิตตามเดิม',
   licenseBody: 'โค้ดเป็น [MIT](../../LICENSE) ข้อมูลสภาพอากาศเป็นของผู้ให้บริการข้างต้นและอยู่ภายใต้ข้อกำหนดของพวกเขา ไม่สำหรับความปลอดภัยของชีวิตหรือเหตุฉุกเฉิน'
 });
 
@@ -975,7 +975,7 @@ C.vi = cloneFrom('es', {
   check: 'Kiểm tra cú pháp từng JS nội bộ: `npm run check`',
   unit: 'Kiểm thử đơn vị: `npm run test:unit`',
   e2e: 'Smoke Playwright giả lập API thời tiết và không dùng hạn ngạch thật: `npm test`',
-  deployBody: 'Thư mục gốc kho chứa là trang web. [Cloudflare Pages](https://duskline.pages.dev/) là máy chủ chính dự kiến; GitHub Pages là bản sao lưu. Cả hai xuất bản tệp tĩnh nguyên trạng.',
+  deployBody: 'Thư mục gốc kho chứa là trang web. [Cloudflare Pages](https://dusklineweather.pages.dev/) là máy chủ chính dự kiến; GitHub Pages là bản sao lưu. Cả hai xuất bản tệp tĩnh nguyên trạng.',
   licenseBody: 'Mã nguồn là [MIT](../../LICENSE). Dữ liệu thời tiết thuộc các nhà cung cấp trên và tuân theo điều khoản của họ. Không dùng cho an toàn tính mạng hay khẩn cấp.'
 });
 
@@ -1006,7 +1006,7 @@ C.id = cloneFrom('es', {
   check: 'Periksa sintaksis setiap JS pihak pertama: `npm run check`',
   unit: 'Uji unit: `npm run test:unit`',
   e2e: 'Smoke Playwright meniru API cuaca dan tidak memakai kuota langsung: `npm test`',
-  deployBody: 'Akar repositori adalah situsnya. [Cloudflare Pages](https://duskline.pages.dev/) adalah host utama yang dimaksud; GitHub Pages cadangan. Keduanya menerbitkan berkas statis apa adanya.',
+  deployBody: 'Akar repositori adalah situsnya. [Cloudflare Pages](https://dusklineweather.pages.dev/) adalah host utama yang dimaksud; GitHub Pages cadangan. Keduanya menerbitkan berkas statis apa adanya.',
   licenseBody: 'Kode berlisensi [MIT](../../LICENSE). Data cuaca milik penyedia di atas dan tunduk pada ketentuan mereka. Bukan untuk keselamatan jiwa atau darurat.'
 });
 

@@ -4,7 +4,7 @@
 
 무료 브라우저 전용 날씨 앱. 전 세계 도시 검색, 시간별 및 10일 전망, 대기질, 애니메이션 하늘, 미국 National Weather Service 예보와 경보.
 
-[duskline 열기](https://duskline.pages.dev/) · [개인정보 처리방침](../../privacy.html) · [이용약관](../../terms.html)
+[duskline 열기](https://dusklineweather.pages.dev/) · [개인정보 처리방침](../../privacy.html) · [이용약관](../../terms.html)
 
 계정, 자체 백엔드, 광고 식별자가 없습니다. 언어, 단위, 즐겨찾기, 의도적으로 대략적인 저장 위치는 브라우저에 남습니다.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## 배포
 
-저장소 루트가 사이트입니다. 주 호스트는 [Cloudflare Pages](https://duskline.pages.dev/), GitHub Pages는 백업입니다. 둘 다 정적 파일을 그대로 게시합니다.
+저장소 루트가 사이트입니다. 주 호스트는 [Cloudflare Pages](https://dusklineweather.pages.dev/), GitHub Pages는 백업입니다. 둘 다 정적 파일을 그대로 게시합니다.
 
 ## 라이선스
 

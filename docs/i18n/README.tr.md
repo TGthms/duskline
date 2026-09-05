@@ -4,7 +4,7 @@
 
 Ücretsiz, yalnızca tarayıcıda çalışan bir hava durumu uygulaması: dünya çapında şehir araması, saatlik ve 10 günlük görünüm, hava kalitesi, animasyonlu koşullar ve geliştirilmiş U.S. National Weather Service tahminleri ile uyarıları.
 
-[duskline’ı aç](https://duskline.pages.dev/) · [Gizlilik Politikası](../../privacy.html) · [Kullanım Koşulları](../../terms.html)
+[duskline’ı aç](https://dusklineweather.pages.dev/) · [Gizlilik Politikası](../../privacy.html) · [Kullanım Koşulları](../../terms.html)
 
 Hesap yok, kendi arka ucumuz yok, reklam tanımlayıcısı yok. Dil, birimler, favoriler ve kasıtlı olarak yaklaşık kaydedilmiş konum tarayıcınızda kalır.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Yayımlama
 
-Depo kökü sitedir. [Cloudflare Pages](https://duskline.pages.dev/) amaçlanan birincil barındırıcıdır; GitHub Pages yedektir. İkisi de statik dosyaları olduğu gibi yayımlar.
+Depo kökü sitedir. [Cloudflare Pages](https://dusklineweather.pages.dev/) amaçlanan birincil barındırıcıdır; GitHub Pages yedektir. İkisi de statik dosyaları olduğu gibi yayımlar.
 
 ## Lisans
 

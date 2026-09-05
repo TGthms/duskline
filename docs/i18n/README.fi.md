@@ -4,7 +4,7 @@
 
 Ilmainen, vain selaimessa toimiva sääsovellus säätilan tarkistamiseen ja tutkimiseen: maailmanlaajuinen kaupunkihaku, tunti- ja 10 päivän näkymät, ilmanlaatu, animoidut olosuhteet sekä täydennetyt U.S. National Weather Service -ennusteet ja -varoitukset.
 
-[Avaa duskline](https://duskline.pages.dev/) · [Tietosuojakäytäntö](../../privacy.html) · [Käyttöehdot](../../terms.html)
+[Avaa duskline](https://dusklineweather.pages.dev/) · [Tietosuojakäytäntö](../../privacy.html) · [Käyttöehdot](../../terms.html)
 
 Ei tiliä, ei omaa taustajärjestelmää, ei mainostunnistetta. Kieli, yksiköt, suosikit ja tahallaan karkea tallennettu sijainti jäävät selaimeen.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Julkaisu
 
-Tietovaraston juuri on sivusto. [Cloudflare Pages](https://duskline.pages.dev/) on tarkoitettu pääisäntä; GitHub Pages on varmuuskopio. Molemmat julkaisevat staattiset tiedostot sellaisinaan.
+Tietovaraston juuri on sivusto. [Cloudflare Pages](https://dusklineweather.pages.dev/) on tarkoitettu pääisäntä; GitHub Pages on varmuuskopio. Molemmat julkaisevat staattiset tiedostot sellaisinaan.
 
 ## Lisenssi
 

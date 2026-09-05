@@ -4,7 +4,7 @@
 
 Ứng dụng thời tiết miễn phí, chỉ chạy trên trình duyệt, để kiểm tra và khám phá: tìm thành phố toàn cầu, triển vọng theo giờ và 10 ngày, chất lượng không khí, điều kiện chuyển động, cùng dự báo và cảnh báo tăng cường từ U.S. National Weather Service.
 
-[Mở duskline](https://duskline.pages.dev/) · [Chính sách quyền riêng tư](../../privacy.html) · [Điều khoản sử dụng](../../terms.html)
+[Mở duskline](https://dusklineweather.pages.dev/) · [Chính sách quyền riêng tư](../../privacy.html) · [Điều khoản sử dụng](../../terms.html)
 
 Không tài khoản, không backend riêng, không mã nhận dạng quảng cáo. Ngôn ngữ, đơn vị, mục yêu thích và vị trí đã lưu được làm tròn có chủ đích ở lại trình duyệt.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Triển khai
 
-Thư mục gốc kho chứa là trang web. [Cloudflare Pages](https://duskline.pages.dev/) là máy chủ chính dự kiến; GitHub Pages là bản sao lưu. Cả hai xuất bản tệp tĩnh nguyên trạng.
+Thư mục gốc kho chứa là trang web. [Cloudflare Pages](https://dusklineweather.pages.dev/) là máy chủ chính dự kiến; GitHub Pages là bản sao lưu. Cả hai xuất bản tệp tĩnh nguyên trạng.
 
 ## Giấy phép
 

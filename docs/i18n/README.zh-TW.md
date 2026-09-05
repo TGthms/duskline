@@ -4,7 +4,7 @@
 
 免費的純瀏覽器天氣應用程式，用於日常查看與探索：全球城市搜尋、逐小時與 10 日展望、空氣品質、動態天空，以及強化的美國國家氣象局預報與警報。
 
-[開啟 duskline](https://duskline.pages.dev/) · [隱私權政策](../../privacy.html) · [使用條款](../../terms.html)
+[開啟 duskline](https://dusklineweather.pages.dev/) · [隱私權政策](../../privacy.html) · [使用條款](../../terms.html)
 
 沒有帳戶、沒有自有後端、沒有廣告識別碼。語言、單位、收藏以及刻意降低精度的儲存位置都留在瀏覽器中。
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## 部署
 
-儲存庫根目錄就是網站。預定的主要託管是 [Cloudflare Pages](https://duskline.pages.dev/)；GitHub Pages 為備份。兩者都按原樣發布靜態檔案。
+儲存庫根目錄就是網站。預定的主要託管是 [Cloudflare Pages](https://dusklineweather.pages.dev/)；GitHub Pages 為備份。兩者都按原樣發布靜態檔案。
 
 ## 授權
 

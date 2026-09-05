@@ -4,7 +4,7 @@
 
 A free, browser-only weather app for everyday checking and weather exploration: worldwide city search, hourly and 10-day outlooks, air quality, animated conditions, and enhanced U.S. National Weather Service forecasts and alerts.
 
-[Open duskline](https://duskline.pages.dev/) · [Privacy Policy](privacy.html) · [Terms of Use](terms.html)
+[Open duskline](https://dusklineweather.pages.dev/) · [Privacy Policy](privacy.html) · [Terms of Use](terms.html)
 
 There is no account, no backend of our own, and no advertising identifier. Language, units, favorites, and an intentionally approximate saved location stay in your browser.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Deployment
 
-The repository root is the site. [Cloudflare Pages](https://duskline.pages.dev/) is the intended primary host; GitHub Pages is the backup. Both publish the static files as-is.
+The repository root is the site. [Cloudflare Pages](https://dusklineweather.pages.dev/) is the intended primary host; GitHub Pages is the backup. Both publish the static files as-is.
 
 ## License
 

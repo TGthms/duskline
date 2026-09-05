@@ -28,8 +28,15 @@ test('home page exposes Search Console verification and SEO head', async ({ page
     'content',
     '0rE0QD0vWPSfPxelCpS8qL2_n3JGrd_ZYPJBaGwnLZQ'
   );
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://duskline.pages.dev/');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://dusklineweather.pages.dev/');
+  await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', 'duskline');
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+  const jsonLd = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+  const nodes = Array.isArray(jsonLd['@graph']) ? jsonLd['@graph'] : [jsonLd];
+  const website = nodes.find((n) => n['@type'] === 'WebSite');
+  expect(website.name).toBe('duskline');
+  expect(website.url).toBe('https://dusklineweather.pages.dev/');
+  expect(website.alternateName).toEqual(expect.arrayContaining(['duskline weather', 'dusklineweather.pages.dev']));
   await expect(page.locator('h1')).toHaveCount(1);
 });
 

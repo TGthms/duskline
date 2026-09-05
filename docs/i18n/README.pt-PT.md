@@ -4,7 +4,7 @@
 
 Uma aplicação meteorológica gratuita, só no browser, para consultar e explorar o tempo: pesquisa mundial de cidades, perspetivas horárias e a 10 dias, qualidade do ar, condições animadas e previsões e alertas melhorados do U.S. National Weather Service.
 
-[Abrir o duskline](https://duskline.pages.dev/) · [Política de privacidade](../../privacy.html) · [Termos de utilização](../../terms.html)
+[Abrir o duskline](https://dusklineweather.pages.dev/) · [Política de privacidade](../../privacy.html) · [Termos de utilização](../../terms.html)
 
 Não há conta, backend próprio nem identificador publicitário. O idioma, as unidades, os favoritos e uma localização guardada de propósito aproximada ficam no browser.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Publicação
 
-A raiz do repositório é o sítio. [Cloudflare Pages](https://duskline.pages.dev/) é o anfitrião principal previsto; o GitHub Pages é a cópia de segurança. Ambos publicam os ficheiros estáticos tal como estão.
+A raiz do repositório é o sítio. [Cloudflare Pages](https://dusklineweather.pages.dev/) é o anfitrião principal previsto; o GitHub Pages é a cópia de segurança. Ambos publicam os ficheiros estáticos tal como estão.
 
 ## Licença
 

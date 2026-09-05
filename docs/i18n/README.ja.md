@@ -4,7 +4,7 @@
 
 無料のブラウザ専用天気アプリ。世界の都市検索、1時間ごとと10日の見通し、大気質、アニメーションの空、そして米国 National Weather Service の強化された予報と警報。
 
-[duskline を開く](https://duskline.pages.dev/) · [プライバシーポリシー](../../privacy.html) · [利用規約](../../terms.html)
+[duskline を開く](https://dusklineweather.pages.dev/) · [プライバシーポリシー](../../privacy.html) · [利用規約](../../terms.html)
 
 アカウントも独自バックエンドも広告識別子もありません。言語、単位、お気に入り、意図的に粗くした保存位置はブラウザ内に残ります。
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## 公開
 
-リポジトリのルートがサイトです。想定の主ホストは [Cloudflare Pages](https://duskline.pages.dev/)、GitHub Pages は予備です。どちらも静的ファイルをそのまま公開します。
+リポジトリのルートがサイトです。想定の主ホストは [Cloudflare Pages](https://dusklineweather.pages.dev/)、GitHub Pages は予備です。どちらも静的ファイルをそのまま公開します。
 
 ## ライセンス
 

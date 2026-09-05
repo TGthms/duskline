@@ -4,7 +4,7 @@
 
 En gratis, browser-only vejrapp til at tjekke og udforske vejret: global bysøgning, time- og 10-dages udsigter, luftkvalitet, animerede forhold og forbedrede U.S. National Weather Service-udsigter og -advarsler.
 
-[Åbn duskline](https://duskline.pages.dev/) · [Privatlivspolitik](../../privacy.html) · [Brugsvilkår](../../terms.html)
+[Åbn duskline](https://dusklineweather.pages.dev/) · [Privatlivspolitik](../../privacy.html) · [Brugsvilkår](../../terms.html)
 
 Ingen konto, intet eget backend og intet reklame-id. Sprog, enheder, favoritter og en bevidst omtrentlig gemt placering bliver i din browser.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Udgivelse
 
-Lagerets rod er sitet. [Cloudflare Pages](https://duskline.pages.dev/) er den tilsigtede primære vært; GitHub Pages er backup. Begge udgiver de statiske filer som de er.
+Lagerets rod er sitet. [Cloudflare Pages](https://dusklineweather.pages.dev/) er den tilsigtede primære vært; GitHub Pages er backup. Begge udgiver de statiske filer som de er.
 
 ## Licens
 

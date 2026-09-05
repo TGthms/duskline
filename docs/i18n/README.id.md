@@ -4,7 +4,7 @@
 
 Aplikasi cuaca gratis yang hanya berjalan di peramban, untuk memeriksa dan menjelajahi cuaca: pencarian kota di seluruh dunia, pandangan per jam dan 10 hari, kualitas udara, kondisi beranimasi, serta prakiraan dan peringatan U.S. National Weather Service yang diperkaya.
 
-[Buka duskline](https://duskline.pages.dev/) · [Kebijakan Privasi](../../privacy.html) · [Ketentuan Penggunaan](../../terms.html)
+[Buka duskline](https://dusklineweather.pages.dev/) · [Kebijakan Privasi](../../privacy.html) · [Ketentuan Penggunaan](../../terms.html)
 
 Tidak ada akun, backend sendiri, atau pengenal iklan. Bahasa, satuan, favorit, dan lokasi tersimpan yang sengaja didekati tetap di peramban Anda.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Penerbitan
 
-Akar repositori adalah situsnya. [Cloudflare Pages](https://duskline.pages.dev/) adalah host utama yang dimaksud; GitHub Pages cadangan. Keduanya menerbitkan berkas statis apa adanya.
+Akar repositori adalah situsnya. [Cloudflare Pages](https://dusklineweather.pages.dev/) adalah host utama yang dimaksud; GitHub Pages cadangan. Keduanya menerbitkan berkas statis apa adanya.
 
 ## Lisensi
 

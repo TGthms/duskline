@@ -4,7 +4,7 @@
 
 O aplicație meteo gratuită, doar în browser, pentru verificarea și explorarea vremii: căutare mondială de orașe, perspective orare și pe 10 zile, calitatea aerului, condiții animate și prognoze și alerte îmbunătățite de la U.S. National Weather Service.
 
-[Deschide duskline](https://duskline.pages.dev/) · [Politica de confidențialitate](../../privacy.html) · [Termeni de utilizare](../../terms.html)
+[Deschide duskline](https://dusklineweather.pages.dev/) · [Politica de confidențialitate](../../privacy.html) · [Termeni de utilizare](../../terms.html)
 
 Fără cont, fără backend propriu, fără identificator publicitar. Limba, unitățile, favoritele și o locație salvată intenționat aproximativă rămân în browser.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Publicare
 
-Rădăcina depozitului este situl. [Cloudflare Pages](https://duskline.pages.dev/) este gazda principală prevăzută; GitHub Pages este copia de rezervă. Ambele publică fișierele statice ca atare.
+Rădăcina depozitului este situl. [Cloudflare Pages](https://dusklineweather.pages.dev/) este gazda principală prevăzută; GitHub Pages este copia de rezervă. Ambele publică fișierele statice ca atare.
 
 ## Licență
 

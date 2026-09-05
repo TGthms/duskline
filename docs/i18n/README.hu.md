@@ -4,7 +4,7 @@
 
 Ingyenes, csak böngészős időjárás-alkalmazás a mindennapi ellenőrzéshez és felfedezéshez: világszintű városkeresés, óránkénti és 10 napos kilátás, levegőminőség, animált viszonyok, valamint bővített U.S. National Weather Service előrejelzések és riasztások.
 
-[duskline megnyitása](https://duskline.pages.dev/) · [Adatvédelmi szabályzat](../../privacy.html) · [Felhasználási feltételek](../../terms.html)
+[duskline megnyitása](https://dusklineweather.pages.dev/) · [Adatvédelmi szabályzat](../../privacy.html) · [Felhasználási feltételek](../../terms.html)
 
 Nincs fiók, nincs saját háttérrendszer, nincs hirdetési azonosító. A nyelv, az egységek, a kedvencek és egy szándékosan hozzávetőleges mentett hely a böngészőben marad.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Közzététel
 
-A tároló gyökere a webhely. A [Cloudflare Pages](https://duskline.pages.dev/) a tervezett elsődleges host; a GitHub Pages a biztonsági másolat. Mindkettő változatlanul közzéteszi a statikus fájlokat.
+A tároló gyökere a webhely. A [Cloudflare Pages](https://dusklineweather.pages.dev/) a tervezett elsődleges host; a GitHub Pages a biztonsági másolat. Mindkettő változatlanul közzéteszi a statikus fájlokat.
 
 ## Licenc
 

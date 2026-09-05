@@ -4,7 +4,7 @@
 
 免费的纯浏览器天气应用，用于日常查看与探索：全球城市搜索、逐小时与 10 日展望、空气质量、动态天空，以及增强的美国国家气象局预报与警报。
 
-[打开 duskline](https://duskline.pages.dev/) · [隐私政策](../../privacy.html) · [使用条款](../../terms.html)
+[打开 duskline](https://dusklineweather.pages.dev/) · [隐私政策](../../privacy.html) · [使用条款](../../terms.html)
 
 没有账户、没有自有后端、没有广告标识符。语言、单位、收藏以及有意降低精度的保存位置都留在浏览器中。
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## 部署
 
-仓库根目录就是站点。预定的主托管是 [Cloudflare Pages](https://duskline.pages.dev/)；GitHub Pages 为备份。两者都按原样发布静态文件。
+仓库根目录就是站点。预定的主托管是 [Cloudflare Pages](https://dusklineweather.pages.dev/)；GitHub Pages 为备份。两者都按原样发布静态文件。
 
 ## 许可
 

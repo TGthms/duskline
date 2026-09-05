@@ -4,7 +4,7 @@
 
 Eine kostenlose, rein browserbasierte Wetter-App zum Nachschlagen und Erkunden: weltweite Städtesuche, stündliche und 10-Tage-Aussichten, Luftqualität, animierte Bedingungen sowie erweiterte Vorhersagen und Warnungen des U.S. National Weather Service.
 
-[duskline öffnen](https://duskline.pages.dev/) · [Datenschutz](../../privacy.html) · [Nutzungsbedingungen](../../terms.html)
+[duskline öffnen](https://dusklineweather.pages.dev/) · [Datenschutz](../../privacy.html) · [Nutzungsbedingungen](../../terms.html)
 
 Kein Konto, kein eigenes Backend, keine Werbekennung. Sprache, Einheiten, Favoriten und ein bewusst ungefährer gespeicherter Standort bleiben in Ihrem Browser.
 
@@ -44,7 +44,7 @@ npm run serve
 
 ## Bereitstellung
 
-Die Repository-Wurzel ist die Website. [Cloudflare Pages](https://duskline.pages.dev/) ist der vorgesehene Haupthost; GitHub Pages die Absicherung. Beide veröffentlichen die statischen Dateien unverändert.
+Die Repository-Wurzel ist die Website. [Cloudflare Pages](https://dusklineweather.pages.dev/) ist der vorgesehene Haupthost; GitHub Pages die Absicherung. Beide veröffentlichen die statischen Dateien unverändert.
 
 ## Lizenz
 
