@@ -474,7 +474,7 @@
       zh: '未找到城市。', 'zh-TW': '找不到城市。'
     },
     'weather.attribution': {
-      en: 'Data: U.S. forecasts & alerts NWS · world & extras Open-Meteo (CC BY 4.0). For guidance only — not for emergencies.',
+      en: 'Data: Open-Meteo (CC BY 4.0) and NWS. Created by Tim G. For guidance only — not for emergencies.',
       es: 'Datos: previsiones y avisos de EE. UU. NWS · mundo y extras Open-Meteo (CC BY 4.0). Solo orientativo; no uses esto en emergencias.',
       fr: 'Données : prévisions et alertes U.S. NWS · monde et extras Open-Meteo (CC BY 4.0). À titre indicatif — pas pour les urgences.',
       de: 'Daten: US-Vorhersagen & Warnungen NWS · Welt & Zusatz Open-Meteo (CC BY 4.0). Nur zur Orientierung — nicht für Notfälle.',
