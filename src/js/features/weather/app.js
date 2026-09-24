@@ -27,6 +27,11 @@
   /**
    * Localized major-city display names (static — no network).
    * Keys match cityKey() = lat.toFixed(3)+','+lon.toFixed(3)
+   *
+   * COVERAGE: en / es / zh / ja only, the four languages the interface was originally
+   * written in. Every other locale falls back to the English name. That is deliberate —
+   * city and state names are proper nouns, and a mistranslation is worse than leaving them
+   * untranslated. Extend this only with native review; do not machine-translate the set.
    */
   const CITY_NAMES = {
     '40.713,-74.006': { en: 'New York', es: 'Nueva York', zh: '纽约', ja: 'ニューヨーク' },
@@ -173,7 +178,6 @@
   const myLocBlock = $('weatherMyLocationBlock');
   const majorsBlock = $('weatherMajorsBlock');
   const shellEl = $('weatherShell');
-  const loadingEl = $('weatherLoading');
   const errorEl = $('weatherError');
   const updatedEl = $('weatherUpdated');
   const searchEl = $('weatherSearch');
@@ -373,9 +377,9 @@
       cache: cache, cityKey: cityKey, sameCity: sameCity, MAJOR: MAJOR,
       FORECAST: FORECAST, GEOCODE: GEOCODE, AIR: AIR,
       FORECAST_Q: FORECAST_Q,
+      FORECAST_Q_LIST: FORECAST_Q_LIST,
       REFRESH_MS: REFRESH_MS,
       t: t,
-      onLoadProgress: setLoadProgress,
       onCityLoaded: function (city, pack) {
         pendingCityKeys.delete(cityKey(city));
         if (pack && pack.fetchedAt) setUpdated(pack.fetchedAt);
@@ -395,7 +399,7 @@
       nwsFetchJson: function (url, signal) { return dataApi.nwsFetchJson(url, signal); },
       cityKey: cityKey, cache: cache,
       getDetailMods: function () { return detailMods; },
-      isDetailVisible: isDetailVisible,
+      isDetailVisible: isDetailShowingOrOpening,
       getOpenCity: function () { return openCity; },
       scheduleListPaintFromAlerts: function (pack) {
         if (typeof scheduleListPaintFromAlerts === 'function') scheduleListPaintFromAlerts(pack);
@@ -411,6 +415,17 @@
     + '&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max'
     + '&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=10&past_days=1';
+  /**
+   * List rows show only current conditions plus today's H/L, so the list load asks
+   * Open-Meteo for exactly that: no hourly series and no daily fields beyond the three it
+   * renders. That is ~94% smaller per city than the full query (measured: 19,017 -> 1,171
+   * bytes), and packs built from it are marked `needsEnrich` so opening a city upgrades it
+   * to FORECAST_Q. Detail, sheets and enrichment always use the full FORECAST_Q.
+   */
+  const FORECAST_Q_LIST =
+    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,visibility,precipitation'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min'
+    + '&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=10';
   const NWS_BASE = 'https://api.weather.gov';
 
   function roundCoord(n) {
@@ -962,111 +977,9 @@
     return now.getHours() + now.getMinutes() / 60;
   }
 
-  /** Sun (or moon) position on a day arc from local hour. Returns CSS % left/top + size. */
-
-
-  // Smooth progress: never jump straight to ~85% — always ease from low values
-  var progDisplay = 0;
-  var progTarget = 0;
-  var progRaf = 0;
-  var progLabel = '';
-
-  function paintProgressNow() {
-    const fill = document.getElementById('weatherLoadFill');
-    const pctEl = document.getElementById('weatherLoadPct');
-    const label = document.getElementById('weatherLoadLabel');
-    const bar = document.getElementById('weatherLoadBar');
-    const p = Math.max(0, Math.min(100, Math.round(progDisplay)));
-    if (fill) fill.style.width = p + '%';
-    if (pctEl) pctEl.textContent = p + '%';
-    if (bar) bar.setAttribute('aria-valuenow', String(p));
-    if (label && progLabel) label.textContent = progLabel;
-  }
-
-  function tickProgressAnim() {
-    progRaf = 0;
-    const diff = progTarget - progDisplay;
-    if (Math.abs(diff) < 0.4) {
-      progDisplay = progTarget;
-      paintProgressNow();
-      return;
-    }
-    // Ease toward target (readable climb from 0, no instant 85%)
-    const step = Math.max(0.55, Math.abs(diff) * 0.13);
-    progDisplay += diff > 0 ? step : -step;
-    if ((diff > 0 && progDisplay > progTarget) || (diff < 0 && progDisplay < progTarget)) {
-      progDisplay = progTarget;
-    }
-    paintProgressNow();
-    progRaf = window.requestAnimationFrame(tickProgressAnim);
-  }
-
-  function setLoadProgress(pct, labelText) {
-    progTarget = Math.max(0, Math.min(100, Number(pct) || 0));
-    if (labelText) progLabel = labelText;
-    if (!progRaf) progRaf = window.requestAnimationFrame(tickProgressAnim);
-    // Also update label immediately for snappy copy
-    const label = document.getElementById('weatherLoadLabel');
-    if (label && progLabel) label.textContent = progLabel;
-  }
-
-  function resetLoadProgress() {
-    if (progRaf) {
-      try { window.cancelAnimationFrame(progRaf); } catch (e) {}
-      progRaf = 0;
-    }
-    progDisplay = 0;
-    progTarget = 0;
-    progLabel = t('weather.loadingForecasts', 'Loading forecasts…');
-    paintProgressNow();
-  }
-
-  function showWeatherLoadingUI() {
-    listPaintLocked = true;
-    cancelPendingListPaints();
-    if (loadingEl) {
-      loadingEl.hidden = false;
-      loadingEl.className = 'weather-load-panel weather-load-panel--hero';
-      loadingEl.innerHTML =
-        '<div class="weather-load-card">' +
-          '<div class="weather-load-orb" aria-hidden="true"></div>' +
-          '<div class="weather-load-status">' +
-            '<span id="weatherLoadLabel">' + escapeHtml(t('weather.loadingForecasts', 'Loading forecasts…')) + '</span>' +
-            '<span class="weather-load-pct" id="weatherLoadPct">0%</span>' +
-          '</div>' +
-          '<div class="weather-load-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="weatherLoadBar" aria-label="Loading">' +
-            '<div class="weather-load-fill" id="weatherLoadFill"></div>' +
-          '</div>' +
-          '<p class="weather-load-hint" id="weatherLoadHint">' +
-            escapeHtml(t('weather.loadingHint', 'Fetching cities & alerts…')) +
-          '</p>' +
-        '</div>';
-      resetLoadProgress();
-      // Start gently at a few percent so the bar is visibly "alive"
-      setLoadProgress(3, t('weather.loadingForecasts', 'Loading forecasts…'));
-    }
-    // Hide lists entirely until the single final paint — no skeleton thrash
-    if (listEl) {
-      listEl.innerHTML = '';
-      listEl.hidden = true;
-      listEl.classList.remove('weather-skeleton-list');
-    }
-    if (favListEl) { favListEl.innerHTML = ''; }
-    if (myLocListEl) { myLocListEl.innerHTML = ''; }
-    if (favBlock) favBlock.hidden = true;
-    if (myLocBlock) myLocBlock.hidden = true;
-    if (majorsBlock) majorsBlock.hidden = false;
-    if (errorEl) { errorEl.hidden = true; errorEl.textContent = ''; }
-  }
-
   wireRemainingModules();
 
   function clearWeatherSkeleton() {
-    if (loadingEl) {
-      loadingEl.hidden = true;
-      loadingEl.className = 'weather-load-panel';
-      loadingEl.innerHTML = '';
-    }
     if (listEl) {
       listEl.hidden = false;
       listEl.classList.remove('weather-skeleton-list');
@@ -1360,11 +1273,6 @@
     renderCityList(favListEl, favPacks);
     if (listEl) listEl.hidden = false;
     renderCityList(listEl, majorPacks);
-    if (loadingEl) {
-      loadingEl.hidden = true;
-      loadingEl.className = 'weather-load-panel';
-      loadingEl.innerHTML = '';
-    }
 
     let latest = 0;
     [...myPacks, ...favPacks, ...majorPacks].forEach((p) => { latest = Math.max(latest, p.fetchedAt || 0); });
@@ -1462,6 +1370,8 @@
     showError('');
     // Manual always available — busy state only (re-click cancels prior gen)
     setRefreshBusy(true);
+    // Only user-initiated loads are announced; the 10-minute auto refresh stays silent.
+    if (!quiet && shellEl) shellEl.setAttribute('aria-busy', 'true');
 
     if (!myLocationCity) myLocationCity = loadMyLocation();
     const favs = loadFavorites();
@@ -1500,21 +1410,10 @@
 
         // NWS alerts are fetched for every U.S. city, including quiet startup.
         // Quiet mode only suppresses progress UI; it must not suppress safety data.
-        if (!quiet) setLoadProgress(64, t('weather.loadingAlerts', 'Checking weather alerts…'));
-        await alertsApi.prefetchAlertsForCache(function (done, total) {
-          if (gen !== refreshGen || quiet) return;
-          const pct = 64 + Math.round((done / Math.max(1, total)) * 32);
-          setLoadProgress(Math.min(96, pct), t('weather.loadingAlerts', 'Checking weather alerts…')
-            + ' (' + done + '/' + total + ')');
-        });
+        // Alerts are fetched for every U.S. city, quiet or not: quiet mode only
+        // suppresses chrome, never safety data.
+        await alertsApi.prefetchAlertsForCache();
         if (gen !== refreshGen) return;
-
-        if (!quiet) {
-          setLoadProgress(100, t('weather.loadingDone', 'Ready'));
-          // Brief beat so the bar can ease to 100% before the list appears
-          await new Promise(function (r) { window.setTimeout(r, 180); });
-          if (gen !== refreshGen) return;
-        }
 
         // Cards have already been updated individually; do not rebuild the list.
         cities.forEach((c) => pendingCityKeys.delete(cityKey(c)));
@@ -1557,6 +1456,7 @@
         if (gen === refreshGen) {
           listPaintLocked = false;
           setRefreshBusy(false);
+          if (shellEl) shellEl.removeAttribute('aria-busy');
           // Reset 10-minute auto clock after every completed cycle (while active)
           if (isPageActive()) scheduleAutoRefresh();
           if (pendingUiRefresh) {
@@ -1632,6 +1532,17 @@
 
   function isDetailVisible() {
     return !!(detailEl && detailEl.classList.contains('open') && !detailEl.classList.contains('is-closing'));
+  }
+
+  /**
+   * True while the detail is showing OR still animating in. openCity is set synchronously by
+   * openDetail, whereas `.open` is deliberately withheld for two frames by the enter
+   * animation — so a background fetch that resolves inside that window must not read `.open`
+   * to mean "the user has navigated away". Doing so discarded the fetched data.
+   */
+  function isDetailShowingOrOpening() {
+    if (!detailEl || !openCity) return false;
+    return !detailEl.classList.contains('is-closing');
   }
 
   // The detail surface is useful before the background city queue completes.
@@ -1924,7 +1835,10 @@
     // trapping the full-screen pointer layer over the list or detail.
     if (!wasOpen || cityChanged) {
       forceCloseSheet();
-    } else if (sheetEl && !sheetEl.classList.contains('open')) {
+    } else if (sheetEl && !sheetOpen) {
+      /* Use the intent flag, not the class: while the sheet is animating in the class is
+         deliberately absent, and reading it here called inertSheet() mid-open, leaving the
+         sheet painted on top but inert/aria-hidden with pointer-events:none. */
       inertSheet();
     }
 
@@ -2006,7 +1920,10 @@
         if (Array.isArray(pack.alerts)) fresh.alerts = pack.alerts;
         else if (openCity && Array.isArray(openCity.alerts)) fresh.alerts = openCity.alerts;
         cache.set(enrichKey, fresh);
-        if (openCity && openCity.city && sameCity(openCity.city, pack.city) && isDetailVisible()) {
+        // Gate on intent, not on `.open`: an instant Open-Meteo response can land while the
+        // enter animation is still deferring that class, and skipping the re-render here left
+        // the detail permanently without hourly / sunrise / UV data.
+        if (openCity && openCity.city && sameCity(openCity.city, pack.city) && isDetailShowingOrOpening()) {
           // Stash titles for openDetail restore (also captured at openDetail entry)
           if (openTitlesBeforeEnrich.length && detailMods) {
             // openDetail will capture empty if we already rebuilt — set on pack for restore
@@ -2363,6 +2280,10 @@
   let sheetGen = 0;
   let sheetSpringRaf = 0;
   let sheetOpen = false;
+  /* What the sheet is *supposed* to be. `sheetOpen` tracks intent; the `.open` class is
+     briefly absent while the enter animation is deferred, so it must never be read as
+     "the sheet is closed" — that is what tore a mid-open sheet down. */
+  let sheetIntentOpen = false;
 
   function sheetReduceMotion() {
     return motionLevel() === 'off' || motionLevel() === 'reduced'
@@ -2418,6 +2339,7 @@
   }
 
   function inertSheet() {
+    sheetIntentOpen = false;
     if (!sheetEl) return;
     sheetEl.classList.remove('open', 'is-raised', 'is-leaving');
     sheetEl.setAttribute('aria-hidden', 'true');
@@ -2461,6 +2383,7 @@
     sheetGen += 1;
     const gen = sheetGen;
     sheetOpen = true;
+    sheetIntentOpen = true;
     try { sheetEl.inert = false; } catch (e) { /* older browsers */ }
     sheetEl.setAttribute('aria-hidden', 'false');
     sheetEl.style.pointerEvents = 'auto';
@@ -2508,6 +2431,10 @@
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         if (gen !== sheetGen) return;
+        // A reset may have been requested while these frames were pending. Land on a fully
+        // inert sheet instead of applying `.open` on top of it — half-applied state is what
+        // produced an on-screen sheet that ignored taps.
+        if (!sheetIntentOpen) { inertSheet(); return; }
         sheetEl.classList.add('open', 'is-raised');
         try {
           const title = sheetPanel.querySelector('.wx-sheet-title');
@@ -2531,6 +2458,7 @@
     sheetGen += 1;
     const gen = sheetGen;
     sheetOpen = false;
+    sheetIntentOpen = false;
     sheetPanel.classList.remove('is-dragging');
     const reduce = sheetReduceMotion();
     const centered = sheetCentered();
@@ -2746,7 +2674,6 @@
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     } catch (e) {}
-    if (typeof ensureBodyScrollUnlocked === 'function') ensureBodyScrollUnlocked();
   }
 
   /**
@@ -3431,6 +3358,4 @@
       forceCloseSheet();
     }
   });
-  document.querySelectorAll('.weather-root .reveal, .tools-page .reveal').forEach((el) => el.classList.add('visible'));
-
 })();

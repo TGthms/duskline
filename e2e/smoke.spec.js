@@ -268,6 +268,9 @@ test('mobile sheet close is top-right and short sheets stay short', async ({ pag
   const close = page.locator('#weatherSheetClose');
   const panel = page.locator('#weatherSheetPanel');
   await expect(sheet).toHaveClass(/open/);
+  // The enter animation defers `.open` by two frames. Interacting before it settles is not
+  // something a person can do, and doing it here is what made this test flaky.
+  await expect(sheet).toHaveClass(/is-raised/);
   await expect(close).toBeVisible();
   await expect.poll(async () => {
     const box = await close.boundingBox();
@@ -278,8 +281,13 @@ test('mobile sheet close is top-right and short sheets stay short', async ({ pag
   const uvH = panelBox.height;
   expect(uvH).toBeLessThan(page.viewportSize().height * 0.95);
 
-  await close.click({ force: true });
+  await close.click();
   await expect(sheet).not.toHaveClass(/open/, { timeout: 4000 });
+  // Closed must also mean inert: a sheet left painted-but-inert (or inert-but-open) is the
+  // failure mode this guards against, and `.open` alone would not catch it.
+  await expect(sheet).toHaveAttribute('aria-hidden', 'true');
+  expect(await sheet.evaluate((el) => el.inert)).toBe(true);
+  expect(await sheet.evaluate((el) => el.style.pointerEvents)).toBe('none');
 
   await page.locator('.weather-mod[data-sheet="vis"]').click();
   await expect(sheet).toHaveClass(/open/);

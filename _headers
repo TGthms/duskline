@@ -1,0 +1,34 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.weather.gov https://api.bigdatacloud.net https://nominatim.openstreetmap.org; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# Cloudflare Pages reads this file at the site root and applies these headers to every
+# response. GitHub Pages ignores it — Cloudflare Pages is the primary host (see README).
+
+# Notes on the policy, so it can be maintained without re-deriving it:
+#
+#  script-src 'self'
+#     No inline <script> remains anywhere: the pre-paint theme/motion logic and font
+#     registration live in src/js/boot.js, and service worker registration in
+#     src/js/sw-register.js. That is why this can be a bare 'self' with no hashes and no
+#     'unsafe-inline'. Adding an inline script means updating this line.
+#
+#  style-src 'unsafe-inline'
+#     Required: several surfaces carry inline style attributes (progress/ratio bars in the
+#     AQI and humidity widgets, unit-pill offsets, sun-arc geometry, the alert accordion's
+#     animated height). Tightening this needs style-src-elem/style-src-attr, which is not
+#     yet safe across the browsers this app supports.
+#
+#  connect-src
+#     Exactly the five providers the app calls from the browser: Open-Meteo forecast and
+#     air quality, its geocoding endpoint, the US National Weather Service, and the
+#     reverse-geocoding pair (BigDataCloud, then OpenStreetMap Nominatim as fallback).
+#     Adding a provider means adding it here, or the request fails silently in production.
+#
+#  Deliberately absent: upgrade-insecure-requests. Cloudflare serves HTTPS with HSTS and
+#  redirects plain HTTP, and the directive would break same-origin subresources when this
+#  site is verified over plain HTTP locally.

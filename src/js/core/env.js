@@ -63,51 +63,9 @@ function cancelRaf(id) {
   } catch (e) { /* ignore */ }
 }
 
-/** Observe elements entering the viewport; fall back to immediate reveal. */
-function observeWhenVisible(elements, onVisible, options) {
-  const list = elements && elements.length != null ? Array.from(elements) : [];
-  if (!list.length) return null;
-  if (!ENV.hasIO) {
-    list.forEach(onVisible);
-    return null;
-  }
-  try {
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          onVisible(entry.target);
-          try { obs.unobserve(entry.target); } catch (e) { /* ignore */ }
-        }
-      });
-    }, options || { threshold: 0.08 });
-    list.forEach((el) => { try { obs.observe(el); } catch (e) { onVisible(el); } });
-    return obs;
-  } catch (e) {
-    list.forEach(onVisible);
-    return null;
-  }
-}
-
 // Constrained webviews can blank on an unhandled rejection. Desktop: leave it visible.
 window.addEventListener('unhandledrejection', (e) => {
   if (!ENV.constrained) return;
   try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch (err) { /* ignore */ }
-});
-
-/* ── LOADER ── */
-window.addEventListener('load', () => {
-  const loader = document.getElementById('loader');
-  if (!loader) return;
-  // Keep the splash short — long artificial waits hurt first interaction.
-  // Constrained / mobile skip the wait entirely.
-  if (ENV.constrained || ENV.mobile) {
-    loader.classList.add('gone');
-    return;
-  }
-  const isMiniApp = document.body.classList.contains('page-gallery')
-    || document.body.classList.contains('page-tools')
-    || document.body.classList.contains('page-legal');
-  const delay = isMiniApp ? 400 : 700;
-  setTimeout(() => { try { loader.classList.add('gone'); } catch (e) { /* ignore */ } }, delay);
 });
 

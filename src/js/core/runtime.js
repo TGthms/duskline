@@ -7,6 +7,8 @@
    This file used to ship gallery-site chrome (cursor trail, hamburger drawer,
    settings overlay, lightbox). Those DOM nodes do not exist here; the
    corresponding code is omitted so the weather app does not parse or run it.
+   The Appearance x Style preference pair from that site's Settings overlay is gone too —
+   see resolveTheme() below for why only two of its four themes were ever reachable.
 */
 
 /* I18N dictionary: src/js/data/i18n.js → window.I18N */
@@ -235,33 +237,31 @@ function detectLanguage() {
   return 'en';
 }
 
-const LIGHT_THEMES = ['minimal', 'elegant'];
+/* The two themes this app ships, as named constants so the CSS selector values, the
+   pre-paint script in src/js/boot.js and this resolver cannot drift apart. */
+const LIGHT_THEME = 'minimal';
+const DARK_THEME = 'glass';
 
-/**
- * Appearance: system | light | dark
- * Style: classic | modern
- *   Light + Classic → Heritage Paper (elegant)
- *   Light + Modern  → Gallery Daylight (minimal)
- *   Dark  + Classic → Midnight Atlas (default)
- *   Dark  + Modern  → Twilight Glass (glass)
- */
 function isOsLight() {
   return !!safeMatchMedia('(prefers-color-scheme: light)').matches;
 }
 
-function resolveThemeFromAppearanceStyle(appearance, style) {
-  const light = appearance === 'system'
-    ? isOsLight()
-    : appearance === 'light';
-  const classic = style === 'classic';
-  if (light) return classic ? 'elegant' : 'minimal';
-  return classic ? 'default' : 'glass';
+/**
+ * Resolve the OS light/dark appearance into one of the two shipped themes.
+ *
+ * This replaced an Appearance × Style pair (system|light|dark × classic|modern → four
+ * themes) inherited from the multi-tool site this app was extracted from. The Style axis
+ * had no UI and no other way to be set, so `elegant` (light classic) and `default` (dark
+ * classic) could only be reached by writing a localStorage key by hand — the two themes a
+ * real user could see were `minimal` and `glass`. Following the OS is therefore the only
+ * appearance behaviour that was ever reachable, and it is now the only one implemented.
+ * `default` is still meaningful to the CSS: it is the un-overridden :root base layer.
+ */
+function resolveTheme() {
+  return isOsLight() ? LIGHT_THEME : DARK_THEME;
 }
 
-function detectTheme() {
-  // Used when appearance is system + default modern style
-  return resolveThemeFromAppearanceStyle('system', 'modern');
-}
+const LIGHT_THEMES = [LIGHT_THEME];
 
 /**
  * Units auto-detect priority (highest → lowest):
@@ -459,29 +459,16 @@ function loadMotionModePreference() {
   return detectMotionModeDefault();
 }
 
-/* ── SETTINGS STATE ──
-   pref* = what Settings stores (may be "auto" / "system")
-   current* = effective value used by the app (always concrete) */
+/* ── PREFERENCES ──
+   pref* = the stored preference (may be "auto")
+   current* = the effective value the app uses (always concrete) */
 
 let currentLang = safeStorage.has('duskline-lang')
   ? safeStorage.get('duskline-lang', 'en')
   : detectLanguage();
 if (!SUPPORTED_LANGS.includes(currentLang)) currentLang = 'en';
 
-/** Appearance: system | light | dark · Style: classic | modern */
-let prefAppearance = safeStorage.has('duskline-appearance')
-  ? safeStorage.get('duskline-appearance', 'system')
-  : 'system';
-let prefStyle = safeStorage.has('duskline-style')
-  ? safeStorage.get('duskline-style', 'modern')
-  : 'modern';
-if (prefAppearance !== 'system' && prefAppearance !== 'light' && prefAppearance !== 'dark') {
-  prefAppearance = 'system';
-}
-if (prefStyle !== 'classic' && prefStyle !== 'modern') prefStyle = 'modern';
-let currentTheme = resolveThemeFromAppearanceStyle(prefAppearance, prefStyle);
-// Legacy alias used by some UI code
-let prefTheme = prefAppearance === 'system' ? 'auto' : currentTheme;
+let currentTheme = resolveTheme();
 
 /** Unit prefs: auto | f/c | mi/km.
  *  v5 already shipped. Keep the one-time migrate for browsers that never ran it.
@@ -570,7 +557,7 @@ window.__dusklineUnits = function () {
 let motionMode = loadMotionModePreference();
 
 // Guard against corrupt effective values
-if (!['default', 'minimal', 'elegant', 'glass'].includes(currentTheme)) currentTheme = 'default';
+if (![LIGHT_THEME, DARK_THEME].includes(currentTheme)) currentTheme = DARK_THEME;
 if (currentTempUnit !== 'f' && currentTempUnit !== 'c') {
   const fixed = resolveUnitsFromPrefs();
   currentTempUnit = (fixed.temp === 'f' || fixed.temp === 'c') ? fixed.temp : 'c';
@@ -584,7 +571,7 @@ if (!['full', 'reduced', 'off'].includes(motionMode)) motionMode = 'full';
 function recomputeAutoPrefs({ paint = true } = {}) {
   let themeChanged = false;
   let unitsChanged = false;
-  const nextTheme = resolveThemeFromAppearanceStyle(prefAppearance, prefStyle);
+  const nextTheme = resolveTheme();
   if (nextTheme !== currentTheme) {
     currentTheme = nextTheme;
     themeChanged = true;
@@ -596,15 +583,13 @@ function recomputeAutoPrefs({ paint = true } = {}) {
     unitsChanged = true;
   }
   if (!paint) return { themeChanged, unitsChanged };
-  if (themeChanged || prefAppearance === 'system') {
+  if (themeChanged) {
     document.documentElement.setAttribute('data-theme', currentTheme);
     applyThemeChrome(currentTheme);
-    if (typeof updateAppearanceStyleUI === 'function') updateAppearanceStyleUI();
     dispatchPrefs('theme', { theme: currentTheme });
   }
   if (unitsChanged || (prefTempUnit === 'auto' || prefDistUnit === 'auto')) {
     syncUnitGlobals();
-    updateUnitUI();
     if (typeof applyUnits === 'function') applyUnits();
   }
   return { themeChanged, unitsChanged };
@@ -662,73 +647,32 @@ function scrollBehaviorPref() {
   return 'smooth';
 }
 
-/* ── APPEARANCE × STYLE ── */
-const appearancePills = document.querySelectorAll('#appearancePillGroup .pill-btn');
-const stylePills = document.querySelectorAll('#stylePillGroup .pill-btn');
-
-function updateAppearanceStyleUI() {
-  appearancePills.forEach(function (p) {
-    p.classList.toggle('active', p.dataset.appearanceVal === prefAppearance);
-  });
-  stylePills.forEach(function (p) {
-    p.classList.toggle('active', p.dataset.styleVal === prefStyle);
-  });
-}
-function updateThemeUI() {
-  updateAppearanceStyleUI();
-}
-
+/* ── THEME APPLICATION ──
+   `data-theme` is the single switch the CSS keys off. It is set here for any later
+   change, and by src/js/boot.js before first paint; the two must agree. */
 const THEME_META_COLORS = {
-  default: '#07101c',
   minimal: '#f5f5f7',
-  elegant: '#f6f1e8',
   glass: '#000000'
 };
 function applyThemeChrome(theme) {
   const light = LIGHT_THEMES.includes(theme);
   document.documentElement.style.colorScheme = light ? 'light' : 'dark';
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', THEME_META_COLORS[theme] || THEME_META_COLORS.default);
+  if (meta) meta.setAttribute('content', THEME_META_COLORS[theme] || THEME_META_COLORS[DARK_THEME]);
 }
 
-function applyAppearanceStyle({ persist = false } = {}) {
-  currentTheme = resolveThemeFromAppearanceStyle(prefAppearance, prefStyle);
-  prefTheme = prefAppearance === 'system' ? 'auto' : currentTheme;
-  if (persist) {
-    safeStorage.set('duskline-appearance', prefAppearance);
-    safeStorage.set('duskline-style', prefStyle);
-  }
+function applyTheme() {
+  currentTheme = resolveTheme();
   document.documentElement.setAttribute('data-theme', currentTheme);
   applyThemeChrome(currentTheme);
-  updateAppearanceStyleUI();
   dispatchPrefs('theme', { theme: currentTheme });
 }
 
-appearancePills.forEach(function (p) {
-  p.addEventListener('click', function () {
-    const v = p.dataset.appearanceVal;
-    if (v !== 'system' && v !== 'light' && v !== 'dark') return;
-    prefAppearance = v;
-    applyAppearanceStyle({ persist: true });
-  });
-});
-stylePills.forEach(function (p) {
-  p.addEventListener('click', function () {
-    const v = p.dataset.styleVal;
-    if (v !== 'classic' && v !== 'modern') return;
-    prefStyle = v;
-    applyAppearanceStyle({ persist: true });
-    dispatchPrefs('style', { style: prefStyle });
-  });
-});
-applyAppearanceStyle({ persist: false });
+applyTheme();
 
 const prefersColorSchemeDarkMQ = safeMatchMedia('(prefers-color-scheme: dark)');
 function onColorSchemeChange() {
-  // Only System appearance tracks OS light/dark
-  if (prefAppearance === 'system') {
-    applyAppearanceStyle({ persist: false });
-  }
+  applyTheme();
 }
 if (typeof prefersColorSchemeDarkMQ.addEventListener === 'function') {
   prefersColorSchemeDarkMQ.addEventListener('change', onColorSchemeChange);
@@ -739,80 +683,14 @@ document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible') recomputeAutoPrefs({ paint: true });
 });
 
-/* ── LANGUAGE PILLS ── */
-const langPills = document.querySelectorAll('#langPillGroup .pill-btn');
-function updateLangUI(lang) {
-  langPills.forEach(p => p.classList.toggle('active', p.dataset.langVal === lang));
-}
-langPills.forEach(p => {
-  p.addEventListener('click', () => {
-    currentLang = p.dataset.langVal;
-    safeStorage.set('duskline-lang', currentLang);
-    updateLangUI(currentLang);
-    // Auto units: system locale still wins; language is only fallback
-    recomputeAutoPrefs({ paint: true });
-    applyLanguage(currentLang);
-  });
-});
-updateLangUI(currentLang);
-
-/* ── UNIT PILLS (auto | f/c | mi/km) ── */
-const tempPills = document.querySelectorAll('#unitTempGroup .pill-btn');
-const distPills = document.querySelectorAll('#unitDistGroup .pill-btn');
-
-function unitsResolvedHintText(resolved) {
-  const r = resolved || resolveUnitsFromPrefs();
-  const tempLab = r.temp === 'f' ? '°F' : '°C';
-  const distLab = r.dist === 'mi'
-    ? (currentLang === 'zh' ? '英里' : currentLang === 'ja' ? 'マイル' : currentLang === 'es' ? 'millas' : 'mi')
-    : (currentLang === 'zh' ? '公里' : currentLang === 'ja' ? 'km' : currentLang === 'es' ? 'km' : 'km');
-  if (currentLang === 'zh') return '当前：' + tempLab + ' · ' + distLab;
-  if (currentLang === 'ja') return '現在：' + tempLab + ' · ' + distLab;
-  if (currentLang === 'es') return 'Ahora: ' + tempLab + ' · ' + distLab;
-  return 'Using ' + tempLab + ' · ' + distLab;
-}
-
-function ensureUnitsResolvedHintEl() {
-  let el = document.getElementById('unitsResolvedHint');
-  if (el) return el;
-  const tempGroup = document.getElementById('unitTempGroup');
-  const host = tempGroup && tempGroup.closest
-    ? (tempGroup.closest('.settings-group') || tempGroup.parentElement)
-    : null;
-  if (!host) return null;
-  el = document.createElement('p');
-  el.id = 'unitsResolvedHint';
-  el.className = 'settings-units-resolved';
-  el.setAttribute('aria-live', 'polite');
-  // Place after the distance subgroup (end of units group content)
-  host.appendChild(el);
-  return el;
-}
-
-function updateUnitsResolvedHint() {
-  const el = ensureUnitsResolvedHintEl();
-  if (!el) return;
-  const r = syncUnitGlobals();
-  el.textContent = unitsResolvedHintText(r);
-  el.hidden = false;
-  el.setAttribute('data-temp', r.temp);
-  el.setAttribute('data-dist', r.dist);
-  el.setAttribute('data-source', r.source || '');
-}
-
-function updateUnitUI() {
-  tempPills.forEach(function (p) {
-    p.classList.toggle('active', p.dataset.unitVal === prefTempUnit);
-  });
-  distPills.forEach(function (p) {
-    p.classList.toggle('active', p.dataset.unitVal === prefDistUnit);
-  });
-  updateUnitsResolvedHint();
-}
+/* ── LANGUAGE + UNIT PREFERENCES ──
+   The language <select> lives in duskline-controls.js; unit choices live in the
+   Weather units sheet. There is no Settings overlay in this app, so the pill-group
+   wiring that used to live here is gone. The preference variables and the setters
+   below remain the single source of truth for both surfaces. */
 
 function paintUnitsEverywhere() {
   const resolved = syncUnitGlobals();
-  updateUnitUI();
   applyUnits();
   return resolved;
 }
@@ -845,18 +723,7 @@ window.setDistUnitPreference = function setDistUnitPreference(next) {
   return applyResolvedUnits(resolveUnitsFromPrefs());
 };
 
-tempPills.forEach(function (p) {
-  p.addEventListener('click', function () {
-    window.setTempUnitPreference(p.dataset.unitVal);
-  });
-});
-distPills.forEach(function (p) {
-  p.addEventListener('click', function () {
-    window.setDistUnitPreference(p.dataset.unitVal);
-  });
-});
-updateUnitUI();
-updateUnitsResolvedHint();
+
 
 function formatTempFromC(celsius, opts) {
   opts = opts || {};
@@ -901,22 +768,16 @@ window.Duskline = Object.assign(window.Duskline || {}, {
   debugUnits: window.__dusklineUnits
 });
 
-/* ── ACCESSIBILITY PILLS (Animations: full / reduced / off) ── */
-const motionPills = document.querySelectorAll('#motionPillGroup .pill-btn');
-function updateMotionUI() {
-  motionPills.forEach(p => p.classList.toggle('active', p.dataset.motionVal === motionMode));
-}
+/* ── ANIMATION LEVEL ──
+   No picker ships in this app, so motion stays at whatever the OS preference and the
+   saved `duskline-motion` value imply. setMotionMode('full' | 'reduced' | 'off') remains
+   available as a global for programmatic control. */
 function setMotionMode(next, { persist = true } = {}) {
   if (!['full', 'reduced', 'off'].includes(next)) next = 'full';
   motionMode = next;
   if (persist) safeStorage.set('duskline-motion', motionMode);
   applyMotionModeToDom();
-  updateMotionUI();
 }
-motionPills.forEach(p => p.addEventListener('click', () => {
-  setMotionMode(p.dataset.motionVal || 'full', { persist: true });
-}));
-updateMotionUI();
 function onOsMotionPreferenceChange() {
   applyMotionModeToDom();
 }
@@ -939,41 +800,17 @@ window.addEventListener('scroll', () => {
   raf(updateScrollUi);
 }, { passive: true });
 
-/* ── NAVBAR + ACTIVE LINK ── */
+/* ── NAVBAR SCROLL STATE ──
+   Only the sticky header's `scrolled` class is left to maintain. The section spy that
+   highlighted nav links came from the multi-tool site this app was extracted from: it
+   queried `section[id]` and `.nav-links a[data-section]`, and this app has neither on any
+   of its three pages (measured 0 on index, privacy and terms), so every call was a no-op.
+   `page-tools` on <body> of index.html is kept — that one is a live CSS hook. */
 const navbar = document.getElementById('navbar');
-const sections = document.querySelectorAll('section[id]:not(#settings):not(#tools)');
-const navLinks = document.querySelectorAll('.nav-links a[data-section]');
-const isGalleryPage = document.body.classList.contains('page-gallery');
-const isToolsPage = document.body.classList.contains('page-tools');
-const isMiniAppPage = isGalleryPage || isToolsPage;
 
-// Cache section tops — avoid layout thrash from offsetTop on every scroll tick.
-let sectionTopsCache = [];
-let sectionTopsDirty = true;
-function invalidateSectionTops() { sectionTopsDirty = true; }
-function refreshSectionTops() {
-  if (!sectionTopsDirty) return;
-  sectionTopsCache = [];
-  sections.forEach((s) => {
-    sectionTopsCache.push({ id: s.id, top: s.offsetTop });
-  });
-  sectionTopsDirty = false;
-}
-try {
-  window.addEventListener('resize', invalidateSectionTops, { passive: true });
-  window.addEventListener('orientationchange', invalidateSectionTops, { passive: true });
-  if (typeof ResizeObserver === 'function') {
-    const ro = new ResizeObserver(() => { invalidateSectionTops(); });
-    sections.forEach((s) => { try { ro.observe(s); } catch (e) { /* ignore */ } });
-  }
-} catch (e) { /* ignore */ }
-
-/* Nav scrolled + section spy: only write DOM when state changes.
-   Scroll thresholds use a small hysteresis band to avoid flicker. */
 let navIsScrolled = false;
 const NAV_SCROLL_ON = 72;
 const NAV_SCROLL_OFF = 40;
-let lastActiveSection = null;
 
 function setNavScrolled(on) {
   if (!navbar || on === navIsScrolled) return;
@@ -981,70 +818,14 @@ function setNavScrolled(on) {
   navbar.classList.toggle('scrolled', on);
 }
 
-function setActiveNavSection(current) {
-  if (current === lastActiveSection) return;
-  lastActiveSection = current;
-  navLinks.forEach((a) => {
-    a.classList.toggle('active-link', a.dataset.section === current);
-  });
-}
-
 function onPageScroll(y) {
-  if (navbar) {
-    if (!navIsScrolled && y > NAV_SCROLL_ON) setNavScrolled(true);
-    else if (navIsScrolled && y < NAV_SCROLL_OFF) setNavScrolled(false);
-  }
-
-  // Mini-apps use their own chrome (no section spy on guide nav links).
-  if (isMiniAppPage) {
-    if (isGalleryPage) setActiveNavSection('gallery');
-    return;
-  }
-
-  refreshSectionTops();
-  let current = '';
-  const threshold = y + 200;
-  for (let i = 0; i < sectionTopsCache.length; i++) {
-    if (threshold >= sectionTopsCache[i].top) current = sectionTopsCache[i].id;
-  }
-  // Homepage teaser uses id="gallery" — highlight Gallery while it's in view.
-  setActiveNavSection(current);
+  if (!navbar) return;
+  if (!navIsScrolled && y > NAV_SCROLL_ON) setNavScrolled(true);
+  else if (navIsScrolled && y < NAV_SCROLL_OFF) setNavScrolled(false);
 }
 
-// Initial paint (gallery load, deep-linked homepage section)
-{
-  const y0 = window.scrollY || 0;
-  setNavScrolled(y0 > NAV_SCROLL_ON);
-  if (isGalleryPage) setActiveNavSection('gallery');
-  else if (!isMiniAppPage) {
-    try { onPageScroll(y0); } catch (e) { /* ignore */ }
-  }
-}
-
-/* ── SCROLL REVEAL (all pages) ──
-   .reveal starts at opacity:0 until .visible is added. This used to live only
-   in features/home.js, so gallery/tools mini-apps never revealed their headers,
-   search, or filters — leaving a huge empty band above the content. */
-(function initScrollReveal() {
-  const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
-  if (!els.length) return;
-  // Mini-apps are short pages; show chrome immediately (no scroll required).
-  const isMiniApp = document.body.classList.contains('page-gallery')
-    || document.body.classList.contains('page-tools')
-    || document.body.classList.contains('page-legal');
-  if (isMiniApp) {
-    els.forEach((el) => { el.classList.add('visible'); });
-    return;
-  }
-  if (typeof observeWhenVisible === 'function') {
-    observeWhenVisible(els, (el) => { el.classList.add('visible'); }, {
-      threshold: 0.05,
-      rootMargin: '0px 0px -40px 0px'
-    });
-  } else {
-    els.forEach((el) => { el.classList.add('visible'); });
-  }
-})();
+// Initial paint — a reload can already be scrolled past the threshold.
+setNavScrolled((window.scrollY || 0) > NAV_SCROLL_ON);
 
 
 

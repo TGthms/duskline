@@ -454,7 +454,9 @@
       const code = pack && pack.weather && pack.weather.current && Number(pack.weather.current.weather_code);
       const theme = (document.documentElement.getAttribute('data-theme') || 'default');
       const period = hour < 5 ? 'night' : hour < 8 ? 'dawn' : hour < 17 ? 'day' : hour < 20 ? 'dusk' : 'night';
-      // [top, mid, bottom] — soft, satisfying palettes tuned per theme
+      // [top, mid, bottom] — soft, satisfying palettes tuned per theme, one per shipped
+      // theme. `default` is the base dark palette: it is only reached if boot.js never got
+      // to set data-theme, in which case the CSS is rendering the un-overridden :root tokens.
       const palettes = {
         default: {
           night: ['#0a1024', '#121a38', '#060a14'],
@@ -467,12 +469,6 @@
           dawn: ['#a8c0d8', '#f0c8b0', '#d8e4f0'],
           day: ['#7eb8e8', '#c5e0f5', '#e8f2fa'],
           dusk: ['#6b7a9a', '#e8a878', '#2a3040']
-        },
-        elegant: {
-          night: ['#1a1410', '#2a2018', '#0e0a08'],
-          dawn: ['#8a6a58', '#e8c4a0', '#f0e6d8'],
-          day: ['#c8b8a0', '#efe6d8', '#f7f1e8'],
-          dusk: ['#5a3040', '#c47858', '#2a1810']
         },
         glass: {
           night: ['#000000', '#0a1020', '#000000'],
@@ -504,17 +500,17 @@
       } else if (period === 'dawn' || period === 'dusk') {
         fx = 'radial-gradient(ellipse at 50% 80%, rgba(255,180,120,.22), transparent 55%), radial-gradient(ellipse at 20% 10%, rgba(255,220,180,.15), transparent 40%)';
         op = 0.5;
-      } else if (theme === 'minimal' || theme === 'elegant') {
+      } else if (theme === 'minimal') {
         fx = 'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.35), transparent 55%), radial-gradient(ellipse at 80% 40%, rgba(255,255,255,.12), transparent 40%)';
         op = 0.35;
       }
       sky.style.setProperty('--wx-page-fx', fx);
       sky.style.setProperty('--wx-page-fx-o', level === 'off' ? '0' : (level === 'reduced' ? String(op * 0.55) : String(op)));
       // Theme class for CSS light/dark text tuning
-      document.body.classList.toggle('weather-sky-light', theme === 'minimal' || (theme === 'elegant' && period === 'day'));
-      // Pale page wash (minimal/elegant day+dawn) — footer/attribution need dark ink.
+      document.body.classList.toggle('weather-sky-light', theme === 'minimal');
+      // Pale page wash (minimal, day+dawn) — footer/attribution need dark ink.
       document.body.classList.toggle('wx-page-canvas-light',
-        (theme === 'minimal' || theme === 'elegant') && (period === 'day' || period === 'dawn'));
+        theme === 'minimal' && (period === 'day' || period === 'dawn'));
       // Quiet canvas: sun/moon + one cloud. No hue-filter, no blob stack.
       let live = sky.querySelector('.wx-page-live');
       const liveHtml =

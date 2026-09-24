@@ -25,6 +25,9 @@
     var GEOCODE = deps.GEOCODE;
     var AIR = deps.AIR;
     var FORECAST_Q = deps.FORECAST_Q;
+    /* Light query for list rows. Falls back to the full query so a caller that forgets to
+       pass it still gets correct (if larger) responses. */
+    var FORECAST_Q_LIST = deps.FORECAST_Q_LIST || FORECAST_Q;
     var REFRESH_MS = deps.REFRESH_MS || (10 * 60 * 1000);
 
     const FETCH_MS = (deps && deps.FETCH_MS) || 14000;
@@ -394,8 +397,9 @@
       return pack;
     }
 
-    async function loadOpenMeteoCity(c, signal) {
-      const wUrl = FORECAST + '?latitude=' + c.lat + '&longitude=' + c.lon + '&' + FORECAST_Q;
+    async function loadOpenMeteoCity(c, signal, light) {
+      const wUrl = FORECAST + '?latitude=' + c.lat + '&longitude=' + c.lon + '&'
+        + (light ? FORECAST_Q_LIST : FORECAST_Q);
       const aUrl = AIR + '?latitude=' + c.lat + '&longitude=' + c.lon + '&current=us_aqi,pm2_5,pm10,european_aqi&timezone=auto';
 
       async function once() {
@@ -409,7 +413,10 @@
           fetchedAt: Date.now(),
           city: c,
           source: 'open-meteo',
-          needsEnrich: false
+          /* A light pack is missing everything the detail view needs (hourly, sunrise, UV,
+             precipitation sums), so it advertises that it wants enriching. */
+          needsEnrich: !!light,
+          light: !!light
         };
       }
 
@@ -585,9 +592,12 @@
       if (isLikelyUs(c)) {
         // Forecast only here. Alerts load on detail / a later prefetch so list
         // boot does not fire N× /alerts/active alongside NWS grid fetches.
-        const cachedOm = (!opts.forceFetch && hit && hit.weather && !hit.error
+        /* Only a full pack can serve as the enrichment source: merging a light one would
+           leave the detail without hourly or sunrise data. */
+        const cachedOm = (!opts.forceFetch && hit && hit.weather && !hit.error && !hit.light
           && (hit.source === 'open-meteo' || hit.source === 'nws+om')) ? hit : null;
-        const omPromise = (opts.prefetchedOm && opts.prefetchedOm.weather && !opts.prefetchedOm.error)
+        const omPromise = (opts.prefetchedOm && opts.prefetchedOm.weather
+          && !opts.prefetchedOm.error && !opts.prefetchedOm.light)
           ? Promise.resolve(opts.prefetchedOm)
           : (cachedOm ? Promise.resolve(cachedOm) : loadOpenMeteoCity(c, signal));
         const results = await Promise.all([
@@ -628,11 +638,12 @@
       }
     }
 
-    async function loadCityBatchOm(cities, signal) {
+    async function loadCityBatchOm(cities, signal, light) {
       if (!cities.length) return [];
       const lats = cities.map(function (c) { return c.lat; }).join(',');
       const lons = cities.map(function (c) { return c.lon; }).join(',');
-      const wUrl = FORECAST + '?latitude=' + lats + '&longitude=' + lons + '&' + FORECAST_Q;
+      const wUrl = FORECAST + '?latitude=' + lats + '&longitude=' + lons + '&'
+        + (light ? FORECAST_Q_LIST : FORECAST_Q);
       const aUrl = AIR + '?latitude=' + lats + '&longitude=' + lons + '&current=us_aqi,pm2_5,pm10,european_aqi&timezone=auto';
       const pair = await Promise.all([
         fetchJson(wUrl, signal),
@@ -654,41 +665,26 @@
           fetchedAt: now,
           city: c,
           source: 'open-meteo',
-          needsEnrich: false
+          needsEnrich: !!light,
+          light: !!light
         };
       });
     }
 
     async function loadMany(cities, opts) {
       opts = opts || {};
-      const quiet = !!opts.quiet;
       const forceFetch = !!opts.forceFetch;
-      const onProgress = typeof deps.onLoadProgress === 'function' ? deps.onLoadProgress : function () {};
       const onCityLoaded = typeof deps.onCityLoaded === 'function' ? deps.onCityLoaded : function () {};
-      function tMsg(key, fallback) {
-        return typeof deps.t === 'function' ? deps.t(key, fallback) : fallback;
-      }
       abortListLoads();
       listAbortCtl = typeof AbortController === 'function' ? new AbortController() : null;
       const myCtl = listAbortCtl;
       const signal = listAbortCtl ? listAbortCtl.signal : undefined;
       const total = cities.length;
       const out = new Array(total);
-      if (!quiet) onProgress(5, tMsg('weather.loadingForecasts', 'Loading forecasts…'));
 
       const usIdx = [];
       for (let i = 0; i < cities.length; i++) {
         if (isLikelyUs(cities[i])) usIdx.push(i);
-      }
-
-      let done = 0;
-      function bump() {
-        done++;
-        if (signal && signal.aborted) return;
-        if (quiet) return;
-        const pct = 5 + Math.round((done / Math.max(1, total)) * 57);
-        onProgress(Math.min(62, pct), tMsg('weather.loadingForecasts', 'Loading forecasts…')
-          + ' (' + Math.min(done, total) + '/' + total + ')');
       }
 
       async function nwsWorker(queue) {
@@ -708,7 +704,6 @@
           }
           cache.set(cityKey(cities[idx]), out[idx]);
           onCityLoaded(cities[idx], out[idx]);
-          bump();
         }
       }
 
@@ -723,16 +718,16 @@
             const sliceIdx = indices.slice(start, start + CHUNK);
             let packs;
             try {
-              packs = await loadCityBatchOm(slice, signal);
+              packs = await loadCityBatchOm(slice, signal, true);
             } catch (e) {
               if (e && e.name === 'AbortError') throw e;
               if (e && e.name === 'RateLimitError') {
                 await new Promise(function (r) { window.setTimeout(r, 900); });
-                packs = await loadCityBatchOm(slice, signal);
+                packs = await loadCityBatchOm(slice, signal, true);
               } else {
                 packs = [];
                 for (let j = 0; j < slice.length; j++) {
-                  packs.push(await loadOpenMeteoCity(slice[j], signal));
+                  packs.push(await loadOpenMeteoCity(slice[j], signal, true));
                 }
               }
             }
@@ -742,7 +737,6 @@
               out[idx] = packs[j];
               cache.set(cityKey(cities[idx]), packs[j]);
               onCityLoaded(cities[idx], packs[j]);
-              bump();
             }
           }
         } catch (e) {
@@ -753,7 +747,6 @@
             out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
             cache.set(cityKey(cities[idx]), out[idx]);
             onCityLoaded(cities[idx], out[idx]);
-            bump();
           }
         }
       }

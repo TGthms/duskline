@@ -223,7 +223,7 @@ body.duskline .wx-sun-tile-stat span { color: var(--wx-mod-muted, var(--wx-mod-i
 body.duskline .weather-detail-hero .weather-detail-loading,
 body.duskline .weather-detail-loading-panel { color: rgba(255,255,255,.78) !important; }
 body.duskline .weather-region-heading:first-child { margin-top: 4px; }
-body.duskline #weatherLoading[hidden], body.duskline #weatherError[hidden], body.duskline #weatherSuggest[hidden] { display: none !important; }
+body.duskline #weatherError[hidden], body.duskline #weatherSuggest[hidden] { display: none !important; }
 body.duskline .gallery-app-footer { background: var(--duskline-night); }
 /* Keep the established footer geometry. Duskline only supplies readable
    theme-aware ink; the footer remains part of the page flow. */
