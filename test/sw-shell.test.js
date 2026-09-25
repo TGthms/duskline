@@ -14,6 +14,10 @@ test('service worker SHELL paths exist on disk', () => {
   assert.ok(urls.includes('./privacy.html'));
   assert.ok(urls.includes('./terms.html'));
   assert.ok(urls.includes('./src/js/data/legal/packs/en.json'));
+  assert.ok(urls.includes('./src/js/data/weather-aqi-i18n.js'));
+  assert.ok(urls.includes('./src/js/data/weather-copy-i18n.js'));
+  assert.ok(urls.includes('./src/js/data/weather-greeting-pools-i18n.js'));
+  assert.ok(urls.includes('./src/js/data/weather-greeting-settings-i18n.js'));
   for (const url of urls) {
     const rel = url.replace(/^\.\//, '');
     if (rel === '' || rel === './') {

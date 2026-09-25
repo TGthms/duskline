@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v23';
+const CACHE = 'duskline-shell-v25';
 const SHELL = [
   './',
   './index.html',
@@ -29,6 +29,10 @@ const SHELL = [
   './src/js/data/i18n.js',
   './src/js/data/duskline-locales.js',
   './src/js/data/weather-about-i18n.js',
+  './src/js/data/weather-aqi-i18n.js',
+  './src/js/data/weather-copy-i18n.js',
+  './src/js/data/weather-greeting-pools-i18n.js',
+  './src/js/data/weather-greeting-settings-i18n.js',
   './src/js/data/legal-i18n.js',
   './src/js/legal.js',
   './src/js/data/dest-weather-cities.js',

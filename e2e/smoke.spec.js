@@ -1,7 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.clear());
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('__duskline_test_storage_cleared')) {
+      localStorage.clear();
+      sessionStorage.setItem('__duskline_test_storage_cleared', '1');
+    }
+  });
   await page.route(/api\.weather\.gov|api\.open-meteo\.com|air-quality-api\.open-meteo\.com|geocoding-api\.open-meteo\.com/, async route => {
     const url = route.request().url();
     if (url.includes('geocoding')) return route.fulfill({ json: { results: [{ name: 'Boston', latitude: 42.36, longitude: -71.06, admin1: 'Massachusetts', country: 'United States', country_code: 'US', timezone: 'America/New_York' }] } });
@@ -20,6 +25,9 @@ test.beforeEach(async ({ page }) => {
     });
     return route.fulfill({ json: { latitude: 42.36, longitude: -71.06, timezone: 'America/New_York', current: { time: times[0], temperature_2m: 22, apparent_temperature: 21, relative_humidity_2m: 55, weather_code: 2, wind_speed_10m: 3.5, wind_direction_10m: 220, surface_pressure: 1012, visibility: 10000, precipitation: 0 }, hourly: { time: times, temperature_2m: times.map(() => 22), apparent_temperature: times.map(() => 21), weather_code: times.map(() => 2), precipitation_probability: times.map(() => 10), precipitation: times.map(() => 0), wind_speed_10m: times.map(() => 3), wind_direction_10m: times.map(() => 200), relative_humidity_2m: times.map(() => 50), surface_pressure: times.map(() => 1012), uv_index: times.map(() => 3) }, daily: { time: days, weather_code: days.map(() => 2), temperature_2m_max: days.map(() => 26), temperature_2m_min: days.map(() => 14), sunrise: days.map((d) => d + 'T06:16:00'), sunset: days.map((d) => d + 'T19:24:00'), uv_index_max: days.map(() => 6), precipitation_sum: days.map(() => 0), precipitation_probability_max: days.map(() => 20) } } });
   });
+  await page.route(/api\.bigdatacloud\.net/, route => route.fulfill({
+    json: { locality: 'Portland', principalSubdivision: 'Oregon', countryName: 'United States', countryCode: 'US' }
+  }));
 });
 
 test('home page exposes Search Console verification and SEO head', async ({ page }) => {
@@ -59,6 +67,215 @@ test('loads the branded weather shell and all locales', async ({ page }) => {
   await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
   await page.locator('#dusklineLanguage').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+});
+
+test('a chosen My Sky city becomes the personal place and survives reload', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  await expect(page.locator('#weatherMySkyEmpty')).toBeVisible();
+  await page.locator('#weatherMySkySearch').click();
+  await expect(page.locator('#weatherModeSwitch [data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#weatherSearch').fill('Boston');
+  const cityOption = page.getByRole('option', { name: 'Boston Massachusetts, United States' });
+  await expect(cityOption).toBeVisible({ timeout: 10000 });
+  await cityOption.click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherDetailBack').click();
+
+  await expect(page.locator('#weatherMyLocationBlock')).toBeVisible();
+  await expect(page.locator('#weatherMyLocationList')).toContainText('Boston');
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Boston/);
+
+  await page.reload();
+  await expect(page.locator('#weatherModeSwitch [data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherMyLocationList')).toContainText('Boston', { timeout: 15000 });
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Boston/);
+});
+
+test('a successful location fix opens My Sky and shows the user’s place', async ({ page }) => {
+  await page.context().grantPermissions(['geolocation']);
+  await page.context().setGeolocation({ latitude: 45.5152, longitude: -122.6784 });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+
+  await page.locator('#weatherLocate').click();
+  await expect(page.locator('#weatherModeSwitch [data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherMyLocationList')).toContainText('Portland', { timeout: 20000 });
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Portland/, { timeout: 15000 });
+});
+
+test('Traditional Chinese keeps a known city name out of Simplified script', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#dusklineLanguage').selectOption('zh-TW');
+  await page.evaluate(() => {
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-weather-greeting-city', JSON.stringify({
+      name: '旧金山', admin1: 'California', lat: 37.7749, lon: -122.4194,
+      tz: 'America/Los_Angeles', country: 'United States', country_code: 'US',
+      names: { en: '旧金山', 'zh-TW': '旧金山' }
+    }));
+  });
+  await page.reload();
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /San Francisco/, { timeout: 15000 });
+  await expect(page.locator('#weatherMyLocationList')).toContainText('局部多雲', { timeout: 15000 });
+});
+
+test('My Sky does not surface a daytime UV warning at night', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeDate = Date;
+    const now = new NativeDate();
+    const values = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York', year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23'
+    }).formatToParts(now).filter(part => part.type !== 'literal').map(part => [part.type, Number(part.value)]));
+    const asUtc = Date.UTC(values.year, values.month - 1, values.day, values.hour, values.minute, values.second);
+    const zoneOffset = asUtc - now.getTime();
+    const frozenTime = Date.UTC(values.year, values.month - 1, values.day, 2, 0, 0) - zoneOffset;
+    class FrozenDate extends NativeDate {
+      constructor(...args) { super(...(args.length ? args : [frozenTime])); }
+      static now() { return frozenTime; }
+    }
+    window.Date = FrozenDate;
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-weather-myloc', JSON.stringify({
+      name: 'Boston', admin1: 'Massachusetts', lat: 42.36, lon: -71.06,
+      tz: 'America/New_York', country: 'United States', country_code: 'US',
+      isMyLocation: true, locatedAt: frozenTime
+    }));
+  });
+  await page.goto('/');
+  await expect(page.locator('#weatherMyLocationList')).toContainText('Boston', { timeout: 15000 });
+  const locationRow = page.locator('#weatherMyLocationList .weather-row').first();
+  await expect(locationRow.locator('.weather-row-temp')).not.toHaveClass(/weather-row-temp--loading/, { timeout: 20000 });
+  await expect(locationRow.locator('.weather-row-temp')).not.toHaveText('—');
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Good night.*°.*Boston/, { timeout: 20000 });
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Tomorrow:/);
+  await expect(page.locator('#weatherGreeting')).not.toHaveAttribute('aria-label', /\bUV\b|sun protection/i);
+});
+
+test('Change My Sky city follows My Location by default, can use a saved city, and persists', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-weather-myloc', JSON.stringify({
+      name: 'Portland', admin1: 'Oregon', lat: 45.52, lon: -122.68,
+      country: 'United States', country_code: 'US', isMyLocation: true, locatedAt: Date.now()
+    }));
+    // A chosen fallback may be the same point as the device fix; it must keep
+    // the distinct My Location label in the picker rather than being promoted.
+    localStorage.setItem('duskline-weather-greeting-city', JSON.stringify({
+      name: 'Portland', admin1: 'Oregon', lat: 45.52, lon: -122.68,
+      country: 'United States', country_code: 'US'
+    }));
+    localStorage.setItem('duskline-weather-favorites', JSON.stringify([{
+      name: 'Boston', admin1: 'Massachusetts', lat: 42.36, lon: -71.06,
+      country: 'United States', country_code: 'US'
+    }]));
+  });
+  await page.reload();
+  await expect(page.locator('#weatherGreetingPlace')).toBeVisible();
+  await expect(page.locator('#weatherGreetingPlace')).toHaveText('Change My Sky city');
+  await expect(page.locator('#weatherModeSwitch [data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Portland/, { timeout: 15000 });
+
+  await page.locator('#weatherGreetingPlace').click();
+  const locationRadio = page.getByRole('radio', { name: /Portland, My location/i });
+  const bostonRadio = page.getByRole('radio', { name: /Boston, Massachusetts, United States/i });
+  await expect(locationRadio).toHaveAttribute('aria-checked', 'true');
+  await expect(bostonRadio).toHaveAttribute('aria-checked', 'false');
+  await bostonRadio.click();
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Boston/, { timeout: 10000 });
+
+  await page.locator('[data-weather-mode="horizon"]').click();
+  await expect(page.locator('#weatherGreetingPlace')).toBeHidden();
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  await expect(page.locator('#weatherGreetingPlace')).toBeVisible();
+  await page.reload();
+  await page.locator('#weatherGreetingPlace').click();
+  await expect(page.getByRole('radio', { name: /Boston, Massachusetts, United States/i })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('greetings reroll on refresh, re-entry, and mode changes', async ({ page }) => {
+  await page.addInitScript(() => {
+    let next = Number(sessionStorage.getItem('__duskline_greeting_seed') || '100');
+    Object.defineProperty(window.crypto, 'getRandomValues', {
+      configurable: true,
+      value: array => {
+        array[0] = next;
+        sessionStorage.setItem('__duskline_greeting_seed', String(++next));
+        return array;
+      }
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const heading = page.locator('#weatherGreeting');
+  const visibleCopy = page.locator('#weatherGreetingText');
+  await expect(heading).toHaveAttribute('aria-label', /Good (morning|afternoon|evening|night)/);
+  let fullCopy = await heading.getAttribute('aria-label');
+  await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
+  const firstCopy = fullCopy;
+
+  await page.locator('#weatherRefresh').click();
+  await expect(heading).not.toHaveAttribute('aria-label', firstCopy);
+  fullCopy = await heading.getAttribute('aria-label');
+  await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
+  const refreshedCopy = fullCopy;
+
+  await page.reload();
+  await expect(heading).toHaveAttribute('aria-label', /Good (morning|afternoon|evening|night)/);
+  fullCopy = await heading.getAttribute('aria-label');
+  expect(fullCopy).not.toBe(refreshedCopy);
+  await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  const reenteredCopy = fullCopy;
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  await expect(heading).not.toHaveAttribute('aria-label', reenteredCopy);
+  const mySkyCopy = await heading.getAttribute('aria-label');
+  await expect(visibleCopy).toHaveText(mySkyCopy, { timeout: 5000 });
+
+  await page.locator('[data-weather-mode="horizon"]').click();
+  await expect(heading).not.toHaveAttribute('aria-label', mySkyCopy);
+  fullCopy = await heading.getAttribute('aria-label');
+  await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
+});
+
+test('multiline greeting keeps its measured line layout while typing', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-motion', 'full');
+  });
+  await page.goto('/');
+  const heading = page.locator('#weatherGreeting');
+  const visibleCopy = page.locator('#weatherGreetingText');
+  await expect(heading).toHaveAttribute('aria-label', /choose a city/i);
+  await expect(visibleCopy).toHaveText(await heading.getAttribute('aria-label'), { timeout: 5000 });
+  // Wait until the first line has completed so the mode change exercises a
+  // fresh animation rather than the intentional stale-animation fast finish.
+  await expect(heading).not.toHaveAttribute('data-typing', 'true');
+  await page.locator('[data-weather-mode="horizon"]').click();
+  await expect(heading).toHaveAttribute('data-typing', 'true');
+  const layout = await page.evaluate(async () => {
+    const text = document.querySelector('#weatherGreetingText');
+    const top = () => Array.from(text.children).map(line => Math.round(line.getBoundingClientRect().top * 2) / 2);
+    const initial = top();
+    const samples = [];
+    const start = performance.now();
+    while (performance.now() - start < 420) {
+      samples.push(top().join(','));
+      await new Promise(requestAnimationFrame);
+    }
+    return { initial, samples };
+  });
+  expect(layout.initial.length).toBeGreaterThan(1);
+  expect(new Set(layout.samples).size).toBe(1);
+  await expect(visibleCopy).toHaveText(await heading.getAttribute('aria-label'), { timeout: 5000 });
 });
 
 test('long list location names stay on one line and keep high/low visible', async ({ page }) => {
@@ -123,6 +340,37 @@ test('renders mocked weather and opens detail', async ({ page }) => {
   await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/);
 });
 
+test('U.S. AQI detail follows all six official bands and boundaries', async ({ page }) => {
+  let aqiValue = 0;
+  await page.route(/air-quality-api\.open-meteo\.com/, route => route.fulfill({
+    json: { current: { us_aqi: aqiValue, pm2_5: 8.2, pm10: 12.1, european_aqi: 34 } }
+  }));
+  const cases = [
+    [0, 'Good', '0–50'], [50, 'Good', '0–50'],
+    [51, 'Moderate', '51–100'], [100, 'Moderate', '51–100'],
+    [101, 'Unhealthy for Sensitive Groups', '101–150'], [150, 'Unhealthy for Sensitive Groups', '101–150'],
+    [151, 'Unhealthy', '151–200'], [200, 'Unhealthy', '151–200'],
+    [201, 'Very unhealthy', '201–300'], [300, 'Very unhealthy', '201–300'],
+    [301, 'Hazardous', '301+']
+  ];
+
+  for (const [value, label, range] of cases) {
+    aqiValue = value;
+    if (value === 0) await page.goto('/');
+    else await page.reload();
+    await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+    await page.locator('#weatherList .weather-row').first().click();
+    await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+    await page.locator('#weatherModules [data-sheet="aqi"]').click();
+    const sheet = page.locator('#weatherSheetBody');
+    await expect(sheet).toContainText(label);
+    await expect(sheet).toContainText(range);
+    if (value === 151) {
+      await expect(sheet).toContainText('Some members of the general public may experience health effects; members of sensitive groups may experience more serious health effects.');
+    }
+  }
+});
+
 test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
   await page.goto('/');
   await page.locator('#dusklineLanguage').selectOption('pt-BR');
@@ -130,6 +378,113 @@ test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
   await page.locator('#dusklineLanguage').selectOption('zh-TW');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+});
+
+test('all languages render the full weather flow, detail sheets, charts, units, and RTL layout', async ({ page }) => {
+  test.setTimeout(300000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.evaluate(() => {
+    const city = {
+      name: 'Boston', admin1: 'Massachusetts', lat: 42.36, lon: -71.059,
+      tz: 'America/New_York', country: 'United States', country_code: 'US'
+    };
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-weather-greeting-city', JSON.stringify(city));
+  });
+  await page.reload();
+  await expect(page.locator('#weatherMyLocationList .weather-row').first()).toBeVisible({ timeout: 15000 });
+
+  const locales = ['en','es','fr','de','it','pt-BR','pt-PT','nl','da','sv','nb','fi','pl','cs','hu','ro','el','tr','ru','uk','ar','he','hi','th','vi','id','ja','ko','zh','zh-TW'];
+  const sheets = ['aqi','feels','humidity','wind','uv','vis','pressure','precip','sun','conditions'];
+  let detailedAqiRequests = 0;
+  page.on('request', request => {
+    const url = request.url();
+    if (url.includes('air-quality-api.open-meteo.com') && url.includes('us_aqi_pm2_5')) detailedAqiRequests++;
+  });
+
+  for (const locale of locales) {
+    await page.locator('#dusklineLanguage').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('data-lang', locale);
+    await page.locator('[data-weather-mode="horizon"]').click();
+    await expect(page.locator('#weatherModeSwitch [data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('[data-weather-mode="my-sky"]').click();
+    await expect(page.locator('#weatherModeSwitch [data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#weatherGreetingPlace')).toBeVisible();
+
+    const view = await page.evaluate(() => ({
+      direction: document.documentElement.dir,
+      overflow: document.documentElement.scrollWidth > innerWidth,
+      toolbarOverflow: document.querySelector('.weather-toolbar').scrollWidth > document.querySelector('.weather-toolbar').clientWidth,
+      greeting: document.querySelector('#weatherGreeting').getAttribute('aria-label') || '',
+      weatherCondition: document.querySelector('#weatherMyLocationList .weather-row-cond')?.innerText.trim() || '',
+      text: [
+        document.querySelector('#weatherSearch').getAttribute('placeholder'),
+        document.querySelector('#weatherModeSwitch').getAttribute('aria-label'),
+        document.querySelector('#weatherLocate').getAttribute('aria-label'),
+        document.querySelector('#weatherRefresh').getAttribute('aria-label'),
+        document.querySelector('#weatherGreetingPlace').textContent.trim()
+      ].join(' '),
+      rawKeys: Array.from(document.querySelectorAll('body *')).filter(el => el.children.length === 0)
+        .map(el => el.textContent.trim()).filter(text => /^(weather|settings|region|legal)\./.test(text))
+    }));
+    expect(view.overflow, locale + ' page overflow').toBe(false);
+    expect(view.toolbarOverflow, locale + ' toolbar overflow').toBe(false);
+    expect(view.direction, locale + ' direction').toBe(locale === 'ar' || locale === 'he' ? 'rtl' : 'ltr');
+    expect(view.greeting, locale + ' greeting').not.toMatch(/^weather\./);
+    expect(view.weatherCondition, locale + ' weather condition label').not.toBe('');
+    expect(view.rawKeys, locale + ' raw translation keys').toEqual([]);
+    if (locale !== 'en') expect(view.weatherCondition, locale + ' weather condition should be localized').not.toBe('Partly cloudy');
+    if (locale === 'zh-TW') expect(view.greeting, 'Traditional Chinese should keep reviewed city names in the right script').toContain('Boston');
+
+    await page.locator('#weatherGreetingPlace').click();
+    await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+    await expect(page.locator('#weatherSheetBody [role="radio"]')).toHaveCount(1);
+    await expect(page.locator('#weatherSheet .wx-sheet-title')).not.toBeEmpty();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+
+    await page.locator('#weatherUnitsBtn').click();
+    await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+    for (const id of ['wxTempUnits','wxDistUnits','wxWindUnits2','wxPrecipUnits2','wxPressUnits2']) {
+      await expect(page.locator('#' + id + ' [role="radio"]')).not.toHaveCount(0);
+    }
+    if (locale === 'en') {
+      await page.locator('#wxTempUnits [data-unit="f"]').click();
+      await expect(page.locator('#wxTempUnits [data-unit="f"]')).toHaveAttribute('aria-checked', 'true');
+      await expect(page.locator('#wxUnitsResolvedHint')).toContainText('°F');
+      await page.locator('#wxTempUnits [data-unit="auto"]').click();
+    }
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+
+    await page.locator('#weatherMyLocationList .weather-row').first().click();
+    await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+    await expect(page.locator('#weatherModules [data-sheet]')).toHaveCount(10);
+    for (const key of sheets) {
+      await page.locator('#weatherModules [data-sheet="' + key + '"]').click();
+      await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+      await expect(page.locator('#weatherSheet .wx-sheet-title')).not.toBeEmpty();
+      const content = await page.locator('#weatherSheetBody').innerText();
+      expect(content.trim().length, locale + ' empty ' + key + ' sheet').toBeGreaterThan(3);
+      expect(content, locale + ' untranslated ' + key + ' sheet').not.toMatch(/weather\.[a-z.]+/i);
+      const chartCount = await page.locator('#weatherSheetBody .weather-chart').count();
+      if (['feels','humidity','wind','uv','pressure','precip','conditions'].includes(key)) {
+        expect(chartCount, locale + ' missing ' + key + ' chart').toBeGreaterThan(0);
+      }
+      if (key === 'sun') await expect(page.locator('#weatherSheetBody .weather-sun-day .wx-sun-line')).toHaveCount(1);
+      const invalidSvgPaths = await page.locator('#weatherSheetBody svg path').evaluateAll(paths =>
+        paths.map(path => path.getAttribute('d') || '').filter(d => /NaN|undefined/.test(d))
+      );
+      expect(invalidSvgPaths, locale + ' invalid ' + key + ' chart geometry').toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+    }
+    await page.locator('#weatherDetailBack').click();
+    await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/);
+  }
+  expect(detailedAqiRequests, 'AQI detail fetch should be cached even where optional fields are unavailable').toBe(1);
 });
 
 test('privacy page uses the home language picker and full translations', async ({ page }) => {
@@ -174,6 +529,51 @@ test('units sheet opens', async ({ page }) => {
   await expect(page.locator('#wxTempUnits')).toBeVisible();
   await page.locator('#weatherSheetClose').click();
   await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
+});
+
+test('weather unit choices persist and carry into their detail sheets', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherUnitsBtn').click();
+
+  const preferences = [
+    ['wxTempUnits', 'f'], ['wxDistUnits', 'mi'], ['wxWindUnits2', 'kn'],
+    ['wxPrecipUnits2', 'cm'], ['wxPressUnits2', 'kPa']
+  ];
+  for (const [id, unit] of preferences) {
+    const choice = page.locator('#' + id + ' [data-unit="' + unit + '"]');
+    await choice.click();
+    await expect(choice).toHaveAttribute('aria-checked', 'true');
+  }
+  const selectedKnots = page.locator('#wxWindUnits2 [data-unit="kn"]');
+  await selectedKnots.focus();
+  await selectedKnots.press('ArrowRight');
+  await expect(page.locator('#wxWindUnits2 [data-unit="mph"]')).toHaveAttribute('aria-checked', 'true');
+  await selectedKnots.click();
+  await expect(selectedKnots).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+
+  await page.reload();
+  await page.locator('#weatherUnitsBtn').click();
+  for (const [id, unit] of preferences) {
+    await expect(page.locator('#' + id + ' [data-unit="' + unit + '"]')).toHaveAttribute('aria-checked', 'true');
+  }
+  await page.keyboard.press('Escape');
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+
+  for (const [kind, id, unit] of [
+    ['feels', 'wxTempUnitsSheet', 'f'], ['wind', 'wxWindUnits', 'kn'],
+    ['precip', 'wxPrecipUnits', 'cm'], ['pressure', 'wxPressUnits', 'kPa'],
+    ['vis', 'wxVisUnits', 'mi']
+  ]) {
+    await page.locator('#weatherModules [data-sheet="' + kind + '"]').click();
+    await expect(page.locator('#' + id + ' [data-u="' + unit + '"]')).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+  }
 });
 
 test('search suggestions are keyboardable', async ({ page }) => {

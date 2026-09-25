@@ -869,12 +869,18 @@
       // If "now" is after local midnight following this rise/set day, still plot that day
       // but clamp the sun marker to the day range for position.
       const elevAt = function (tms) {
-        if (tms >= rise && tms <= set) {
-          const u = (tms - rise) / (set - rise);
-          return Math.sin(u * Math.PI);
+        const twilight = 5 * 3600000;
+        if (tms < rise) {
+          const u = Math.max(0, Math.min(1, (rise - tms) / twilight));
+          return -0.18 * u * u * (3 - 2 * u);
         }
-        if (tms < rise) return -0.18 * Math.min(1, (rise - tms) / (5 * 3600000));
-        return -0.18 * Math.min(1, (tms - set) / (5 * 3600000));
+        if (tms > set) {
+          const u = Math.max(0, Math.min(1, (tms - set) / twilight));
+          return -0.18 * u * u * (3 - 2 * u);
+        }
+        const u = (tms - rise) / (set - rise);
+        // Cosine easing gives the sunrise and sunset joins a horizontal tangent.
+        return 0.5 - 0.5 * Math.cos(u * Math.PI * 2);
       };
       const elevToY = function (elev) {
         // elev -0.2 .. 1.0 maps to plot bottom..top
@@ -882,7 +888,7 @@
       };
       function samplePath(fromDay0, elevFn) {
         const out = [];
-        const steps = 96;
+        const steps = 144;
         for (let i = 0; i <= steps; i++) {
           const tms = fromDay0 + (i / steps) * dayMs;
           const elev = elevFn(tms);
@@ -921,33 +927,32 @@
         pathRise = rise + shift;
         pathSet = set + shift;
         elevForPath = function (tms) {
-          if (tms >= pathRise && tms <= pathSet) {
-            const u = (tms - pathRise) / (pathSet - pathRise);
-            return Math.sin(u * Math.PI);
+          const twilight = 5 * 3600000;
+          if (tms < pathRise) {
+            const u = Math.max(0, Math.min(1, (pathRise - tms) / twilight));
+            return -0.18 * u * u * (3 - 2 * u);
           }
-          if (tms < pathRise) return -0.18 * Math.min(1, (pathRise - tms) / (5 * 3600000));
-          return -0.18 * Math.min(1, (tms - pathSet) / (5 * 3600000));
+          if (tms > pathSet) {
+            const u = Math.max(0, Math.min(1, (tms - pathSet) / twilight));
+            return -0.18 * u * u * (3 - 2 * u);
+          }
+          const u = (tms - pathRise) / (pathSet - pathRise);
+          return 0.5 - 0.5 * Math.cos(u * Math.PI * 2);
         };
         pts = samplePath(pathDay0, elevForPath);
       }
       const curElev = elevForPath(plotNow);
       const curY = elevToY(curElev);
-      let line = '';
-      pts.forEach(function (p, i) {
-        line += (i ? ' L' : 'M') + p.x.toFixed(2) + ',' + p.y.toFixed(2);
-      });
+      const line = smoothLinePath(pts);
       // Day fill between rise–set above horizon
       const riseX = padL + Math.max(0, Math.min(1, (pathRise - pathDay0) / dayMs)) * plotW;
       const setX = padL + Math.max(0, Math.min(1, (pathSet - pathDay0) / dayMs)) * plotW;
-      let area = '';
-      pts.forEach(function (p) {
-        if (p.x < riseX - 0.5 || p.x > setX + 0.5) return;
-        area += (area ? ' L' : 'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1);
-      });
-      if (area) {
-        area += ' L' + setX.toFixed(1) + ',' + horizonY.toFixed(1)
-          + ' L' + riseX.toFixed(1) + ',' + horizonY.toFixed(1) + ' Z';
-      }
+      const dayPts = [{ x: riseX, y: horizonY }]
+        .concat(pts.filter(function (p) { return p.x > riseX && p.x < setX; }))
+        .concat([{ x: setX, y: horizonY }]);
+      const area = smoothLinePath(dayPts)
+        + ' L' + setX.toFixed(1) + ',' + horizonY.toFixed(1)
+        + ' L' + riseX.toFixed(1) + ',' + horizonY.toFixed(1) + ' Z';
       const beforeRise = now < rise;
       const afterSet = now > set;
       const isDay = !beforeRise && !afterSet;
@@ -1101,12 +1106,22 @@
         <div class="weather-chart-sub">${escapeHtml(remainLab)}: ${escapeHtml(remainVal)}</div>
       </div>`;
       html += `<div class="weather-chart-card wx-sun-day-card">
-        <svg class="weather-chart weather-sun-day" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-          <rect class="wx-sun-day-sky" x="0" y="0" width="${W}" height="${g.horizonY.toFixed(1)}"/>
-          <rect class="wx-sun-day-night" x="0" y="${g.horizonY.toFixed(1)}" width="${W}" height="${(H - g.horizonY).toFixed(1)}"/>
-          <line class="wx-sun-horizon" x1="0" y1="${g.horizonY.toFixed(1)}" x2="${W}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>
-          <path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2.4" stroke-linejoin="round"/>
-          <circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="7" stroke-width="2"/>
+        <svg class="weather-chart weather-sun-day" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(t('weather.sunrise', 'Sunrise'))} · ${escapeHtml(t('weather.sunset', 'Sunset'))}">
+          <defs>
+            <linearGradient id="wxSunDayFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f5c96b" stop-opacity="0.24"/>
+              <stop offset="100%" stop-color="#f5c96b" stop-opacity="0.015"/>
+            </linearGradient>
+            <radialGradient id="wxSunNowGlow">
+              <stop offset="0%" stop-color="#ffd978" stop-opacity="0.42"/>
+              <stop offset="100%" stop-color="#ffd978" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <path class="wx-sun-area" d="${g.area}"/>
+          <line class="wx-sun-horizon" x1="${padL}" y1="${g.horizonY.toFixed(1)}" x2="${W - padR}" y2="${g.horizonY.toFixed(1)}" stroke-width="1"/>
+          <path class="wx-sun-line" d="${g.line}" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="wx-sun-halo" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="12"/>
+          <circle class="wx-sun-now" cx="${g.curX.toFixed(1)}" cy="${g.curY.toFixed(1)}" r="4.5" stroke-width="2"/>
           ${hourLabs}
         </svg>
       </div>`;

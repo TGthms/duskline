@@ -430,58 +430,22 @@
       }
     }
 
-    /** Page canvas: browser time by default, or saved-location conditions when available. */
-    function applyAmbientPageSky(pack) {
+    /** Stable page canvas selected by the active light/dark theme. */
+    function applyAmbientPageSky() {
       const sky = document.getElementById('weatherPageSky');
       if (!sky) return;
       const now = new Date();
-      let hour = now.getHours() + now.getMinutes() / 60;
-      const cityTz = pack && pack.weather && pack.weather.timezone || pack && pack.city && pack.city.tz;
-      if (cityTz) {
-        try {
-          const parts = new Intl.DateTimeFormat('en-GB', {
-            timeZone: cityTz, hour: 'numeric', minute: 'numeric', hour12: false, hourCycle: 'h23'
-          }).formatToParts(now);
-          let h = now.getHours();
-          let min = now.getMinutes();
-          for (let i = 0; i < parts.length; i++) {
-            if (parts[i].type === 'hour') h = Number(parts[i].value) % 24;
-            if (parts[i].type === 'minute') min = Number(parts[i].value) || 0;
-          }
-          hour = h + min / 60;
-        } catch (e) {}
-      }
-      const code = pack && pack.weather && pack.weather.current && Number(pack.weather.current.weather_code);
+      const hour = now.getHours() + now.getMinutes() / 60;
       const theme = (document.documentElement.getAttribute('data-theme') || 'default');
       const period = hour < 5 ? 'night' : hour < 8 ? 'dawn' : hour < 17 ? 'day' : hour < 20 ? 'dusk' : 'night';
-      // [top, mid, bottom] — soft, satisfying palettes tuned per theme, one per shipped
-      // theme. `default` is the base dark palette: it is only reached if boot.js never got
-      // to set data-theme, in which case the CSS is rendering the un-overridden :root tokens.
+      // Keep the page canvas stable while a city loads. Weather remains visible on
+      // forecast cards and detail skies, while this canvas follows the app theme.
       const palettes = {
-        default: {
-          night: ['#0a1024', '#121a38', '#060a14'],
-          dawn: ['#2a1848', '#c4785a', '#1a2848'],
-          day: ['#1a5a9e', '#4a9fd4', '#0c2440'],
-          dusk: ['#3a1848', '#c45a48', '#101828']
-        },
-        minimal: {
-          night: ['#1c1c1e', '#2c2c2e', '#0d0d0f'],
-          dawn: ['#a8c0d8', '#f0c8b0', '#d8e4f0'],
-          day: ['#7eb8e8', '#c5e0f5', '#e8f2fa'],
-          dusk: ['#6b7a9a', '#e8a878', '#2a3040']
-        },
-        glass: {
-          night: ['#000000', '#0a1020', '#000000'],
-          dawn: ['#0a1028', '#4a3060', '#000810'],
-          day: ['#061428', '#0a3a68', '#000810'],
-          dusk: ['#100818', '#3a1848', '#000408']
-        },
+        default: ['#14243b', '#234b6d', '#10243a'],
+        minimal: ['#e8f2fb', '#d9e9f7', '#c5ddf0'],
+        glass: ['#080c15', '#111b2d', '#05070c']
       };
-      let set = (palettes[theme] || palettes.default)[period];
-      if (code >= 95) set = ['#24172d', '#352044', '#100a1c'];
-      else if ((code >= 51 && code < 70) || (code >= 80 && code < 85)) set = period === 'night' ? ['#17243a', '#26384e', '#0b1320'] : ['#46718f', '#6d9ab1', '#18344d'];
-      else if ((code >= 71 && code < 80) || (code >= 85 && code < 90)) set = period === 'night' ? ['#202b3c', '#34445a', '#101722'] : ['#7890a7', '#b8c7d4', '#40586d'];
-      else if (code >= 2 && code <= 3) set = period === 'night' ? ['#18243b', '#2a3852', '#0b1220'] : ['#52799b', '#86a9c2', '#294965'];
+      const set = palettes[theme] || palettes.default;
       const level = motionLevel();
       sky.style.setProperty('--wx-page-1', set[0]);
       sky.style.setProperty('--wx-page-2', set[1]);
@@ -489,28 +453,19 @@
       sky.style.setProperty('--wx-page-flat', set[2]);
       sky.setAttribute('data-period', period);
       sky.setAttribute('data-theme-sky', theme);
-      sky.setAttribute('data-condition', Number.isFinite(code) ? String(code) : 'ambient');
 
-      // Soft ambient texture (not weather-condition FX)
-      let fx = 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,255,255,.06), transparent 45%)';
-      let op = 0.45;
-      if (period === 'night') {
-        fx = 'radial-gradient(circle at 72% 18%, rgba(255,255,255,.5) 0 1px, transparent 2px), radial-gradient(circle at 30% 40%, rgba(255,255,255,.28) 0 1px, transparent 2px), radial-gradient(ellipse at 50% 100%, rgba(80,100,180,.18), transparent 50%)';
-        op = 0.4;
-      } else if (period === 'dawn' || period === 'dusk') {
-        fx = 'radial-gradient(ellipse at 50% 80%, rgba(255,180,120,.22), transparent 55%), radial-gradient(ellipse at 20% 10%, rgba(255,220,180,.15), transparent 40%)';
-        op = 0.5;
-      } else if (theme === 'minimal') {
-        fx = 'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.35), transparent 55%), radial-gradient(ellipse at 80% 40%, rgba(255,255,255,.12), transparent 40%)';
-        op = 0.35;
-      }
+      // Keep the page canvas and its texture fixed by theme during every forecast load.
+      const fx = theme === 'minimal'
+        ? 'radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.35), transparent 55%), radial-gradient(ellipse at 80% 40%, rgba(255,255,255,.12), transparent 40%)'
+        : 'radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,255,255,.06), transparent 45%)';
+      const op = theme === 'minimal' ? 0.35 : 0.45;
       sky.style.setProperty('--wx-page-fx', fx);
       sky.style.setProperty('--wx-page-fx-o', level === 'off' ? '0' : (level === 'reduced' ? String(op * 0.55) : String(op)));
       // Theme class for CSS light/dark text tuning
       document.body.classList.toggle('weather-sky-light', theme === 'minimal');
-      // Pale page wash (minimal, day+dawn) — footer/attribution need dark ink.
+      // The light theme keeps dark footer and attribution ink at every local hour.
       document.body.classList.toggle('wx-page-canvas-light',
-        theme === 'minimal' && (period === 'day' || period === 'dawn'));
+        theme === 'minimal');
       // Quiet canvas: sun/moon + one cloud. No hue-filter, no blob stack.
       let live = sky.querySelector('.wx-page-live');
       const liveHtml =
@@ -537,6 +492,11 @@
       }
       sky.classList.toggle('wx-page--night', period === 'night');
       sky.classList.toggle('wx-page--day', period === 'day' || period === 'dawn' || period === 'dusk');
+      if (!sky.classList.contains('is-ready')) {
+        const reveal = function () { sky.classList.add('is-ready'); };
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(reveal);
+        else window.setTimeout(reveal, 0);
+      }
     }
     function applyPageSkyFromPacks() {
       applyAmbientPageSky();

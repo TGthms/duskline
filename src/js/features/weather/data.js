@@ -235,7 +235,9 @@
       }
       if (!curP) curP = hPeriods[0] || periods[0] || null;
       const isNight = !!(curP && curP.isDaytime === false);
-      const code = shortForecastToCode(curP && curP.shortForecast, isNight);
+      // Do not invent a partly-cloudy/clear condition when NWS has no current
+      // period. Open-Meteo enrichment can supply the missing current values.
+      const code = curP ? shortForecastToCode(curP.shortForecast, isNight) : null;
       const tempC = curP ? nwsTempToC(curP.temperature, curP.temperatureUnit) : null;
 
       const current = {
@@ -453,7 +455,7 @@
         }
         const cur = pack.weather.current || {};
         const ocur = om.weather.current || {};
-        ['relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility'].forEach(function (k) {
+        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility'].forEach(function (k) {
           if (cur[k] == null && ocur[k] != null) cur[k] = ocur[k];
         });
         if (ocur.precipitation != null) cur.precipitation = ocur.precipitation;
