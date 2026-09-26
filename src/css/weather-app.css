@@ -2404,6 +2404,15 @@ html[data-motion-effective="off"] .weather-detail-sky .wx-layer-base {
   -webkit-backdrop-filter: blur(36px) saturate(165%) !important;
   box-shadow: 0 10px 28px rgba(18, 42, 72, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
+/* Keep the glass finish on phones while limiting the blur cost on small GPUs. */
+html[data-mobile-lite="true"] .weather-detail .weather-mod {
+  backdrop-filter: blur(20px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(145%) !important;
+}
+html[data-mobile-lite="true"] .weather-detail.wx-mods-light .weather-mod {
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+}
 html[data-motion-effective="off"] .weather-mod {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;

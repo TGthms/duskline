@@ -211,6 +211,7 @@
   const detailFavBtn = $('weatherDetailFav');
   const detailShareBtn = $('weatherDetailShare');
   const detailSky = $('weatherDetailSky');
+  const detailFx = $('weatherDetailFx');
   const sheetEl = $('weatherSheet');
   const sheetBody = $('weatherSheetBody');
   const sheetClose = $('weatherSheetClose');
@@ -1516,10 +1517,10 @@
     notify(msg, 'error');
   }
 
-  function buildRowButton(pack) {
+  function buildRowButton(pack, favoriteKeys) {
     const c = pack.city || {};
     const li = document.createElement('li');
-    const fav = isFavorite(c);
+    const fav = favoriteKeys ? favoriteKeys.has(cityKey(c)) : isFavorite(c);
 
     if (pack.pending && !pack.weather) {
       const row = document.createElement('div');
@@ -1716,7 +1717,7 @@
         ul.appendChild(heading);
         region = nextRegion;
       }
-      const item = buildRowButton(pack);
+      const item = buildRowButton(pack, opts.favoriteKeys);
       item.dataset.cityKey = cityKey(pack.city || {});
       ul.appendChild(item);
     });
@@ -1724,14 +1725,15 @@
 
   function replaceCityCard(city, pack) {
     const key = cityKey(city || (pack && pack.city) || {});
+    const favoriteKeys = new Set(loadFavorites().map(cityKey));
     const lists = [myLocListEl, favListEl, listEl];
     for (const list of lists) {
-      if (!list) continue;
+      if (!list || list.closest('[hidden]')) continue;
       const current = list.querySelector('li[data-city-key="' + CSS.escape(key) + '"]');
       if (!current) continue;
       const focused = current.contains(document.activeElement) ? document.activeElement : null;
       const focusSave = focused && focused.classList.contains('weather-row-save');
-      const next = buildRowButton(pack);
+      const next = buildRowButton(pack, favoriteKeys);
       next.dataset.cityKey = key;
       current.replaceWith(next);
       if (focused) restoreFocus(next.querySelector(focusSave ? '.weather-row-save' : '.weather-row'));
@@ -2458,10 +2460,13 @@
     modeButtons.forEach(function (button) {
       button.setAttribute('aria-pressed', button.getAttribute('data-weather-mode') === weatherMode ? 'true' : 'false');
     });
-    renderCityList(myLocListEl, myPacks);
-    renderCityList(favListEl, favPacks);
-    if (listEl) listEl.hidden = false;
-    renderCityList(listEl, majorPacks, { regions: horizonExpanded });
+    if (showMySky) {
+      renderCityList(myLocListEl, myPacks, { favoriteKeys: favKeys });
+      renderCityList(favListEl, favPacks, { favoriteKeys: favKeys });
+    } else {
+      if (listEl) listEl.hidden = false;
+      renderCityList(listEl, majorPacks, { regions: horizonExpanded, favoriteKeys: favKeys });
+    }
     if (focusKey) {
       const next = [myLocListEl, favListEl, listEl]
         .map(function (list) { return list && list.querySelector('li[data-city-key="' + CSS.escape(focusKey) + '"]'); })
@@ -2533,6 +2538,8 @@
   function onPageActivityChange() {
     if (isPageActive()) {
       finishGreetingTyping();
+      if (openCity && openCity.weather && isDetailShowingOrOpening()
+          && skyApi.resumeStormFx) skyApi.resumeStormFx(detailFx);
       scheduleAutoRefresh();
       // If data is stale after being away, quiet-refresh immediately
       const stale = !lastListFetch || (Date.now() - lastListFetch >= REFRESH_MS);
@@ -2542,6 +2549,7 @@
     } else {
       finishGreetingTyping();
       clearAutoRefresh();
+      if (skyApi.pauseStormFx) skyApi.pauseStormFx(detailFx);
     }
   }
 
@@ -4081,6 +4089,7 @@
     detailEl.style.transform = 'none';
     detailEl.setAttribute('aria-hidden', 'true');
     openCity = null;
+    if (skyApi.pauseStormFx) skyApi.pauseStormFx(detailFx);
     forceCloseSheet();
 
     // Restore city list immediately — no solid-sky void under the fade.

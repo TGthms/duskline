@@ -31,12 +31,12 @@
     function stopStormFx(host) {
       if (!host) return;
       const timers = host._wxBoltTimers;
-      if (timers && timers.length) {
-        for (let i = 0; i < timers.length; i++) {
-          try { clearTimeout(timers[i]); } catch (e) {}
-        }
+      if (timers && typeof timers.forEach === 'function') {
+        timers.forEach(function (timer) {
+          try { clearTimeout(timer); } catch (e) {}
+        });
       }
-      host._wxBoltTimers = [];
+      host._wxBoltTimers = new Set();
       if (host._wxBolt) {
         try { clearTimeout(host._wxBolt); } catch (e) {}
         host._wxBolt = 0;
@@ -123,10 +123,19 @@
     }
 
     function later(host, ms, fn) {
-      const id = window.setTimeout(fn, ms);
-      if (!host._wxBoltTimers) host._wxBoltTimers = [];
-      host._wxBoltTimers.push(id);
+      const timers = host._wxBoltTimers || (host._wxBoltTimers = new Set());
+      let id = 0;
+      id = window.setTimeout(function () {
+        timers.delete(id);
+        fn();
+      }, ms);
+      timers.add(id);
       return id;
+    }
+
+    function resumeStormFx(host) {
+      if (!host) return;
+      armStormFx(host);
     }
 
     function armStormFx(host) {
@@ -657,7 +666,9 @@
       ensureOrnaments: ensureOrnaments,
       skyModeFromCode: skyModeFromCode,
       paintSkyModeClassOnly: paintSkyModeClassOnly,
-      paintSkyMode: paintSkyMode
+      paintSkyMode: paintSkyMode,
+      pauseStormFx: stopStormFx,
+      resumeStormFx: resumeStormFx
     };
   };
 })(window);

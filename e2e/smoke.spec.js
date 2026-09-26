@@ -65,6 +65,27 @@ test('search combobox has an accessible name', async ({ page }) => {
   await expect(page.locator('#weatherError')).toHaveAttribute('role', 'alert');
 });
 
+test('detail storm effects release completed timers and stop when detail closes', async ({ page }) => {
+  await page.goto('/');
+  const beforeClose = await page.evaluate(async () => {
+    const api = window.DusklineWeather.factories.sky({ motionLevel: () => 'full' });
+    const sky = document.getElementById('weatherDetailSky');
+    const fx = document.getElementById('weatherDetailFx');
+    api.paintSkyMode(sky, 95, new Date().toISOString(), { hour: 12 });
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    return { activeOneShotTimers: fx._wxBoltTimers.size, recurringTimer: !!fx._wxBolt };
+  });
+  expect(beforeClose.activeOneShotTimers).toBe(0);
+  expect(beforeClose.recurringTimer).toBe(true);
+
+  await page.evaluate(() => window.closeWeatherDetail());
+  const afterClose = await page.locator('#weatherDetailFx').evaluate((fx) => ({
+    activeOneShotTimers: fx._wxBoltTimers.size,
+    recurringTimer: !!fx._wxBolt
+  }));
+  expect(afterClose).toEqual({ activeOneShotTimers: 0, recurringTimer: false });
+});
+
 test('loads the branded weather shell and all locales', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('body')).toHaveClass(/duskline/);
