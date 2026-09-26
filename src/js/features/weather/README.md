@@ -18,6 +18,8 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone.
 
+Keep this order explicit when adding scripts. Same-origin scripts in `index.html` and stylesheets imported by `src/css/styles.css` must also appear in the service worker `SHELL`; `npm run test:unit` checks that offline dependency contract.
+
 ## Editing
 
 - Sky visuals → `sky.js`
