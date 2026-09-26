@@ -87,19 +87,17 @@ body.duskline .weather-row-save { min-width: 44px; width: 44px; min-height: 44px
 body.duskline .weather-mod-label { font-size: 12px; opacity: .86; }
 body.duskline .weather-mod-sub { opacity: .95; }
 body.duskline .weather-detail-insight {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 12px;
-  padding: 7px 12px;
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 999px;
-  background: rgba(9,25,43,.25);
-  color: #fff;
-  font: 550 13px/1.25 var(--ff-body);
+  display: block;
+  max-width: min(760px, 100%);
+  margin: 12px auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: 500 14px/1.4 var(--ff-body);
   text-shadow: 0 1px 3px rgba(0,0,0,.4);
 }
-body.duskline .weather-detail-insight strong { font-weight: 700; }
 .weather-toast {
   position: fixed;
   z-index: 11000;

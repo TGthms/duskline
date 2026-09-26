@@ -407,19 +407,18 @@ test('My Sky checking copy is immediate and the completed forecast types in', as
   await expect(page.locator('#weatherGreetingText')).toHaveText(finalText, { timeout: 5000 });
   const measure = () => page.locator('#weatherGreetingText').evaluate(node => ({
     height: node.getBoundingClientRect().height,
-    hidden: Array.from(node.querySelectorAll('.weather-greeting-word span')).filter(glyph => glyph.style.visibility === 'hidden').length,
-    words: Array.from(node.querySelectorAll('.weather-greeting-word'), word => ({
+    words: Array.from(node.querySelectorAll('.weather-typewriter-word'), word => ({
       top: word.getBoundingClientRect().top,
-      left: word.getBoundingClientRect().left
+      left: word.getBoundingClientRect().left,
+      clip: word.style.getPropertyValue('--wx-typewriter-clip')
     }))
   }));
   const before = await measure();
-  expect(before.hidden).toBeGreaterThan(0);
   await page.waitForTimeout(180);
   const after = await measure();
-  expect(after.hidden).toBeLessThan(before.hidden);
   expect(after.height).toBe(before.height);
-  expect(after.words).toEqual(before.words);
+  expect(after.words.map(({ top, left }) => ({ top, left }))).toEqual(before.words.map(({ top, left }) => ({ top, left })));
+  expect(after.words.map(word => word.clip)).not.toEqual(before.words.map(word => word.clip));
 });
 
 test('search shows progress and saves a result directly with confirmation', async ({ page }) => {

@@ -4358,7 +4358,23 @@ html[data-motion-effective="off"] .weather-sheet.wx-sheet-light .weather-sheet-p
   white-space: normal;
 }
 .weather-greeting-sizer { position: absolute; visibility: hidden; pointer-events: none; }
-.weather-greeting-word { white-space: nowrap; }
+.weather-typewriter-word {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  color: transparent;
+  text-shadow: none;
+}
+.weather-typewriter-word::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0 auto auto 0;
+  color: var(--wx-typewriter-ink, currentColor);
+  text-shadow: var(--wx-typewriter-shadow, none);
+  white-space: nowrap;
+  clip-path: var(--wx-typewriter-clip, inset(0 100% 0 0));
+  pointer-events: none;
+}
 .weather-greeting-title[data-typing="true"]::after {
   content: '';
   position: absolute;

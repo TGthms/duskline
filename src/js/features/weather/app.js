@@ -291,6 +291,9 @@
   let lastGreetingText = '';
   let greetingTypeTimer = 0;
   let greetingTypeGeneration = 0;
+  let detailInsightTimer = 0;
+  let detailInsightGeneration = 0;
+  let lastDetailInsightKey = '';
   let greetingVisitSeed = null;
   const aqiDetailInflight = new Map();
   let activeSheetKind = null;
@@ -2036,6 +2039,106 @@
       if (greetingTitleEl) greetingTitleEl.removeAttribute('data-typing');
     }
   }
+  function prepareTypewriter(element, fullText, direction) {
+    const style = getComputedStyle(element);
+    const ink = style.color;
+    const shadow = style.textShadow;
+    const segmenter = typeof Intl.Segmenter === 'function'
+      ? new Intl.Segmenter(lang(), { granularity: 'grapheme' }) : null;
+    const wordSegmenter = typeof Intl.Segmenter === 'function'
+      ? new Intl.Segmenter(lang(), { granularity: 'word' }) : null;
+    const splitGraphemes = function (text) {
+      return segmenter
+        ? Array.from(segmenter.segment(text), part => part.segment)
+        : Array.from(text);
+    };
+    const runs = [];
+    let prefix = '';
+    const tokens = wordSegmenter
+      ? Array.from(wordSegmenter.segment(fullText))
+      : (fullText.match(/\s+|\S+/gu) || []).map(function (text) {
+          return { segment: text, isWordLike: !/^\s+$/u.test(text) };
+        });
+    for (const token of tokens) {
+      const text = token.segment;
+      if (/^\s+$/u.test(text)) {
+        runs.push({ text, whitespace: true });
+        continue;
+      }
+      if (token.isWordLike === false) {
+        const previous = runs[runs.length - 1];
+        if (previous && !previous.whitespace) previous.text += text;
+        else prefix += text;
+        continue;
+      }
+      const cjk = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(text);
+      const pieces = cjk ? splitGraphemes(text) : [text];
+      if (prefix && pieces.length) {
+        pieces[0] = prefix + pieces[0];
+        prefix = '';
+      }
+      pieces.forEach(piece => runs.push({ text: piece, whitespace: false }));
+    }
+    if (prefix) {
+      const previous = runs[runs.length - 1];
+      if (previous && !previous.whitespace) previous.text += prefix;
+      else runs.push({ text: prefix, whitespace: false });
+    }
+    const glyphs = [];
+    const measurements = [];
+    const fragment = document.createDocumentFragment();
+    for (const run of runs) {
+      const chars = splitGraphemes(run.text);
+      if (run.whitespace) {
+        fragment.appendChild(document.createTextNode(run.text));
+        chars.forEach(() => glyphs.push(null));
+        continue;
+      }
+      const word = document.createElement('span');
+      word.className = 'weather-typewriter-word';
+      word.setAttribute('aria-hidden', 'true');
+      word.dataset.text = run.text;
+      word.style.setProperty('--wx-typewriter-ink', ink);
+      word.style.setProperty('--wx-typewriter-shadow', shadow);
+      word.style.setProperty('--wx-typewriter-clip', direction === 'rtl'
+        ? 'inset(0 0 0 100%)' : 'inset(0 100% 0 0)');
+      word.textContent = run.text;
+      fragment.appendChild(word);
+      const textNode = word.firstChild;
+      let offset = 0;
+      for (const char of chars) {
+        offset += char.length;
+        glyphs.push(null);
+        measurements.push({ index: glyphs.length - 1, word, textNode, offset });
+      }
+    }
+    element.replaceChildren(fragment);
+    const wordRects = new Map();
+    measurements.forEach(function (measurement) {
+      const range = document.createRange();
+      range.setStart(measurement.textNode, 0);
+      range.setEnd(measurement.textNode, measurement.offset);
+      const rangeRect = range.getBoundingClientRect();
+      let wordRect = wordRects.get(measurement.word);
+      if (!wordRect) {
+        wordRect = measurement.word.getBoundingClientRect();
+        wordRects.set(measurement.word, wordRect);
+      }
+      const width = direction === 'rtl'
+        ? Math.max(0, wordRect.right - rangeRect.left)
+        : Math.max(0, rangeRect.right - wordRect.left);
+      glyphs[measurement.index] = { word: measurement.word, width, direction };
+    });
+    return glyphs;
+  }
+  function revealTypewriterGlyph(glyph) {
+    if (!glyph) return null;
+    const width = glyph.width.toFixed(2) + 'px';
+    glyph.word.style.setProperty('--wx-typewriter-clip', glyph.direction === 'rtl'
+      ? `inset(0 0 0 calc(100% - ${width}))`
+      : `inset(0 calc(100% - ${width}) 0 0)`);
+    return { rect: glyph.word.getBoundingClientRect(), width: glyph.width, direction: glyph.direction };
+  }
   function typeGreeting(fullText, animate) {
     if (!greetingTitleEl || !greetingTextEl) return;
     if (fullText === lastGreetingText) return;
@@ -2049,46 +2152,62 @@
       greetingTitleEl.removeAttribute('data-typing');
       return;
     }
-    const segmenter = typeof Intl.Segmenter === 'function'
-      ? new Intl.Segmenter(lang(), { granularity: 'grapheme' }) : null;
-    const chars = segmenter
-      ? Array.from(segmenter.segment(fullText), part => part.segment)
+    const chars = typeof Intl.Segmenter === 'function'
+      ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(fullText), part => part.segment)
       : Array.from(fullText);
     let shown = 0;
     const interval = Math.min(1400, Math.max(380, chars.length * 26)) / Math.max(1, chars.length);
-    const fragment = document.createDocumentFragment();
-    const glyphs = [];
-    for (const token of fullText.match(/\s+|\S+/gu) || []) {
-      const word = document.createElement('span');
-      word.className = 'weather-greeting-word';
-      for (const char of (segmenter
-        ? Array.from(segmenter.segment(token), part => part.segment)
-        : Array.from(token))) {
-        const glyph = document.createElement('span');
-        glyph.textContent = char;
-        glyph.style.visibility = 'hidden';
-        word.appendChild(glyph);
-        glyphs.push(glyph);
-      }
-      fragment.appendChild(word);
-    }
-    greetingTextEl.replaceChildren(fragment);
+    const direction = getComputedStyle(greetingTextEl).direction;
+    const glyphs = prepareTypewriter(greetingTextEl, fullText, direction);
     greetingTitleEl.style.setProperty('--wx-greeting-caret-x', '0px');
     greetingTitleEl.style.setProperty('--wx-greeting-caret-y', '0px');
     greetingTitleEl.setAttribute('data-typing', 'true');
     const tick = function () {
       if (generation !== greetingTypeGeneration) return;
       shown++;
-      const glyph = glyphs[shown - 1];
-      glyph.style.visibility = 'visible';
-      const glyphRect = glyph.getBoundingClientRect();
+      const glyphRect = revealTypewriterGlyph(glyphs[shown - 1]);
       const titleRect = greetingTitleEl.getBoundingClientRect();
-      greetingTitleEl.style.setProperty('--wx-greeting-caret-x', Math.min(glyphRect.right - titleRect.left + 2, titleRect.width - 2) + 'px');
-      greetingTitleEl.style.setProperty('--wx-greeting-caret-y', glyphRect.top - titleRect.top + 2 + 'px');
+      if (glyphRect) {
+        const caretX = glyphRect.direction === 'rtl'
+          ? glyphRect.rect.right - glyphRect.width - titleRect.left - 2
+          : glyphRect.rect.left + glyphRect.width - titleRect.left + 2;
+        greetingTitleEl.style.setProperty('--wx-greeting-caret-x', Math.max(0, Math.min(caretX, titleRect.width - 2)) + 'px');
+        greetingTitleEl.style.setProperty('--wx-greeting-caret-y', glyphRect.rect.top - titleRect.top + 2 + 'px');
+      }
       if (shown < chars.length) greetingTypeTimer = window.setTimeout(tick, interval);
       else greetingTitleEl.removeAttribute('data-typing');
     };
     greetingTypeTimer = window.setTimeout(tick, interval);
+  }
+  function typeDetailInsight(element, text, city) {
+    if (!element) return;
+    window.clearTimeout(detailInsightTimer);
+    const generation = ++detailInsightGeneration;
+    const key = cityKey(city) + ':' + text;
+    const shouldAnimate = motionFull() && key !== lastDetailInsightKey;
+    lastDetailInsightKey = key;
+    element.setAttribute('aria-label', text);
+    if (!shouldAnimate || !text) {
+      element.textContent = text;
+      element.removeAttribute('data-typing');
+      return;
+    }
+    const direction = getComputedStyle(element).direction;
+    const chars = typeof Intl.Segmenter === 'function'
+      ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(text), part => part.segment)
+      : Array.from(text);
+    const glyphs = prepareTypewriter(element, text, direction);
+    let shown = 0;
+    const interval = Math.min(520, Math.max(280, chars.length * 7)) / Math.max(1, chars.length);
+    element.setAttribute('data-typing', 'true');
+    const tick = function () {
+      if (generation !== detailInsightGeneration) return;
+      revealTypewriterGlyph(glyphs[shown]);
+      shown++;
+      if (shown < chars.length) detailInsightTimer = window.setTimeout(tick, interval);
+      else element.removeAttribute('data-typing');
+    };
+    detailInsightTimer = window.setTimeout(tick, interval);
   }
   function scheduleGreetingBoundary(timeZone, parts, pack) {
     window.clearTimeout(greetingBoundaryTimer);
@@ -2687,6 +2806,12 @@
       ${nextHoursInsight}
       <div class="weather-detail-updated" id="weatherDetailUpdated"></div>`;
     try { detailEl.setAttribute('aria-labelledby', 'weatherDetailTitle'); } catch (eLab2) { /* ignore */ }
+    if (insightText) typeDetailInsight(detailHero.querySelector('.weather-detail-insight'), insightText, c);
+    else {
+      window.clearTimeout(detailInsightTimer);
+      detailInsightGeneration++;
+      lastDetailInsightKey = cityKey(c) + ':';
+    }
     {
       const detUp = $('weatherDetailUpdated');
       if (detUp) {
