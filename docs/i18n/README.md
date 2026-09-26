@@ -1,4 +1,4 @@
-# Duskline README translations
+# duskline README translations
 
 The canonical English README is [`README.md`](../../README.md) at the repository root (what GitHub shows by default). Every other locale lives in this folder so the root stays uncluttered.
 

@@ -1,10 +1,15 @@
-**อ่านเป็น:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · **ไทย** · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>แอปสภาพอากาศฟรีที่ทำงานในเบราว์เซอร์เท่านั้น สำหรับตรวจและสำรวจอากาศ: ค้นหาเมืองทั่วโลก รายชั่วโมงและ 10 วัน คุณภาพอากาศ สภาพเคลื่อนไหว และพยากรณ์กับคำเตือนเสริมจาก U.S. National Weather Service</p>
+  <p><a href="https://dusklineweather.pages.dev/">เปิด duskline</a> · <a href="../../privacy.html">นโยบายความเป็นส่วนตัว</a> · <a href="../../terms.html">ข้อกำหนดการใช้งาน</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>อ่านเป็น</summary>
 
-แอปสภาพอากาศฟรีที่ทำงานในเบราว์เซอร์เท่านั้น สำหรับตรวจและสำรวจอากาศ: ค้นหาเมืองทั่วโลก รายชั่วโมงและ 10 วัน คุณภาพอากาศ สภาพเคลื่อนไหว และพยากรณ์กับคำเตือนเสริมจาก U.S. National Weather Service
-
-[เปิด duskline](https://dusklineweather.pages.dev/) · [นโยบายความเป็นส่วนตัว](../../privacy.html) · [ข้อกำหนดการใช้งาน](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · **ไทย** · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 ไม่มีบัญชี ไม่มีแบ็กเอนด์ของเราเอง ไม่มีตัวระบุโฆษณา ภาษา หน่วย รายการโปรด และตำแหน่งที่บันทึกแบบประมาณโดยตั้งใจอยู่ในเบราว์เซอร์ของคุณ
 

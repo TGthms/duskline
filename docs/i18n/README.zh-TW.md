@@ -1,10 +1,15 @@
-**閱讀語言:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · **繁體中文**
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>免費的純瀏覽器天氣應用程式，用於日常查看與探索：全球城市搜尋、逐小時與 10 日展望、空氣品質、動態天空，以及強化的美國國家氣象局預報與警報。</p>
+  <p><a href="https://dusklineweather.pages.dev/">開啟 duskline</a> · <a href="../../privacy.html">隱私權政策</a> · <a href="../../terms.html">使用條款</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>閱讀語言</summary>
 
-免費的純瀏覽器天氣應用程式，用於日常查看與探索：全球城市搜尋、逐小時與 10 日展望、空氣品質、動態天空，以及強化的美國國家氣象局預報與警報。
-
-[開啟 duskline](https://dusklineweather.pages.dev/) · [隱私權政策](../../privacy.html) · [使用條款](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · **繁體中文**
+</details>
 
 沒有帳戶、沒有自有後端、沒有廣告識別碼。語言、單位、收藏以及刻意降低精度的儲存位置都留在瀏覽器中。
 

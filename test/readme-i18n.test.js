@@ -20,6 +20,8 @@ test('root README and docs/i18n cover every picker language', () => {
   const codes = localeCodes();
   const rootReadme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   const index = fs.readFileSync(path.join(i18nDir, 'README.md'), 'utf8');
+  assert.match(rootReadme, /<h1 align="center">duskline<\/h1>/);
+  assert.match(rootReadme, /src="assets\/duskline-icon-512\.png"/);
   assert.match(rootReadme, /docs\/i18n\/README\.md/);
   for (const code of codes) {
     if (code === 'en') {
@@ -34,7 +36,8 @@ test('root README and docs/i18n cover every picker language', () => {
     assert.match(body, /\]\(\.\.\/\.\.\/README\.md\)/);
     assert.match(body, /\]\(\.\.\/\.\.\/privacy\.html\)/);
     assert.match(body, /\]\(\.\.\/\.\.\/terms\.html\)/);
-    assert.match(body, /# Duskline/);
+    assert.match(body, /<h1>duskline<\/h1>/);
+    assert.match(body, /src="\.\.\/\.\.\/assets\/duskline-icon-512\.png"/);
     if (code === 'ar' || code === 'he') {
       assert.match(body, /dir="rtl"/);
     }

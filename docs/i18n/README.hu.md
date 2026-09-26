@@ -1,10 +1,15 @@
-**Olvasás nyelve:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · **Magyar** · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>Ingyenes, csak böngészős időjárás-alkalmazás a mindennapi ellenőrzéshez és felfedezéshez: világszintű városkeresés, óránkénti és 10 napos kilátás, levegőminőség, animált viszonyok, valamint bővített U.S. National Weather Service előrejelzések és riasztások.</p>
+  <p><a href="https://dusklineweather.pages.dev/">duskline megnyitása</a> · <a href="../../privacy.html">Adatvédelmi szabályzat</a> · <a href="../../terms.html">Felhasználási feltételek</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>Olvasás nyelve</summary>
 
-Ingyenes, csak böngészős időjárás-alkalmazás a mindennapi ellenőrzéshez és felfedezéshez: világszintű városkeresés, óránkénti és 10 napos kilátás, levegőminőség, animált viszonyok, valamint bővített U.S. National Weather Service előrejelzések és riasztások.
-
-[duskline megnyitása](https://dusklineweather.pages.dev/) · [Adatvédelmi szabályzat](../../privacy.html) · [Felhasználási feltételek](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · **Magyar** · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 Nincs fiók, nincs saját háttérrendszer, nincs hirdetési azonosító. A nyelv, az egységek, a kedvencek és egy szándékosan hozzávetőleges mentett hely a böngészőben marad.
 

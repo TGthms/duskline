@@ -1,10 +1,15 @@
-**言語:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · **日本語** · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>無料のブラウザ専用天気アプリ。世界の都市検索、1時間ごとと10日の見通し、大気質、アニメーションの空、そして米国 National Weather Service の強化された予報と警報。</p>
+  <p><a href="https://dusklineweather.pages.dev/">duskline を開く</a> · <a href="../../privacy.html">プライバシーポリシー</a> · <a href="../../terms.html">利用規約</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>言語</summary>
 
-無料のブラウザ専用天気アプリ。世界の都市検索、1時間ごとと10日の見通し、大気質、アニメーションの空、そして米国 National Weather Service の強化された予報と警報。
-
-[duskline を開く](https://dusklineweather.pages.dev/) · [プライバシーポリシー](../../privacy.html) · [利用規約](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · **日本語** · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 アカウントも独自バックエンドも広告識別子もありません。言語、単位、お気に入り、意図的に粗くした保存位置はブラウザ内に残ります。
 

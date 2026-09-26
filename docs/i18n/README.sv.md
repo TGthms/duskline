@@ -1,10 +1,15 @@
-**Läs på:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · **Svenska** · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>En gratis väderapp som bara körs i webbläsaren, för att kolla och utforska vädret: global stadssökning, tim- och 10-dygnsutsikter, luftkvalitet, animerade förhållanden och utökade U.S. National Weather Service-prognoser och varningar.</p>
+  <p><a href="https://dusklineweather.pages.dev/">Öppna duskline</a> · <a href="../../privacy.html">Integritetspolicy</a> · <a href="../../terms.html">Användarvillkor</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>Läs på</summary>
 
-En gratis väderapp som bara körs i webbläsaren, för att kolla och utforska vädret: global stadssökning, tim- och 10-dygnsutsikter, luftkvalitet, animerade förhållanden och utökade U.S. National Weather Service-prognoser och varningar.
-
-[Öppna duskline](https://dusklineweather.pages.dev/) · [Integritetspolicy](../../privacy.html) · [Användarvillkor](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · **Svenska** · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 Inget konto, ingen egen backend, ingen reklamidentifierare. Språk, enheter, favoriter och en avsiktligt ungefärlig sparad plats stannar i webbläsaren.
 

@@ -38,21 +38,32 @@ function bar(current, where) {
 }
 
 function hrefs(where) {
-  if (where === 'root') return { privacy: 'privacy.html', terms: 'terms.html', i18nIndex: 'docs/i18n/README.md' };
-  return { privacy: '../../privacy.html', terms: '../../terms.html', i18nIndex: 'README.md' };
+  if (where === 'root') return {
+    privacy: 'privacy.html', terms: 'terms.html', i18nIndex: 'docs/i18n/README.md',
+    icon: 'assets/duskline-icon-512.png'
+  };
+  return {
+    privacy: '../../privacy.html', terms: '../../terms.html', i18nIndex: 'README.md',
+    icon: '../../assets/duskline-icon-512.png'
+  };
 }
 
 function render(code, S, where) {
   const h = hrefs(where);
   const rtl = code === 'ar' || code === 'he';
   const open = [
-    '**' + S.readIn + ':** ' + bar(code, where),
+    '<div align="center">',
+    '  <img src="' + h.icon + '" alt="duskline app icon" width="88" height="88">',
+    '  <h1>duskline</h1>',
+    '  <p>' + S.tagline + '</p>',
+    '  <p><a href="' + APP + '">' + S.openApp + '</a> · <a href="' + h.privacy + '">' + S.privacy + '</a> · <a href="' + h.terms + '">' + S.terms + '</a></p>',
+    '</div>',
     '',
-    '# Duskline',
+    '<details>',
+    '<summary>' + S.readIn + '</summary>',
     '',
-    S.tagline,
-    '',
-    '[' + S.openApp + '](' + APP + ') · [' + S.privacy + '](' + h.privacy + ') · [' + S.terms + '](' + h.terms + ')',
+    bar(code, where),
+    '</details>',
     '',
     S.intro,
     '',
@@ -1023,7 +1034,7 @@ function writeAll() {
     fs.writeFileSync(path.join(OUT, 'README.' + code + '.md'), md);
   });
   const index = [
-    '# Duskline README translations',
+    '# duskline README translations',
     '',
     'The canonical English README is [`README.md`](../../README.md) at the repository root (what GitHub shows by default). Every other locale lives in this folder so the root stays uncluttered.',
     '',
@@ -1047,4 +1058,3 @@ function writeAll() {
 module.exports = { LOCALES, C, bar, render, fillLinks, OUT, ROOT, writeAll };
 
 if (require.main === module) writeAll();
-

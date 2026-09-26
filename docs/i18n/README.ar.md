@@ -1,12 +1,17 @@
 <div dir="rtl" lang="ar">
 
-**اقرأ باللغة:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · **العربية** · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>تطبيق طقس مجاني يعمل في المتصفح فقط للاطلاع والاستكشاف: بحث عالمي عن المدن، توقعات ساعية ولعشرة أيام، جودة الهواء، أحوال متحركة، وتوقعات وتنبيهات محسّنة من U.S. National Weather Service.</p>
+  <p><a href="https://dusklineweather.pages.dev/">فتح duskline</a> · <a href="../../privacy.html">سياسة الخصوصية</a> · <a href="../../terms.html">شروط الاستخدام</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>اقرأ باللغة</summary>
 
-تطبيق طقس مجاني يعمل في المتصفح فقط للاطلاع والاستكشاف: بحث عالمي عن المدن، توقعات ساعية ولعشرة أيام، جودة الهواء، أحوال متحركة، وتوقعات وتنبيهات محسّنة من U.S. National Weather Service.
-
-[فتح duskline](https://dusklineweather.pages.dev/) · [سياسة الخصوصية](../../privacy.html) · [شروط الاستخدام](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · **العربية** · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 لا حساب ولا خلفية خاصة بنا ولا معرّف إعلاني. تبقى اللغة والوحدات والمفضّلات وموقع محفوظ تقريبًا عن قصد في متصفحك.
 

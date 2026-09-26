@@ -1,10 +1,15 @@
-**Citește în:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · **Română** · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>O aplicație meteo gratuită, doar în browser, pentru verificarea și explorarea vremii: căutare mondială de orașe, perspective orare și pe 10 zile, calitatea aerului, condiții animate și prognoze și alerte îmbunătățite de la U.S. National Weather Service.</p>
+  <p><a href="https://dusklineweather.pages.dev/">Deschide duskline</a> · <a href="../../privacy.html">Politica de confidențialitate</a> · <a href="../../terms.html">Termeni de utilizare</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>Citește în</summary>
 
-O aplicație meteo gratuită, doar în browser, pentru verificarea și explorarea vremii: căutare mondială de orașe, perspective orare și pe 10 zile, calitatea aerului, condiții animate și prognoze și alerte îmbunătățite de la U.S. National Weather Service.
-
-[Deschide duskline](https://dusklineweather.pages.dev/) · [Politica de confidențialitate](../../privacy.html) · [Termeni de utilizare](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · **Română** · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 Fără cont, fără backend propriu, fără identificator publicitar. Limba, unitățile, favoritele și o locație salvată intenționat aproximativă rămân în browser.
 

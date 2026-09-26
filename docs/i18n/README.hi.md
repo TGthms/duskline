@@ -1,10 +1,15 @@
-**इस भाषा में पढ़ें:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · **हिन्दी** · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>मुफ़्त, केवल ब्राउज़र वाला मौसम ऐप: विश्वव्यापी शहर खोज, घंटेवार और 10-दिन का दृष्टिकोण, वायु गुणवत्ता, एनिमेटेड स्थितियाँ, और बेहतर U.S. National Weather Service पूर्वानुमान व अलर्ट।</p>
+  <p><a href="https://dusklineweather.pages.dev/">duskline खोलें</a> · <a href="../../privacy.html">गोपनीयता नीति</a> · <a href="../../terms.html">उपयोग की शर्तें</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>इस भाषा में पढ़ें</summary>
 
-मुफ़्त, केवल ब्राउज़र वाला मौसम ऐप: विश्वव्यापी शहर खोज, घंटेवार और 10-दिन का दृष्टिकोण, वायु गुणवत्ता, एनिमेटेड स्थितियाँ, और बेहतर U.S. National Weather Service पूर्वानुमान व अलर्ट।
-
-[duskline खोलें](https://dusklineweather.pages.dev/) · [गोपनीयता नीति](../../privacy.html) · [उपयोग की शर्तें](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · **हिन्दी** · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 कोई खाता नहीं, कोई अपना बैकएंड नहीं, कोई विज्ञापन पहचानकर्ता नहीं। भाषा, इकाइयाँ, पसंदीदा और जानबूझकर अनुमानित सहेजा गया स्थान आपके ब्राउज़र में रहता है।
 

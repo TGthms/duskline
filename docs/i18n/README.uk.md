@@ -1,10 +1,15 @@
-**Читати мовою:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · **Українська** · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>Безкоштовний погодний застосунок лише в браузері: пошук міст у всьому світі, погодинний і 10-денний огляд, якість повітря, анімовані умови та розширені прогнози й попередження U.S. National Weather Service.</p>
+  <p><a href="https://dusklineweather.pages.dev/">Відкрити duskline</a> · <a href="../../privacy.html">Політика конфіденційності</a> · <a href="../../terms.html">Умови використання</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>Читати мовою</summary>
 
-Безкоштовний погодний застосунок лише в браузері: пошук міст у всьому світі, погодинний і 10-денний огляд, якість повітря, анімовані умови та розширені прогнози й попередження U.S. National Weather Service.
-
-[Відкрити duskline](https://dusklineweather.pages.dev/) · [Політика конфіденційності](../../privacy.html) · [Умови використання](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · **Українська** · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 Немає облікового запису, власного бекенду чи рекламного ідентифікатора. Мова, одиниці, обране та навмисно наближене збережене місцезнаходження лишаються в браузері.
 

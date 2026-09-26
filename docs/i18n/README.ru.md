@@ -1,10 +1,15 @@
-**Читать на:** [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · **Русский** · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+<div align="center">
+  <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
+  <h1>duskline</h1>
+  <p>Бесплатное погодное приложение только в браузере: поиск городов по всему миру, почасовой и 10-дневный обзор, качество воздуха, анимированные условия и расширенные прогнозы и предупреждения U.S. National Weather Service.</p>
+  <p><a href="https://dusklineweather.pages.dev/">Открыть duskline</a> · <a href="../../privacy.html">Политика конфиденциальности</a> · <a href="../../terms.html">Условия использования</a></p>
+</div>
 
-# Duskline
+<details>
+<summary>Читать на</summary>
 
-Бесплатное погодное приложение только в браузере: поиск городов по всему миру, почасовой и 10-дневный обзор, качество воздуха, анимированные условия и расширенные прогнозы и предупреждения U.S. National Weather Service.
-
-[Открыть duskline](https://dusklineweather.pages.dev/) · [Политика конфиденциальности](../../privacy.html) · [Условия использования](../../terms.html)
+[English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · **Русский** · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
+</details>
 
 Нет аккаунта, нет своего бэкенда, нет рекламного идентификатора. Язык, единицы, избранное и намеренно приблизительное сохранённое местоположение остаются в браузере.
 
