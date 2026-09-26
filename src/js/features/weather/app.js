@@ -2036,7 +2036,10 @@
       if (greetingTitleEl) greetingTitleEl.setAttribute('aria-label', finalText);
       if (greetingSizerEl) greetingSizerEl.textContent = finalText;
       if (greetingTextEl) greetingTextEl.textContent = finalText;
-      if (greetingTitleEl) greetingTitleEl.removeAttribute('data-typing');
+      if (greetingTitleEl) {
+        greetingTitleEl.removeAttribute('data-typing');
+        greetingTitleEl.removeAttribute('data-font-preparing');
+      }
     }
   }
   function prepareTypewriter(element, fullText, direction) {
@@ -2150,6 +2153,30 @@
       : `inset(0 calc(100% - ${width}) 0 0)`);
     return { rect: glyph.word.getBoundingClientRect(), width: glyph.width, direction: glyph.direction };
   }
+  function waitForGreetingFont(element, text) {
+    if (!document.fonts || typeof document.fonts.load !== 'function') return null;
+    const style = getComputedStyle(element);
+    const font = style.font || [style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily].join(' ');
+    let loading;
+    try {
+      loading = typeof window.__dusklineLoadGreetingFont === 'function'
+        ? window.__dusklineLoadGreetingFont(font, text)
+        : document.fonts.load(font, text);
+    } catch (error) {
+      return Promise.resolve(false);
+    }
+    let timeout;
+    const expired = new Promise(function (resolve) {
+      timeout = window.setTimeout(function () { resolve(false); }, 1200);
+    });
+    return Promise.race([
+      Promise.resolve(loading).then(function () { return true; }, function () { return false; }),
+      expired
+    ]).then(function (ready) {
+      window.clearTimeout(timeout);
+      return ready;
+    });
+  }
   function typeGreeting(fullText, animate) {
     if (!greetingTitleEl || !greetingTextEl) return;
     if (fullText === lastGreetingText) return;
@@ -2164,34 +2191,57 @@
     if (!animate || !motionFull() || wasTyping) {
       greetingTextEl.textContent = fullText;
       greetingTitleEl.removeAttribute('data-typing');
+      greetingTitleEl.removeAttribute('data-font-preparing');
       return;
     }
-    const chars = typeof Intl.Segmenter === 'function'
-      ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(fullText), part => part.segment)
-      : Array.from(fullText);
-    let shown = 0;
-    const interval = Math.min(1400, Math.max(380, chars.length * 26)) / Math.max(1, chars.length);
-    const direction = getComputedStyle(greetingTextEl).direction;
-    const glyphs = prepareTypewriter(greetingTextEl, fullText, direction);
-    greetingTitleEl.style.setProperty('--wx-greeting-caret-x', '0px');
-    greetingTitleEl.style.setProperty('--wx-greeting-caret-y', '0px');
-    greetingTitleEl.setAttribute('data-typing', 'true');
-    const tick = function () {
+    const beginTypewriter = function () {
       if (generation !== greetingTypeGeneration) return;
-      shown++;
-      const glyphRect = revealTypewriterGlyph(glyphs[shown - 1]);
-      const titleRect = greetingTitleEl.getBoundingClientRect();
-      if (glyphRect) {
-        const caretX = glyphRect.direction === 'rtl'
-          ? glyphRect.rect.right - glyphRect.width - titleRect.left - 2
-          : glyphRect.rect.left + glyphRect.width - titleRect.left + 2;
-        greetingTitleEl.style.setProperty('--wx-greeting-caret-x', Math.max(0, Math.min(caretX, titleRect.width - 2)) + 'px');
-        greetingTitleEl.style.setProperty('--wx-greeting-caret-y', glyphRect.rect.top - titleRect.top + 2 + 'px');
-      }
-      if (shown < chars.length) greetingTypeTimer = window.setTimeout(tick, interval);
-      else greetingTitleEl.removeAttribute('data-typing');
+      const chars = typeof Intl.Segmenter === 'function'
+        ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(fullText), part => part.segment)
+        : Array.from(fullText);
+      let shown = 0;
+      const interval = Math.min(1400, Math.max(380, chars.length * 26)) / Math.max(1, chars.length);
+      const direction = getComputedStyle(greetingTextEl).direction;
+      const glyphs = prepareTypewriter(greetingTextEl, fullText, direction);
+      greetingTitleEl.style.setProperty('--wx-greeting-caret-x', '0px');
+      greetingTitleEl.style.setProperty('--wx-greeting-caret-y', '0px');
+      greetingTitleEl.setAttribute('data-typing', 'true');
+      greetingTitleEl.removeAttribute('data-font-preparing');
+      const tick = function () {
+        if (generation !== greetingTypeGeneration) return;
+        shown++;
+        const glyphRect = revealTypewriterGlyph(glyphs[shown - 1]);
+        const titleRect = greetingTitleEl.getBoundingClientRect();
+        if (glyphRect) {
+          const caretX = glyphRect.direction === 'rtl'
+            ? glyphRect.rect.right - glyphRect.width - titleRect.left - 2
+            : glyphRect.rect.left + glyphRect.width - titleRect.left + 2;
+          greetingTitleEl.style.setProperty('--wx-greeting-caret-x', Math.max(0, Math.min(caretX, titleRect.width - 2)) + 'px');
+          greetingTitleEl.style.setProperty('--wx-greeting-caret-y', glyphRect.rect.top - titleRect.top + 2 + 'px');
+        }
+        if (shown < chars.length) greetingTypeTimer = window.setTimeout(tick, interval);
+        else greetingTitleEl.removeAttribute('data-typing');
+      };
+      greetingTypeTimer = window.setTimeout(tick, interval);
     };
-    greetingTypeTimer = window.setTimeout(tick, interval);
+    const fontReady = waitForGreetingFont(greetingTextEl, fullText);
+    if (!fontReady) {
+      beginTypewriter();
+      return;
+    }
+    // Keep the sentence in layout while its web font settles. Measure glyph widths only
+    // after the font is ready, avoiding first-visit jumps when the fallback is replaced.
+    greetingTextEl.textContent = fullText;
+    greetingTitleEl.setAttribute('data-font-preparing', 'true');
+    fontReady.then(function (ready) {
+      if (generation !== greetingTypeGeneration) return;
+      greetingTitleEl.removeAttribute('data-font-preparing');
+      if (ready) beginTypewriter();
+      else {
+        greetingTextEl.textContent = fullText;
+        greetingTitleEl.removeAttribute('data-typing');
+      }
+    });
   }
   function typeDetailInsight(element, text, city) {
     if (!element) return;

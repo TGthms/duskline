@@ -7,6 +7,11 @@ test.beforeEach(async ({ page }) => {
       sessionStorage.setItem('__duskline_test_storage_cleared', '1');
     }
   });
+  // Keep browser checks independent of Google Fonts availability; a focused regression
+  // below supplies a controllably delayed font face for the cold-load greeting.
+  await page.route(/fonts\.googleapis\.com/, route => route.fulfill({
+    status: 200, contentType: 'text/css', body: ''
+  }));
   await page.route(/api\.weather\.gov|api\.open-meteo\.com|air-quality-api\.open-meteo\.com|geocoding-api\.open-meteo\.com/, async route => {
     const url = route.request().url();
     if (url.includes('geocoding')) return route.fulfill({ json: { results: [{ name: 'Boston', latitude: 42.36, longitude: -71.06, admin1: 'Massachusetts', country: 'United States', country_code: 'US', timezone: 'America/New_York' }] } });
@@ -271,6 +276,58 @@ test('checking copy is immediate, then the real greeting types inside a stable l
   expect(await fits()).toBe(true);
   await page.setViewportSize({ width: 360, height: 844 });
   expect(await fits()).toBe(true);
+});
+
+test('the first greeting waits for its web font before measuring typewriter glyphs', async ({ page }) => {
+  let releaseFont;
+  const fontGate = new Promise(resolve => { releaseFont = resolve; });
+  let fontRequested = false;
+  await page.route(/fonts\.googleapis\.com/, route => route.fulfill({
+    status: 200,
+    contentType: 'text/css',
+    body: '@font-face{font-family:"Public Sans";font-style:normal;font-weight:300 900;font-display:swap;src:url("https://fonts.gstatic.com/duskline-test.woff2") format("woff2")}'
+  }));
+  await page.route(/fonts\.gstatic\.com\/duskline-test\.woff2/, async route => {
+    fontRequested = true;
+    await fontGate;
+    // An invalid face makes the browser settle on its normal fallback after exercising
+    // the same async font-loading window as a real cold request.
+    await route.fulfill({ status: 200, contentType: 'font/woff2', body: Buffer.alloc(0) });
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-motion', 'full');
+  });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  const heading = page.locator('#weatherGreeting');
+  const visibleCopy = page.locator('#weatherGreetingText');
+  await expect.poll(() => fontRequested).toBe(true);
+  await expect(heading).toHaveAttribute('data-font-preparing', 'true');
+  await expect(heading).not.toHaveAttribute('data-typing', 'true');
+  expect(await visibleCopy.evaluate(node => getComputedStyle(node).visibility)).toBe('hidden');
+  expect(await visibleCopy.textContent()).toBe(await heading.getAttribute('aria-label'));
+
+  releaseFont();
+  await expect(heading).not.toHaveAttribute('data-font-preparing', 'true');
+  await expect.poll(async () => {
+    const label = await heading.getAttribute('aria-label');
+    const text = await visibleCopy.textContent();
+    return text === label;
+  }, { timeout: 10000 }).toBe(true);
+  expect(await visibleCopy.evaluate(node => getComputedStyle(node).visibility)).toBe('visible');
+
+  if (await heading.getAttribute('data-typing') === 'true') {
+    const positions = () => visibleCopy.evaluate(node => Array.from(
+      node.querySelectorAll('.weather-typewriter-word'), word => {
+        const rect = word.getBoundingClientRect();
+        return [rect.top, rect.left, rect.width, rect.height];
+      }
+    ));
+    const before = await positions();
+    await page.waitForTimeout(160);
+    expect(await positions()).toEqual(before);
+  }
 });
 
 test('long list location names stay on one line and keep high/low visible', async ({ page }) => {

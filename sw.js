@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v30';
+const CACHE = 'duskline-shell-v31';
 const SHELL = [
   './',
   './index.html',

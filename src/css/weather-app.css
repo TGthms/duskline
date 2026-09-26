@@ -4357,6 +4357,7 @@ html[data-motion-effective="off"] .weather-sheet.wx-sheet-light .weather-sheet-p
   display: block;
   white-space: normal;
 }
+.weather-greeting-title[data-font-preparing="true"] .weather-greeting-text { visibility: hidden; }
 .weather-greeting-sizer { position: absolute; visibility: hidden; pointer-events: none; }
 .weather-typewriter-word {
   position: relative;

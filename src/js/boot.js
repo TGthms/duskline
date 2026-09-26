@@ -101,17 +101,23 @@
   }
 
   var loaded = {};
+  var stylesheetReady = {};
   function add(id, familySpec) {
     if (loaded[id] || document.getElementById(id)) {
       loaded[id] = true;
-      return;
+      return stylesheetReady[id] || Promise.resolve(true);
     }
     var link = document.createElement('link');
     link.id = id;
     link.rel = 'stylesheet';
     link.href = 'https://fonts.googleapis.com/css2?' + familySpec + '&display=swap';
+    var resolveReady;
+    stylesheetReady[id] = new Promise(function (resolve) { resolveReady = resolve; });
+    link.addEventListener('load', function () { resolveReady(true); }, { once: true });
+    link.addEventListener('error', function () { resolveReady(false); }, { once: true });
     document.head.appendChild(link);
     loaded[id] = true;
+    return stylesheetReady[id];
   }
 
   function apply() {
@@ -121,6 +127,13 @@
   }
 
   apply();
+  window.__dusklineLoadGreetingFont = function (font, text) {
+    return Promise.all(Object.keys(stylesheetReady).map(function (id) { return stylesheetReady[id]; }))
+      .then(function () {
+        if (document.fonts && typeof document.fonts.load === 'function') return document.fonts.load(font, text);
+        return [];
+      });
+  };
   /* legal.js calls this after a language change; the picker also fires duskline:prefs. */
   window.__dusklineLoadFonts = apply;
   document.addEventListener('duskline:prefs', function (e) {
