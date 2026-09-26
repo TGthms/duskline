@@ -4,7 +4,7 @@
   var D = {
     en: {
       mode: ['Horizon', 'My Sky'], time: ['Good morning', 'Good afternoon', 'Good evening', 'Good night'],
-      horizon: ['{greeting}. See what the weather is doing around the world.', '{greeting}. Explore the weather unfolding around the world.'],
+      horizon: ['{greeting} — see what the weather is doing around the world.', '{greeting} — explore the weather unfolding around the world.'],
       prompt: '{greeting} — choose a city to see your local forecast.', checking: '{greeting} — checking the weather in {place}.',
       forecast: '{greeting} — {temp} and {condition} in {place}.',
       condition: ['clear', 'mostly clear', 'partly cloudy', 'overcast', 'foggy', 'drizzly', 'rainy', 'snowy', 'stormy'],

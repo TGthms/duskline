@@ -2059,7 +2059,8 @@
       : (fullText.match(/\s+|\S+/gu) || []).map(function (text) {
           return { segment: text, isWordLike: !/^\s+$/u.test(text) };
         });
-    for (const token of tokens) {
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
       const text = token.segment;
       if (/^\s+$/u.test(text)) {
         runs.push({ text, whitespace: true });
@@ -2067,6 +2068,16 @@
       }
       if (token.isWordLike === false) {
         const previous = runs[runs.length - 1];
+        const next = tokens[i + 1];
+        const hasSpaceBefore = previous && previous.whitespace;
+        const hasSpaceAfter = next && /^\s+$/u.test(next.segment);
+        // Keep spaced punctuation (em dashes, middle dots, and similar separators)
+        // between its original spaces. Folding it into the next word moves the mark
+        // and drops the space after it in the typewriter DOM.
+        if (hasSpaceBefore && hasSpaceAfter) {
+          runs.push({ text, whitespace: false });
+          continue;
+        }
         if (previous && !previous.whitespace) previous.text += text;
         else prefix += text;
         continue;
@@ -2142,12 +2153,15 @@
   function typeGreeting(fullText, animate) {
     if (!greetingTitleEl || !greetingTextEl) return;
     if (fullText === lastGreetingText) return;
+    const wasTyping = greetingTitleEl.hasAttribute('data-typing');
     window.clearTimeout(greetingTypeTimer);
     const generation = ++greetingTypeGeneration;
     lastGreetingText = fullText;
     greetingTitleEl.setAttribute('aria-label', fullText);
     if (greetingSizerEl) greetingSizerEl.textContent = fullText;
-    if (!animate || !motionFull()) {
+    // Forecast data can arrive in stages. If it changes during a reveal, replace
+    // the copy in one frame rather than restarting the typewriter at a new line.
+    if (!animate || !motionFull() || wasTyping) {
       greetingTextEl.textContent = fullText;
       greetingTitleEl.removeAttribute('data-typing');
       return;
@@ -2287,21 +2301,21 @@
       }
     } else {
       const horizonFallbacks = [
-        'Explore the weather unfolding around the world.',
-        'See how conditions change from city to city.',
-        'Follow the day’s skies across the globe.',
-        'Discover forecasts from cities near and far.',
-        'From sunshine to showers, see what the day brings.',
-        'Take a closer look at weather around the world.',
-        'A world of weather is waiting to be explored.',
-        'See where clouds are gathering and skies are clearing.',
-        'Check in on forecasts from near and far.',
-        'Each city has its own forecast. See what today brings.',
-        'Follow the sunshine, showers, and changing skies.',
-        'Explore current conditions in cities around the world.',
-        'Look beyond the horizon to see what the forecast holds.',
-        'Watch the forecast shift as the day moves along.',
-        'See what the weather has in store across the map.'
+        'explore the weather unfolding around the world.',
+        'see how conditions change from city to city.',
+        'follow the day’s skies across the globe.',
+        'discover forecasts from cities near and far.',
+        'from sunshine to showers, see what the day brings.',
+        'take a closer look at weather around the world.',
+        'a world of weather is waiting to be explored.',
+        'see where clouds are gathering and skies are clearing.',
+        'check in on forecasts from near and far.',
+        'each city has its own forecast. See what today brings.',
+        'follow the sunshine, showers, and changing skies.',
+        'explore current conditions in cities around the world.',
+        'look beyond the horizon to see what the forecast holds.',
+        'watch the forecast shift as the day moves along.',
+        'see what the weather has in store across the map.'
       ];
       fullText = greet + t('weather.greeting.separator', '. ')
         + t('weather.greeting.horizon' + choice, horizonFallbacks[choice]);

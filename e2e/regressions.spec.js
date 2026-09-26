@@ -403,22 +403,58 @@ test('My Sky checking copy is immediate and the completed forecast types in', as
   await expect(heading).toHaveAttribute('aria-label', /checking the weather/i);
   await expect(heading).not.toHaveAttribute('data-typing', 'true');
   await expect(heading).toHaveAttribute('data-typing', 'true', { timeout: 15000 });
-  const finalText = await heading.getAttribute('aria-label');
-  await expect(page.locator('#weatherGreetingText')).toHaveText(finalText, { timeout: 5000 });
+  const readGreetingState = () => heading.evaluate((el) => {
+    const text = document.querySelector('#weatherGreetingText');
+    return {
+      label: el.getAttribute('aria-label'),
+      text: text ? text.textContent : null,
+      typing: el.hasAttribute('data-typing')
+    };
+  });
+  const initialState = await readGreetingState();
+  expect(initialState.label).toContain('Boston');
+  expect(initialState.text).toBe(initialState.label);
   const measure = () => page.locator('#weatherGreetingText').evaluate(node => ({
     height: node.getBoundingClientRect().height,
     words: Array.from(node.querySelectorAll('.weather-typewriter-word'), word => ({
       top: word.getBoundingClientRect().top,
       left: word.getBoundingClientRect().left,
       clip: word.style.getPropertyValue('--wx-typewriter-clip')
-    }))
+    })),
+    text: node.textContent
   }));
   const before = await measure();
   await page.waitForTimeout(180);
   const after = await measure();
-  expect(after.height).toBe(before.height);
-  expect(after.words.map(({ top, left }) => ({ top, left }))).toEqual(before.words.map(({ top, left }) => ({ top, left })));
-  expect(after.words.map(word => word.clip)).not.toEqual(before.words.map(word => word.clip));
+  const currentState = await readGreetingState();
+  if (currentState.label === before.text && currentState.typing) {
+    expect(after.height).toBe(before.height);
+    expect(after.words.map(({ top, left }) => ({ top, left }))).toEqual(before.words.map(({ top, left }) => ({ top, left })));
+    expect(after.words.map(word => word.clip)).not.toEqual(before.words.map(word => word.clip));
+  } else {
+    // If enrichment landed during the sample, the new sentence must replace the
+    // old reveal atomically rather than restarting midway through another line.
+    expect(currentState.text).toBe(currentState.label);
+    if (currentState.label !== before.text) expect(currentState.typing).toBe(false);
+  }
+  await expect.poll(async () => {
+    const state = await readGreetingState();
+    return !state.typing && state.label === state.text;
+  }, { timeout: 15000 }).toBe(true);
+  const finalState = await readGreetingState();
+  expect(finalState.text).toBe(finalState.label);
+});
+
+test('first Horizon greeting keeps its editorial pause after typing', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed', 'true');
+  const heading = page.locator('#weatherGreeting');
+  await expect(heading).toHaveAttribute('aria-label', /^Good (morning|afternoon|evening|night) — [a-z]/);
+  await expect(heading).toHaveAttribute('data-typing', 'true', { timeout: 10000 });
+  await expect(heading).not.toHaveAttribute('data-typing', 'true', { timeout: 10000 });
+  const label = await heading.getAttribute('aria-label');
+  const renderedCopy = await page.locator('#weatherGreetingText').textContent();
+  expect(renderedCopy).toBe(label);
 });
 
 test('search shows progress and saves a result directly with confirmation', async ({ page }) => {

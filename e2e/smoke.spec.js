@@ -278,25 +278,48 @@ test('long list location names stay on one line and keep high/low visible', asyn
   await page.goto('/');
   const row = page.locator('#weatherList .weather-row').first();
   await expect(row).toBeVisible({ timeout: 15000 });
-  await row.evaluate((el) => {
-    const name = el.querySelector('.weather-row-city-name');
-    if (name) name.textContent = 'Livermore-Pleasanton';
-    const meta = el.querySelector('.weather-row-meta');
-    if (meta) meta.textContent = '3:29 PM · California, United States of America';
+  // Wait for the real row (loading placeholders are replaced when weather arrives)
+  // before mutating it, then read all geometry in one page task to avoid a refresh
+  // detaching one of the queried elements between boundingBox calls.
+  await expect(row.locator('.weather-row-hl')).toBeVisible({ timeout: 15000 });
+  const layout = await page.evaluate(async () => {
+    const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    let previous = null;
+    const deadline = performance.now() + 5000;
+    while (performance.now() < deadline) {
+      await nextFrame();
+      const el = document.querySelector('#weatherList .weather-row');
+      if (!el || el !== previous || !el.querySelector('.weather-row-hl')) {
+        previous = el;
+        continue;
+      }
+      const name = el.querySelector('.weather-row-city-name');
+      const meta = el.querySelector('.weather-row-meta');
+      if (!name || !meta) return null;
+      // The same rendered row survived two frames, so the measurement is based
+      // on the settled row rather than a loading node that is about to be replaced.
+      name.textContent = 'Livermore-Pleasanton';
+      meta.textContent = '3:29 PM · California, United States of America';
+      const box = (node) => {
+        const rect = node.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom };
+      };
+      return {
+        row: box(el),
+        city: box(el.querySelector('.weather-row-city')),
+        name: box(name),
+        temp: box(el.querySelector('.weather-row-temp')),
+        highLow: box(el.querySelector('.weather-row-hl')),
+        nameText: name.textContent
+      };
+    }
+    return null;
   });
-  const city = row.locator('.weather-row-city');
-  const hl = row.locator('.weather-row-hl');
-  await expect(hl).toBeVisible();
-  const [rowBox, cityBox, nameBox, tempBox, hlBox] = await Promise.all([
-    row.boundingBox(),
-    city.boundingBox(),
-    row.locator('.weather-row-city-name').boundingBox(),
-    row.locator('.weather-row-temp').boundingBox(),
-    hl.boundingBox()
-  ]);
-  expect(nameBox.height).toBeLessThan(36);
-  expect(cityBox.x + cityBox.width).toBeLessThanOrEqual(tempBox.x + 2);
-  expect(hlBox.y + hlBox.height).toBeLessThanOrEqual(rowBox.y + rowBox.height + 1);
+  expect(layout).not.toBeNull();
+  expect(layout.nameText).toBe('Livermore-Pleasanton');
+  expect(layout.name.height).toBeLessThan(36);
+  expect(layout.city.right).toBeLessThanOrEqual(layout.temp.x + 2);
+  expect(layout.highLow.bottom).toBeLessThanOrEqual(layout.row.bottom + 1);
 });
 
 test('weather loading uses a sliding bar, not dashes', async ({ page }) => {
