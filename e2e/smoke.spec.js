@@ -244,7 +244,7 @@ test('greetings reroll on refresh, re-entry, and mode changes', async ({ page })
   await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
 });
 
-test('greeting is immediately readable and reflows after a viewport change', async ({ page }) => {
+test('checking copy is immediate, then the real greeting types inside a stable layout', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.addInitScript(() => {
@@ -258,6 +258,8 @@ test('greeting is immediately readable and reflows after a viewport change', asy
   await expect(visibleCopy).toHaveText(await heading.getAttribute('aria-label'), { timeout: 5000 });
   await expect(heading).not.toHaveAttribute('data-typing', 'true');
   await page.locator('[data-weather-mode="horizon"]').click();
+  await expect(heading).toHaveAttribute('data-typing', 'true');
+  await expect(page.locator('#weatherGreetingSizer')).toHaveText(await heading.getAttribute('aria-label'));
   await expect(visibleCopy).toHaveText(await heading.getAttribute('aria-label'), { timeout: 5000 });
   const fits = async () => page.evaluate(() => {
     const heading = document.querySelector('#weatherGreeting');

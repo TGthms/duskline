@@ -100,17 +100,32 @@ body.duskline .weather-detail-insight {
   text-shadow: 0 1px 3px rgba(0,0,0,.4);
 }
 body.duskline .weather-detail-insight strong { font-weight: 700; }
-body.duskline .weather-share-status:not(:empty) {
-  position: absolute;
-  inset-inline-end: 16px;
-  top: calc(100% + 3px);
-  padding: 9px 13px;
-  border: 1px solid rgba(255,255,255,.24);
-  border-radius: 12px;
-  background: rgba(12,29,48,.94);
-  color: #fff;
-  font: 600 13px/1.2 var(--ff-body);
-  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+.weather-toast {
+  position: fixed;
+  z-index: 11000;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 50%;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 18px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 16px;
+  background: rgba(18, 31, 49, .96);
+  color: #f6faff;
+  box-shadow: 0 12px 36px rgba(4,13,27,.28);
+  font: 600 13px/1.35 var(--ff-body);
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -10px);
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.weather-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.weather-toast[data-kind="error"] { border-color: rgba(255,127,127,.5); }
+@media (prefers-reduced-motion: reduce) {
+  .weather-toast { transition: none; }
+}
+@media (max-width: 640px) {
+  body.duskline .gallery-app-footer-copy { flex: 0 1 auto; }
 }
 body.duskline .weather-suggest .s-group {
   padding: 10px 15px 5px;
@@ -196,6 +211,9 @@ body.duskline.weather-sky-light .weather-suggest {
 body.duskline.weather-sky-light .weather-suggest button { color: #15263b; }
 body.duskline.weather-sky-light .weather-suggest .s-meta,
 body.duskline.weather-sky-light .weather-suggest .s-empty { color: rgba(21,38,59,.55); }
+body.duskline.weather-sky-light .weather-suggest .s-add { color: #16344f; background: rgba(31,74,109,.08); border-color: rgba(31,74,109,.18); }
+body.duskline.weather-sky-light .weather-suggest .s-add[aria-pressed="true"] { color: #176b32; }
+body.duskline.weather-sky-light .weather-suggest .s-loading { color: #31516b; --wx-content: #31516b; }
 body.duskline.weather-sky-light .weather-suggest button.is-active,
 body.duskline.weather-sky-light .weather-suggest button:hover,
 body.duskline.weather-sky-light .weather-suggest button:focus-visible { background: rgba(31,74,109,.08); }

@@ -683,6 +683,58 @@
       th: 'สภาพอากาศสำหรับคนอยากรู้', vi: 'Thời tiết cho người tò mò', id: 'Cuaca untuk yang penasaran',
       ja: '知りたい人のための天気', ko: '궁금한 사람을 위한 날씨', zh: '写给好奇的人的天气', 'zh-TW': '給好奇的人看的天氣'
     },
+    'weather.notice.added': {
+      en: 'Added to My Sky', es: 'Añadido a Mi cielo', fr: 'Ajouté à Mon ciel', de: 'Zu Mein Himmel hinzugefügt',
+      it: 'Aggiunto a Il mio cielo', 'pt-BR': 'Adicionado ao Meu Céu', 'pt-PT': 'Adicionado ao Meu Céu',
+      nl: 'Toegevoegd aan Mijn lucht', da: 'Føjet til Min himmel', sv: 'Tillagd i Min himmel',
+      nb: 'Lagt til i Min himmel', fi: 'Lisätty Oma taivas -näkymään', pl: 'Dodano do Mojego nieba',
+      cs: 'Přidáno do Mé oblohy', hu: 'Hozzáadva a Saját égbolthoz', ro: 'Adăugat în Cerul meu',
+      el: 'Προστέθηκε στον Ουρανό μου', tr: 'Gökyüzüme eklendi', ru: 'Добавлено в «Моё небо»',
+      uk: 'Додано до «Мого неба»', ar: 'تمت الإضافة إلى سمائي', he: 'נוסף לשמיים שלי',
+      hi: 'मेरे आसमान में जोड़ा गया', th: 'เพิ่มในท้องฟ้าของฉันแล้ว', vi: 'Đã thêm vào Bầu trời của tôi',
+      id: 'Ditambahkan ke Langit Saya', ja: 'マイスカイに追加しました', ko: '내 하늘에 추가됨',
+      zh: '已添加到我的天空', 'zh-TW': '已加入我的天空'
+    },
+    'weather.notice.removed': {
+      en: 'Removed from My Sky', es: 'Quitado de Mi cielo', fr: 'Retiré de Mon ciel', de: 'Aus Mein Himmel entfernt',
+      it: 'Rimosso da Il mio cielo', 'pt-BR': 'Removido do Meu Céu', 'pt-PT': 'Removido do Meu Céu',
+      nl: 'Verwijderd uit Mijn lucht', da: 'Fjernet fra Min himmel', sv: 'Borttagen från Min himmel',
+      nb: 'Fjernet fra Min himmel', fi: 'Poistettu Oma taivas -näkymästä', pl: 'Usunięto z Mojego nieba',
+      cs: 'Odebráno z Mé oblohy', hu: 'Eltávolítva a Saját égboltból', ro: 'Eliminat din Cerul meu',
+      el: 'Αφαιρέθηκε από τον Ουρανό μου', tr: 'Gökyüzümden kaldırıldı', ru: 'Удалено из «Моего неба»',
+      uk: 'Видалено з «Мого неба»', ar: 'تمت الإزالة من سمائي', he: 'הוסר מהשמיים שלי',
+      hi: 'मेरे आसमान से हटाया गया', th: 'นำออกจากท้องฟ้าของฉันแล้ว', vi: 'Đã xóa khỏi Bầu trời của tôi',
+      id: 'Dihapus dari Langit Saya', ja: 'マイスカイから削除しました', ko: '내 하늘에서 삭제됨',
+      zh: '已从我的天空移除', 'zh-TW': '已從我的天空移除'
+    },
+    'weather.notice.searching': {
+      en: 'Searching places…', es: 'Buscando lugares…', fr: 'Recherche de lieux…', de: 'Orte werden gesucht…',
+      it: 'Ricerca di luoghi…', 'pt-BR': 'Buscando lugares…', 'pt-PT': 'A procurar locais…',
+      nl: 'Plaatsen zoeken…', da: 'Søger efter steder…', sv: 'Söker platser…',
+      nb: 'Søker etter steder…', fi: 'Haetaan paikkoja…', pl: 'Szukam miejsc…',
+      cs: 'Hledání míst…', hu: 'Helyek keresése…', ro: 'Se caută locuri…',
+      el: 'Αναζήτηση τοποθεσιών…', tr: 'Yerler aranıyor…', ru: 'Поиск мест…',
+      uk: 'Пошук місць…', ar: 'جارٍ البحث عن أماكن…', he: 'מחפש מקומות…',
+      hi: 'स्थान खोजे जा रहे हैं…', th: 'กำลังค้นหาสถานที่…', vi: 'Đang tìm địa điểm…',
+      id: 'Mencari tempat…', ja: '場所を検索中…', ko: '장소 검색 중…',
+      zh: '正在搜索地点…', 'zh-TW': '正在搜尋地點…'
+    },
+    'weather.notice.copyManually': {
+      en: 'Select this link to copy it:', es: 'Selecciona este enlace para copiarlo:', fr: 'Sélectionnez ce lien pour le copier:',
+      de: 'Diesen Link zum Kopieren auswählen:', it: 'Seleziona questo link per copiarlo:',
+      'pt-BR': 'Selecione este link para copiá-lo:', 'pt-PT': 'Selecione esta ligação para a copiar:',
+      nl: 'Selecteer deze link om hem te kopiëren:', da: 'Vælg dette link for at kopiere det:',
+      sv: 'Markera länken för att kopiera den:', nb: 'Velg denne lenken for å kopiere den:',
+      fi: 'Valitse tämä linkki kopioitavaksi:', pl: 'Zaznacz ten link, aby go skopiować:',
+      cs: 'Vyberte tento odkaz ke zkopírování:', hu: 'Jelölje ki ezt a hivatkozást a másoláshoz:',
+      ro: 'Selectează acest link pentru a-l copia:', el: 'Επιλέξτε αυτόν τον σύνδεσμο για αντιγραφή:',
+      tr: 'Kopyalamak için bu bağlantıyı seçin:', ru: 'Выделите эту ссылку, чтобы скопировать её:',
+      uk: 'Виділіть це посилання, щоб скопіювати його:', ar: 'حدّد هذا الرابط لنسخه:',
+      he: 'בחרו בקישור הזה כדי להעתיק אותו:', hi: 'कॉपी करने के लिए यह लिंक चुनें:',
+      th: 'เลือกลิงก์นี้เพื่อคัดลอก:', vi: 'Chọn liên kết này để sao chép:',
+      id: 'Pilih tautan ini untuk menyalinnya:', ja: 'このリンクを選択してコピーしてください:',
+      ko: '복사하려면 이 링크를 선택하세요:', zh: '选中此链接以复制：', 'zh-TW': '選取此連結以複製：'
+    },
     'weather.search': {
       en: 'Search city', es: 'Buscar ciudad', fr: 'Rechercher une ville', de: 'Stadt suchen', it: 'Cerca città',
       'pt-BR': 'Buscar cidade', 'pt-PT': 'Pesquisar cidade', nl: 'Stad zoeken', da: 'Søg by', sv: 'Sök stad',

@@ -150,12 +150,20 @@ test('a manual refresh marks the shell busy and clears it again', async ({ page 
   await stubWeather(page, null);
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:', { timeout: 20000 });
+  await page.route(/api\.open-meteo\.com/, async route => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await route.fallback();
+  });
 
   const shell = page.locator('#weatherShell');
   await expect(shell).not.toHaveAttribute('aria-busy', 'true');
   await page.click('#weatherRefresh');
   await expect(shell).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#weatherRefresh')).toHaveClass(/is-busy/);
+  const spin = await page.locator('#weatherRefresh svg').evaluate(node => getComputedStyle(node).animationName);
+  expect(spin).toBe('wx-refresh-spin');
   await expect(shell).not.toHaveAttribute('aria-busy', 'true', { timeout: 15000 });
+  await expect(page.locator('#weatherRefresh')).not.toHaveClass(/is-busy/);
 });
 
 test('the theme follows the OS, before first paint and when the OS flips', async ({ page }) => {
@@ -342,4 +350,181 @@ test('the empty My Sky message uses dark readable text on the light canvas', asy
   const message = page.locator('#weatherMySkyEmpty p');
   await expect(message).toBeVisible();
   expect(await message.evaluate(el => getComputedStyle(el).color)).toBe('rgb(36, 73, 102)');
+});
+
+test('detail actions stay in the top right and the footer uses the current year', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stubWeather(page, null);
+  await page.goto('/');
+  await expect(page.locator('#dusklineYear')).toHaveText(String(new Date().getFullYear()));
+  await expect(page.locator('.gallery-app-footer-copy')).toContainText('Tim G (TGthms)');
+  const footerGap = await page.evaluate(() => {
+    const copy = document.querySelector('.gallery-app-footer-copy').getBoundingClientRect();
+    const links = document.querySelector('.gallery-app-footer .footer-legal-links').getBoundingClientRect();
+    return links.top - copy.bottom;
+  });
+  expect(footerGap).toBeLessThan(80);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const position = await page.locator('.weather-detail-bar-actions').evaluate(node => {
+    const box = node.getBoundingClientRect();
+    return { right: box.right, top: box.top };
+  });
+  expect(position.right).toBeGreaterThan(1400);
+  expect(position.top).toBeLessThan(80);
+  await page.locator('#weatherModules [data-sheet="humidity"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheet .wx-sheet-grab')).toBeHidden();
+});
+
+test('My Sky checking copy is immediate and the completed forecast types in', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-motion', 'full');
+    localStorage.setItem('duskline-weather-greeting-city', JSON.stringify({
+      name: 'Boston', admin1: 'Massachusetts', lat: 42.36, lon: -71.059,
+      tz: 'America/New_York', country: 'United States', country_code: 'US'
+    }));
+  });
+  await stubWeather(page, null);
+  await page.route(/api\.open-meteo\.com/, async route => {
+    await new Promise(resolve => setTimeout(resolve, 650));
+    await route.fallback();
+  });
+  await page.goto('/');
+  const heading = page.locator('#weatherGreeting');
+  await expect(heading).toHaveAttribute('aria-label', /checking the weather/i);
+  await expect(heading).not.toHaveAttribute('data-typing', 'true');
+  await expect(heading).toHaveAttribute('data-typing', 'true', { timeout: 15000 });
+  const finalText = await heading.getAttribute('aria-label');
+  await expect(page.locator('#weatherGreetingText')).toHaveText(finalText, { timeout: 5000 });
+});
+
+test('search shows progress and saves a result directly with confirmation', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route(/geocoding-api\.open-meteo\.com/, async route => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await route.fulfill({ json: { results: [{
+      name: 'Boston', latitude: 42.36, longitude: -71.06, admin1: 'Massachusetts',
+      country: 'United States', country_code: 'US', timezone: 'America/New_York'
+    }] } });
+  });
+  await page.goto('/');
+  await page.locator('#weatherSearch').fill('Boston');
+  await expect(page.locator('#weatherSuggest .s-loading')).toBeVisible();
+  await expect(page.locator('#weatherSearch')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#weatherSuggest .s-add')).toBeVisible();
+  await page.locator('#weatherSuggest .s-add').click();
+  await expect(page.locator('.weather-toast')).toContainText('Added to My Sky');
+  await expect(page.locator('#weatherSuggest .s-add')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  await expect(page.locator('#weatherFavoritesList')).toContainText('Boston');
+});
+
+test('a denied location request gives visible feedback', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition(_success, error) { error({ code: 1 }); } }
+    });
+  });
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.locator('#weatherLocate').click();
+  await expect(page.locator('.weather-toast')).toHaveClass(/is-visible/);
+  await expect(page.locator('.weather-toast')).toContainText('permission was denied');
+});
+
+test('share exposes a selectable link when clipboard APIs are unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    document.execCommand = () => false;
+  });
+  await stubWeather(page, null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherDetailShare').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#wxShareLink')).toHaveValue(/lat=35\.6762.*lon=139\.6503/);
+  await expect(page.locator('#wxShareLink')).toBeFocused();
+});
+
+test('share confirms a legacy clipboard copy when native clipboard is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    document.execCommand = () => true;
+  });
+  await stubWeather(page, null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherDetailShare').click();
+  await expect(page.locator('.weather-toast')).toContainText('Link copied');
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+});
+
+test('a light city pack explains hourly loading until full data arrives', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route(/api\.open-meteo\.com/, async route => {
+    if (route.request().url().includes('hourly=')) await new Promise(resolve => setTimeout(resolve, 750));
+    await route.fallback();
+  });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:');
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('.weather-hourly-loading')).toBeVisible();
+  await expect(page.locator('.weather-hourly-loading')).toContainText('Loading forecast');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 15000 });
+});
+
+test('calm conditions do not promote a zero percent rain insight', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherDetailHero .weather-detail-insight')).toBeVisible();
+  await expect(page.locator('#weatherDetailHero .weather-detail-insight')).not.toContainText('Precipitation');
+  await expect(page.locator('#weatherDetailHero .weather-detail-insight')).not.toBeEmpty();
+});
+
+test('a strong wind replaces the rain insight with timely wind guidance', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route(/api\.open-meteo\.com/, async route => {
+    if (!route.request().url().includes('hourly=')) return route.fallback();
+    const forecast = body(false, Date.now(), 1);
+    forecast.current.wind_speed_10m = 20;
+    return route.fulfill({ json: forecast });
+  });
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetailHero .weather-detail-insight')).toContainText('Wind');
+  await expect(page.locator('#weatherDetailHero .weather-detail-insight')).not.toContainText('Precipitation');
+});
+
+test('the detail insight looks ahead to tomorrow near bedtime', async ({ page }) => {
+  const bedtimeNewYork = new Date();
+  bedtimeNewYork.setUTCHours(3, 0, 0, 0);
+  await page.clock.install({ time: bedtimeNewYork });
+  await stubWeather(page, null);
+  await page.goto('/?city=nyc');
+  await expect(page.locator('#weatherDetailHero .weather-detail-insight')).toContainText('Tomorrow');
+});
+
+test('light air quality sheet uses readable dark band colors', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  const middayNewYork = new Date();
+  middayNewYork.setUTCHours(17, 0, 0, 0);
+  await page.clock.install({ time: middayNewYork });
+  await stubWeather(page, null);
+  await page.route(/air-quality-api\.open-meteo\.com/, route => route.fulfill({
+    json: { current: { us_aqi: 66, pm2_5: 17, pm10: 27, us_aqi_pm2_5: 66, us_aqi_pm10: 55 } }
+  }));
+  await page.goto('/?city=nyc');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherModules [data-sheet="aqi"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/wx-sheet-light/);
+  await expect(page.locator('#wxAqiExtended .wx-air-contribution strong').first()).toBeVisible();
+  const color = await page.locator('#wxAqiExtended .wx-air-contribution strong').first()
+    .evaluate(node => getComputedStyle(node).color);
+  expect(color).toBe('rgb(118, 83, 0)');
 });

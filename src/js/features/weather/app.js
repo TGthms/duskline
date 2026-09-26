@@ -198,6 +198,7 @@
   const mySkySearchBtn = $('weatherMySkySearch');
   const greetingTitleEl = $('weatherGreeting');
   const greetingTextEl = $('weatherGreetingText');
+  const greetingSizerEl = $('weatherGreetingSizer');
   const greetingPlaceBtn = $('weatherGreetingPlace');
   const modeButtons = Array.from(document.querySelectorAll('[data-weather-mode]'));
   const unitsBtn = $('weatherUnitsBtn');
@@ -209,7 +210,6 @@
   const detailRefresh = $('weatherDetailRefresh');
   const detailFavBtn = $('weatherDetailFav');
   const detailShareBtn = $('weatherDetailShare');
-  const shareStatusEl = $('weatherShareStatus');
   const detailSky = $('weatherDetailSky');
   const sheetEl = $('weatherSheet');
   const sheetBody = $('weatherSheetBody');
@@ -289,10 +289,22 @@
   let selectingGreetingPlace = false;
   let greetingBoundaryTimer = 0;
   let lastGreetingText = '';
+  let greetingTypeTimer = 0;
+  let greetingTypeGeneration = 0;
   let greetingVisitSeed = null;
   const aqiDetailInflight = new Map();
   let activeSheetKind = null;
-  let shareStatusTimer = 0;
+  let toastTimer = 0;
+  const toastEl = $('weatherToast');
+  function notify(message, kind) {
+    if (!message || !toastEl) return;
+    window.clearTimeout(toastTimer);
+    toastEl.textContent = message;
+    toastEl.dataset.kind = kind === 'error' ? 'error' : 'success';
+    toastEl.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    toastEl.classList.add('is-visible');
+    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); }, 2800);
+  }
   let detailReturnFocus = null;
   let detailReturnKey = null;
   let sheetReturnFocus = null;
@@ -830,6 +842,8 @@
       }, ...list.filter((f) => !sameCity(f, c))];
     }
     saveFavorites(list);
+    notify(t(removing ? 'weather.notice.removed' : 'weather.notice.added',
+      removing ? 'Removed from My Sky' : 'Added to My Sky'));
     const snapshot = removing ? savedSnapshotFor(c) : null;
     if (removing && !sameCity(c, myLocationCity) && !sameCity(c, selectedGreetingCity)
         && !(snapshot && snapshot.visited)) forgetSnapshotFor(c);
@@ -1308,7 +1322,7 @@
     if (rows.length && contributors.length) {
       const top = contributors[0];
       const mainLabel = top.pollutant.labelKey ? t(top.pollutant.labelKey, top.pollutant.label) : top.pollutant.label;
-      html += `<div class="wx-air-main"><span class="wx-air-main-label">${escapeHtml(t('weather.aqiMainPollutant', 'Main pollutant'))}</span><strong>${escapeHtml(mainLabel)}</strong><span class="wx-air-main-score" style="color:${aqiColor(top.value)}">${Math.round(top.value)}</span></div>`;
+      html += `<div class="wx-air-main"><span class="wx-air-main-label">${escapeHtml(t('weather.aqiMainPollutant', 'Main pollutant'))}</span><strong>${escapeHtml(mainLabel)}</strong><span class="wx-air-main-score" style="--wx-aqi-color:${aqiColor(top.value)};--wx-aqi-light:${aqiLightColor(top.value)}">${Math.round(top.value)}</span></div>`;
     }
     if (rows.length) {
       html += `<div class="wx-air-list-title">${escapeHtml(t('weather.aqiPollutantLevels', 'Pollutant levels'))}</div><div class="wx-air-list">`;
@@ -1319,7 +1333,7 @@
         const amount = airValueText(current[p.key], p.key === 'aerosol_optical_depth' ? '' : unit);
         const label = p.labelKey ? t(p.labelKey, p.label) : p.label;
         const contributionHtml = contribution == null ? ''
-          : `<span class="wx-air-contribution${contribution > 100 ? ' is-elevated' : ''}" style="--wx-air-color:${aqiColor(contribution)}"><span>${escapeHtml(t('weather.aqiContribution', 'AQI contribution'))}</span><strong>${Math.round(contribution)}</strong></span>`;
+          : `<span class="wx-air-contribution${contribution > 100 ? ' is-elevated' : ''}" style="--wx-air-color:${aqiColor(contribution)};--wx-aqi-light:${aqiLightColor(contribution)}"><span>${escapeHtml(t('weather.aqiContribution', 'AQI contribution'))}</span><strong>${Math.round(contribution)}</strong></span>`;
         html += `<div class="wx-air-row"><span class="wx-air-name">${escapeHtml(label)}</span><span class="wx-air-amount">${escapeHtml(amount)}</span>${contributionHtml}</div>`;
       });
       html += '</div>';
@@ -1368,6 +1382,13 @@
       Good: '#34c759', Moderate: '#ffd60a', UnhealthySG: '#ff9f0a',
       Unhealthy: '#ff453a', VeryUnhealthy: '#bf5af2', Hazardous: '#9b2335'
     })[band] || '#8e8e93';
+  }
+  function aqiLightColor(v) {
+    const band = aqiBandKey(v);
+    return ({
+      Good: '#176b32', Moderate: '#765300', UnhealthySG: '#934600',
+      Unhealthy: '#b3261e', VeryUnhealthy: '#7130a0', Hazardous: '#7b1832'
+    })[band] || '#40556a';
   }
   function aqiPct(v) {
     const band = aqiBandKey(v);
@@ -1489,6 +1510,7 @@
     errorEl.hidden = false;
     errorEl.setAttribute('role', 'alert');
     errorEl.textContent = msg;
+    notify(msg, 'error');
   }
 
   function buildRowButton(pack) {
@@ -1633,6 +1655,7 @@
         e.preventDefault();
         e.stopPropagation();
         saveMyLocation(null);
+        notify(t('weather.notice.removed', 'Removed from My Sky'));
         refreshListsFromCache();
       });
     } else {
@@ -1968,19 +1991,79 @@
     const options = candidates.filter(function (item) { return item.score >= Math.max(0, top - 24); }).slice(0, 4);
     return (options[Math.abs(Number(seed) || 0) % options.length] || candidates[0]).text;
   }
+  function detailWeatherInsight(pack) {
+    if (!pack || !pack.weather) return '';
+    const tz = cityTimeZone(pack, pack.city);
+    const parts = localDateTimeParts(tz);
+    const current = pack.weather.current || {};
+    const hourly = pack.weather.hourly || {};
+    const daily = pack.weather.daily || {};
+    const precipScore = greetingPrecipitationScore(pack, tz);
+    const precip = sheetContextText('precip', pack, tz);
+    const tomorrow = greetingTomorrowInsight(pack, tz);
+    const wind = Number(current.wind_speed_10m);
+    const windText = current.wind_speed_10m != null && Number.isFinite(wind)
+      ? t('weather.wind', 'Wind') + ': ' + fmtWind(wind) + '.' : '';
+    const aqi = Number(pack.air && pack.air.current && pack.air.current.us_aqi);
+    const aqiText = Number.isFinite(aqi) && pack.air && pack.air.current
+      ? aqiGreetingDescription(aqi) : '';
+    const dayIndex = dailyTodayIndex(daily, tz);
+    const uvMax = Number(dailyFieldAt(daily, 'uv_index_max', dayIndex));
+    const uvNow = hourlyNowValue(hourly, 'uv_index', tz);
+    const uv = Math.max(Number.isFinite(uvMax) ? uvMax : 0, Number.isFinite(uvNow) ? uvNow : 0);
+    const uvText = greetingIsDaylight(daily, tz, parts, uvNow) && uv >= 3
+      ? sheetContextText('uv', pack, tz) : '';
+    if (precipScore >= 62 && precip) return precip;
+    if (aqi >= 101 && aqiText) return aqiText;
+    if (wind >= 14 && windText) return windText;
+    if (uv >= 6 && uvText) return uvText;
+    if ((parts.hour >= 20 || parts.hour < 5) && tomorrow) return tomorrow;
+    if (precipScore >= 48 && precip) return precip;
+    if (wind >= 8 && windText) return windText;
+    if (uvText) return uvText;
+    if (aqi >= 51 && aqiText) return aqiText;
+    return tomorrow || '';
+  }
   function finishGreetingTyping(text) {
+    window.clearTimeout(greetingTypeTimer);
+    greetingTypeGeneration++;
     const finalText = text == null ? lastGreetingText : String(text);
     if (finalText) {
       lastGreetingText = finalText;
       if (greetingTitleEl) greetingTitleEl.setAttribute('aria-label', finalText);
+      if (greetingSizerEl) greetingSizerEl.textContent = finalText;
       if (greetingTextEl) greetingTextEl.textContent = finalText;
+      if (greetingTitleEl) greetingTitleEl.removeAttribute('data-typing');
     }
   }
-  function typeGreeting(fullText) {
+  function typeGreeting(fullText, animate) {
     if (!greetingTitleEl || !greetingTextEl) return;
-    if (fullText !== lastGreetingText || greetingTextEl.textContent !== fullText) {
-      finishGreetingTyping(fullText);
+    if (fullText === lastGreetingText) return;
+    window.clearTimeout(greetingTypeTimer);
+    const generation = ++greetingTypeGeneration;
+    lastGreetingText = fullText;
+    greetingTitleEl.setAttribute('aria-label', fullText);
+    if (greetingSizerEl) greetingSizerEl.textContent = fullText;
+    if (!animate || !motionFull()) {
+      greetingTextEl.textContent = fullText;
+      greetingTitleEl.removeAttribute('data-typing');
+      return;
     }
+    const chars = typeof Intl.Segmenter === 'function'
+      ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(fullText), part => part.segment)
+      : Array.from(fullText);
+    let shown = 0;
+    const interval = Math.min(1400, Math.max(380, chars.length * 26)) / Math.max(1, chars.length);
+    greetingTextEl.textContent = '';
+    greetingTitleEl.setAttribute('data-typing', 'true');
+    const tick = function () {
+      if (generation !== greetingTypeGeneration) return;
+      shown++;
+      greetingTextEl.textContent = chars.slice(0, shown).join('');
+      if (shown < chars.length) greetingTypeTimer = window.setTimeout(tick, interval);
+      else greetingTitleEl.removeAttribute('data-typing');
+    };
+    greetingTypeTimer = window.setTimeout(tick, interval);
   }
   function scheduleGreetingBoundary(timeZone, parts, pack) {
     window.clearTimeout(greetingBoundaryTimer);
@@ -2023,6 +2106,7 @@
     }[period]);
     const cur = pack && pack.weather && pack.weather.current || {};
     let fullText;
+    let animateGreeting = weatherMode === 'horizon';
     if (weatherMode === 'my-sky') {
       if (!selectedCity) {
         fullText = t('weather.greeting.mySkyPrompt', '{greeting} — choose a city to see your local forecast.')
@@ -2038,6 +2122,7 @@
         fullText = t('weather.greeting.mySkyChecking', '{greeting} — checking the weather in {place}.')
           .replace('{greeting}', greet).replace('{place}', displayCityName(selectedCity));
       } else {
+        animateGreeting = true;
         const place = displayCityName(selectedCity);
         const temp = fmtTemp(cur.temperature_2m);
         const weatherPhrase = greetingWeatherPhrase(cur.weather_code);
@@ -2077,7 +2162,7 @@
       fullText = greet + t('weather.greeting.separator', '. ')
         + t('weather.greeting.horizon' + choice, horizonFallbacks[choice]);
     }
-    typeGreeting(fullText);
+    typeGreeting(fullText, animateGreeting);
     if (greetingPlaceBtn) {
       const hasGreetingSources = greetingSourceOptions().length > 0;
       greetingPlaceBtn.hidden = weatherMode !== 'my-sky';
@@ -2566,19 +2651,9 @@
     const night = localHourForPack(pack) < 6 || localHourForPack(pack) >= 20;
     const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
     const heroRange = dayHiLo(daily, dayIdx, cur.temperature_2m);
-    let nextHoursInsight = '';
-    if (hourly.time && hourly.precipitation_probability) {
-      const probabilities = hourly.time.reduce(function (values, stamp, index) {
-        const at = stampToMs(stamp, cityTimeZone(pack, c));
-        const chance = Number(hourly.precipitation_probability[index]);
-        if (at >= Date.now() - 3600000 && at <= Date.now() + 6 * 3600000
-            && Number.isFinite(chance)) values.push(chance);
-        return values;
-      }, []);
-      if (probabilities.length) {
-        nextHoursInsight = `<div class="weather-detail-insight">${escapeHtml(t('weather.nextSixHours', 'Next 6 hours'))}<span aria-hidden="true"> · </span>${escapeHtml(t('weather.precip', 'Precipitation'))} <strong>${Math.round(Math.max(...probabilities))}%</strong></div>`;
-      }
-    }
+    const insightText = detailWeatherInsight(pack);
+    const nextHoursInsight = insightText
+      ? `<p class="weather-detail-insight">${escapeHtml(insightText)}</p>` : '';
     detailHero.innerHTML = `
       <h2 id="weatherDetailTitle">${escapeHtml(displayCityName(c))}</h2>
       <div class="weather-detail-temp">${fmtTemp(cur.temperature_2m)}</div>
@@ -2748,6 +2823,9 @@
       </div>`;
     }
     hourlyHtml += '</div>';
+    if (!times.length) {
+      hourlyHtml = `<div class="weather-hourly-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
+    }
     const hourlyTitle = t('weather.hourly', 'Hourly Forecast');
     mods.push(`<button type="button" class="weather-mod weather-mod-wide is-tappable" data-sheet="conditions" aria-label="${escapeHtml(hourlyTitle)}"><div class="weather-mod-label">${modLabelIcon('conditions')}<span>${escapeHtml(hourlyTitle)}</span></div>${hourlyHtml}</button>`);
 
@@ -3149,7 +3227,7 @@
     } else if (kind === 'aqi') {
       const aqi = pack.air && pack.air.current && pack.air.current.us_aqi;
       body += `<div class="wx-sheet-hero">
-        <div class="weather-chart-readout" style="color:${aqiColor(aqi)}">${aqi != null ? Math.round(aqi) : '—'}</div>
+        <div class="weather-chart-readout wx-aqi-readout" style="--wx-aqi-color:${aqiColor(aqi)};--wx-aqi-light:${aqiLightColor(aqi)}">${aqi != null ? Math.round(aqi) : '—'}</div>
         <div class="weather-chart-sub">${escapeHtml(aqiLabel(aqi) || t('weather.aqi', 'Air Quality'))}${aqi != null ? ' · ' + escapeHtml(aqiRange(aqi)) : ''}</div>
       </div>`;
       body += aqiBarHtml(aqi, false);
@@ -3398,8 +3476,14 @@
     titleHost.innerHTML = html || '';
   }
 
-  function presentSheet() {
+  function presentSheet(initialFocus) {
     if (!sheetEl || !sheetPanel) return;
+    const focusSheet = function () {
+      const target = initialFocus && initialFocus.isConnected ? initialFocus : sheetClose;
+      if (!target) return;
+      target.focus({ preventScroll: true });
+      if (target === initialFocus && typeof target.select === 'function') target.select();
+    };
     if (!isSheetOpen()) {
       sheetReturnFocus = document.activeElement;
       const tile = sheetReturnFocus && sheetReturnFocus.closest && sheetReturnFocus.closest('[data-sheet]');
@@ -3437,7 +3521,7 @@
           title.setAttribute('id', 'weatherSheetTitle');
           sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
         }
-        if (sheetClose) sheetClose.focus({ preventScroll: true });
+        focusSheet();
       } catch (eFocus) { /* ignore */ }
       return;
     }
@@ -3452,7 +3536,7 @@
           titleR.setAttribute('id', 'weatherSheetTitle');
           sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
         }
-        if (sheetClose) sheetClose.focus({ preventScroll: true });
+        focusSheet();
       } catch (eRed) { /* ignore */ }
       return;
     }
@@ -3470,7 +3554,7 @@
             title.setAttribute('id', 'weatherSheetTitle');
             sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
           }
-          if (sheetClose) sheetClose.focus({ preventScroll: true });
+          focusSheet();
         } catch (eFocus2) { /* ignore */ }
       });
     });
@@ -3824,6 +3908,7 @@
   let suggestIndex = -1;
   function closeSuggest() {
     if (!suggestEl || !searchEl) return;
+    searchEl.removeAttribute('aria-busy');
     suggestEl.classList.remove('open');
     suggestEl.hidden = true;
     suggestEl.innerHTML = '';
@@ -3898,19 +3983,42 @@
     suggestEl.innerHTML = `<li role="presentation" class="s-group">${escapeHtml(t('weather.recentPlaces', 'Recent places'))}</li>`;
     recent.forEach(function (pack) {
       const city = pack.city;
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.setAttribute('role', 'option');
-      btn.setAttribute('aria-selected', 'false');
-      btn.id = 'wx-suggest-' + suggestEl.querySelectorAll('[role="option"]').length;
       const name = displayCityName(city);
-      btn.innerHTML = `<div class="s-name">${escapeHtml(name)}</div><div class="s-meta">${escapeHtml([displayAdmin1(city), city.country].filter(Boolean).join(', '))}</div>`;
-      btn.addEventListener('click', function () { chooseSearchCity(city, name); });
-      li.appendChild(btn);
-      suggestEl.appendChild(li);
+      appendSuggestion(city, name, [displayAdmin1(city), city.country].filter(Boolean).join(', '));
     });
     openSuggest();
+  }
+  function appendSuggestion(city, name, meta) {
+    const li = document.createElement('li');
+    li.className = 's-result';
+    li.setAttribute('role', 'presentation');
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', 'false');
+    option.id = 'wx-suggest-' + suggestEl.querySelectorAll('[role="option"]').length;
+    option.innerHTML = `<div class="s-name">${escapeHtml(name)}</div><div class="s-meta">${escapeHtml(meta)}</div>`;
+    option.addEventListener('click', function () { chooseSearchCity(city, name); });
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 's-add';
+    const syncSave = function () {
+      const saved = isFavorite(city);
+      save.textContent = saved ? '✓' : '+';
+      save.setAttribute('aria-label', t(saved ? 'weather.removeFromMySky' : 'weather.addToMySky',
+        saved ? 'Remove from My Sky' : 'Add to My Sky') + ': ' + name);
+      save.title = save.getAttribute('aria-label');
+      save.setAttribute('aria-pressed', saved ? 'true' : 'false');
+    };
+    syncSave();
+    save.addEventListener('click', function () {
+      toggleFavorite(city);
+      syncSave();
+      refreshListsFromCache({ force: true });
+      if (weatherMode === 'my-sky') refresh(false, { quiet: true, reason: 'view' });
+    });
+    li.append(option, save);
+    suggestEl.appendChild(li);
   }
 
   async function searchSuggest(q) {
@@ -3921,10 +4029,14 @@
       return;
     }
     const gen = ++searchGen;
+    suggestEl.innerHTML = `<li class="s-loading" role="status"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.notice.searching', 'Searching places…'))}</span></li>`;
+    searchEl.setAttribute('aria-busy', 'true');
+    openSuggest();
     try {
       const langParam = geocodeLangParam();
       const data = await dataApi.fetchJson(`${GEOCODE}?name=${encodeURIComponent(q)}&count=8&language=${encodeURIComponent(langParam)}&format=json`);
       if (gen !== searchGen) return;
+      searchEl.removeAttribute('aria-busy');
       const results = data.results || [];
       suggestEl.innerHTML = '';
       if (!results.length) {
@@ -3933,37 +4045,27 @@
         return;
       }
       results.forEach((r) => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.setAttribute('role', 'option');
-        btn.setAttribute('aria-selected', 'false');
-        btn.id = 'wx-suggest-' + suggestEl.children.length;
         const admin = [r.admin1, r.country].filter(Boolean).join(', ');
-        btn.innerHTML = `<div class="s-name">${escapeHtml(r.name)}</div><div class="s-meta">${escapeHtml(admin)}</div>`;
-        btn.addEventListener('click', () => {
-          const L = lang();
-          const city = {
-            name: r.name,
-            names: {},
-            admin1: r.admin1 || r.country || '',
-            lat: r.latitude,
-            lon: r.longitude,
-            tz: r.timezone,
-            country: r.country || '',
-            country_code: r.country_code || ''
-          };
-          city.names[L] = r.name;
-          city.names.en = r.name;
-          try { nameCache.set(L + ':' + cityKey(city), r.name); } catch (e2) {}
-          chooseSearchCity(city, r.name);
-        });
-        li.appendChild(btn);
-        suggestEl.appendChild(li);
+        const L = lang();
+        const city = {
+          name: r.name,
+          names: {},
+          admin1: r.admin1 || r.country || '',
+          lat: r.latitude,
+          lon: r.longitude,
+          tz: r.timezone,
+          country: r.country || '',
+          country_code: r.country_code || ''
+        };
+        city.names[L] = r.name;
+        city.names.en = r.name;
+        try { nameCache.set(L + ':' + cityKey(city), r.name); } catch (e2) {}
+        appendSuggestion(city, r.name, admin);
       });
       openSuggest();
     } catch (e) {
       if (gen !== searchGen) return;
+      searchEl.removeAttribute('aria-busy');
       suggestEl.innerHTML = `<li role="presentation"><div role="option" aria-disabled="true" class="s-empty">${escapeHtml(t('weather.error', 'Could not load weather data.'))}</div></li>`;
       openSuggest();
     }
@@ -4268,6 +4370,41 @@
       refreshListsFromCache();
     });
   }
+  function openManualShareSheet(url) {
+    setSheetTitle(`<div class="wx-sheet-head" data-sheet-title><div class="wx-sheet-icon">${modLabelIcon('conditions')}</div><h3 class="wx-sheet-title">${escapeHtml(t('weather.shareForecast', 'Share forecast'))}</h3></div>`);
+    sheetBody.innerHTML = `<p class="wx-sheet-context">${escapeHtml(t('weather.notice.copyManually', 'Select this link to copy it:'))}</p><input id="wxShareLink" class="wx-share-link" type="text" readonly value="${escapeHtml(url)}" aria-label="${escapeHtml(t('weather.shareForecast', 'Share forecast'))}">`;
+    const input = $('wxShareLink');
+    presentSheet(input);
+    // Visibility is transitioned on this sheet; focusing a child before the
+    // entrance finishes is ignored by some browsers.
+    window.setTimeout(function () {
+      if (input && input.isConnected && isSheetOpen()) {
+        input.focus({ preventScroll: true });
+        input.select();
+      }
+    }, sheetReduceMotion() ? 0 : 360);
+  }
+  async function copyShareLink(value) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
+    } catch (e) { /* browser policy may deny clipboard access */ }
+    const priorFocus = document.activeElement;
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.setAttribute('readonly', '');
+    input.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (e) { /* unsupported */ }
+    input.remove();
+    restoreFocus(priorFocus, detailShareBtn);
+    return copied;
+  }
   if (detailShareBtn) detailShareBtn.addEventListener('click', async function () {
     if (!openCity || !openCity.city) return;
     const city = openCity.city;
@@ -4288,17 +4425,8 @@
         if (e && e.name === 'AbortError') return;
       }
     }
-    try {
-      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(url.href);
-      if (shareStatusEl) shareStatusEl.textContent = t('weather.linkCopied', 'Link copied');
-    } catch (e) {
-      if (shareStatusEl) shareStatusEl.textContent = t('weather.copyFailed', 'Could not copy link');
-    }
-    window.clearTimeout(shareStatusTimer);
-    shareStatusTimer = window.setTimeout(function () {
-      if (shareStatusEl) shareStatusEl.textContent = '';
-    }, 3500);
+    if (await copyShareLink(url.href)) notify(t('weather.linkCopied', 'Link copied'));
+    else openManualShareSheet(url.href);
   });
   if (sheetClose) sheetClose.addEventListener('click', closeSheet);
   if (sheetEl) sheetEl.addEventListener('click', (e) => { if (e.target === sheetEl) closeSheet(); });
@@ -4365,6 +4493,7 @@
           const locatedPack = await dataApi.loadCity(city);
           if (locatedPack && locatedPack.weather) cache.set(cityKey(city), locatedPack);
           refreshListsFromCache();
+          notify(t('weather.notice.added', 'Added to My Sky'));
           // Card only — do not open detail
           if (myLocBlock) {
             try { myLocBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
@@ -4503,7 +4632,6 @@
   });
   window.addEventListener('focus', function () {
     // Window focus while still "visible" — ensure timer is running
-    finishGreetingTyping();
     if (isPageActive() && !autoRefreshTimer) scheduleAutoRefresh();
   });
   window.addEventListener('blur', function () {
