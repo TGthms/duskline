@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>En gratis, browser-only vejrapp til at tjekke og udforske vejret: global bysøgning, time- og 10-dages udsigter, luftkvalitet, animerede forhold og forbedrede U.S. National Weather Service-udsigter og -advarsler.</p>
-  <p><a href="https://dusklineweather.pages.dev/">Åbn duskline</a> · <a href="../../privacy.html">Privatlivspolitik</a> · <a href="../../terms.html">Brugsvilkår</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">Åbn duskline</a> · <a href="https://dusklineweather.pages.dev/privacy.html">Privatlivspolitik</a> · <a href="https://dusklineweather.pages.dev/terms.html">Brugsvilkår</a></p>
 </div>
 
-<details>
-<summary>Læs på</summary>
+## Læs på
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · **Dansk** · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 Ingen konto, intet eget backend og intet reklame-id. Sprog, enheder, favoritter og en bevidst omtrentlig gemt placering bliver i din browser.
 
@@ -28,7 +26,7 @@ Ingen konto, intet eget backend og intet reklame-id. Sprog, enheder, favoritter 
 
 Vejrforespørgsler går fra din browser til [Open-Meteo](https://open-meteo.com/) og, for amerikanske steder, [National Weather Service](https://www.weather.gov/). Hvis du bruger placering, går omvendt geokodning til BigDataCloud og kan falde tilbage til OpenStreetMap Nominatim. Hosting og Google Fonts kan se almindelige tekniske forespørgselsdata.
 
-duskline sælger ikke de oplysninger. Udsigter er til planlægning og udforskning, ikke nødbeslutninger. Detaljer: [Privatlivspolitik](../../privacy.html) og [Brugsvilkår](../../terms.html).
+duskline sælger ikke de oplysninger. Udsigter er til planlægning og udforskning, ikke nødbeslutninger. Detaljer: [Privatlivspolitik](https://dusklineweather.pages.dev/privacy.html) og [Brugsvilkår](https://dusklineweather.pages.dev/terms.html).
 
 ## Sprog
 

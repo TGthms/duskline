@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>Ilmainen, vain selaimessa toimiva sääsovellus säätilan tarkistamiseen ja tutkimiseen: maailmanlaajuinen kaupunkihaku, tunti- ja 10 päivän näkymät, ilmanlaatu, animoidut olosuhteet sekä täydennetyt U.S. National Weather Service -ennusteet ja -varoitukset.</p>
-  <p><a href="https://dusklineweather.pages.dev/">Avaa duskline</a> · <a href="../../privacy.html">Tietosuojakäytäntö</a> · <a href="../../terms.html">Käyttöehdot</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">Avaa duskline</a> · <a href="https://dusklineweather.pages.dev/privacy.html">Tietosuojakäytäntö</a> · <a href="https://dusklineweather.pages.dev/terms.html">Käyttöehdot</a></p>
 </div>
 
-<details>
-<summary>Lue kielellä</summary>
+## Lue kielellä
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · **Suomi** · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 Ei tiliä, ei omaa taustajärjestelmää, ei mainostunnistetta. Kieli, yksiköt, suosikit ja tahallaan karkea tallennettu sijainti jäävät selaimeen.
 
@@ -28,7 +26,7 @@ Ei tiliä, ei omaa taustajärjestelmää, ei mainostunnistetta. Kieli, yksiköt,
 
 Sääpyynnöt lähtevät selaimesta [Open-Meteoon](https://open-meteo.com/) ja Yhdysvaltain sijainneissa [National Weather Serviceen](https://www.weather.gov/). Jos käytät sijaintia, käänteinen geokoodaus menee BigDataCloudille ja voi siirtyä OpenStreetMap Nominatimiin. Isännöinti ja Google Fonts voivat nähdä tavanomaisia teknisiä pyyntötietoja.
 
-duskline ei myy näitä tietoja. Ennusteet ovat suunnittelua ja tutkimista varten, eivät hätäpäätöksiä. Tiedot: [Tietosuojakäytäntö](../../privacy.html) ja [Käyttöehdot](../../terms.html).
+duskline ei myy näitä tietoja. Ennusteet ovat suunnittelua ja tutkimista varten, eivät hätäpäätöksiä. Tiedot: [Tietosuojakäytäntö](https://dusklineweather.pages.dev/privacy.html) ja [Käyttöehdot](https://dusklineweather.pages.dev/terms.html).
 
 ## Kielet
 

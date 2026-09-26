@@ -22,6 +22,14 @@ test('root README and docs/i18n cover every picker language', () => {
   const index = fs.readFileSync(path.join(i18nDir, 'README.md'), 'utf8');
   assert.match(rootReadme, /<h1 align="center">duskline<\/h1>/);
   assert.match(rootReadme, /src="assets\/duskline-icon-512\.png"/);
+  assert.match(rootReadme, /Weather, beautifully clear\. Anywhere in the world\./);
+  assert.match(rootReadme, /^## Read this README in another language$/m);
+  assert.doesNotMatch(rootReadme, /<(?:details|summary)\b/i);
+  assert.match(rootReadme, /href="https:\/\/dusklineweather\.pages\.dev\/privacy\.html"/);
+  assert.match(rootReadme, /href="https:\/\/dusklineweather\.pages\.dev\/terms\.html"/);
+  assert.match(rootReadme, /\[العربية\]\(docs\/i18n\/README\.ar\.md\)/);
+  assert.match(index, /https:\/\/dusklineweather\.pages\.dev\/privacy\.html/);
+  assert.match(index, /https:\/\/dusklineweather\.pages\.dev\/terms\.html/);
   assert.match(rootReadme, /docs\/i18n\/README\.md/);
   for (const code of codes) {
     if (code === 'en') {
@@ -34,8 +42,10 @@ test('root README and docs/i18n cover every picker language', () => {
     assert.match(rootReadme, new RegExp('docs/i18n/README\\.' + code.replace('.', '\\.') + '\\.md'));
     assert.match(index, new RegExp('README\\.' + code.replace('.', '\\.') + '\\.md'));
     assert.match(body, /\]\(\.\.\/\.\.\/README\.md\)/);
-    assert.match(body, /\]\(\.\.\/\.\.\/privacy\.html\)/);
-    assert.match(body, /\]\(\.\.\/\.\.\/terms\.html\)/);
+    assert.match(body, /\]\(https:\/\/dusklineweather\.pages\.dev\/privacy\.html\)/);
+    assert.match(body, /\]\(https:\/\/dusklineweather\.pages\.dev\/terms\.html\)/);
+    assert.match(body, /^## /m);
+    assert.doesNotMatch(body, /<(?:details|summary)\b/i);
     assert.match(body, /<h1>duskline<\/h1>/);
     assert.match(body, /src="\.\.\/\.\.\/assets\/duskline-icon-512\.png"/);
     if (code === 'ar' || code === 'he') {

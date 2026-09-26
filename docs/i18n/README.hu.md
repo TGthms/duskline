@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>Ingyenes, csak böngészős időjárás-alkalmazás a mindennapi ellenőrzéshez és felfedezéshez: világszintű városkeresés, óránkénti és 10 napos kilátás, levegőminőség, animált viszonyok, valamint bővített U.S. National Weather Service előrejelzések és riasztások.</p>
-  <p><a href="https://dusklineweather.pages.dev/">duskline megnyitása</a> · <a href="../../privacy.html">Adatvédelmi szabályzat</a> · <a href="../../terms.html">Felhasználási feltételek</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">duskline megnyitása</a> · <a href="https://dusklineweather.pages.dev/privacy.html">Adatvédelmi szabályzat</a> · <a href="https://dusklineweather.pages.dev/terms.html">Felhasználási feltételek</a></p>
 </div>
 
-<details>
-<summary>Olvasás nyelve</summary>
+## Olvasás nyelve
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · **Magyar** · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 Nincs fiók, nincs saját háttérrendszer, nincs hirdetési azonosító. A nyelv, az egységek, a kedvencek és egy szándékosan hozzávetőleges mentett hely a böngészőben marad.
 
@@ -28,7 +26,7 @@ Nincs fiók, nincs saját háttérrendszer, nincs hirdetési azonosító. A nyel
 
 Az időjárási kérések a böngészőből mennek az [Open-Meteo](https://open-meteo.com/) felé, amerikai helyeken a [National Weather Service](https://www.weather.gov/) felé. Ha helyzetet használ, a fordított geokódolás a BigDataCloudhoz megy, és visszaeshet az OpenStreetMap Nominatimre. A tárhely és a Google Fonts láthatja a szokásos technikai kérésadatokat.
 
-A duskline nem adja el ezeket az információkat. Az előrejelzések tervezésre és felfedezésre valók, nem vészhelyzeti döntésekre. Részletek: [Adatvédelmi szabályzat](../../privacy.html) és [Felhasználási feltételek](../../terms.html).
+A duskline nem adja el ezeket az információkat. Az előrejelzések tervezésre és felfedezésre valók, nem vészhelyzeti döntésekre. Részletek: [Adatvédelmi szabályzat](https://dusklineweather.pages.dev/privacy.html) és [Felhasználási feltételek](https://dusklineweather.pages.dev/terms.html).
 
 ## Nyelvek
 

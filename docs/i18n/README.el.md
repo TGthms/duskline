@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>Μια δωρεάν εφαρμογή καιρού μόνο στο πρόγραμμα περιήγησης, για καθημερινό έλεγχο και εξερεύνηση: παγκόσμια αναζήτηση πόλεων, ωριαίες και 10ήμερες προοπτικές, ποιότητα αέρα, κινούμενες συνθήκες και ενισχυμένες προγνώσεις και ειδοποιήσεις του U.S. National Weather Service.</p>
-  <p><a href="https://dusklineweather.pages.dev/">Άνοιγμα duskline</a> · <a href="../../privacy.html">Πολιτική απορρήτου</a> · <a href="../../terms.html">Όροι χρήσης</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">Άνοιγμα duskline</a> · <a href="https://dusklineweather.pages.dev/privacy.html">Πολιτική απορρήτου</a> · <a href="https://dusklineweather.pages.dev/terms.html">Όροι χρήσης</a></p>
 </div>
 
-<details>
-<summary>Διαβάστε στα</summary>
+## Διαβάστε στα
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · **Ελληνικά** · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 Χωρίς λογαριασμό, χωρίς δικό μας backend, χωρίς αναγνωριστικό διαφήμισης. Η γλώσσα, οι μονάδες, τα αγαπημένα και μια σκόπιμα προσεγγιστική αποθηκευμένη τοποθεσία μένουν στο πρόγραμμα περιήγησης.
 
@@ -28,7 +26,7 @@
 
 Τα αιτήματα καιρού φεύγουν από το πρόγραμμα περιήγησης προς το [Open-Meteo](https://open-meteo.com/) και, για τοποθεσίες στις ΗΠΑ, το [National Weather Service](https://www.weather.gov/). Αν χρησιμοποιείτε τοποθεσία, η αντίστροφη γεωκωδικοποίηση πηγαίνει στο BigDataCloud και μπορεί να καταλήξει στο OpenStreetMap Nominatim. Η φιλοξενία και το Google Fonts μπορεί να βλέπουν συνήθη τεχνικά δεδομένα αιτήματος.
 
-Το duskline δεν πουλά αυτές τις πληροφορίες. Οι προγνώσεις είναι για σχεδιασμό και εξερεύνηση, όχι για αποφάσεις έκτακτης ανάγκης. Λεπτομέρειες: [Πολιτική απορρήτου](../../privacy.html) και [Όροι χρήσης](../../terms.html).
+Το duskline δεν πουλά αυτές τις πληροφορίες. Οι προγνώσεις είναι για σχεδιασμό και εξερεύνηση, όχι για αποφάσεις έκτακτης ανάγκης. Λεπτομέρειες: [Πολιτική απορρήτου](https://dusklineweather.pages.dev/privacy.html) και [Όροι χρήσης](https://dusklineweather.pages.dev/terms.html).
 
 ## Γλώσσες
 

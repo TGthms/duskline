@@ -4,19 +4,17 @@
 
 <h1 align="center">duskline</h1>
 
-<p align="center"><strong>Weather, with a wider view.</strong></p>
+<p align="center"><strong>Weather, beautifully clear. Anywhere in the world.</strong></p>
 
 <p align="center">A calmer way to check the next hour, plan the week, and see what the sky is doing around the world.</p>
 
-<p align="center"><a href="https://dusklineweather.pages.dev/"><strong>Open duskline ↗</strong></a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
+<p align="center"><a href="https://dusklineweather.pages.dev/"><strong>Open duskline ↗</strong></a> · <a href="https://dusklineweather.pages.dev/privacy.html">Privacy</a> · <a href="https://dusklineweather.pages.dev/terms.html">Terms</a></p>
 
 ---
 
-<details>
-  <summary>Read this README in another language</summary>
+## Read this README in another language
 
-  **English** · [Español](docs/i18n/README.es.md) · [Français](docs/i18n/README.fr.md) · [Deutsch](docs/i18n/README.de.md) · [Italiano](docs/i18n/README.it.md) · [Português (Brasil)](docs/i18n/README.pt-BR.md) · [Português (Portugal)](docs/i18n/README.pt-PT.md) · [Nederlands](docs/i18n/README.nl.md) · [Dansk](docs/i18n/README.da.md) · [Svenska](docs/i18n/README.sv.md) · [Norsk bokmål](docs/i18n/README.nb.md) · [Suomi](docs/i18n/README.fi.md) · [Polski](docs/i18n/README.pl.md) · [Čeština](docs/i18n/README.cs.md) · [Magyar](docs/i18n/README.hu.md) · [Română](docs/i18n/README.ro.md) · [Ελληνικά](docs/i18n/README.el.md) · [Türkçe](docs/i18n/README.tr.md) · [Русский](docs/i18n/README.ru.md) · [Українська](docs/i18n/README.uk.md) · [العربية](docs/i18n/README.ar.md) · [עברית](docs/i18n/README.he.md) · [हिन्दी](docs/i18n/README.hi.md) · [ไทย](docs/i18n/README.th.md) · [Tiếng Việt](docs/i18n/README.vi.md) · [Bahasa Indonesia](docs/i18n/README.id.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [简体中文](docs/i18n/README.zh.md) · [繁體中文](docs/i18n/README.zh-TW.md)
-</details>
+**English** · [Español](docs/i18n/README.es.md) · [Français](docs/i18n/README.fr.md) · [Deutsch](docs/i18n/README.de.md) · [Italiano](docs/i18n/README.it.md) · [Português (Brasil)](docs/i18n/README.pt-BR.md) · [Português (Portugal)](docs/i18n/README.pt-PT.md) · [Nederlands](docs/i18n/README.nl.md) · [Dansk](docs/i18n/README.da.md) · [Svenska](docs/i18n/README.sv.md) · [Norsk bokmål](docs/i18n/README.nb.md) · [Suomi](docs/i18n/README.fi.md) · [Polski](docs/i18n/README.pl.md) · [Čeština](docs/i18n/README.cs.md) · [Magyar](docs/i18n/README.hu.md) · [Română](docs/i18n/README.ro.md) · [Ελληνικά](docs/i18n/README.el.md) · [Türkçe](docs/i18n/README.tr.md) · [Русский](docs/i18n/README.ru.md) · [Українська](docs/i18n/README.uk.md) · [العربية](docs/i18n/README.ar.md) · [עברית](docs/i18n/README.he.md) · [हिन्दी](docs/i18n/README.hi.md) · [ไทย](docs/i18n/README.th.md) · [Tiếng Việt](docs/i18n/README.vi.md) · [Bahasa Indonesia](docs/i18n/README.id.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [简体中文](docs/i18n/README.zh.md) · [繁體中文](docs/i18n/README.zh-TW.md)
 
 ## A forecast that feels at home
 
@@ -39,7 +37,7 @@ No account or advertising identifier is needed, and duskline has no weather back
 
 Weather requests go directly from your browser to [Open-Meteo](https://open-meteo.com/) and, for eligible U.S. locations, the [National Weather Service](https://www.weather.gov/). Reverse geocoding for device location uses BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may receive ordinary technical request data.
 
-Forecasts are for planning and exploration, not emergency decisions. Read the [Privacy Policy](privacy.html) and [Terms of Use](terms.html) for details. Removing a saved place removes its forecast snapshot unless the same place remains saved elsewhere; clear the site's browser data to remove all local history.
+Forecasts are for planning and exploration, not emergency decisions. Read the [Privacy Policy](https://dusklineweather.pages.dev/privacy.html) and [Terms of Use](https://dusklineweather.pages.dev/terms.html) for details. Removing a saved place removes its forecast snapshot unless the same place remains saved elsewhere; clear the site's browser data to remove all local history.
 
 ## For contributors
 

@@ -39,11 +39,11 @@ function bar(current, where) {
 
 function hrefs(where) {
   if (where === 'root') return {
-    privacy: 'privacy.html', terms: 'terms.html', i18nIndex: 'docs/i18n/README.md',
+    privacy: APP + 'privacy.html', terms: APP + 'terms.html', i18nIndex: 'docs/i18n/README.md',
     icon: 'assets/duskline-icon-512.png'
   };
   return {
-    privacy: '../../privacy.html', terms: '../../terms.html', i18nIndex: 'README.md',
+    privacy: APP + 'privacy.html', terms: APP + 'terms.html', i18nIndex: 'README.md',
     icon: '../../assets/duskline-icon-512.png'
   };
 }
@@ -59,11 +59,9 @@ function render(code, S, where) {
     '  <p><a href="' + APP + '">' + S.openApp + '</a> · <a href="' + h.privacy + '">' + S.privacy + '</a> · <a href="' + h.terms + '">' + S.terms + '</a></p>',
     '</div>',
     '',
-    '<details>',
-    '<summary>' + S.readIn + '</summary>',
+    '## ' + S.readIn,
     '',
     bar(code, where),
-    '</details>',
     '',
     S.intro,
     '',
@@ -1038,7 +1036,7 @@ function writeAll() {
     '',
     'The canonical English README is [`README.md`](../../README.md) at the repository root (what GitHub shows by default). Every other locale lives in this folder so the root stays uncluttered.',
     '',
-    'In the app, the same 30 locales power the language picker and the [privacy](../../privacy.html) / [terms](../../terms.html) pages. Policy strings are JSON packs in `src/js/data/legal/packs/`.',
+    'In the app, the same 30 locales power the language picker and the [privacy](https://dusklineweather.pages.dev/privacy.html) / [terms](https://dusklineweather.pages.dev/terms.html) pages. Policy strings are JSON packs in `src/js/data/legal/packs/`.',
     '',
     '| Language | File |',
     '| --- | --- |',

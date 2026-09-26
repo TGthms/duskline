@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>無料のブラウザ専用天気アプリ。世界の都市検索、1時間ごとと10日の見通し、大気質、アニメーションの空、そして米国 National Weather Service の強化された予報と警報。</p>
-  <p><a href="https://dusklineweather.pages.dev/">duskline を開く</a> · <a href="../../privacy.html">プライバシーポリシー</a> · <a href="../../terms.html">利用規約</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">duskline を開く</a> · <a href="https://dusklineweather.pages.dev/privacy.html">プライバシーポリシー</a> · <a href="https://dusklineweather.pages.dev/terms.html">利用規約</a></p>
 </div>
 
-<details>
-<summary>言語</summary>
+## 言語
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · **日本語** · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 アカウントも独自バックエンドも広告識別子もありません。言語、単位、お気に入り、意図的に粗くした保存位置はブラウザ内に残ります。
 
@@ -28,7 +26,7 @@
 
 天気リクエストはブラウザから [Open-Meteo](https://open-meteo.com/) へ、米国の地点では [National Weather Service](https://www.weather.gov/) へ直接送られます。位置情報を使う場合の逆ジオコーディングは BigDataCloud、失敗時は OpenStreetMap Nominatim です。ホスティングと Google Fonts は通常の技術的リクエストデータを見ることがあります。
 
-duskline はこの情報を販売しません。予報は計画と探索のためであり、緊急判断用ではありません。詳細は [プライバシーポリシー](../../privacy.html) と [利用規約](../../terms.html)。
+duskline はこの情報を販売しません。予報は計画と探索のためであり、緊急判断用ではありません。詳細は [プライバシーポリシー](https://dusklineweather.pages.dev/privacy.html) と [利用規約](https://dusklineweather.pages.dev/terms.html)。
 
 ## 言語
 

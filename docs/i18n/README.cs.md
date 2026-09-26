@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>Bezplatná, pouze prohlížečová meteorologická aplikace ke kontrole a zkoumání počasí: celosvětové hledání měst, hodinové a 10denní výhledy, kvalita ovzduší, animované podmínky a rozšířené předpovědi a výstrahy U.S. National Weather Service.</p>
-  <p><a href="https://dusklineweather.pages.dev/">Otevřít duskline</a> · <a href="../../privacy.html">Zásady ochrany soukromí</a> · <a href="../../terms.html">Podmínky použití</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">Otevřít duskline</a> · <a href="https://dusklineweather.pages.dev/privacy.html">Zásady ochrany soukromí</a> · <a href="https://dusklineweather.pages.dev/terms.html">Podmínky použití</a></p>
 </div>
 
-<details>
-<summary>Číst v jazyce</summary>
+## Číst v jazyce
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · **Čeština** · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 Žádný účet, žádný vlastní backend, žádný reklamní identifikátor. Jazyk, jednotky, oblíbené položky a záměrně přibližná uložená poloha zůstanou v prohlížeči.
 
@@ -28,7 +26,7 @@
 
 Požadavky na počasí odcházejí z prohlížeče na [Open-Meteo](https://open-meteo.com/) a u amerických míst na [National Weather Service](https://www.weather.gov/). Pokud použijete polohu, reverzní geokódování jde na BigDataCloud a může spadnout na OpenStreetMap Nominatim. Hosting a Google Fonts mohou vidět běžná technická data požadavku.
 
-duskline tyto informace neprodává. Předpovědi slouží k plánování a zkoumání, ne k nouzovým rozhodnutím. Podrobnosti: [Zásady ochrany soukromí](../../privacy.html) a [Podmínky použití](../../terms.html).
+duskline tyto informace neprodává. Předpovědi slouží k plánování a zkoumání, ne k nouzovým rozhodnutím. Podrobnosti: [Zásady ochrany soukromí](https://dusklineweather.pages.dev/privacy.html) a [Podmínky použití](https://dusklineweather.pages.dev/terms.html).
 
 ## Jazyky
 

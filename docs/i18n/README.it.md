@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>Un’app meteo gratuita, solo nel browser, per consultare ed esplorare il tempo: ricerca mondiale di città, previsioni orarie e a 10 giorni, qualità dell’aria, condizioni animate e previsioni e allerte potenziate del U.S. National Weather Service.</p>
-  <p><a href="https://dusklineweather.pages.dev/">Apri duskline</a> · <a href="../../privacy.html">Privacy</a> · <a href="../../terms.html">Termini di utilizzo</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">Apri duskline</a> · <a href="https://dusklineweather.pages.dev/privacy.html">Privacy</a> · <a href="https://dusklineweather.pages.dev/terms.html">Termini di utilizzo</a></p>
 </div>
 
-<details>
-<summary>Leggi in</summary>
+## Leggi in
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **Italiano** · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
-</details>
 
 Nessun account, nessun backend nostro, nessun identificatore pubblicitario. Lingua, unità, preferiti e una posizione salvata volutamente approssimativa restano nel browser.
 
@@ -28,7 +26,7 @@ Nessun account, nessun backend nostro, nessun identificatore pubblicitario. Ling
 
 Le richieste meteo escono dal browser verso [Open-Meteo](https://open-meteo.com/) e, per le località USA, il [National Weather Service](https://www.weather.gov/). Se usi la posizione, il geocoding inverso va a BigDataCloud e può passare a OpenStreetMap Nominatim. Hosting e Google Fonts possono vedere dati tecnici ordinari della richiesta.
 
-duskline non vende queste informazioni. Le previsioni servono a pianificare ed esplorare, non a decisioni di emergenza. Dettagli: [Privacy](../../privacy.html) e [Termini di utilizzo](../../terms.html).
+duskline non vende queste informazioni. Le previsioni servono a pianificare ed esplorare, non a decisioni di emergenza. Dettagli: [Privacy](https://dusklineweather.pages.dev/privacy.html) e [Termini di utilizzo](https://dusklineweather.pages.dev/terms.html).
 
 ## Lingue
 

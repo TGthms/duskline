@@ -2,14 +2,12 @@
   <img src="../../assets/duskline-icon-512.png" alt="duskline app icon" width="88" height="88">
   <h1>duskline</h1>
   <p>免费的纯浏览器天气应用，用于日常查看与探索：全球城市搜索、逐小时与 10 日展望、空气质量、动态天空，以及增强的美国国家气象局预报与警报。</p>
-  <p><a href="https://dusklineweather.pages.dev/">打开 duskline</a> · <a href="../../privacy.html">隐私政策</a> · <a href="../../terms.html">使用条款</a></p>
+  <p><a href="https://dusklineweather.pages.dev/">打开 duskline</a> · <a href="https://dusklineweather.pages.dev/privacy.html">隐私政策</a> · <a href="https://dusklineweather.pages.dev/terms.html">使用条款</a></p>
 </div>
 
-<details>
-<summary>阅读语言</summary>
+## 阅读语言
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **简体中文** · [繁體中文](README.zh-TW.md)
-</details>
 
 没有账户、没有自有后端、没有广告标识符。语言、单位、收藏以及有意降低精度的保存位置都留在浏览器中。
 
@@ -28,7 +26,7 @@
 
 天气请求由浏览器直接发往 [Open-Meteo](https://open-meteo.com/)；美国地点发往 [国家气象局](https://www.weather.gov/)。若使用位置，反向地理编码发往 BigDataCloud，失败时回退到 OpenStreetMap Nominatim。托管与 Google Fonts 可能看到常规技术请求数据。
 
-duskline 不出售这些信息。预报用于规划与探索，不用于紧急决策。详情见 [隐私政策](../../privacy.html) 与 [使用条款](../../terms.html)。
+duskline 不出售这些信息。预报用于规划与探索，不用于紧急决策。详情见 [隐私政策](https://dusklineweather.pages.dev/privacy.html) 与 [使用条款](https://dusklineweather.pages.dev/terms.html)。
 
 ## 语言
 
