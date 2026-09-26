@@ -2512,6 +2512,7 @@
     }
     const prevCity = openCity && openCity.city;
     const cityChanged = !!(prevCity && pack.city && !sameCity(prevCity, pack.city));
+    const sameOpenCity = !!(prevCity && pack.city && sameCity(prevCity, pack.city));
     // Preserve expanded warnings across enrich / unit / language re-renders
     const keepAlertOpen = !cityChanged && isDetailVisible() ? alertsApi.captureOpenAlertTitles() : [];
     // Preserve alerts already loaded when enrich replaces the pack object
@@ -2806,7 +2807,7 @@
 
     // Opening a city (or switching cities) must never leave a units/info sheet
     // trapping the full-screen pointer layer over the list or detail.
-    if (!wasOpen || cityChanged) {
+    if (cityChanged || (!wasOpen && !sameOpenCity)) {
       forceCloseSheet();
     } else if (sheetEl && !sheetOpen) {
       /* Use the intent flag, not the class: while the sheet is animating in the class is
