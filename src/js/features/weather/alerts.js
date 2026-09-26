@@ -320,11 +320,12 @@
      * Cheap: 1 worker, skips when tab hidden, yield between cities (battery).
      */
     var alertsPrefetchGen = 0;
-    function prefetchAlertsForCache(onProgress) {
+    function prefetchAlertsForCache(onProgress, allowedKeys) {
       const gen = ++alertsPrefetchGen;
       const pending = [];
       cache.forEach(function (pack) {
         if (!pack || !pack.city || pack.error || !pack.weather) return;
+        if (allowedKeys && !allowedKeys.has(cityKey(pack.city))) return;
         if (!isLikelyUs(pack.city)) return;
         if ((Array.isArray(pack.alerts) && !pack.alertsError) || pack._alertsLoading) return;
         pending.push(pack);

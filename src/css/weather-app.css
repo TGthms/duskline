@@ -4286,34 +4286,9 @@ html[data-motion-effective="off"] .weather-sheet.wx-sheet-light .weather-sheet-p
   letter-spacing: -0.035em;
   line-height: 1.16;
 }
-.weather-greeting-sizer {
-  display: block;
-  visibility: hidden;
-  white-space: normal;
-}
 .weather-greeting-text {
-  position: absolute;
-  inset: 0;
-  white-space: normal;
-}
-.weather-greeting-line {
   display: block;
-  min-height: 1.16em;
-  white-space: pre;
-}
-.weather-greeting-line.is-typing::after {
-  content: "";
-  display: inline-block;
-  height: 0.9em;
-  margin-inline-start: 2px;
-  border-inline-start: 1.5px solid currentColor;
-  vertical-align: -0.08em;
-  animation: wxGreetingCaret 0.9s steps(2, start) infinite;
-}
-@keyframes wxGreetingCaret { to { opacity: 0; } }
-html[data-motion-effective="reduced"] .weather-greeting-line.is-typing::after,
-html[data-motion-effective="off"] .weather-greeting-line.is-typing::after {
-  animation: none;
+  white-space: normal;
 }
 .weather-greeting-place {
   padding: 2px 0;

@@ -1,7 +1,7 @@
 'use strict';
 /* Duskline — weather/ns.js
    Page gate + factory registry.
-   Load order: ns → sky → charts → alerts → data → app
+   Load order: ns → sky → charts → alerts → data → snapshots → app
 */
 (function (global) {
   var page = document.getElementById('weatherList')

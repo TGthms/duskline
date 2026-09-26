@@ -210,6 +210,36 @@
       ar: 'تم التحديث', he: 'עודכן', hi: 'अपडेट किया गया', th: 'อัปเดตแล้ว', vi: 'Đã cập nhật',
       id: 'Diperbarui', ja: '更新', ko: '업데이트됨', zh: '更新于', 'zh-TW': '更新於'
     },
+    'weather.checked': {
+      en: 'Checked', es: 'Consultado', fr: 'Vérifié', de: 'Abgerufen', it: 'Controllato',
+      'pt-BR': 'Consultado', 'pt-PT': 'Consultado', nl: 'Gecontroleerd', da: 'Kontrolleret',
+      sv: 'Kontrollerad', nb: 'Sjekket', fi: 'Tarkistettu', pl: 'Sprawdzono', cs: 'Zkontrolováno',
+      hu: 'Ellenőrizve', ro: 'Verificat', el: 'Ελέγχθηκε', tr: 'Kontrol edildi', ru: 'Проверено',
+      uk: 'Перевірено', ar: 'تم التحقق', he: 'נבדק', hi: 'जाँच की गई', th: 'ตรวจสอบแล้ว',
+      vi: 'Đã kiểm tra', id: 'Diperiksa', ja: '確認', ko: '확인됨', zh: '查询于', 'zh-TW': '查詢於'
+    },
+    'weather.conditionsAt': {
+      en: 'Conditions at {time}', es: 'Condiciones a las {time}', fr: 'Conditions à {time}',
+      de: 'Bedingungen um {time}', it: 'Condizioni alle {time}', 'pt-BR': 'Condições às {time}',
+      'pt-PT': 'Condições às {time}', nl: 'Weer om {time}', da: 'Vejret kl. {time}',
+      sv: 'Vädret kl. {time}', nb: 'Været kl. {time}', fi: 'Sää klo {time}',
+      pl: 'Warunki o {time}', cs: 'Podmínky v {time}', hu: 'Időjárás ekkor: {time}',
+      ro: 'Condiții la {time}', el: 'Συνθήκες στις {time}', tr: '{time} koşulları',
+      ru: 'Условия на {time}', uk: 'Умови на {time}', ar: 'الأحوال عند {time}',
+      he: 'תנאים בשעה {time}', hi: '{time} पर मौसम', th: 'สภาพอากาศเวลา {time}',
+      vi: 'Điều kiện lúc {time}', id: 'Kondisi pukul {time}', ja: '{time}の天気',
+      ko: '{time} 기준 날씨', zh: '{time}的天气', 'zh-TW': '{time}的天氣'
+    },
+    'weather.savedForecast': {
+      en: 'Saved forecast', es: 'Pronóstico guardado', fr: 'Prévision enregistrée', de: 'Gespeicherte Vorhersage',
+      it: 'Previsioni salvate', 'pt-BR': 'Previsão salva', 'pt-PT': 'Previsão guardada',
+      nl: 'Opgeslagen voorspelling', da: 'Gemt vejrudsigt', sv: 'Sparad prognos', nb: 'Lagret værvarsel',
+      fi: 'Tallennettu ennuste', pl: 'Zapisana prognoza', cs: 'Uložená předpověď', hu: 'Mentett előrejelzés',
+      ro: 'Prognoză salvată', el: 'Αποθηκευμένη πρόγνωση', tr: 'Kaydedilen tahmin', ru: 'Сохранённый прогноз',
+      uk: 'Збережений прогноз', ar: 'توقعات محفوظة', he: 'תחזית שמורה', hi: 'सहेजा गया पूर्वानुमान',
+      th: 'พยากรณ์ที่บันทึกไว้', vi: 'Dự báo đã lưu', id: 'Prakiraan tersimpan', ja: '保存済みの予報',
+      ko: '저장된 예보', zh: '已保存的预报', 'zh-TW': '已儲存的預報'
+    },
     'weather.unavailable': {
       en: 'Unavailable', es: 'No disponible', fr: 'Indisponible', de: 'Nicht verfügbar', it: 'Non disponibile',
       'pt-BR': 'Indisponível', 'pt-PT': 'Indisponível', nl: 'Niet beschikbaar', da: 'Utilgængelig', sv: 'Otillgänglig',
@@ -660,6 +690,72 @@
       ro: 'Caută oraș', el: 'Αναζήτηση πόλης', tr: 'Şehir ara', ru: 'Поиск города', uk: 'Пошук міста',
       ar: 'بحث عن مدينة', he: 'חיפוש עיר', hi: 'शहर खोजें', th: 'ค้นหาเมือง', vi: 'Tìm thành phố',
       id: 'Cari kota', ja: '都市を検索', ko: '도시 검색', zh: '搜索城市', 'zh-TW': '搜尋城市'
+    },
+    'weather.showAllPlaces': {
+      en: 'Show all places', es: 'Ver todos los lugares', fr: 'Voir tous les lieux', de: 'Alle Orte anzeigen',
+      it: 'Mostra tutti i luoghi', 'pt-BR': 'Mostrar todos os lugares', 'pt-PT': 'Mostrar todos os locais',
+      nl: 'Alle plaatsen tonen', da: 'Vis alle steder', sv: 'Visa alla platser', nb: 'Vis alle steder',
+      fi: 'Näytä kaikki paikat', pl: 'Pokaż wszystkie miejsca', cs: 'Zobrazit všechna místa',
+      hu: 'Összes hely megjelenítése', ro: 'Afișează toate locurile', el: 'Εμφάνιση όλων των τοποθεσιών',
+      tr: 'Tüm yerleri göster', ru: 'Показать все места', uk: 'Показати всі місця',
+      ar: 'عرض جميع الأماكن', he: 'הצגת כל המקומות', hi: 'सभी स्थान दिखाएँ', th: 'แสดงสถานที่ทั้งหมด',
+      vi: 'Xem tất cả địa điểm', id: 'Tampilkan semua tempat', ja: 'すべての場所を表示',
+      ko: '모든 장소 보기', zh: '显示所有地点', 'zh-TW': '顯示所有地點'
+    },
+    'weather.recentPlaces': {
+      en: 'Recent places', es: 'Lugares recientes', fr: 'Lieux récents', de: 'Letzte Orte',
+      it: 'Luoghi recenti', 'pt-BR': 'Lugares recentes', 'pt-PT': 'Locais recentes', nl: 'Recente plaatsen',
+      da: 'Seneste steder', sv: 'Senaste platser', nb: 'Nylige steder', fi: 'Viimeaikaiset paikat',
+      pl: 'Ostatnie miejsca', cs: 'Nedávná místa', hu: 'Legutóbbi helyek', ro: 'Locuri recente',
+      el: 'Πρόσφατες τοποθεσίες', tr: 'Son yerler', ru: 'Недавние места', uk: 'Нещодавні місця',
+      ar: 'الأماكن الأخيرة', he: 'מקומות אחרונים', hi: 'हाल के स्थान', th: 'สถานที่ล่าสุด',
+      vi: 'Địa điểm gần đây', id: 'Tempat terbaru', ja: '最近の場所', ko: '최근 장소',
+      zh: '最近的地点', 'zh-TW': '最近的地點'
+    },
+    'weather.nextSixHours': {
+      en: 'Next 6 hours', es: 'Próximas 6 horas', fr: '6 prochaines heures', de: 'Nächste 6 Stunden',
+      it: 'Prossime 6 ore', 'pt-BR': 'Próximas 6 horas', 'pt-PT': 'Próximas 6 horas',
+      nl: 'Komende 6 uur', da: 'Næste 6 timer', sv: 'Kommande 6 timmar', nb: 'Neste 6 timer',
+      fi: 'Seuraavat 6 tuntia', pl: 'Najbliższe 6 godzin', cs: 'Příštích 6 hodin',
+      hu: 'Következő 6 óra', ro: 'Următoarele 6 ore', el: 'Επόμενες 6 ώρες',
+      tr: 'Önümüzdeki 6 saat', ru: 'Следующие 6 часов', uk: 'Наступні 6 годин',
+      ar: 'الساعات الست القادمة', he: '6 השעות הקרובות', hi: 'अगले 6 घंटे',
+      th: '6 ชั่วโมงข้างหน้า', vi: '6 giờ tới', id: '6 jam ke depan', ja: '今後6時間',
+      ko: '앞으로 6시간', zh: '未来6小时', 'zh-TW': '未來6小時'
+    },
+    'weather.shareForecast': {
+      en: 'Share forecast', es: 'Compartir pronóstico', fr: 'Partager la prévision', de: 'Vorhersage teilen',
+      it: 'Condividi previsioni', 'pt-BR': 'Compartilhar previsão', 'pt-PT': 'Partilhar previsão',
+      nl: 'Voorspelling delen', da: 'Del vejrudsigt', sv: 'Dela prognos', nb: 'Del værvarsel',
+      fi: 'Jaa ennuste', pl: 'Udostępnij prognozę', cs: 'Sdílet předpověď', hu: 'Előrejelzés megosztása',
+      ro: 'Distribuie prognoza', el: 'Κοινοποίηση πρόγνωσης', tr: 'Tahmini paylaş', ru: 'Поделиться прогнозом',
+      uk: 'Поділитися прогнозом', ar: 'مشاركة التوقعات', he: 'שיתוף התחזית', hi: 'पूर्वानुमान साझा करें',
+      th: 'แชร์พยากรณ์อากาศ', vi: 'Chia sẻ dự báo', id: 'Bagikan prakiraan', ja: '予報を共有',
+      ko: '예보 공유', zh: '分享预报', 'zh-TW': '分享預報'
+    },
+    'weather.linkCopied': {
+      en: 'Link copied', es: 'Enlace copiado', fr: 'Lien copié', de: 'Link kopiert', it: 'Link copiato',
+      'pt-BR': 'Link copiado', 'pt-PT': 'Ligação copiada', nl: 'Link gekopieerd', da: 'Link kopieret',
+      sv: 'Länk kopierad', nb: 'Lenke kopiert', fi: 'Linkki kopioitu', pl: 'Link skopiowany',
+      cs: 'Odkaz zkopírován', hu: 'Hivatkozás másolva', ro: 'Link copiat', el: 'Ο σύνδεσμος αντιγράφηκε',
+      tr: 'Bağlantı kopyalandı', ru: 'Ссылка скопирована', uk: 'Посилання скопійовано',
+      ar: 'تم نسخ الرابط', he: 'הקישור הועתק', hi: 'लिंक कॉपी किया गया', th: 'คัดลอกลิงก์แล้ว',
+      vi: 'Đã sao chép liên kết', id: 'Tautan disalin', ja: 'リンクをコピーしました',
+      ko: '링크 복사됨', zh: '链接已复制', 'zh-TW': '連結已複製'
+    },
+    'weather.copyFailed': {
+      en: 'Could not copy link', es: 'No se pudo copiar el enlace', fr: 'Impossible de copier le lien',
+      de: 'Link konnte nicht kopiert werden', it: 'Impossibile copiare il link',
+      'pt-BR': 'Não foi possível copiar o link', 'pt-PT': 'Não foi possível copiar a ligação',
+      nl: 'Link kopiëren mislukt', da: 'Kunne ikke kopiere linket', sv: 'Kunde inte kopiera länken',
+      nb: 'Kunne ikke kopiere lenken', fi: 'Linkkiä ei voitu kopioida', pl: 'Nie udało się skopiować linku',
+      cs: 'Odkaz se nepodařilo zkopírovat', hu: 'Nem sikerült másolni a hivatkozást',
+      ro: 'Linkul nu a putut fi copiat', el: 'Δεν ήταν δυνατή η αντιγραφή του συνδέσμου',
+      tr: 'Bağlantı kopyalanamadı', ru: 'Не удалось скопировать ссылку',
+      uk: 'Не вдалося скопіювати посилання', ar: 'تعذّر نسخ الرابط', he: 'לא ניתן להעתיק את הקישור',
+      hi: 'लिंक कॉपी नहीं हो सका', th: 'ไม่สามารถคัดลอกลิงก์ได้', vi: 'Không thể sao chép liên kết',
+      id: 'Tidak dapat menyalin tautan', ja: 'リンクをコピーできませんでした', ko: '링크를 복사할 수 없음',
+      zh: '无法复制链接', 'zh-TW': '無法複製連結'
     },
     'weather.today': {
       en: 'Today', es: 'Hoy', fr: 'Aujourd’hui', de: 'Heute', it: 'Oggi', 'pt-BR': 'Hoje', 'pt-PT': 'Hoje',

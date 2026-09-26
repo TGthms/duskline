@@ -436,12 +436,12 @@
           }
         }
         if (!packed.weather || !packed.weather.current) {
-          return { error: true, city: c, fetchedAt: Date.now() };
+          return { error: true, city: c, fetchedAt: 0 };
         }
         return packed;
       } catch (e) {
         if (e && e.name === 'AbortError') throw e;
-        return { error: true, city: c, fetchedAt: Date.now() };
+        return { error: true, city: c, fetchedAt: 0 };
       }
     }
 
@@ -628,8 +628,10 @@
         pack = await enrichWithOpenMeteo(pack, signal);
       }
 
-      if (pack) cache.set(key, pack);
-      return pack || { error: true, city: c, fetchedAt: Date.now() };
+      if (pack && pack.weather) cache.set(key, pack);
+      else if (hit && hit.weather) return Object.assign({}, hit, { stored: true });
+      else if (pack) cache.set(key, pack);
+      return pack || { error: true, city: c, fetchedAt: 0 };
     }
 
     var listAbortCtl = null;
@@ -659,7 +661,7 @@
       return cities.map(function (c, i) {
         const weather = weatherList[i];
         if (!weather || !weather.current) {
-          return { error: true, city: c, fetchedAt: now };
+          return { error: true, city: c, fetchedAt: 0 };
         }
         return {
           weather: weather,
@@ -702,7 +704,10 @@
             });
           } catch (e) {
             if (e && e.name === 'AbortError') return;
-            out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
+            const previous = cache.get(cityKey(cities[idx]));
+            out[idx] = previous && previous.weather
+              ? Object.assign({}, previous, { stored: true })
+              : { error: true, city: cities[idx], fetchedAt: 0 };
           }
           cache.set(cityKey(cities[idx]), out[idx]);
           onCityLoaded(cities[idx], out[idx]);
@@ -736,9 +741,11 @@
             for (let j = 0; j < packs.length; j++) {
               const idx = sliceIdx[j];
               if (out[idx] && out[idx].weather && !out[idx].error) continue;
-              out[idx] = packs[j];
-              cache.set(cityKey(cities[idx]), packs[j]);
-              onCityLoaded(cities[idx], packs[j]);
+              const previous = cache.get(cityKey(cities[idx]));
+              out[idx] = packs[j] && packs[j].weather ? packs[j]
+                : previous && previous.weather ? Object.assign({}, previous, { stored: true }) : packs[j];
+              cache.set(cityKey(cities[idx]), out[idx]);
+              onCityLoaded(cities[idx], out[idx]);
             }
           }
         } catch (e) {
@@ -746,7 +753,10 @@
           for (let k = 0; k < indices.length; k++) {
             const idx = indices[k];
             if (out[idx] && out[idx].weather) continue;
-            out[idx] = { error: true, city: cities[idx], fetchedAt: Date.now() };
+            const previous = cache.get(cityKey(cities[idx]));
+            out[idx] = previous && previous.weather
+              ? Object.assign({}, previous, { stored: true })
+              : { error: true, city: cities[idx], fetchedAt: 0 };
             cache.set(cityKey(cities[idx]), out[idx]);
             onCityLoaded(cities[idx], out[idx]);
           }
@@ -768,7 +778,7 @@
 
       for (let i = 0; i < total; i++) {
         if (!out[i]) {
-          out[i] = { error: true, city: cities[i], fetchedAt: Date.now() };
+          out[i] = { error: true, city: cities[i], fetchedAt: 0 };
           cache.set(cityKey(cities[i]), out[i]);
           onCityLoaded(cities[i], out[i]);
         }

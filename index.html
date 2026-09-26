@@ -98,8 +98,7 @@
   <div class="weather-page">
     <div class="weather-greeting-wrap">
       <h2 class="weather-greeting-title" id="weatherGreeting" aria-label="">
-        <span class="weather-greeting-sizer" id="weatherGreetingSizer" aria-hidden="true"></span>
-        <span class="weather-greeting-text" id="weatherGreetingText" aria-hidden="true"></span>
+        <span class="weather-greeting-text" id="weatherGreetingText"></span>
       </h2>
       <button type="button" class="weather-greeting-place" id="weatherGreetingPlace" aria-haspopup="dialog" aria-controls="weatherSheet" hidden data-i18n="weather.changeMySkyPlace">Change My Sky city</button>
     </div>
@@ -127,6 +126,17 @@
     <p class="weather-updated" id="weatherUpdated" aria-live="polite"></p>
     <p class="weather-error" id="weatherError" role="alert" hidden></p>
     <div class="weather-shell" id="weatherShell">
+      <div class="weather-start" id="weatherStart" hidden>
+        <div class="weather-start-mark" aria-hidden="true">✦</div>
+        <div class="weather-start-copy">
+          <h3 data-i18n="weather.chooseMySkyPlace">Choose a city for My Sky</h3>
+          <p data-i18n="weather.mySkyEmpty">Add your location or choose a city to make My Sky personal.</p>
+        </div>
+        <div class="weather-start-actions">
+          <button type="button" class="weather-btn weather-btn-pill" id="weatherStartSearch" data-i18n="weather.search">Search city</button>
+          <button type="button" class="weather-btn weather-btn-pill" id="weatherStartLocate" data-i18n="weather.useLocation">Use my location</button>
+        </div>
+      </div>
       <div id="weatherMyLocationBlock" hidden>
         <div class="weather-section-label" data-i18n="weather.myLocation">My Location</div>
         <ul class="weather-list" id="weatherMyLocationList"></ul>
@@ -138,6 +148,7 @@
       <div id="weatherMajorsBlock">
         <div class="weather-section-label" data-i18n="weather.majorCities">Featured places</div>
         <ul class="weather-list" id="weatherList"></ul>
+        <button type="button" class="weather-more" id="weatherMore" hidden data-i18n="weather.showAllPlaces">Show all places</button>
       </div>
       <div class="weather-my-sky-empty" id="weatherMySkyEmpty" hidden>
         <div class="weather-my-sky-empty-mark" aria-hidden="true">✦</div>
@@ -167,8 +178,10 @@
       </button>
       <div class="weather-detail-bar-actions">
         <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailFav" aria-pressed="false" aria-label="Add to My Sky" title="Add to My Sky" data-i18n-aria="weather.addToMySky"></button>
+        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailShare" aria-label="Share forecast" title="Share forecast" data-i18n-aria="weather.shareForecast"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m0 0 4.5 4.5M12 3 7.5 7.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
         <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailRefresh" data-i18n-aria="weather.refresh" aria-label="Refresh" title="Refresh"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M0 0h24v24H0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/></svg></button>
       </div>
+      <span class="weather-share-status" id="weatherShareStatus" role="status" aria-live="polite"></span>
     </div>
     <div class="weather-detail-hero" id="weatherDetailHero"></div>
     <div class="weather-modules" id="weatherModules"></div>
@@ -228,6 +241,7 @@
 <script src="src/js/features/weather/charts.js" defer></script>
 <script src="src/js/features/weather/alerts.js" defer></script>
 <script src="src/js/features/weather/data.js" defer></script>
+<script src="src/js/features/weather/snapshots.js" defer></script>
 <script src="src/js/features/weather/app.js" defer></script>
 <script src="src/js/app.js" defer></script>
 <script src="src/js/sw-register.js"></script>

@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v25';
+const CACHE = 'duskline-shell-v26';
 const SHELL = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const SHELL = [
   './assets/duskline-icon.jpg',
   './assets/duskline-icon-192.png',
   './assets/duskline-icon-512.png',
+  './assets/duskline-icon-maskable.svg',
   './src/css/styles.css',
   './src/css/tokens.css',
   './src/css/icons.css',
@@ -45,14 +46,13 @@ const SHELL = [
   './src/js/features/weather/charts.js',
   './src/js/features/weather/alerts.js',
   './src/js/features/weather/data.js',
+  './src/js/features/weather/snapshots.js',
   './src/js/features/weather/app.js'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => Promise.all(
-      SHELL.map((url) => cache.add(url).catch(function () {}))
-    )).then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
   );
 });
 
@@ -79,7 +79,7 @@ self.addEventListener('fetch', (event) => {
       const response = await fetch(request);
       if (response && response.ok && (response.type === 'basic' || response.type === 'default')) {
         const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(function () {});
+        event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(function () {}));
       }
       return response;
     } catch (err) {

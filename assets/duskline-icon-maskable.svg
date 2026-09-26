@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Duskline horizon">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#064183"/>
+      <stop offset=".37" stop-color="#53689c"/>
+      <stop offset=".78" stop-color="#d88898"/>
+      <stop offset="1" stop-color="#ffad78"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#092f66"/>
+      <stop offset="1" stop-color="#06183b"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h512v300H0z"/>
+  <path fill="url(#sea)" d="M0 300h512v212H0z"/>
+</svg>

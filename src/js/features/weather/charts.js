@@ -557,11 +557,11 @@
           (pastLine ? '<path d="' + pathThrough(pastPts) + ' L' + mid.x.toFixed(1) + ',' + (H - padB).toFixed(1) + ' L' + first.x.toFixed(1) + ',' + (H - padB).toFixed(1) + ' Z" fill="url(#' + id + 'gpast)"/>' : '')
         : '<path d="' + area + '" fill="url(#' + id + (pastLine && !futureLine ? 'gpast' : 'g') + ')"/>';
 
-      return '<div class="weather-chart-wrap weather-chart-card" data-chart="' + id + '" data-pts=\'' + JSON.stringify(payload).replace(/'/g, '&#39;') + '\' data-kind="' + key + '" data-tz="' + escapeHtml(tz || '') + '" data-now-idx="' + midIdx + '" data-vw="' + W + '" data-vh="' + H + '" data-padt="' + padT + '" data-padb="' + padB + '" data-padl="' + padL + '">' +
+      return '<div class="weather-chart-wrap weather-chart-card" role="slider" tabindex="0" data-chart="' + id + '" data-pts=\'' + JSON.stringify(payload).replace(/'/g, '&#39;') + '\' data-kind="' + key + '" data-tz="' + escapeHtml(tz || '') + '" data-now-idx="' + midIdx + '" data-vw="' + W + '" data-vh="' + H + '" data-padt="' + padT + '" data-padb="' + padB + '" data-padl="' + padL + '">' +
         '<div class="weather-chart-readout" data-readout>' + escapeHtml(unitFmt(mid.v)) + '</div>' +
         '<div class="weather-chart-sub" data-sub">' + escapeHtml(formatClock(mid.t, tz)) + '</div>' +
         // preserveAspectRatio=none: CSS size maps 1:1 to viewBox → scrub X/Y stay aligned
-        '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + escapeHtml(t('weather.hourly', 'Hourly Forecast')) + '">' +
+        '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' +
           '<defs>' +
             '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="0" y2="1">' +
               '<stop class="wx-chart-fill-a" offset="0%" stop-color="#ffffff" stop-opacity="0.38"/>' +
@@ -620,6 +620,19 @@
         }
         const defaultPt = pts[idxNow];
         let curPt = defaultPt;
+        let keyboardIndex = idxNow;
+        const chartLabels = {
+          temperature_2m: t('settings.temperature', 'Temperature'),
+          apparent_temperature: t('weather.feelsLike', 'Feels like'),
+          surface_pressure: t('weather.pressure', 'Pressure'),
+          wind_speed_10m: t('weather.wind', 'Wind'),
+          relative_humidity_2m: t('weather.humidity', 'Humidity'),
+          precipitation: t('weather.precip', 'Precipitation'),
+          uv_index: t('weather.uv', 'UV Index')
+        };
+        wrap.setAttribute('aria-label', t('weather.hourly', 'Hourly Forecast') + ': ' + (chartLabels[kind] || kind));
+        wrap.setAttribute('aria-valuemin', '0');
+        wrap.setAttribute('aria-valuemax', String(pts.length - 1));
         const formatVal = (v) => {
           if (kind === 'temperature_2m' || kind === 'apparent_temperature') return fmtTemp(v);
           if (kind === 'surface_pressure') return fmtPress(v);
@@ -642,12 +655,32 @@
           }
           if (readout) readout.textContent = formatVal(pt.v);
           if (sub) sub.textContent = formatClock(pt.t, tz);
+          const valueIndex = pts.indexOf(pt);
+          if (valueIndex >= 0) {
+            keyboardIndex = valueIndex;
+            wrap.setAttribute('aria-valuenow', String(valueIndex));
+            wrap.setAttribute('aria-valuetext', formatClock(pt.t, tz) + ', ' + formatVal(pt.v));
+          }
           curPt = pt;
         };
         const resetToNow = () => {
           paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
         };
         paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
+        wrap.addEventListener('keydown', function (event) {
+          let next = keyboardIndex;
+          if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next += 1;
+          else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next -= 1;
+          else if (event.key === 'PageUp') next += 6;
+          else if (event.key === 'PageDown') next -= 6;
+          else if (event.key === 'Home') next = 0;
+          else if (event.key === 'End') next = pts.length - 1;
+          else if (event.key === 'Escape') next = idxNow;
+          else return;
+          event.preventDefault();
+          keyboardIndex = Math.max(0, Math.min(pts.length - 1, next));
+          paintImmediate(pts[keyboardIndex].x, pts[keyboardIndex].y, pts[keyboardIndex]);
+        });
 
         /** Map pointer → SVG viewBox coords (handles CSS scale; requires none or CTM). */
         function clientToViewBox(clientX, clientY) {

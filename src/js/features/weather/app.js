@@ -26,6 +26,7 @@
   const MAJOR = (window.WEATHER_CITIES && window.WEATHER_CITIES.length)
     ? window.WEATHER_CITIES
     : [];
+  const HORIZON_PREVIEW_SLUGS = new Set(['nyc', 'la', 'london', 'paris', 'tokyo', 'singapore', 'sydney', 'cairo']);
 
   /**
    * Localized major-city display names (static — no network).
@@ -181,6 +182,10 @@
   const myLocListEl = $('weatherMyLocationList');
   const myLocBlock = $('weatherMyLocationBlock');
   const majorsBlock = $('weatherMajorsBlock');
+  const startEl = $('weatherStart');
+  const startSearchBtn = $('weatherStartSearch');
+  const startLocateBtn = $('weatherStartLocate');
+  const moreBtn = $('weatherMore');
   const shellEl = $('weatherShell');
   const errorEl = $('weatherError');
   const updatedEl = $('weatherUpdated');
@@ -192,7 +197,6 @@
   const mySkyLocateBtn = $('weatherMySkyLocate');
   const mySkySearchBtn = $('weatherMySkySearch');
   const greetingTitleEl = $('weatherGreeting');
-  const greetingSizerEl = $('weatherGreetingSizer');
   const greetingTextEl = $('weatherGreetingText');
   const greetingPlaceBtn = $('weatherGreetingPlace');
   const modeButtons = Array.from(document.querySelectorAll('[data-weather-mode]'));
@@ -204,6 +208,8 @@
   const detailBack = $('weatherDetailBack');
   const detailRefresh = $('weatherDetailRefresh');
   const detailFavBtn = $('weatherDetailFav');
+  const detailShareBtn = $('weatherDetailShare');
+  const shareStatusEl = $('weatherShareStatus');
   const detailSky = $('weatherDetailSky');
   const sheetEl = $('weatherSheet');
   const sheetBody = $('weatherSheetBody');
@@ -211,6 +217,31 @@
 
   const CACHE_SOFT_MAX = 200;
   const cacheStore = new Map();
+  const snapshotApi = W.factories.snapshots({
+    cityKey: cityKey, sameCity: sameCity,
+    storage: {
+      getItem: function (key) { return localStorage.getItem(key); },
+      setItem: function (key, value) { localStorage.setItem(key, value); }
+    }
+  });
+  const savedSnapshots = snapshotApi.all;
+  function persistSnapshot(pack) {
+    if (!pack || !pack.weather || !pack.city || pack.error) return;
+    const c = pack.city;
+    const isPersonal = (myLocationCity && sameCity(c, myLocationCity))
+      || (selectedGreetingCity && sameCity(c, selectedGreetingCity))
+      || (openCity && openCity.city && sameCity(c, openCity.city))
+      || loadFavorites().some(function (fav) { return sameCity(c, fav); });
+    if (isPersonal) snapshotApi.save(pack, {
+      visited: !!(openCity && openCity.city && sameCity(c, openCity.city))
+    });
+  }
+  function savedSnapshotFor(city) { return snapshotApi.find(city); }
+  function forgetSnapshotFor(city) {
+    if (!city) return;
+    snapshotApi.forget(city);
+    cacheStore.delete(cityKey(city));
+  }
   function isPinnedCacheKey(key) {
     if (myLocationCity && cityKey(myLocationCity) === key) return true;
     if (selectedGreetingCity && cityKey(selectedGreetingCity) === key) return true;
@@ -239,6 +270,7 @@
       if (cacheStore.has(k)) cacheStore.delete(k);
       cacheStore.set(k, v);
       evictWeatherCache();
+      persistSnapshot(v);
       return cache;
     },
     has: function (k) { return cacheStore.has(k); },
@@ -252,15 +284,25 @@
   let openCity = null;
   let weatherMode = null;
   let weatherModeExplicit = false;
+  let horizonExpanded = !!readWeatherModePreference();
   let selectedGreetingCity = null;
   let selectingGreetingPlace = false;
-  let greetingTypeTimer = 0;
-  let greetingTypeGeneration = 0;
   let greetingBoundaryTimer = 0;
   let lastGreetingText = '';
   let greetingVisitSeed = null;
   const aqiDetailInflight = new Map();
   let activeSheetKind = null;
+  let shareStatusTimer = 0;
+  let detailReturnFocus = null;
+  let detailReturnKey = null;
+  let sheetReturnFocus = null;
+  let sheetReturnKind = null;
+
+  function restoreFocus(target, fallback) {
+    const next = target && target.isConnected && !target.closest('[inert]') ? target : fallback;
+    if (!next || typeof next.focus !== 'function') return;
+    try { next.focus({ preventScroll: true }); } catch (e) { next.focus(); }
+  }
 
   let lastListFetch = 0;
   let myLocationCity = null;
@@ -413,7 +455,14 @@
       t: t,
       onCityLoaded: function (city, pack) {
         pendingCityKeys.delete(cityKey(city));
-        if (pack && pack.fetchedAt) setUpdated(pack.fetchedAt);
+        if ((!pack || !pack.weather) && savedSnapshotFor(city)) {
+          pack = savedSnapshotFor(city);
+          cache.set(cityKey(city), pack);
+        }
+        if (pack && pack.weather && pack.fetchedAt) {
+          if (pack.stored && updatedEl) updatedEl.textContent = rowUpdatedLabel(pack);
+          else setUpdated(pack.fetchedAt);
+        }
         if (pack && pack.city && pack.city.isMyLocation) applyAmbientPageSky();
         // The greeting starts with a lightweight “checking” line while the
         // selected place loads. Refresh it as soon as that place's real pack
@@ -503,7 +552,7 @@
     return (Number(c.lat).toFixed(3) + ',' + Number(c.lon).toFixed(3));
   }
   function sameCity(a, b) {
-    return cityKey(a) === cityKey(b);
+    return !!(a && b && cityKey(a) === cityKey(b));
   }
 
   function cityTimeZone(pack, city) {
@@ -771,7 +820,8 @@
   }
   function toggleFavorite(c) {
     let list = loadFavorites();
-    if (list.some((f) => sameCity(f, c))) {
+    const removing = list.some((f) => sameCity(f, c));
+    if (removing) {
       list = list.filter((f) => !sameCity(f, c));
     } else {
       list = [{
@@ -780,6 +830,9 @@
       }, ...list.filter((f) => !sameCity(f, c))];
     }
     saveFavorites(list);
+    const snapshot = removing ? savedSnapshotFor(c) : null;
+    if (removing && !sameCity(c, myLocationCity) && !sameCity(c, selectedGreetingCity)
+        && !(snapshot && snapshot.visited)) forgetSnapshotFor(c);
     return list;
   }
 
@@ -800,8 +853,10 @@
   function saveMyLocation(c, opts) {
     opts = opts || {};
     if (!c) {
+      const oldLocation = myLocationCity || loadMyLocation();
       try { localStorage.removeItem(MYLOC_KEY); } catch (e) {}
       myLocationCity = null;
+      if (oldLocation && !isFavorite(oldLocation) && !sameCity(oldLocation, selectedGreetingCity)) forgetSnapshotFor(oldLocation);
       return;
     }
     // Stamp when the device position was (re)fetched — not the weather pack time.
@@ -891,15 +946,17 @@
       return mode === 'horizon' || mode === 'my-sky' ? mode : null;
     } catch (e) { return null; }
   }
-  function setWeatherMode(mode, remember) {
+  function setWeatherMode(mode, remember, skipLoad) {
     if (mode !== 'horizon' && mode !== 'my-sky') return;
     if (weatherMode !== mode) greetingVisitSeed = null;
     weatherMode = mode;
+    if (mode === 'horizon' && remember) horizonExpanded = true;
     if (remember) {
       weatherModeExplicit = true;
       try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
     }
     refreshListsFromCache({ force: true });
+    if (!skipLoad) refresh(false, { quiet: true, reason: 'view' });
   }
 
   async function reverseGeocode(lat, lon) {
@@ -1405,15 +1462,18 @@
   function setUpdated(ts, el) {
     const target = el || updatedEl;
     if (!target) return;
-    target.textContent = t('weather.updated', 'Updated') + ' ' + formatUpdatedStamp(ts);
+    target.textContent = t('weather.checked', 'Checked') + ' ' + formatUpdatedStamp(ts);
   }
   /** Short stamp for list rows (and offline/unavailable state). */
   function rowUpdatedLabel(pack) {
     if (!pack) return '';
-    if (pack.fetchedAt) {
-      return t('weather.updated', 'Updated') + ' ' + formatUpdatedStamp(pack.fetchedAt);
-    }
     if (pack.error) return t('weather.unavailable', 'Unavailable');
+    if (pack.stored && pack.fetchedAt) {
+      return t('weather.savedForecast', 'Saved forecast') + ' · ' + formatUpdatedStamp(pack.fetchedAt);
+    }
+    if (pack.fetchedAt) {
+      return t('weather.checked', 'Checked') + ' ' + formatUpdatedStamp(pack.fetchedAt);
+    }
     return '';
   }
   /** When the device position for My Location was last obtained. */
@@ -1451,9 +1511,14 @@
           const fresh = await dataApi.loadCity(c, null, { forceFetch: true, enrich: true });
           cache.set(cityKey(c), fresh);
           pendingCityKeys.delete(cityKey(c));
-          if (openCity && openCity.city && sameCity(openCity.city, c)) openDetail(fresh);
+          if (fresh && fresh.weather && openCity && openCity.city && sameCity(openCity.city, c)) openDetail(fresh);
+          else if (!fresh || !fresh.weather) {
+            if (isDetailVisible() && openCity && openCity.city && sameCity(openCity.city, c)) closeDetail();
+            showError(t('weather.error', 'Could not load weather data.'));
+          }
           replaceCityCard(c, fresh);
         } catch (e) {
+          if (isDetailVisible() && openCity && openCity.city && sameCity(openCity.city, c)) closeDetail();
           showError(t('weather.error', 'Could not load weather data.'));
         }
       };
@@ -1480,6 +1545,10 @@
       const retry = async () => {
         try {
           const fresh = await dataApi.loadCity(c);
+          if (!fresh || !fresh.weather) {
+            showError(t('weather.error', 'Could not load weather data.'));
+            return;
+          }
           openDetail(fresh);
           refreshListsFromCache();
         } catch (e) { showError(t('weather.error', 'Could not load weather data.')); }
@@ -1582,9 +1651,14 @@
 
     const cityLab = displayCityName(c) || c.name || '';
     const tempLab = fmtTemp(cur.temperature_2m);
-    row.setAttribute('aria-label', cityLab + (tempLab ? ', ' + tempLab : '') + (stampLine ? '. ' + stampLine : ''));
+    row.setAttribute('aria-label', [cityLab, tempLab, condLabel(code),
+      t('weather.high', 'H') + ' ' + fmtTemp(hi),
+      t('weather.low', 'L') + ' ' + fmtTemp(lo), stampLine].filter(Boolean).join(', '));
 
-    const open = () => openDetail(pack);
+    const open = () => {
+      restoreFocus(row);
+      openDetail(pack);
+    };
     row.addEventListener('click', open);
 
     if (c.isMyLocation) {
@@ -1601,13 +1675,14 @@
     return li;
   }
 
-  function renderCityList(ul, packs) {
+  function renderCityList(ul, packs, opts) {
     if (!ul) return;
+    opts = opts || {};
     ul.innerHTML = '';
     let region = '';
     packs.forEach((pack) => {
       const nextRegion = pack && pack.city && pack.city.region;
-      if (nextRegion && nextRegion !== region) {
+      if (opts.regions !== false && nextRegion && nextRegion !== region) {
         const heading = document.createElement('li');
         heading.className = 'weather-region-heading';
         heading.setAttribute('role', 'presentation');
@@ -1628,9 +1703,12 @@
       if (!list) continue;
       const current = list.querySelector('li[data-city-key="' + CSS.escape(key) + '"]');
       if (!current) continue;
+      const focused = current.contains(document.activeElement) ? document.activeElement : null;
+      const focusSave = focused && focused.classList.contains('weather-row-save');
       const next = buildRowButton(pack);
       next.dataset.cityKey = key;
       current.replaceWith(next);
+      if (focused) restoreFocus(next.querySelector(focusSave ? '.weather-row-save' : '.weather-row'));
       return true;
     }
     return false;
@@ -1890,131 +1968,19 @@
     const options = candidates.filter(function (item) { return item.score >= Math.max(0, top - 24); }).slice(0, 4);
     return (options[Math.abs(Number(seed) || 0) % options.length] || candidates[0]).text;
   }
-  function greetingGraphemes(value) {
-    const text = String(value || '');
-    try {
-      if (window.Intl && Intl.Segmenter) {
-        return Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(text), function (part) { return part.segment; });
-      }
-    } catch (e) { /* use code point fallback */ }
-    return Array.from(text);
-  }
-  function greetingLineGroups(graphemes) {
-    if (!greetingSizerEl || !graphemes.length || typeof document.createRange !== 'function') return [graphemes];
-    const node = greetingSizerEl.firstChild;
-    if (!node || node.nodeType !== 3) return [graphemes];
-    const groups = [];
-    const range = document.createRange();
-    let offset = 0;
-    let lineTop = null;
-    let line = [];
-    try {
-      graphemes.forEach(function (grapheme) {
-        range.setStart(node, offset);
-        range.setEnd(node, offset + grapheme.length);
-        const rect = range.getBoundingClientRect();
-        const top = rect && rect.height ? Math.round(rect.top * 2) / 2 : lineTop;
-        if (line.length && top != null && lineTop != null && Math.abs(top - lineTop) > 1) {
-          groups.push(line);
-          line = [];
-        }
-        line.push(grapheme);
-        if (top != null) lineTop = top;
-        offset += grapheme.length;
-      });
-      if (line.length) groups.push(line);
-    } catch (e) {
-      return [graphemes];
-    }
-    return groups.length ? groups : [graphemes];
-  }
-  function renderGreetingLines(groups) {
-    const lines = [];
-    greetingTextEl.replaceChildren();
-    groups.forEach(function (graphemes) {
-      const line = document.createElement('span');
-      line.className = 'weather-greeting-line';
-      const text = document.createElement('span');
-      text.className = 'weather-greeting-line-text';
-      line.appendChild(text);
-      greetingTextEl.appendChild(line);
-      lines.push({ element: line, text: text, graphemes: graphemes });
-    });
-    return lines;
-  }
   function finishGreetingTyping(text) {
     const finalText = text == null ? lastGreetingText : String(text);
-    window.clearTimeout(greetingTypeTimer);
-    greetingTypeTimer = 0;
-    greetingTypeGeneration += 1;
     if (finalText) {
       lastGreetingText = finalText;
       if (greetingTitleEl) greetingTitleEl.setAttribute('aria-label', finalText);
-      if (greetingSizerEl) greetingSizerEl.textContent = finalText;
       if (greetingTextEl) greetingTextEl.textContent = finalText;
     }
-    if (greetingTitleEl) greetingTitleEl.removeAttribute('data-typing');
   }
   function typeGreeting(fullText) {
-    if (!greetingTitleEl || !greetingTextEl || !greetingSizerEl) return;
-    // List repaints call updateGreeting often. Keep the active typewriter when the
-    // text is unchanged instead of clearing its only pending character timer.
-    if (fullText === lastGreetingText) {
-      if (greetingTypeTimer) return;
-      if (greetingTitleEl.getAttribute('data-typing') === 'true') {
-        finishGreetingTyping(fullText);
-      }
-      return;
-    }
-    // A data refresh can replace the checking message while it is typing. End on
-    // the newest copy in one step instead of repeatedly restarting midway through.
-    if (greetingTypeTimer || greetingTitleEl.getAttribute('data-typing') === 'true') {
+    if (!greetingTitleEl || !greetingTextEl) return;
+    if (fullText !== lastGreetingText || greetingTextEl.textContent !== fullText) {
       finishGreetingTyping(fullText);
-      return;
     }
-    window.clearTimeout(greetingTypeTimer);
-    greetingTypeTimer = 0;
-    const generation = ++greetingTypeGeneration;
-    lastGreetingText = fullText;
-    greetingTitleEl.setAttribute('aria-label', fullText);
-    greetingSizerEl.textContent = fullText;
-    const graphemes = greetingGraphemes(fullText);
-    const reduced = motionLevel() !== 'full';
-    if (reduced || !graphemes.length) {
-      greetingTextEl.textContent = fullText;
-      greetingTitleEl.removeAttribute('data-typing');
-      return;
-    }
-    const lines = renderGreetingLines(greetingLineGroups(graphemes));
-    greetingTitleEl.setAttribute('data-typing', 'true');
-    const duration = Math.max(380, Math.min(1400, graphemes.length * 26));
-    const delay = duration / graphemes.length;
-    let i = 0;
-    let lineIndex = 0;
-    let charInLine = 0;
-    const typeNext = function () {
-      if (generation !== greetingTypeGeneration) return;
-      if (i >= graphemes.length) {
-        greetingTypeTimer = 0;
-        greetingTitleEl.removeAttribute('data-typing');
-        return;
-      }
-      const line = lines[lineIndex];
-      if (!line) {
-        finishGreetingTyping(fullText);
-        return;
-      }
-      line.element.classList.add('is-typing');
-      line.text.textContent += line.graphemes[charInLine++];
-      i += 1;
-      if (charInLine >= line.graphemes.length) {
-        line.element.classList.remove('is-typing');
-        lineIndex += 1;
-        charInLine = 0;
-      }
-      greetingTypeTimer = window.setTimeout(typeNext, delay);
-    };
-    typeNext();
   }
   function scheduleGreetingBoundary(timeZone, parts, pack) {
     window.clearTimeout(greetingBoundaryTimer);
@@ -2129,6 +2095,11 @@
     opts = opts || {};
     // Block mid-load repaints (this was the multi-refresh flicker)
     if (listPaintLocked && !opts.force) return;
+    const focusedRow = document.activeElement && document.activeElement.closest
+      ? document.activeElement.closest('li[data-city-key]') : null;
+    const focusKey = focusedRow && focusedRow.dataset.cityKey;
+    const focusSave = document.activeElement && document.activeElement.classList
+      && document.activeElement.classList.contains('weather-row-save');
 
     if (!myLocationCity) myLocationCity = loadMyLocation();
     if (!selectedGreetingCity) selectedGreetingCity = loadGreetingCity();
@@ -2144,6 +2115,8 @@
       }
     }
     const showMySky = weatherMode === 'my-sky';
+    const showStart = !showMySky && !myLocationCity && !selectedGreetingCity && !favs.length;
+    const featured = horizonExpanded ? MAJOR : MAJOR.filter((c) => HORIZON_PREVIEW_SLUGS.has(c.slug));
     const homeCity = myLocationCity || selectedGreetingCity;
     const homeKey = homeCity ? cityKey(homeCity) : null;
 
@@ -2170,7 +2143,7 @@
       .map((c) => pendingCityKeys.has(cityKey(c))
         ? { city: c, pending: true, fetchedAt: 0 }
         : (cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 }));
-    const majorPacks = MAJOR
+    const majorPacks = featured
       .filter((c) => !showMySky || (!favKeys.has(cityKey(c)) && (!homeKey || cityKey(c) !== homeKey)))
       .map((c) => pendingCityKeys.has(cityKey(c))
         ? { city: c, pending: true, fetchedAt: 0 }
@@ -2185,6 +2158,9 @@
     }
     if (favBlock) favBlock.hidden = !showMySky || favPacks.length === 0;
     if (majorsBlock) majorsBlock.hidden = showMySky;
+    if (majorsBlock) majorsBlock.classList.toggle('is-preview', !horizonExpanded);
+    if (startEl) startEl.hidden = !showStart;
+    if (moreBtn) moreBtn.hidden = showMySky || horizonExpanded;
     if (mySkyEmptyEl) mySkyEmptyEl.hidden = !showMySky || !!homeCity || favPacks.length > 0;
     modeButtons.forEach(function (button) {
       button.setAttribute('aria-pressed', button.getAttribute('data-weather-mode') === weatherMode ? 'true' : 'false');
@@ -2192,11 +2168,21 @@
     renderCityList(myLocListEl, myPacks);
     renderCityList(favListEl, favPacks);
     if (listEl) listEl.hidden = false;
-    renderCityList(listEl, majorPacks);
+    renderCityList(listEl, majorPacks, { regions: horizonExpanded });
+    if (focusKey) {
+      const next = [myLocListEl, favListEl, listEl]
+        .map(function (list) { return list && list.querySelector('li[data-city-key="' + CSS.escape(focusKey) + '"]'); })
+        .find(function (item) { return item && item.offsetParent !== null; });
+      if (next) restoreFocus(next.querySelector(focusSave ? '.weather-row-save' : '.weather-row'));
+    }
 
-    let latest = 0;
-    [...myPacks, ...favPacks, ...majorPacks].forEach((p) => { latest = Math.max(latest, p.fetchedAt || 0); });
-    if (latest) setUpdated(latest);
+    let latestPack = null;
+    (showMySky ? [...myPacks, ...favPacks] : majorPacks).forEach((p) => {
+      if (p && p.weather && !p.error && (!latestPack || p.fetchedAt > latestPack.fetchedAt)) latestPack = p;
+    });
+    if (latestPack && latestPack.stored && updatedEl) updatedEl.textContent = rowUpdatedLabel(latestPack);
+    else if (latestPack) setUpdated(latestPack.fetchedAt);
+    else if (updatedEl) updatedEl.textContent = '';
     updateGreeting();
     if (!opts.skipAmbient) applyAmbientPageSky();
     // List is interactive again — clear any stuck full-screen PE lock
@@ -2280,16 +2266,8 @@
     }
     const gen = ++refreshGen;
 
-    // Forced reload: ensure NWS + OM re-fetch
-    if (force) {
-      if (!quiet) {
-        // Manual refresh invalidates weather values; visible cards stay in place.
-        cache.clear();
-        dataApi.clearAllNwsPointsCache();
-      } else {
-        // Quiet auto: keep showing last good list; invalidate NWS grid + forceFetch
-        dataApi.clearAllNwsPointsCache();
-      }
+    // A refresh keeps the last valid forecast visible while a new one loads.
+    if (force || opts.reason === 'view' || opts.reason === 'expand') {
       alertsPrefetchGen++; // cancel any in-flight alert prefetch
       if (dataApi && typeof dataApi.abortListLoads === 'function') dataApi.abortListLoads();
     }
@@ -2304,20 +2282,35 @@
     if (!selectedGreetingCity) selectedGreetingCity = loadGreetingCity();
     const favs = loadFavorites();
     const cities = [];
-    if (myLocationCity) cities.push(myLocationCity);
-    favs.forEach((c) => {
+    if (weatherMode === 'my-sky' && myLocationCity) cities.push(myLocationCity);
+    if (weatherMode === 'my-sky') favs.forEach((c) => {
       if (!myLocationCity || !sameCity(c, myLocationCity)) cities.push(c);
     });
     const seen = new Set(cities.map(cityKey));
-    if (selectedGreetingCity && !seen.has(cityKey(selectedGreetingCity))) {
+    if (weatherMode === 'my-sky' && selectedGreetingCity && !seen.has(cityKey(selectedGreetingCity))) {
       cities.push(selectedGreetingCity);
       seen.add(cityKey(selectedGreetingCity));
     }
-    MAJOR.forEach((c) => { if (!seen.has(cityKey(c))) cities.push(c); });
+    if (weatherMode !== 'my-sky') {
+      const featured = horizonExpanded ? MAJOR : MAJOR.filter((c) => HORIZON_PREVIEW_SLUGS.has(c.slug));
+      featured.forEach((c) => { if (!seen.has(cityKey(c))) cities.push(c); });
+    }
+    // Mode changes and boot only request places without a usable recent forecast.
+    if (!force) {
+      for (let i = cities.length - 1; i >= 0; i--) {
+        const hit = cache.get(cityKey(cities[i]));
+        if (hit && hit.weather && Date.now() - (hit.fetchedAt || 0) < REFRESH_MS) cities.splice(i, 1);
+      }
+    }
+    if (!cities.length) {
+      setRefreshBusy(false);
+      if (shellEl) shellEl.removeAttribute('aria-busy');
+      return;
+    }
     cities.forEach((c) => {
       const k = cityKey(c);
       const hit = cache.get(k);
-      if (!quiet || !hit || !hit.weather) pendingCityKeys.add(k);
+      if (!hit || !hit.weather) pendingCityKeys.add(k);
     });
     if (!quiet) refreshListsFromCache({ force: true, skipAmbient: true });
 
@@ -2340,11 +2333,8 @@
         if (gen !== refreshGen) return;
         lastListFetch = Date.now();
 
-        // NWS alerts are fetched for every U.S. city, including quiet startup.
-        // Quiet mode only suppresses progress UI; it must not suppress safety data.
-        // Alerts are fetched for every U.S. city, quiet or not: quiet mode only
-        // suppresses chrome, never safety data.
-        await alertsApi.prefetchAlertsForCache();
+        // Keep active places' alerts fresh without polling hidden history.
+        await alertsApi.prefetchAlertsForCache(null, new Set(cities.map(cityKey)));
         if (gen !== refreshGen) return;
 
         // Cards have already been updated individually; do not rebuild the list.
@@ -2482,6 +2472,11 @@
   // Open it immediately, then replace this loading state with the fetched pack.
   function openDetailLoading(city) {
     if (!detailEl || !city) return;
+    if (!isDetailVisible()) {
+      detailReturnFocus = document.activeElement;
+      const item = detailReturnFocus && detailReturnFocus.closest && detailReturnFocus.closest('li[data-city-key]');
+      detailReturnKey = item && item.dataset.cityKey;
+    }
     openCity = { city: city, pending: true };
     if (detailHero) {
       detailHero.innerHTML = `<h2 id="weatherDetailTitle">${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
@@ -2501,6 +2496,7 @@
     detailEl.classList.remove('is-closing', 'wx-detail-enter');
     detailEl.classList.add('open');
     detailEl.style.opacity = '';
+    restoreFocus(detailBack);
     detailEl.style.pointerEvents = '';
     if (detailScroll) detailScroll.scrollTop = 0;
     try { detailEl.setAttribute('aria-labelledby', 'weatherDetailTitle'); } catch (eLab) { /* ignore */ }
@@ -2509,6 +2505,11 @@
 
   function openDetail(pack) {
     if (!detailEl || !pack || !pack.weather) return;
+    if (!isDetailVisible()) {
+      detailReturnFocus = document.activeElement;
+      const item = detailReturnFocus && detailReturnFocus.closest && detailReturnFocus.closest('li[data-city-key]');
+      detailReturnKey = item && item.dataset.cityKey;
+    }
     const prevCity = openCity && openCity.city;
     const cityChanged = !!(prevCity && pack.city && !sameCity(prevCity, pack.city));
     // Preserve expanded warnings across enrich / unit / language re-renders
@@ -2564,20 +2565,36 @@
     const night = localHourForPack(pack) < 6 || localHourForPack(pack) >= 20;
     const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
     const heroRange = dayHiLo(daily, dayIdx, cur.temperature_2m);
+    let nextHoursInsight = '';
+    if (hourly.time && hourly.precipitation_probability) {
+      const probabilities = hourly.time.reduce(function (values, stamp, index) {
+        const at = stampToMs(stamp, cityTimeZone(pack, c));
+        const chance = Number(hourly.precipitation_probability[index]);
+        if (at >= Date.now() - 3600000 && at <= Date.now() + 6 * 3600000
+            && Number.isFinite(chance)) values.push(chance);
+        return values;
+      }, []);
+      if (probabilities.length) {
+        nextHoursInsight = `<div class="weather-detail-insight">${escapeHtml(t('weather.nextSixHours', 'Next 6 hours'))}<span aria-hidden="true"> · </span>${escapeHtml(t('weather.precip', 'Precipitation'))} <strong>${Math.round(Math.max(...probabilities))}%</strong></div>`;
+      }
+    }
     detailHero.innerHTML = `
       <h2 id="weatherDetailTitle">${escapeHtml(displayCityName(c))}</h2>
       <div class="weather-detail-temp">${fmtTemp(cur.temperature_2m)}</div>
       <div class="weather-detail-cond">${condIcon(cur.weather_code, night)} ${escapeHtml(condLabel(cur.weather_code))}</div>
       <div class="weather-detail-hl">${t('weather.high', 'H')}:${fmtTemp(heroRange.hi)}  ${t('weather.low', 'L')}:${fmtTemp(heroRange.lo)}</div>
+      ${nextHoursInsight}
       <div class="weather-detail-updated" id="weatherDetailUpdated"></div>`;
     try { detailEl.setAttribute('aria-labelledby', 'weatherDetailTitle'); } catch (eLab2) { /* ignore */ }
     {
       const detUp = $('weatherDetailUpdated');
       if (detUp) {
         const parts = [];
-        if (pack.fetchedAt) {
-          parts.push(t('weather.updated', 'Updated') + ' ' + formatUpdatedStamp(pack.fetchedAt));
+        if (cur.time) {
+          parts.push(t('weather.conditionsAt', 'Conditions at {time}')
+            .replace('{time}', formatClock(cur.time, cityTimeZone(pack, c))));
         }
+        if (pack.fetchedAt) parts.push(rowUpdatedLabel(pack));
         const locLab = locationLocatedLabel(c);
         if (locLab) parts.push(locLab);
         detUp.textContent = parts.join(' · ');
@@ -2590,9 +2607,10 @@
 
     const aqi = pack.air && pack.air.current && pack.air.current.us_aqi;
     const mods = [];
+    let hasAlertBlock = false;
     {
       const alertHtml = alertsApi.alertsBlockHtml(pack);
-      if (alertHtml) mods.push(alertHtml);
+      if (alertHtml) { mods.push(alertHtml); hasAlertBlock = true; }
     }
     mods.push(modHtml(
       'aqi', t('weather.aqi', 'Air Quality'),
@@ -2744,6 +2762,26 @@
         ? t('weather.daily7', '7-Day Forecast')
         : t('weather.dailyN', '{n}-Day Forecast').replace('{n}', String(dailyN));
     mods.push(`<div class="weather-mod weather-mod-wide"><div class="weather-mod-label">${escapeHtml(dailyTitle)}</div>${chartsApi.dailyBarsHtml(daily, dailyOpts)}</div>`);
+    // Put the forecast people check first ahead of the exploratory measurements.
+    // The alert banner, when present, still leads the detail.
+    const forecastModules = mods.splice(-2);
+    mods.splice(hasAlertBlock ? 1 : 0, 0, ...forecastModules);
+    const metricStart = hasAlertBlock ? 3 : 2;
+    const metricModules = mods.splice(metricStart);
+    const codeNow = Number(cur.weather_code);
+    const priority = (codeNow >= 51 && codeNow <= 99)
+      ? ['precip', 'feels', 'wind', 'humidity', 'aqi', 'vis', 'uv', 'pressure', 'sun']
+      : (codeNow === 45 || codeNow === 48)
+        ? ['vis', 'aqi', 'humidity', 'feels', 'wind', 'precip', 'uv', 'pressure', 'sun']
+        : !night && codeNow <= 2
+          ? ['uv', 'feels', 'aqi', 'wind', 'humidity', 'precip', 'vis', 'pressure', 'sun']
+          : ['feels', 'aqi', 'wind', 'humidity', 'precip', 'vis', 'uv', 'pressure', 'sun'];
+    metricModules.sort(function (a, b) {
+      const aKey = ((a.match(/data-sheet="([^"]+)"/) || [])[1]) || 'sun';
+      const bKey = ((b.match(/data-sheet="([^"]+)"/) || [])[1]) || 'sun';
+      return priority.indexOf(aKey) - priority.indexOf(bKey);
+    });
+    mods.push(...metricModules);
 
     // Apple-style location attribution
     const placeBits = [displayCityName(c), displayAdmin1(c), c.country || ''].filter(Boolean);
@@ -3336,6 +3374,8 @@
   function forceCloseSheet() {
     sheetGen += 1;
     sheetOpen = false;
+    sheetReturnFocus = null;
+    sheetReturnKind = null;
     inertSheet();
   }
 
@@ -3359,6 +3399,11 @@
 
   function presentSheet() {
     if (!sheetEl || !sheetPanel) return;
+    if (!isSheetOpen()) {
+      sheetReturnFocus = document.activeElement;
+      const tile = sheetReturnFocus && sheetReturnFocus.closest && sheetReturnFocus.closest('[data-sheet]');
+      sheetReturnKind = tile && tile.getAttribute('data-sheet');
+    }
     closeSuggest();
     hoistOverlays();
     const alreadyOpen = sheetEl.classList.contains('open') && !sheetEl.classList.contains('is-leaving');
@@ -3437,6 +3482,12 @@
       sheetOpen = false;
       return;
     }
+    const returnFocus = sheetReturnFocus;
+    const returnKind = sheetReturnKind;
+    sheetReturnFocus = null;
+    sheetReturnKind = null;
+    const returnTile = returnKind && detailMods && detailMods.querySelector('[data-sheet="' + CSS.escape(returnKind) + '"]');
+    const fallback = returnTile || (isDetailVisible() ? detailBack : unitsBtn);
     sheetGen += 1;
     const gen = sheetGen;
     sheetOpen = false;
@@ -3451,11 +3502,13 @@
     sheetEl.style.pointerEvents = 'none';
     if (reduce) {
       inertSheet();
+      restoreFocus(returnFocus, fallback);
       return;
     }
     window.setTimeout(function () {
       if (gen !== sheetGen) return;
       inertSheet();
+      restoreFocus(returnFocus, fallback);
     }, closeMs);
   }
 
@@ -3716,6 +3769,10 @@
 
   function closeDetail() {
     if (!detailEl) return;
+    const returnFocus = detailReturnFocus;
+    const returnKey = detailReturnKey;
+    detailReturnFocus = null;
+    detailReturnKey = null;
     const motionGen = cancelDetailMotion();
     const isOpen = detailEl.classList.contains('open') || detailEl.classList.contains('is-closing');
 
@@ -3728,6 +3785,8 @@
 
     // Restore city list immediately — no solid-sky void under the fade.
     unlockDetailPage();
+    const returnRow = returnKey && shellEl && shellEl.querySelector('li[data-city-key="' + CSS.escape(returnKey) + '"] .weather-row');
+    restoreFocus(returnFocus && returnFocus.isConnected ? returnFocus : returnRow, searchEl);
 
     if (!isOpen) {
       finishDetailClose();
@@ -3795,11 +3854,68 @@
     searchEl.setAttribute('aria-expanded', 'true');
   }
 
+  async function chooseSearchCity(city, label) {
+    const c = Object.assign({}, city, { isMyLocation: false });
+    const chooseAsMySkyPlace = selectingGreetingPlace;
+    selectingGreetingPlace = false;
+    if (chooseAsMySkyPlace) {
+      saveGreetingCity(c);
+      saveGreetingSource('city:' + cityKey(c));
+    }
+    closeSuggest();
+    if (searchEl) searchEl.value = label || displayCityName(c);
+    if (searchClear) {
+      searchClear.hidden = false;
+      searchClear.classList.add('show');
+    }
+    const cached = cache.get(cityKey(c));
+    if (cached && cached.weather) openDetail(cached);
+    else openDetailLoading(c);
+    try {
+      const pack = await dataApi.loadCity(c, null, { enrich: true });
+      if (!pack || !pack.weather) {
+        if (isDetailVisible() && openCity && sameCity(openCity.city, c)) closeDetail();
+        showError(t('weather.error', 'Could not load weather data.'));
+        if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
+        return;
+      }
+      if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
+      if (openCity && sameCity(openCity.city, c)) openDetail(pack);
+    } catch (e) {
+      if (isDetailVisible() && openCity && sameCity(openCity.city, c)) closeDetail();
+      showError(t('weather.error', 'Could not load weather data.'));
+      if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
+    }
+  }
+
+  function renderRecentSuggestions() {
+    if (!suggestEl) return;
+    searchGen += 1;
+    const recent = savedSnapshots.filter(function (pack) { return pack.visited; }).slice(0, 5);
+    if (!recent.length) { closeSuggest(); return; }
+    suggestEl.innerHTML = `<li role="presentation" class="s-group">${escapeHtml(t('weather.recentPlaces', 'Recent places'))}</li>`;
+    recent.forEach(function (pack) {
+      const city = pack.city;
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', 'false');
+      btn.id = 'wx-suggest-' + suggestEl.querySelectorAll('[role="option"]').length;
+      const name = displayCityName(city);
+      btn.innerHTML = `<div class="s-name">${escapeHtml(name)}</div><div class="s-meta">${escapeHtml([displayAdmin1(city), city.country].filter(Boolean).join(', '))}</div>`;
+      btn.addEventListener('click', function () { chooseSearchCity(city, name); });
+      li.appendChild(btn);
+      suggestEl.appendChild(li);
+    });
+    openSuggest();
+  }
+
   async function searchSuggest(q) {
     if (!suggestEl) return;
     if (!q || q.length < 2) {
-      searchGen += 1;
-      closeSuggest();
+      if (!q) renderRecentSuggestions();
+      else { searchGen += 1; closeSuggest(); }
       return;
     }
     const gen = ++searchGen;
@@ -3823,7 +3939,7 @@
         btn.id = 'wx-suggest-' + suggestEl.children.length;
         const admin = [r.admin1, r.country].filter(Boolean).join(', ');
         btn.innerHTML = `<div class="s-name">${escapeHtml(r.name)}</div><div class="s-meta">${escapeHtml(admin)}</div>`;
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', () => {
           const L = lang();
           const city = {
             name: r.name,
@@ -3838,29 +3954,7 @@
           city.names[L] = r.name;
           city.names.en = r.name;
           try { nameCache.set(L + ':' + cityKey(city), r.name); } catch (e2) {}
-          const chooseAsMySkyPlace = selectingGreetingPlace;
-          selectingGreetingPlace = false;
-          if (chooseAsMySkyPlace) {
-            saveGreetingCity(city);
-            saveGreetingSource('city:' + cityKey(city));
-            setWeatherMode('my-sky', true);
-          }
-          closeSuggest();
-          if (searchEl) searchEl.value = r.name;
-          if (searchClear) {
-            searchClear.hidden = false;
-            searchClear.classList.add('show');
-          }
-          try {
-            const pack = await dataApi.loadCity(city);
-            if (chooseAsMySkyPlace && pack && pack.weather) {
-              cache.set(cityKey(city), pack);
-              refreshListsFromCache();
-            }
-            openDetail(pack);
-          } catch (e) {
-            showError(t('weather.error', 'Could not load weather data.'));
-          }
+          chooseSearchCity(city, r.name);
         });
         li.appendChild(btn);
         suggestEl.appendChild(li);
@@ -4156,6 +4250,7 @@
         if (Math.abs(e.clientX - sheetPtr.x) > 12 || Math.abs(e.clientY - sheetPtr.y) > 12) return;
       }
       e.preventDefault();
+      restoreFocus(btn);
       openSheet(kind, openCity);
     });
   }
@@ -4171,6 +4266,38 @@
       refreshListsFromCache();
     });
   }
+  if (detailShareBtn) detailShareBtn.addEventListener('click', async function () {
+    if (!openCity || !openCity.city) return;
+    const city = openCity.city;
+    const url = new URL(location.pathname || '/', location.origin);
+    const params = new URLSearchParams();
+    params.set('lat', String(city.lat));
+    params.set('lon', String(city.lon));
+    params.set('name', city.name || displayCityName(city));
+    if (city.admin1) params.set('admin1', city.admin1);
+    if (city.tz) params.set('tz', city.tz);
+    if (city.country_code) params.set('cc', city.country_code);
+    url.search = params.toString();
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: 'duskline · ' + displayCityName(city), url: url.href });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+      }
+    }
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(url.href);
+      if (shareStatusEl) shareStatusEl.textContent = t('weather.linkCopied', 'Link copied');
+    } catch (e) {
+      if (shareStatusEl) shareStatusEl.textContent = t('weather.copyFailed', 'Could not copy link');
+    }
+    window.clearTimeout(shareStatusTimer);
+    shareStatusTimer = window.setTimeout(function () {
+      if (shareStatusEl) shareStatusEl.textContent = '';
+    }, 3500);
+  });
   if (sheetClose) sheetClose.addEventListener('click', closeSheet);
   if (sheetEl) sheetEl.addEventListener('click', (e) => { if (e.target === sheetEl) closeSheet(); });
   if (unitsBtn) unitsBtn.addEventListener('click', openUnitsSheet);
@@ -4186,7 +4313,6 @@
   }
   function startGreetingPlaceSelection() {
     selectingGreetingPlace = true;
-    setWeatherMode('my-sky', true);
     focusCitySearch();
   }
   if (greetingPlaceBtn) greetingPlaceBtn.addEventListener('click', function () {
@@ -4195,6 +4321,13 @@
   });
   if (mySkySearchBtn) mySkySearchBtn.addEventListener('click', startGreetingPlaceSelection);
   if (mySkyLocateBtn && locateBtn) mySkyLocateBtn.addEventListener('click', function () { locateBtn.click(); });
+  if (startSearchBtn) startSearchBtn.addEventListener('click', startGreetingPlaceSelection);
+  if (startLocateBtn && locateBtn) startLocateBtn.addEventListener('click', function () { locateBtn.click(); });
+  if (moreBtn) moreBtn.addEventListener('click', function () {
+    horizonExpanded = true;
+    refreshListsFromCache({ force: true });
+    refresh(false, { quiet: true, reason: 'expand' });
+  });
 
   if (locateBtn) {
     locateBtn.addEventListener('click', () => {
@@ -4226,7 +4359,7 @@
           saveMyLocation(city, { refreshLocatedAt: true });
           // A successful opt-in should visibly land in the personal forecast, even
           // when the user had previously chosen Horizon explicitly.
-          setWeatherMode('my-sky', true);
+          setWeatherMode('my-sky', true, true);
           const locatedPack = await dataApi.loadCity(city);
           if (locatedPack && locatedPack.weather) cache.set(cityKey(city), locatedPack);
           refreshListsFromCache();
@@ -4257,6 +4390,9 @@
   }
 
   if (searchEl) {
+    searchEl.addEventListener('focus', function () {
+      if (!searchEl.value.trim()) renderRecentSuggestions();
+    });
     searchEl.addEventListener('input', () => {
       const q = searchEl.value.trim();
       if (searchClear) {
@@ -4298,7 +4434,7 @@
       if (searchEl) searchEl.value = '';
       searchClear.hidden = true;
       searchClear.classList.remove('show');
-      closeSuggest();
+      renderRecentSuggestions();
       searchEl && searchEl.focus();
     });
   }
@@ -4309,7 +4445,8 @@
     // Let that initiating click bubble without clearing the flag; the next
     // suggestion click consumes it, while unrelated clicks still cancel it.
     if ((greetingPlaceBtn && greetingPlaceBtn.contains(e.target))
-        || (mySkySearchBtn && mySkySearchBtn.contains(e.target))) return;
+        || (mySkySearchBtn && mySkySearchBtn.contains(e.target))
+        || (startSearchBtn && startSearchBtn.contains(e.target))) return;
     selectingGreetingPlace = false;
     closeSuggest();
   });
@@ -4407,12 +4544,7 @@
       window.refreshWeatherUi({ force: false });
       return;
     }
-    if (type === 'motion') {
-      if (motionLevel() !== 'full' && greetingTypeTimer) {
-        finishGreetingTyping();
-      }
-      return;
-    }
+    if (type === 'motion') return;
     if (type !== 'units') return;
     var temp = e.detail && e.detail.temp;
     var dist = e.detail && e.detail.dist;
@@ -4474,6 +4606,10 @@
 
   // Kick off — paint the complete static catalog immediately, then refresh it quietly.
   myLocationCity = loadMyLocation();
+  selectedGreetingCity = loadGreetingCity();
+  savedSnapshots.forEach(function (pack) {
+    cacheStore.set(cityKey(pack.city), Object.assign({}, pack, { stored: true }));
+  });
   loadNameCacheFromSession();
   ensureListTappable();
   forceCloseSheet();
