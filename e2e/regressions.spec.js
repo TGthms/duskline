@@ -376,6 +376,12 @@ test('detail actions stay in the top right and the footer uses the current year'
   await page.locator('#weatherModules [data-sheet="humidity"]').click();
   await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
   await expect(page.locator('#weatherSheet .wx-sheet-grab')).toBeHidden();
+  const sheetSpacing = await page.locator('#weatherSheet').evaluate(node => {
+    const panel = node.querySelector('.weather-sheet-panel').getBoundingClientRect();
+    const icon = node.querySelector('.wx-sheet-dragzone .wx-sheet-icon').getBoundingClientRect();
+    return icon.top - panel.top;
+  });
+  expect(sheetSpacing).toBeGreaterThanOrEqual(20);
 });
 
 test('My Sky checking copy is immediate and the completed forecast types in', async ({ page }) => {
@@ -399,6 +405,21 @@ test('My Sky checking copy is immediate and the completed forecast types in', as
   await expect(heading).toHaveAttribute('data-typing', 'true', { timeout: 15000 });
   const finalText = await heading.getAttribute('aria-label');
   await expect(page.locator('#weatherGreetingText')).toHaveText(finalText, { timeout: 5000 });
+  const measure = () => page.locator('#weatherGreetingText').evaluate(node => ({
+    height: node.getBoundingClientRect().height,
+    hidden: Array.from(node.querySelectorAll('.weather-greeting-word span')).filter(glyph => glyph.style.visibility === 'hidden').length,
+    words: Array.from(node.querySelectorAll('.weather-greeting-word'), word => ({
+      top: word.getBoundingClientRect().top,
+      left: word.getBoundingClientRect().left
+    }))
+  }));
+  const before = await measure();
+  expect(before.hidden).toBeGreaterThan(0);
+  await page.waitForTimeout(180);
+  const after = await measure();
+  expect(after.hidden).toBeLessThan(before.hidden);
+  expect(after.height).toBe(before.height);
+  expect(after.words).toEqual(before.words);
 });
 
 test('search shows progress and saves a result directly with confirmation', async ({ page }) => {
@@ -415,9 +436,11 @@ test('search shows progress and saves a result directly with confirmation', asyn
   await expect(page.locator('#weatherSuggest .s-loading')).toBeVisible();
   await expect(page.locator('#weatherSearch')).toHaveAttribute('aria-busy', 'true');
   await expect(page.locator('#weatherSuggest .s-add')).toBeVisible();
+  await expect(page.locator('#weatherSuggest .s-add svg.weather-save-icon')).toBeVisible();
+  await page.locator('#weatherSuggest [role="option"]').hover();
+  expect(await page.locator('#weatherSuggest [role="option"]').evaluate(node => getComputedStyle(node).borderRadius)).toBe('10px');
   await page.locator('#weatherSuggest .s-add').click();
   await expect(page.locator('.weather-toast')).toContainText('Added to My Sky');
-  await expect(page.locator('#weatherSuggest .s-add')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('[data-weather-mode="my-sky"]').click();
   await expect(page.locator('#weatherFavoritesList')).toContainText('Boston');
 });

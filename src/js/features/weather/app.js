@@ -2049,17 +2049,42 @@
       greetingTitleEl.removeAttribute('data-typing');
       return;
     }
-    const chars = typeof Intl.Segmenter === 'function'
-      ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(fullText), part => part.segment)
+    const segmenter = typeof Intl.Segmenter === 'function'
+      ? new Intl.Segmenter(lang(), { granularity: 'grapheme' }) : null;
+    const chars = segmenter
+      ? Array.from(segmenter.segment(fullText), part => part.segment)
       : Array.from(fullText);
     let shown = 0;
     const interval = Math.min(1400, Math.max(380, chars.length * 26)) / Math.max(1, chars.length);
-    greetingTextEl.textContent = '';
+    const fragment = document.createDocumentFragment();
+    const glyphs = [];
+    for (const token of fullText.match(/\s+|\S+/gu) || []) {
+      const word = document.createElement('span');
+      word.className = 'weather-greeting-word';
+      for (const char of (segmenter
+        ? Array.from(segmenter.segment(token), part => part.segment)
+        : Array.from(token))) {
+        const glyph = document.createElement('span');
+        glyph.textContent = char;
+        glyph.style.visibility = 'hidden';
+        word.appendChild(glyph);
+        glyphs.push(glyph);
+      }
+      fragment.appendChild(word);
+    }
+    greetingTextEl.replaceChildren(fragment);
+    greetingTitleEl.style.setProperty('--wx-greeting-caret-x', '0px');
+    greetingTitleEl.style.setProperty('--wx-greeting-caret-y', '0px');
     greetingTitleEl.setAttribute('data-typing', 'true');
     const tick = function () {
       if (generation !== greetingTypeGeneration) return;
       shown++;
-      greetingTextEl.textContent = chars.slice(0, shown).join('');
+      const glyph = glyphs[shown - 1];
+      glyph.style.visibility = 'visible';
+      const glyphRect = glyph.getBoundingClientRect();
+      const titleRect = greetingTitleEl.getBoundingClientRect();
+      greetingTitleEl.style.setProperty('--wx-greeting-caret-x', Math.min(glyphRect.right - titleRect.left + 2, titleRect.width - 2) + 'px');
+      greetingTitleEl.style.setProperty('--wx-greeting-caret-y', glyphRect.top - titleRect.top + 2 + 'px');
       if (shown < chars.length) greetingTypeTimer = window.setTimeout(tick, interval);
       else greetingTitleEl.removeAttribute('data-typing');
     };
@@ -4004,7 +4029,7 @@
     save.className = 's-add';
     const syncSave = function () {
       const saved = isFavorite(city);
-      save.textContent = saved ? '✓' : '+';
+      save.innerHTML = savedPlaceIcon(saved);
       save.setAttribute('aria-label', t(saved ? 'weather.removeFromMySky' : 'weather.addToMySky',
         saved ? 'Remove from My Sky' : 'Add to My Sky') + ': ' + name);
       save.title = save.getAttribute('aria-label');
