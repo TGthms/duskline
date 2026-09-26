@@ -6,12 +6,14 @@ A free, browser-only weather app for everyday checking and weather exploration: 
 
 [Open duskline](https://dusklineweather.pages.dev/) · [Privacy Policy](privacy.html) · [Terms of Use](terms.html)
 
-There is no account, no backend of our own, and no advertising identifier. Language, units, favorites, and an intentionally approximate saved location stay in your browser.
+There is no account, no backend of our own, and no advertising identifier. Language, units, favorites, recent places, saved forecasts, and an intentionally approximate saved location stay in your browser.
 
 ## Features
 
 - Search any city worldwide, with keyboard-friendly suggestions
+- Start with a personal place or explore a small worldwide preview, then open the full catalog
 - Save favorites and optionally use your location (coordinates are rounded before they are stored or sent)
+- Reopen recent places, share a direct city link, and view the last saved forecast when offline
 - Current conditions, hourly forecast, and a 10-day outlook
 - Air quality
 - For eligible U.S. places, National Weather Service forecasts and public alerts
@@ -24,6 +26,8 @@ There is no account, no backend of our own, and no advertising identifier. Langu
 Weather requests leave your browser directly for [Open-Meteo](https://open-meteo.com/) and, for U.S. locations, the [National Weather Service](https://www.weather.gov/). Reverse geocoding, if you use location, goes to BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may see ordinary technical request data.
 
 duskline does not sell that information. Forecasts are for planning and exploration, not emergency decisions. Full details: [Privacy Policy](privacy.html) and [Terms of Use](terms.html).
+
+The app keeps up to ten recent or saved forecast snapshots in local browser storage for up to seven days. A saved forecast is labeled with its original check time, and public weather alerts are fetched anew rather than stored for offline use. Removing a saved location removes its snapshot unless the same place remains saved elsewhere. Clear the site's browser data to remove all local history.
 
 ## Languages
 

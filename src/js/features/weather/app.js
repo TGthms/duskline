@@ -26,7 +26,7 @@
   const MAJOR = (window.WEATHER_CITIES && window.WEATHER_CITIES.length)
     ? window.WEATHER_CITIES
     : [];
-  const HORIZON_PREVIEW_SLUGS = new Set(['nyc', 'la', 'london', 'paris', 'tokyo', 'singapore', 'sydney', 'cairo']);
+  const HORIZON_PREVIEW_SLUGS = new Set(['nyc', 'london', 'cairo', 'tokyo', 'singapore', 'sydney']);
 
   /**
    * Localized major-city display names (static — no network).
@@ -3764,7 +3764,8 @@
     try { detailEl.hidden = true; } catch (eHid) { /* ignore */ }
     unlockDetailPage();
     openCity = null;
-    forceCloseSheet();
+    // closeDetail already dismissed its sheet. A list-level sheet may have opened
+    // during this exit transition; do not close that newer interaction here.
     ensureListTappable();
   }
 

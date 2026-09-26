@@ -13,6 +13,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
 | `alerts.js` | NWS alerts accordion + prefetch (`W.factories.alerts`) |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
+| `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
 | `app.js` | UI state, list/detail/sheets, boot |
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone.
@@ -23,6 +24,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 - Chart geometry / daily range colors → `charts.js`
 - Alert cards / collapse animation → `alerts.js`
 - API + hybrid NWS/OM → `data.js`
+- Local forecast retention → `snapshots.js`
 - List, detail, units sheet, refresh → `app.js`
 
 After edits: `npm run check` and Playwright `e2e/smoke.spec.js`.

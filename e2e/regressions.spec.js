@@ -3,7 +3,7 @@
  * Regressions this suite exists to prevent. Each one was a real defect found during review.
  *
  *  1. The list must load the LIGHT query (no hourly, three daily fields). Asking for the full
- *     shape for 36 cities on boot cost ~0.65 MB.
+ *     shape for the visible catalog on boot costs much more data and time.
  *  2. Opening a city must upgrade that pack to the FULL shape, and the detail must actually
  *     render the result. The enrichment re-render used to be gated on `isDetailVisible()`,
  *     which reads a class the enter animation withholds for two frames — so a fast response
@@ -187,4 +187,159 @@ test('a stale parent-site appearance preference is ignored', async ({ page }) =>
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'glass');
   await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:', { timeout: 20000 });
+});
+
+test('first visit offers My Sky above a compact global preview', async ({ page }) => {
+  const log = [];
+  await stubWeather(page, log);
+  await page.goto('/');
+  await expect(page.locator('#weatherStart')).toBeVisible();
+  await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
+  await expect(page.locator('#weatherMore')).toBeVisible();
+  await expect(page.locator('#weatherList .weather-region-heading')).toHaveCount(0);
+  await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:');
+  expect(log.filter((r) => r.coords > 1).every((r) => r.coords <= 6)).toBe(true);
+  await page.locator('#weatherMore').click();
+  await expect(page.locator('#weatherList .weather-row')).toHaveCount(36);
+  await expect(page.locator('#weatherMore')).toBeHidden();
+});
+
+test('a failed search selection explains the failure and closes its loading detail', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:');
+  await page.route(/geocoding-api\.open-meteo\.com/, route => route.fulfill({ json: {
+    results: [{ name: 'Boston', latitude: 42.36, longitude: -71.06, admin1: 'Massachusetts', country: 'United States', country_code: 'US', timezone: 'America/New_York' }]
+  } }));
+  await page.route(/^https:\/\/(api\.weather\.gov|api\.open-meteo\.com)\//, route => route.abort());
+  await page.locator('#weatherSearch').fill('Boston');
+  await page.locator('#weatherSuggest button[role="option"]').first().click();
+  await expect(page.locator('#weatherError')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/, { timeout: 15000 });
+  await expect(page.locator('#weatherError')).toContainText('Could not load');
+});
+
+test('a saved forecast remains visible after provider failure and is marked as saved', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  const row = page.locator('#weatherList .weather-row').first();
+  await expect(row.locator('.weather-row-hl')).toContainText('H:');
+  await row.click();
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#weatherDetailBack')).toBeFocused();
+  await page.locator('#weatherDetailBack').click();
+  await expect(page.locator('#weatherList .weather-row').first()).toBeFocused();
+  await page.route(/api\.weather\.gov|api\.open-meteo\.com|air-quality-api\.open-meteo\.com/, route => route.abort());
+  await page.reload();
+  const saved = page.locator('#weatherList .weather-row').first();
+  await expect(saved).toContainText('Saved forecast');
+  await expect(saved.locator('.weather-row-temp')).not.toHaveText('—');
+});
+
+test('hourly charts can be explored with a keyboard', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.locator('#weatherList .weather-row').first().click();
+  await page.locator('#weatherModules [data-sheet="conditions"]').click();
+  const chart = page.locator('#weatherSheet .weather-chart-wrap[role="slider"]').first();
+  await expect(chart).toBeVisible();
+  await chart.focus();
+  await chart.press('Home');
+  await expect(chart).toHaveAttribute('aria-valuenow', '0');
+  await chart.press('ArrowRight');
+  await expect(chart).toHaveAttribute('aria-valuenow', '1');
+  await chart.press('End');
+  const last = Number(await chart.getAttribute('aria-valuemax'));
+  await expect(chart).toHaveAttribute('aria-valuenow', String(last));
+});
+
+test('the installed app opens a saved forecast offline', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:');
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherDetailBack').click();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller, undefined, { timeout: 15000 });
+  await page.route(/api\.weather\.gov|api\.open-meteo\.com|air-quality-api\.open-meteo\.com/, route => route.abort());
+  await page.context().setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#weatherList .weather-row').first()).toContainText('Saved forecast', { timeout: 15000 });
+  await expect(page.locator('#weatherList .weather-row-temp').first()).not.toHaveText('—');
+  await page.context().setOffline(false);
+});
+
+test('detail and info sheet return focus to the control that opened them', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  const row = page.locator('#weatherList .weather-row').first();
+  await expect(row.locator('.weather-row-hl')).toContainText('H:');
+  await row.click();
+  const tile = page.locator('#weatherModules [data-sheet="feels"]');
+  await tile.click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await page.locator('#weatherSheetClose').click();
+  await expect(tile).toBeFocused();
+  await page.locator('#weatherDetailBack').click();
+  await expect(page.locator('#weatherList .weather-row').first()).toBeFocused();
+});
+
+test('closing a city does not dismiss a place picker opened during its exit transition', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode', 'my-sky');
+    localStorage.setItem('duskline-weather-greeting-city', JSON.stringify({
+      name: 'Boston', admin1: 'Massachusetts', lat: 42.36, lon: -71.059,
+      tz: 'America/New_York', country: 'United States', country_code: 'US'
+    }));
+  });
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.locator('#weatherMyLocationList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.evaluate(() => {
+    document.querySelector('#weatherDetailBack').click();
+    document.querySelector('#weatherGreetingPlace').click();
+  });
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await page.waitForTimeout(300);
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheetBody [role="radio"]')).toHaveCount(1);
+});
+
+test('share creates a direct city link with its forecast coordinates', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: async data => { window.__sharedForecast = data; } });
+  });
+  await stubWeather(page, null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherDetailShare').click();
+  const shared = await page.evaluate(() => window.__sharedForecast);
+  expect(shared.title).toContain('Tokyo');
+  const url = new URL(shared.url);
+  expect(url.searchParams.get('lat')).toBe('35.6762');
+  expect(url.searchParams.get('lon')).toBe('139.6503');
+});
+
+test('search offers recently opened cities without a geocoding request', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherDetailBack').click();
+  await page.locator('#weatherSearch').focus();
+  await expect(page.locator('#weatherSuggest')).toBeVisible();
+  await expect(page.locator('#weatherSuggest .s-group')).toContainText('Recent places');
+  await expect(page.locator('#weatherSuggest button[role="option"]').first()).toContainText('New York');
+});
+
+test('the empty My Sky message uses dark readable text on the light canvas', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  const message = page.locator('#weatherMySkyEmpty p');
+  await expect(message).toBeVisible();
+  expect(await message.evaluate(el => getComputedStyle(el).color)).toBe('rgb(36, 73, 102)');
 });

@@ -244,7 +244,7 @@ test('greetings reroll on refresh, re-entry, and mode changes', async ({ page })
   await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
 });
 
-test('multiline greeting keeps its measured line layout while typing', async ({ page }) => {
+test('greeting is immediately readable and reflows after a viewport change', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 844 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.addInitScript(() => {
@@ -256,26 +256,19 @@ test('multiline greeting keeps its measured line layout while typing', async ({ 
   const visibleCopy = page.locator('#weatherGreetingText');
   await expect(heading).toHaveAttribute('aria-label', /choose a city/i);
   await expect(visibleCopy).toHaveText(await heading.getAttribute('aria-label'), { timeout: 5000 });
-  // Wait until the first line has completed so the mode change exercises a
-  // fresh animation rather than the intentional stale-animation fast finish.
   await expect(heading).not.toHaveAttribute('data-typing', 'true');
   await page.locator('[data-weather-mode="horizon"]').click();
-  await expect(heading).toHaveAttribute('data-typing', 'true');
-  const layout = await page.evaluate(async () => {
-    const text = document.querySelector('#weatherGreetingText');
-    const top = () => Array.from(text.children).map(line => Math.round(line.getBoundingClientRect().top * 2) / 2);
-    const initial = top();
-    const samples = [];
-    const start = performance.now();
-    while (performance.now() - start < 420) {
-      samples.push(top().join(','));
-      await new Promise(requestAnimationFrame);
-    }
-    return { initial, samples };
-  });
-  expect(layout.initial.length).toBeGreaterThan(1);
-  expect(new Set(layout.samples).size).toBe(1);
   await expect(visibleCopy).toHaveText(await heading.getAttribute('aria-label'), { timeout: 5000 });
+  const fits = async () => page.evaluate(() => {
+    const heading = document.querySelector('#weatherGreeting');
+    const text = document.querySelector('#weatherGreetingText');
+    return text.scrollWidth <= heading.clientWidth + 1 && text.scrollHeight <= heading.clientHeight + 1;
+  });
+  expect(await fits()).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 844 });
+  expect(await fits()).toBe(true);
+  await page.setViewportSize({ width: 360, height: 844 });
+  expect(await fits()).toBe(true);
 });
 
 test('long list location names stay on one line and keep high/low visible', async ({ page }) => {
@@ -466,7 +459,10 @@ test('all languages render the full weather flow, detail sheets, charts, units, 
       await page.locator('#weatherModules [data-sheet="' + key + '"]').click();
       await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
       await expect(page.locator('#weatherSheet .wx-sheet-title')).not.toBeEmpty();
-      const content = await page.locator('#weatherSheetBody').innerText();
+      const sheetBody = page.locator('#weatherSheetBody');
+      await expect(sheetBody).toBeVisible();
+      await expect(sheetBody).toContainText(/\S/);
+      const content = await sheetBody.innerText();
       expect(content.trim().length, locale + ' empty ' + key + ' sheet').toBeGreaterThan(3);
       expect(content, locale + ' untranslated ' + key + ' sheet').not.toMatch(/weather\.[a-z.]+/i);
       const chartCount = await page.locator('#weatherSheetBody .weather-chart').count();

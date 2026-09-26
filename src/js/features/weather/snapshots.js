@@ -48,7 +48,12 @@
           storage.setItem(KEY, JSON.stringify({ version: 1, packs: next }));
           all.splice(0, all.length, ...next);
           return;
-        } catch (e) { next.pop(); }
+        } catch (e) {
+          const drop = next.map(function (p) { return cityKey(p.city); }).lastIndexOf(key) === next.length - 1
+            ? next.length - 2 : next.length - 1;
+          if (drop < 0) break;
+          next.splice(drop, 1);
+        }
       }
     }
     function find(city) {
