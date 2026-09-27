@@ -27,7 +27,7 @@ Konto ani identyfikator reklamowy nie są potrzebne. Preferencje i zapisane prog
 
 Żądania pogodowe wychodzą z przeglądarki do [Open-Meteo](https://open-meteo.com/) oraz, dla lokalizacji w USA, do [National Weather Service](https://www.weather.gov/). Jeśli używasz lokalizacji, odwrotne geokodowanie idzie do BigDataCloud i może wrócić do OpenStreetMap Nominatim. Hosting i Google Fonts mogą widzieć zwykłe techniczne dane żądania.
 
-W przypadku alertów międzynarodowych kod i nazwa wybranego kraju oraz język interfejsu są wysyłane do funkcji Cloudflare Pages duskline; współrzędne miasta pozostają w przeglądarce. Funkcja pobiera publiczne alerty CAP z IFRC Alert Hub.
+W przypadku alertów międzynarodowych kod i nazwa wybranego kraju oraz język interfejsu są wysyłane do funkcji Cloudflare Pages duskline; współrzędne miasta pozostają w przeglądarce. Funkcja pobiera publiczne alerty CAP z IFRC Alert Hub. Jeśli jest dostępna, nazwa regionu administracyjnego pierwszego stopnia jest również wysyłana, aby lepiej dopasować alerty.
 
 duskline nie sprzedaje tych informacji. Prognozy służą planowaniu i eksploracji, nie decyzjom awaryjnym. Szczegóły: [Polityka prywatności](https://dusklineweather.pages.dev/privacy.html) i [Warunki korzystania](https://dusklineweather.pages.dev/terms.html).
 

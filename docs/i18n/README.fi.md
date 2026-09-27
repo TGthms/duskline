@@ -27,7 +27,7 @@ Tiliä tai mainostunnistetta ei tarvita. Asetukset ja tallennetut ennusteet pysy
 
 Sääpyynnöt lähtevät selaimesta [Open-Meteoon](https://open-meteo.com/) ja Yhdysvaltain sijainneissa [National Weather Serviceen](https://www.weather.gov/). Jos käytät sijaintia, käänteinen geokoodaus menee BigDataCloudille ja voi siirtyä OpenStreetMap Nominatimiin. Isännöinti ja Google Fonts voivat nähdä tavanomaisia teknisiä pyyntötietoja.
 
-Kansainvälisiä varoituksia varten valitun maan koodi ja nimi sekä käyttöliittymän kieli lähetetään duskline Cloudflare Pages -toiminnolle; kaupungin koordinaatit pysyvät selaimessa. Toiminto pyytää julkiset CAP-varoitukset IFRC Alert Hubilta.
+Kansainvälisiä varoituksia varten valitun maan koodi ja nimi sekä käyttöliittymän kieli lähetetään duskline Cloudflare Pages -toiminnolle; kaupungin koordinaatit pysyvät selaimessa. Toiminto pyytää julkiset CAP-varoitukset IFRC Alert Hubilta. Kun saatavilla, myös ensimmäisen tason hallintoalueen nimi lähetetään varoitusten tarkempaa kohdistamista varten.
 
 duskline ei myy näitä tietoja. Ennusteet ovat suunnittelua ja tutkimista varten, eivät hätäpäätöksiä. Tiedot: [Tietosuojakäytäntö](https://dusklineweather.pages.dev/privacy.html) ja [Käyttöehdot](https://dusklineweather.pages.dev/terms.html).
 

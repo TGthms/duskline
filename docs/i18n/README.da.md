@@ -27,7 +27,7 @@ Du behøver hverken en konto eller et annonce-id. Dine præferencer og gemte pro
 
 Vejrforespørgsler går fra din browser til [Open-Meteo](https://open-meteo.com/) og, for amerikanske steder, [National Weather Service](https://www.weather.gov/). Hvis du bruger placering, går omvendt geokodning til BigDataCloud og kan falde tilbage til OpenStreetMap Nominatim. Hosting og Google Fonts kan se almindelige tekniske forespørgselsdata.
 
-Til internationale varsler sendes koden og navnet på det valgte land samt grænsefladens sprog til duskline-funktionen på Cloudflare Pages; bykoordinater bliver i browseren. Funktionen henter offentlige CAP-varsler fra IFRC Alert Hub.
+Til internationale varsler sendes koden og navnet på det valgte land samt grænsefladens sprog til duskline-funktionen på Cloudflare Pages; bykoordinater bliver i browseren. Funktionen henter offentlige CAP-varsler fra IFRC Alert Hub. Når det er muligt, sendes navnet på den administrative region på første niveau også med, så varsler kan matches bedre.
 
 duskline sælger ikke de oplysninger. Udsigter er til planlægning og udforskning, ikke nødbeslutninger. Detaljer: [Privatlivspolitik](https://dusklineweather.pages.dev/privacy.html) og [Brugsvilkår](https://dusklineweather.pages.dev/terms.html).
 

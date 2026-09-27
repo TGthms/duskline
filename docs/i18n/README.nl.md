@@ -27,7 +27,7 @@ Je hebt geen account of advertentie-ID nodig. Je voorkeuren en opgeslagen verwac
 
 Weerverzoeken gaan vanuit je browser naar [Open-Meteo](https://open-meteo.com/) en, voor Amerikaanse locaties, de [National Weather Service](https://www.weather.gov/). Reverse geocoding bij locatiegebruik gaat naar BigDataCloud en kan terugvallen op OpenStreetMap Nominatim. Hosting en Google Fonts kunnen gewone technische verzoekgegevens zien.
 
-Voor internationale waarschuwingen worden de code en naam van het gekozen land en de interfacetaal naar de Cloudflare Pages-functie van duskline gestuurd; stadcoördinaten blijven in de browser. De functie vraagt openbare CAP-waarschuwingen op bij IFRC Alert Hub.
+Voor internationale waarschuwingen worden de code en naam van het gekozen land en de interfacetaal naar de Cloudflare Pages-functie van duskline gestuurd; stadcoördinaten blijven in de browser. De functie vraagt openbare CAP-waarschuwingen op bij IFRC Alert Hub. Wanneer beschikbaar wordt ook de naam van de bestuurlijke regio op het eerste niveau meegestuurd om waarschuwingen beter te vinden.
 
 duskline verkoopt die informatie niet. Verwachtingen zijn voor planning en verkenning, niet voor noodbeslissingen. Details: [Privacybeleid](https://dusklineweather.pages.dev/privacy.html) en [Gebruiksvoorwaarden](https://dusklineweather.pages.dev/terms.html).
 

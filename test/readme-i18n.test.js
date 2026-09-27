@@ -28,6 +28,7 @@ test('root README and docs/i18n cover every picker language', () => {
   assert.match(rootReadme, /href="https:\/\/dusklineweather\.pages\.dev\/privacy\.html"/);
   assert.match(rootReadme, /href="https:\/\/dusklineweather\.pages\.dev\/terms\.html"/);
   assert.match(rootReadme, /IFRC Alert Hub/);
+  assert.match(rootReadme, /first-level administrative region/);
   assert.match(rootReadme, /\[العربية\]\(docs\/i18n\/README\.ar\.md\)/);
   assert.match(index, /https:\/\/dusklineweather\.pages\.dev\/privacy\.html/);
   assert.match(index, /https:\/\/dusklineweather\.pages\.dev\/terms\.html/);

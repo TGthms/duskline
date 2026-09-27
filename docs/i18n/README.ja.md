@@ -27,7 +27,7 @@
 
 天気リクエストはブラウザから [Open-Meteo](https://open-meteo.com/) へ、米国の地点では [National Weather Service](https://www.weather.gov/) へ直接送られます。位置情報を使う場合の逆ジオコーディングは BigDataCloud、失敗時は OpenStreetMap Nominatim です。ホスティングと Google Fonts は通常の技術的リクエストデータを見ることがあります。
 
-海外の警報では、選択した国のコードと名称、画面の言語を duskline の Cloudflare Pages 機能に送信します。都市の座標はブラウザー内に保持されます。この機能は IFRC Alert Hub に公的 CAP 警報を問い合わせます。
+海外の警報では、選択した国のコードと名称、画面の言語を duskline の Cloudflare Pages 機能に送信します。都市の座標はブラウザー内に保持されます。この機能は IFRC Alert Hub に公的 CAP 警報を問い合わせます。 利用可能な場合、警報を正確に照合するため、第一級行政区の名称も送信されます。
 
 duskline はこの情報を販売しません。予報は計画と探索のためであり、緊急判断用ではありません。詳細は [プライバシーポリシー](https://dusklineweather.pages.dev/privacy.html) と [利用規約](https://dusklineweather.pages.dev/terms.html)。
 

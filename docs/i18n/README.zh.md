@@ -27,7 +27,7 @@
 
 天气请求由浏览器直接发往 [Open-Meteo](https://open-meteo.com/)；美国地点发往 [国家气象局](https://www.weather.gov/)。若使用位置，反向地理编码发往 BigDataCloud，失败时回退到 OpenStreetMap Nominatim。托管与 Google Fonts 可能看到常规技术请求数据。
 
-查询国际预警时，浏览器会将所选国家/地区的代码、名称和界面语言发送至 duskline 的 Cloudflare Pages 函数；城市坐标仍保留在浏览器中。该函数会向 IFRC Alert Hub 请求公共 CAP 预警。
+查询国际预警时，浏览器会将所选国家/地区的代码、名称和界面语言发送至 duskline 的 Cloudflare Pages 函数；城市坐标仍保留在浏览器中。该函数会向 IFRC Alert Hub 请求公共 CAP 预警。 如有该信息，也会发送一级行政区名称，以便更准确地匹配预警。
 
 duskline 不出售这些信息。预报用于规划与探索，不用于紧急决策。详情见 [隐私政策](https://dusklineweather.pages.dev/privacy.html) 与 [使用条款](https://dusklineweather.pages.dev/terms.html)。
 

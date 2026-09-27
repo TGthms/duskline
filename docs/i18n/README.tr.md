@@ -27,7 +27,7 @@ Hesap veya reklam kimliği gerekmez. Tercihleriniz ve kaydedilmiş tahminler tar
 
 Hava istekleri tarayıcınızdan [Open-Meteo](https://open-meteo.com/)’ya ve ABD konumları için [National Weather Service](https://www.weather.gov/)’e gider. Konum kullanırsanız ters jeokodlama BigDataCloud’a gider, başarısız olursa OpenStreetMap Nominatim’e düşebilir. Barındırma ve Google Fonts olağan teknik istek verilerini görebilir.
 
-Uluslararası uyarılar için seçilen ülkenin kodu ve adı ile arayüz dili duskline’ın Cloudflare Pages işlevine gönderilir; şehir koordinatları tarayıcıda kalır. İşlev, IFRC Alert Hub’dan kamuya açık CAP uyarıları ister.
+Uluslararası uyarılar için seçilen ülkenin kodu ve adı ile arayüz dili duskline’ın Cloudflare Pages işlevine gönderilir; şehir koordinatları tarayıcıda kalır. İşlev, IFRC Alert Hub’dan kamuya açık CAP uyarıları ister. Mevcut olduğunda uyarıları daha doğru eşleştirmek için birinci düzey idari bölgenin adı da gönderilir.
 
 duskline bu bilgileri satmaz. Tahminler planlama ve keşif içindir, acil durum kararları için değil. Ayrıntılar: [Gizlilik Politikası](https://dusklineweather.pages.dev/privacy.html) ve [Kullanım Koşulları](https://dusklineweather.pages.dev/terms.html).
 

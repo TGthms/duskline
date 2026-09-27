@@ -27,7 +27,7 @@
 
 날씨 요청은 브라우저에서 [Open-Meteo](https://open-meteo.com/)로, 미국 위치는 [National Weather Service](https://www.weather.gov/)로 바로 갑니다. 위치를 쓰면 역지오코딩은 BigDataCloud, 실패 시 OpenStreetMap Nominatim입니다. 호스팅과 Google Fonts는 일반적인 기술 요청 데이터를 볼 수 있습니다.
 
-국제 경보를 위해 선택한 국가의 코드와 이름, 인터페이스 언어를 duskline의 Cloudflare Pages 함수로 보냅니다. 도시 좌표는 브라우저에 남으며, 함수는 IFRC Alert Hub에 공개 CAP 경보를 요청합니다.
+국제 경보를 위해 선택한 국가의 코드와 이름, 인터페이스 언어를 duskline의 Cloudflare Pages 함수로 보냅니다. 도시 좌표는 브라우저에 남으며, 함수는 IFRC Alert Hub에 공개 CAP 경보를 요청합니다. 사용 가능한 경우 경보를 더 정확히 찾기 위해 1단계 행정 구역 이름도 전송됩니다.
 
 duskline은 그 정보를 판매하지 않습니다. 예보는 계획과 탐색용이며 긴급 결정용이 아닙니다. 자세한 내용: [개인정보 처리방침](https://dusklineweather.pages.dev/privacy.html), [이용약관](https://dusklineweather.pages.dev/terms.html).
 

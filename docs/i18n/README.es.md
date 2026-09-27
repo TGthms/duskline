@@ -27,7 +27,7 @@ No se necesita una cuenta ni un identificador publicitario. Tus preferencias y p
 
 Las solicitudes meteorológicas salen de tu navegador hacia [Open-Meteo](https://open-meteo.com/) y, en ubicaciones de EE. UU., el [National Weather Service](https://www.weather.gov/). Si usas la ubicación, la geocodificación inversa va a BigDataCloud y puede recurrir a OpenStreetMap Nominatim. El alojamiento y Google Fonts pueden ver datos técnicos habituales de la solicitud.
 
-Para las alertas internacionales, se envían el código y el nombre del país elegido y el idioma de la interfaz a la función de Cloudflare Pages de duskline; las coordenadas de la ciudad permanecen en el navegador. La función solicita alertas públicas CAP a IFRC Alert Hub.
+Para las alertas internacionales, se envían el código y el nombre del país elegido y el idioma de la interfaz a la función de Cloudflare Pages de duskline; las coordenadas de la ciudad permanecen en el navegador. La función solicita alertas públicas CAP a IFRC Alert Hub. Cuando está disponible, también se envía el nombre de la región administrativa de primer nivel para asignar mejor las alertas.
 
 duskline no vende esa información. Las previsiones son para planificar y explorar, no para decisiones de emergencia. Detalles: [Política de privacidad](https://dusklineweather.pages.dev/privacy.html) y [Términos de uso](https://dusklineweather.pages.dev/terms.html).
 

@@ -27,7 +27,7 @@ Tidak perlu akun atau ID iklan. Preferensi dan prakiraan tersimpan tetap di brow
 
 Permintaan cuaca keluar dari peramban ke [Open-Meteo](https://open-meteo.com/) dan, untuk lokasi AS, [National Weather Service](https://www.weather.gov/). Jika Anda memakai lokasi, geocoding terbalik ke BigDataCloud dan dapat jatuh ke OpenStreetMap Nominatim. Hosting dan Google Fonts dapat melihat data permintaan teknis biasa.
 
-Untuk peringatan internasional, kode dan nama negara yang dipilih serta bahasa antarmuka dikirim ke fungsi Cloudflare Pages duskline; koordinat kota tetap di browser. Fungsi tersebut meminta peringatan publik CAP dari IFRC Alert Hub.
+Untuk peringatan internasional, kode dan nama negara yang dipilih serta bahasa antarmuka dikirim ke fungsi Cloudflare Pages duskline; koordinat kota tetap di browser. Fungsi tersebut meminta peringatan publik CAP dari IFRC Alert Hub. Jika tersedia, nama wilayah administratif tingkat pertama juga dikirim agar peringatan dapat dicocokkan dengan lebih tepat.
 
 duskline tidak menjual informasi itu. Prakiraan untuk perencanaan dan penjelajahan, bukan keputusan darurat. Rincian: [Kebijakan Privasi](https://dusklineweather.pages.dev/privacy.html) dan [Ketentuan Penggunaan](https://dusklineweather.pages.dev/terms.html).
 

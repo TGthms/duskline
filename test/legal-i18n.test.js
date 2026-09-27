@@ -22,6 +22,8 @@ test('legal packs exist for every picker language and share English keys', () =>
   const keys = Object.keys(en);
   assert.ok(keys.length > 20);
   assert.equal(fs.readdirSync(packsDir).filter((n) => n.endsWith('.json')).length, codes.length);
+  assert.match(en['legal.privacy.p3'], /first-level administrative region/);
+  assert.match(en['legal.privacy.p3'], /city coordinates remain in your browser/);
   for (const code of codes) {
     const file = path.join(packsDir, code + '.json');
     assert.ok(fs.existsSync(file), 'missing pack ' + code);

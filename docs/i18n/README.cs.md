@@ -27,7 +27,7 @@
 
 Požadavky na počasí odcházejí z prohlížeče na [Open-Meteo](https://open-meteo.com/) a u amerických míst na [National Weather Service](https://www.weather.gov/). Pokud použijete polohu, reverzní geokódování jde na BigDataCloud a může spadnout na OpenStreetMap Nominatim. Hosting a Google Fonts mohou vidět běžná technická data požadavku.
 
-U mezinárodních upozornění se kód a název zvolené země a jazyk rozhraní odesílají funkci duskline na Cloudflare Pages; souřadnice města zůstávají v prohlížeči. Funkce získává veřejná upozornění CAP z IFRC Alert Hub.
+U mezinárodních upozornění se kód a název zvolené země a jazyk rozhraní odesílají funkci duskline na Cloudflare Pages; souřadnice města zůstávají v prohlížeči. Funkce získává veřejná upozornění CAP z IFRC Alert Hub. Je-li k dispozici, funkce odešle také název správní oblasti první úrovně pro přesnější přiřazení upozornění.
 
 duskline tyto informace neprodává. Předpovědi slouží k plánování a zkoumání, ne k nouzovým rozhodnutím. Podrobnosti: [Zásady ochrany soukromí](https://dusklineweather.pages.dev/privacy.html) a [Podmínky použití](https://dusklineweather.pages.dev/terms.html).
 

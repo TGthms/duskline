@@ -27,7 +27,7 @@ Nincs szükség fiókra vagy hirdetési azonosítóra. A beállítások és a me
 
 Az időjárási kérések a böngészőből mennek az [Open-Meteo](https://open-meteo.com/) felé, amerikai helyeken a [National Weather Service](https://www.weather.gov/) felé. Ha helyzetet használ, a fordított geokódolás a BigDataCloudhoz megy, és visszaeshet az OpenStreetMap Nominatimre. A tárhely és a Google Fonts láthatja a szokásos technikai kérésadatokat.
 
-A nemzetközi riasztásokhoz a kiválasztott ország kódja és neve, valamint a felület nyelve a duskline Cloudflare Pages-funkciójához kerül; a város koordinátái a böngészőben maradnak. A funkció nyilvános CAP-riasztásokat kér le az IFRC Alert Hubtól.
+A nemzetközi riasztásokhoz a kiválasztott ország kódja és neve, valamint a felület nyelve a duskline Cloudflare Pages-funkciójához kerül; a város koordinátái a böngészőben maradnak. A funkció nyilvános CAP-riasztásokat kér le az IFRC Alert Hubtól. Ha rendelkezésre áll, a riasztások pontosabb egyeztetéséhez az első szintű közigazgatási régió neve is elküldésre kerül.
 
 A duskline nem adja el ezeket az információkat. Az előrejelzések tervezésre és felfedezésre valók, nem vészhelyzeti döntésekre. Részletek: [Adatvédelmi szabályzat](https://dusklineweather.pages.dev/privacy.html) és [Felhasználási feltételek](https://dusklineweather.pages.dev/terms.html).
 

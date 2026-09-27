@@ -27,7 +27,7 @@ Nu ai nevoie de cont sau identificator publicitar. Preferințele și prognozele 
 
 Cererile meteo pleacă din browser către [Open-Meteo](https://open-meteo.com/) și, pentru locații din SUA, [National Weather Service](https://www.weather.gov/). Dacă folosiți locația, geocodarea inversă merge la BigDataCloud și poate trece la OpenStreetMap Nominatim. Găzduirea și Google Fonts pot vedea date tehnice obișnuite ale cererii.
 
-Pentru alertele internaționale, codul și numele țării alese și limba interfeței sunt trimise funcției Cloudflare Pages a duskline; coordonatele orașului rămân în browser. Funcția solicită alerte publice CAP de la IFRC Alert Hub.
+Pentru alertele internaționale, codul și numele țării alese și limba interfeței sunt trimise funcției Cloudflare Pages a duskline; coordonatele orașului rămân în browser. Funcția solicită alerte publice CAP de la IFRC Alert Hub. Dacă este disponibil, numele regiunii administrative de primul nivel este trimis și pentru potrivirea mai precisă a alertelor.
 
 duskline nu vinde aceste informații. Prognozele sunt pentru planificare și explorare, nu pentru decizii de urgență. Detalii: [Politica de confidențialitate](https://dusklineweather.pages.dev/privacy.html) și [Termeni de utilizare](https://dusklineweather.pages.dev/terms.html).
 

@@ -27,7 +27,7 @@ Es wird weder ein Konto noch eine Werbekennung benötigt. Ihre Einstellungen und
 
 Wetteranfragen gehen direkt aus Ihrem Browser an [Open-Meteo](https://open-meteo.com/) und für US-Standorte an den [National Weather Service](https://www.weather.gov/). Reverse Geocoding bei Standortnutzung geht an BigDataCloud und kann auf OpenStreetMap Nominatim zurückfallen. Hosting und Google Fonts können gewöhnliche technische Anfragedaten sehen.
 
-Für internationale Warnungen werden Code und Name des gewählten Landes sowie die Oberflächensprache an die Cloudflare-Pages-Funktion von duskline gesendet; Stadtkoordinaten bleiben im Browser. Die Funktion ruft öffentliche CAP-Warnungen bei IFRC Alert Hub ab.
+Für internationale Warnungen werden Code und Name des gewählten Landes sowie die Oberflächensprache an die Cloudflare-Pages-Funktion von duskline gesendet; Stadtkoordinaten bleiben im Browser. Die Funktion ruft öffentliche CAP-Warnungen bei IFRC Alert Hub ab. Wenn verfügbar, wird zur besseren Zuordnung von Warnungen auch der Name der Verwaltungseinheit der ersten Ebene gesendet.
 
 duskline verkauft diese Informationen nicht. Vorhersagen dienen der Planung und Erkundung, nicht Notfallentscheidungen. Details: [Datenschutz](https://dusklineweather.pages.dev/privacy.html) und [Nutzungsbedingungen](https://dusklineweather.pages.dev/terms.html).
 

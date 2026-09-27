@@ -27,7 +27,7 @@ Không cần tài khoản hay mã định danh quảng cáo. Tùy chọn và d�
 
 Yêu cầu thời tiết rời trình duyệt tới [Open-Meteo](https://open-meteo.com/) và, với vị trí Hoa Kỳ, [National Weather Service](https://www.weather.gov/). Nếu dùng vị trí, geocoding ngược tới BigDataCloud và có thể về OpenStreetMap Nominatim. Hosting và Google Fonts có thể thấy dữ liệu kỹ thuật thông thường của yêu cầu.
 
-Đối với cảnh báo quốc tế, mã và tên quốc gia đã chọn cùng ngôn ngữ giao diện được gửi đến hàm Cloudflare Pages của duskline; tọa độ thành phố vẫn ở trong trình duyệt. Hàm này yêu cầu cảnh báo công cộng CAP từ IFRC Alert Hub.
+Đối với cảnh báo quốc tế, mã và tên quốc gia đã chọn cùng ngôn ngữ giao diện được gửi đến hàm Cloudflare Pages của duskline; tọa độ thành phố vẫn ở trong trình duyệt. Hàm này yêu cầu cảnh báo công cộng CAP từ IFRC Alert Hub. Khi có sẵn, tên khu vực hành chính cấp một cũng được gửi để ghép cảnh báo chính xác hơn.
 
 duskline không bán thông tin đó. Dự báo dành cho lập kế hoạch và khám phá, không phải quyết định khẩn cấp. Chi tiết: [Chính sách quyền riêng tư](https://dusklineweather.pages.dev/privacy.html) và [Điều khoản sử dụng](https://dusklineweather.pages.dev/terms.html).
 
