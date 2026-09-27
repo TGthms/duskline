@@ -48,18 +48,20 @@ function polygonAlert(overrides) {
 
 function createContext(url, options) {
   const calls = [];
+  const country = options && options.country ? options.country : { id: '101', iso3: 'JPN', name: 'Japan' };
+  const admin1s = options && options.admin1s ? options.admin1s : [{ id: '301', name: 'Tokyo' }];
   const upstream = async (_url, init) => {
     const body = JSON.parse(init.body);
     calls.push({ query: body.query, variables: body.variables });
     if (options && options.fetch) return options.fetch(_url, init);
     if (body.query.includes('countries(pagination')) {
-      return Response.json({ data: { public: { countries: { count: 1, items: [{ id: '101', iso3: 'JPN', name: 'Japan' }] } } } });
+      return Response.json({ data: { public: { countries: { count: 1, items: [country] } } } });
     }
     if (body.query.includes('country(pk:')) {
-      return Response.json({ data: { public: { country: { admin1s: [{ id: '301', name: 'Tokyo' }] } } } });
+      return Response.json({ data: { public: { country: { admin1s: admin1s } } } });
     }
     if (body.query.includes('feeds(pagination')) {
-      const feeds = options && options.noFeed ? [] : [{ official: true, enableRebroadcast: true, status: 'ACTIVE', country: { iso3: 'JPN' } }];
+      const feeds = options && options.noFeed ? [] : [{ official: true, enableRebroadcast: true, status: 'ACTIVE', country: { iso3: country.iso3 } }];
       return Response.json({ data: { public: { feeds: { count: feeds.length, items: feeds } } } });
     }
     if (body.query.includes('alerts(filters')) {
@@ -156,6 +158,22 @@ test('international CAP endpoint scopes a capped country feed to the requested f
   assert.equal(payload.scoped, true);
   assert.equal(scopedQuery.variables.filter.country.pk, '101');
   assert.equal(scopedQuery.variables.filter.admin1, '301');
+  assert.equal(payload.alerts.length, 1);
+});
+
+test('international CAP endpoint matches IFRC pinyin admin1 suffixes to the city region', async () => {
+  const { onRequest } = await handlerPromise;
+  const ctx = createContext('https://duskline.test/api/international-alerts?cc=CN&country=China&admin1=Beijing&lang=en', {
+    country: { id: '109', iso3: 'CHN', name: 'China' },
+    admin1s: [{ id: '1464', name: 'Beijing Shi' }]
+  });
+  const response = await onRequest(ctx.value);
+  const payload = await response.json();
+  const alertQuery = ctx.calls.find((call) => call.query.includes('alerts(filters'));
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.scoped, true);
+  assert.equal(alertQuery.variables.filter.admin1, '1464');
   assert.equal(payload.alerts.length, 1);
 });
 

@@ -129,7 +129,7 @@ function normalizeAdmin1Name(value) {
     .trim()
     .replace(/\s+/g, ' ');
   const simplified = normalized
-    .replace(/\b(state|province|prefecture|metropolis|metropolitan|region|county|district|department|governorate|oblast|territory|municipality|autonomous|community|national capital)\b/g, ' ')
+    .replace(/\b(state|province|prefecture|metropolis|metropolitan|region|county|district|department|governorate|oblast|territory|municipality|autonomous|community|national capital|shi|sheng|zizhiqu)\b/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/^of\s+/, '');
