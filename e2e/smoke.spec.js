@@ -467,6 +467,48 @@ test('U.S. AQI detail follows all six official bands and boundaries', async ({ p
   }
 });
 
+test('AQI defaults to the U.S. scale and offers a localized European scale with an on-demand outlook', async ({ page }) => {
+  let detailUrl = '';
+  await page.route(/air-quality-api\.open-meteo\.com/, async route => {
+    const url = new URL(route.request().url());
+    if (!url.searchParams.has('hourly')) {
+      return route.fulfill({ json: { current: { us_aqi: 45, european_aqi: 67, pm2_5: 12, pm10: 20 } } });
+    }
+    detailUrl = route.request().url();
+    await new Promise(resolve => setTimeout(resolve, 250));
+    const times = Array.from({ length: 24 }, (_, i) => new Date(Date.now() + i * 3600000).toISOString());
+    return route.fulfill({ json: {
+      current: {
+        us_aqi: 45, european_aqi: 67, pm2_5: 12, pm10: 20,
+        us_aqi_pm2_5: 45, european_aqi_pm2_5: 67
+      },
+      hourly: { time: times, us_aqi: times.map(() => 45), european_aqi: times.map((_, i) => 60 + i) }
+    } });
+  });
+
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('United States AQI');
+  expect(detailUrl).toBe('', 'hourly air data should stay out of the initial city-list request');
+
+  await page.locator('#weatherModules [data-sheet="aqi"]').click();
+  const sheet = page.locator('#weatherSheetBody');
+  await expect(sheet.locator('#wxAqiScale [data-u="us"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(sheet.locator('#wxAqiOutlook[aria-busy="true"]')).toBeVisible();
+  await expect(sheet.locator('#wxAqiOutlook .wx-aqi-outlook-item')).toHaveCount(8);
+  expect(detailUrl).toContain('forecast_hours=24');
+  expect(new URL(detailUrl).searchParams.get('hourly')).toBe('us_aqi,european_aqi');
+
+  await sheet.locator('#wxAqiScale [data-u="eu"]').click();
+  await expect(sheet.locator('.wx-aqi-readout')).toHaveText('67');
+  await expect(sheet.locator('.weather-chart-sub')).toContainText('Poor · 61–80');
+  await expect(sheet.locator('.wx-sheet-about')).toContainText('European AQI');
+  await expect(sheet.locator('.wx-air-main')).toContainText('PM₂.₅');
+  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('European AQI');
+  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('Poor');
+});
+
 test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
   await page.goto('/');
   await page.locator('#dusklineLanguage').selectOption('pt-BR');

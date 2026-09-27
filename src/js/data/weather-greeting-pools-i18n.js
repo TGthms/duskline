@@ -838,6 +838,38 @@
     zh: ['湿度为 {value}%，空气可能会让人感觉干燥。', '湿度为 {value}%，空气可能会让人感觉闷热。', '风速为 {value}，空旷处风力可能更明显。', '今天的日照时长约为 {hours} 小时 {minutes} 分钟。', '今天气温在 {low} 到 {high} 之间。'],
     'zh-TW': ['濕度為 {value}%，空氣可能會讓人感覺乾燥。', '濕度為 {value}%，空氣可能會讓人感覺悶熱。', '風速為 {value}，空曠處風力可能更明顯。', '今天的日照時間約為 {hours} 小時 {minutes} 分鐘。', '今天氣溫介於 {low} 到 {high} 之間。']
   };
+  var WIND_GUST_COPY = {
+    en: 'Gusts may reach {value} around {time}; exposed areas can feel much windier.',
+    es: 'Las ráfagas podrían alcanzar {value} hacia las {time}; en zonas expuestas se sentirán más fuertes.',
+    fr: 'Les rafales pourraient atteindre {value} vers {time} ; elles seront plus sensibles dans les zones exposées.',
+    de: 'Böen können gegen {time} {value} erreichen; an offenen Orten wirken sie noch stärker.',
+    it: 'Le raffiche potrebbero raggiungere {value} verso le {time}; saranno più forti nelle zone esposte.',
+    'pt-BR': 'As rajadas podem chegar a {value} por volta de {time}; em áreas abertas, o vento pode parecer mais forte.',
+    'pt-PT': 'As rajadas poderão atingir {value} por volta das {time}; em zonas expostas, o vento pode parecer mais forte.',
+    nl: 'Windstoten kunnen rond {time} {value} bereiken; op open plekken voelt de wind sterker aan.',
+    da: 'Vindstød kan nå {value} omkring kl. {time}; vinden mærkes kraftigere på åbne steder.',
+    sv: 'Vindbyarna kan nå {value} omkring {time}; på öppna platser känns vinden starkare.',
+    nb: 'Vindkast kan nå {value} rundt {time}; vinden merkes sterkere på åpne steder.',
+    fi: 'Puuskat voivat nousta arvoon {value} noin klo {time}; avoimilla paikoilla tuuli tuntuu voimakkaammalta.',
+    pl: 'Porywy mogą osiągnąć {value} około {time}; na otwartej przestrzeni wiatr będzie odczuwalny mocniej.',
+    cs: 'Nárazy větru mohou kolem {time} dosáhnout {value}; na otevřených místech bude vítr působit silněji.',
+    hu: 'A széllökések {time} körül elérhetik a(z) {value} értéket; nyílt területen erősebbnek érződhetnek.',
+    ro: 'Rafalele pot ajunge la {value} în jurul orei {time}; în zonele deschise, vântul se va simți mai puternic.',
+    el: 'Οι ριπές μπορεί να φτάσουν τα {value} γύρω στις {time}· σε εκτεθειμένα σημεία ο άνεμος θα φαίνεται ισχυρότερος.',
+    tr: 'Rüzgâr hamleleri {time} civarında {value} hızına ulaşabilir; açık alanlarda daha güçlü hissedilebilir.',
+    ru: 'Порывы ветра могут достигать {value} около {time}; на открытых участках ветер будет ощущаться сильнее.',
+    uk: 'Пориви можуть сягнути {value} близько {time}; на відкритих ділянках вітер відчуватиметься сильніше.',
+    ar: 'قد تصل هبّات الرياح إلى {value} قرب {time}، وقد تكون أشدّ في الأماكن المكشوفة.',
+    he: 'משבי הרוח עשויים להגיע ל־{value} בסביבות {time}; במקומות חשופים הרוח תורגש חזקה יותר.',
+    hi: '{time} के आसपास हवा के झोंके {value} तक पहुँच सकते हैं; खुले स्थानों पर हवा और तेज़ महसूस होगी।',
+    th: 'ลมกระโชกอาจแรงถึง {value} ราว {time} และจะรู้สึกแรงขึ้นในพื้นที่โล่ง',
+    vi: 'Gió giật có thể đạt {value} vào khoảng {time}; ở nơi trống trải, gió sẽ cảm nhận mạnh hơn.',
+    id: 'Hembusan angin dapat mencapai {value} sekitar {time}; di area terbuka angin terasa lebih kencang.',
+    ja: '{time}ごろに最大{value}の突風が予想されます。開けた場所ではさらに強く感じられます。',
+    ko: '{time} 무렵 돌풍이 {value}까지 불 수 있으며, 탁 트인 곳에서는 더 강하게 느껴질 수 있습니다.',
+    zh: '{time}左右阵风可能达到 {value}，空旷处会感觉更强。',
+    'zh-TW': '{time}左右陣風可能達到 {value}，空曠處會感覺更強。'
+  };
 
   global.I18N = global.I18N || {};
   Object.keys(COPY).forEach(function (code) {
@@ -851,6 +883,7 @@
     dict['weather.greeting.insightSeparator'] = Object.prototype.hasOwnProperty.call(INSIGHT_SEPARATOR, code)
       ? INSIGHT_SEPARATOR[code] : ' ';
     dict['weather.context.tomorrow.outlook'] = TOMORROW_OUTLOOK[code] || TOMORROW_OUTLOOK.en;
+    dict['weather.context.wind.gusts'] = WIND_GUST_COPY[code] || WIND_GUST_COPY.en;
     dict['weather.greeting.mySkySpecialForecast'] = SPECIAL_FORECAST[code] || SPECIAL_FORECAST.en;
     CONTEXT_KEYS.forEach(function (key, index) {
       dict[key] = (CONTEXT_COPY[code] || CONTEXT_COPY.en)[index];

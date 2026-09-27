@@ -9,6 +9,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | File | Role |
 |------|------|
 | `ns.js` | Page gate + `window.DusklineWeather` factory registry |
+| `aqi-math.js` | Pure US and European AQI band and scale helpers |
 | `sky.js` | Sky / ambient FX (`W.factories.sky`) |
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
 | `alerts.js` | NWS alerts accordion + prefetch (`W.factories.alerts`) |

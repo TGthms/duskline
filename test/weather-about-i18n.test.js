@@ -10,6 +10,7 @@ const ABOUT_KEYS = [
   'weather.about.humidity',
   'weather.about.uv',
   'weather.about.aqi',
+  'weather.about.aqi.eu',
   'weather.about.wind',
   'weather.about.pressure',
   'weather.about.vis',

@@ -90,6 +90,14 @@ test('the service worker precaches only what the app needs offline', () => {
   assert.match(sw, /const CACHE = 'duskline-shell-v\d+';/);
 });
 
+test('air-quality attribution names both CAMS ENSEMBLE and Open-Meteo', () => {
+  const html = read('index.html');
+  assert.match(html, /weather-attribution-air[\s\S]*?data-i18n="weather\.aqi"/);
+  assert.match(html, /href="https:\/\/confluence\.ecmwf\.int\/[^"]+"[^>]*>CAMS ENSEMBLE<\/a>/);
+  assert.match(html, /href="https:\/\/open-meteo\.com\/"[^>]*>Open-Meteo<\/a>/);
+  assert.match(html, /target="_blank" rel="noopener noreferrer"/);
+});
+
 test('the theme axis follows the OS, with no leftover appearance/style preference', () => {
   const RESOLVERS = ['src/js/core/runtime.js', 'src/js/boot.js'];
 

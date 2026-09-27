@@ -3444,7 +3444,7 @@ html:has(#weatherSheet.open) .wx-sheet-surface {
   height: 8px;
   border-radius: 99px;
   overflow: hidden;
-  gap: 2px;
+  gap: 0;
 }
 .wx-aqi-seg { flex: 1; }
 .wx-aqi-marker {
@@ -3458,13 +3458,42 @@ html:has(#weatherSheet.open) .wx-sheet-surface {
   border: 2px solid rgba(0,0,0,.15);
 }
 .wx-aqi-labels {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  display: block;
+  height: 14px;
   font-size: 10px;
   opacity: .65;
   margin-top: 6px;
   font-variant-numeric: tabular-nums;
 }
+.wx-aqi-labels span { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; }
+.wx-aqi-labels span.is-start { transform: none; }
+.wx-aqi-labels span.is-end { transform: translateX(-100%); }
+.wx-aqi-outlook { margin-top: 18px; }
+.wx-aqi-outlook-status { display: flex; align-items: center; gap: 9px; margin: 8px 0 0; font-size: 14px; opacity: .7; }
+.wx-aqi-outlook-scroll { overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+.wx-aqi-outlook-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(38px, 1fr));
+  gap: 8px;
+  min-width: 390px;
+  margin: 0;
+  padding: 4px 0 8px;
+  list-style: none;
+}
+.wx-aqi-outlook-item {
+  display: grid;
+  grid-template-rows: auto auto 54px;
+  justify-items: center;
+  align-items: end;
+  gap: 4px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.wx-aqi-outlook-time { font-size: 10px; white-space: nowrap; opacity: .68; }
+.wx-aqi-outlook-value { font-size: 12px; font-weight: 650; }
+.wx-aqi-outlook-track { display: flex; align-items: end; width: 12px; height: 50px; border-radius: 8px; background: rgba(128,144,160,.13); overflow: hidden; }
+.wx-aqi-outlook-track > span { display: block; width: 100%; min-height: 4px; border-radius: 8px 8px 2px 2px; }
 .wx-metric-bar {
   height: 6px;
   border-radius: 99px;
@@ -4458,6 +4487,14 @@ html[data-motion-effective="off"] .weather-sheet.wx-sheet-light .weather-sheet-p
   background: rgba(255, 255, 255, 0.08);
   text-align: center;
 }
+.weather-attribution-air { margin-top: 4px; }
+.weather-attribution a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 2px;
+}
+.weather-attribution a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }
 .weather-my-sky-empty[hidden] { display: none; }
 .weather-my-sky-empty-mark {
   color: #ffdc91;

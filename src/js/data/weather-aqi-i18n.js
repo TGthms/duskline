@@ -273,6 +273,31 @@
       hu: 'Európai AQI', ro: 'AQI european', el: 'Ευρωπαϊκός AQI', tr: 'Avrupa AQI', ru: 'Европейский AQI', uk: 'Європейський AQI', ar: 'مؤشر جودة الهواء الأوروبي',
       he: 'מדד AQI אירופי', hi: 'यूरोपीय AQI', th: 'AQI ยุโรป', vi: 'AQI châu Âu', id: 'AQI Eropa', ja: '欧州AQI', ko: '유럽 AQI', zh: '欧洲 AQI', 'zh-TW': '歐洲 AQI'
     },
+    'weather.aqiEurFair': {
+      en: 'Fair', es: 'Aceptable', fr: 'Correcte', de: 'Ausreichend', it: 'Discreta', 'pt-BR': 'Aceitável', 'pt-PT': 'Aceitável',
+      nl: 'Redelijk', da: 'Rimelig', sv: 'Acceptabel', nb: 'Akseptabel', fi: 'Tyydyttävä', pl: 'Dostateczna', cs: 'Přijatelná',
+      hu: 'Elfogadható', ro: 'Acceptabilă', el: 'Ικανοποιητική', tr: 'Kabul edilebilir', ru: 'Удовлетворительно', uk: 'Прийнятна',
+      ar: 'مقبولة', he: 'בינונית', hi: 'ठीक', th: 'พอใช้', vi: 'Chấp nhận được', id: 'Cukup', ja: '許容範囲', ko: '양호', zh: '良好', 'zh-TW': '尚可'
+    },
+    'weather.aqiEurPoor': {
+      en: 'Poor', es: 'Mala', fr: 'Médiocre', de: 'Schlecht', it: 'Scarsa', 'pt-BR': 'Fraca', 'pt-PT': 'Fraca',
+      nl: 'Slecht', da: 'Dårlig', sv: 'Dålig', nb: 'Dårlig', fi: 'Huono', pl: 'Zła', cs: 'Špatná', hu: 'Rossz', ro: 'Slabă',
+      el: 'Κακή', tr: 'Kötü', ru: 'Плохо', uk: 'Погано', ar: 'رديئة', he: 'ירודה', hi: 'खराब', th: 'แย่', vi: 'Kém', id: 'Buruk',
+      ja: '悪い', ko: '나쁨', zh: '较差', 'zh-TW': '不佳'
+    },
+    'weather.aqiEurVeryPoor': {
+      en: 'Very poor', es: 'Muy mala', fr: 'Très mauvaise', de: 'Sehr schlecht', it: 'Molto scarsa', 'pt-BR': 'Muito fraca', 'pt-PT': 'Muito fraca',
+      nl: 'Zeer slecht', da: 'Meget dårlig', sv: 'Mycket dålig', nb: 'Svært dårlig', fi: 'Erittäin huono', pl: 'Bardzo zła', cs: 'Velmi špatná',
+      hu: 'Nagyon rossz', ro: 'Foarte slabă', el: 'Πολύ κακή', tr: 'Çok kötü', ru: 'Очень плохо', uk: 'Дуже погано', ar: 'سيئة جداً', he: 'גרועה מאוד',
+      hi: 'बहुत खराब', th: 'แย่มาก', vi: 'Rất kém', id: 'Sangat buruk', ja: '非常に悪い', ko: '매우 나쁨', zh: '很差', 'zh-TW': '很差'
+    },
+    'weather.aqiEurExtremelyPoor': {
+      en: 'Extremely poor', es: 'Extremadamente mala', fr: 'Extrêmement mauvaise', de: 'Extrem schlecht', it: 'Estremamente scarsa',
+      'pt-BR': 'Extremamente fraca', 'pt-PT': 'Extremamente fraca', nl: 'Extreem slecht', da: 'Ekstremt dårlig', sv: 'Extremt dålig', nb: 'Ekstremt dårlig',
+      fi: 'Erittäin huono', pl: 'Bardzo zła', cs: 'Mimořádně špatná', hu: 'Rendkívül rossz', ro: 'Extrem de slabă', el: 'Εξαιρετικά κακή',
+      tr: 'Son derece kötü', ru: 'Крайне плохо', uk: 'Надзвичайно погано', ar: 'سيئة للغاية', he: 'גרועה ביותר', hi: 'अत्यंत खराब', th: 'แย่มากที่สุด',
+      vi: 'Cực kỳ kém', id: 'Sangat buruk sekali', ja: '極めて悪い', ko: '매우 나쁨', zh: '极差', 'zh-TW': '極差'
+    },
     'weather.aqiClearSkyUv': {
       en: 'Clear-sky UV', es: 'UV con cielo despejado', fr: 'UV par ciel dégagé', de: 'UV bei klarem Himmel', it: 'UV a cielo sereno',
       'pt-BR': 'UV com céu limpo', 'pt-PT': 'UV com céu limpo', nl: 'UV bij heldere hemel', da: 'UV ved klar himmel', sv: 'UV vid klar himmel',

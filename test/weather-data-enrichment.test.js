@@ -33,13 +33,23 @@ test('Open-Meteo enrichment fills missing NWS current temperature and condition 
   assert.equal(nwsPack.weather.current.weather_code, null);
 
   const openMeteo = {
-    weather: { current: { temperature_2m: 22, weather_code: 61, relative_humidity_2m: 55 }, daily: {}, hourly: {} },
+    weather: {
+      current: { temperature_2m: 22, weather_code: 61, relative_humidity_2m: 55, wind_gusts_10m: 21 },
+      daily: { time: ['2026-09-26'], wind_gusts_10m_max: [29] },
+      hourly: {
+        time: Array.from({ length: 12 }, (_, i) => '2026-09-26T' + String(i).padStart(2, '0') + ':00'),
+        wind_gusts_10m: Array(12).fill(21)
+      }
+    },
     air: null
   };
   const enriched = await data.enrichWithOpenMeteo(nwsPack, undefined, openMeteo);
   assert.equal(enriched.weather.current.temperature_2m, 22);
   assert.equal(enriched.weather.current.weather_code, 61);
   assert.equal(enriched.weather.current.relative_humidity_2m, 55);
+  assert.equal(enriched.weather.current.wind_gusts_10m, 21);
+  assert.equal(enriched.weather.hourly.wind_gusts_10m.length, 12);
+  assert.equal(enriched.weather.daily.wind_gusts_10m_max[0], 29);
 
   const validNwsPack = data.normalizeNws(
     city,

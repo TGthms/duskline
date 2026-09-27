@@ -17,6 +17,7 @@
   const WIND_KEY = 'duskline-weather-wind';
   const PRECIP_KEY = 'duskline-weather-precip';
   const PRESS_KEY = 'duskline-weather-pressure';
+  const AQI_SCALE_KEY = 'duskline-weather-aqi-scale';
   const FAV_KEY = 'duskline-weather-favorites';
   const MYLOC_KEY = 'duskline-weather-myloc';
   const MODE_KEY = 'duskline-weather-mode';
@@ -438,6 +439,12 @@
 
 
   /* ── Wire factory modules ── */
+  function aqiScale() {
+    try { return window.DusklineAqiMath.scale(localStorage.getItem(AQI_SCALE_KEY)); }
+    catch (e) { return 'us'; }
+  }
+  function setAqiScale(value) { if (value === 'us' || value === 'eu') try { localStorage.setItem(AQI_SCALE_KEY, value); } catch (e) {} }
+
   var skyApi = (W.factories.sky && W.factories.sky({
     motionLevel: motionLevel,
     staticListFx: typeof WEATHER_STATIC_LIST_FX !== 'undefined' ? WEATHER_STATIC_LIST_FX : true
@@ -512,9 +519,9 @@
   // Shared Open-Meteo query (also used inside data module)
   // past_days=1 so hourly includes earlier hours of the local calendar day (Apple-style 00–24 charts)
   const FORECAST_Q =
-    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,visibility,precipitation'
-    + '&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index'
-    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max'
+    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,precipitation'
+    + '&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max'
     + '&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=10&past_days=1';
   /**
    * List rows show only current conditions plus today's H/L, so the list load asks
@@ -1228,40 +1235,60 @@
     const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     return dirs[Math.round(d / 45) % 8];
   }
-  function aqiLabel(v) {
-    const band = aqiBandKey(v);
+  function aqiCurrentValue(current, scale) {
+    const source = current || {};
+    return source[scale === 'eu' ? 'european_aqi' : 'us_aqi'];
+  }
+  function aqiScaleLabel(scale) {
+    return scale === 'eu'
+      ? t('weather.aqiEuropeanAqi', 'European AQI')
+      : t('weather.countryUS', 'United States') + ' AQI';
+  }
+  function aqiLabel(v, scale) {
+    const band = aqiBandKey(v, scale);
     const labels = {
       Good: ['weather.aqiGood', 'Good'],
       Moderate: ['weather.aqiModerate', 'Moderate'],
       UnhealthySG: ['weather.aqiUnhealthySG', 'Unhealthy for Sensitive Groups'],
       Unhealthy: ['weather.aqiUnhealthy', 'Unhealthy'],
       VeryUnhealthy: ['weather.aqiVeryUnhealthy', 'Very unhealthy'],
-      Hazardous: ['weather.aqiHazardous', 'Hazardous']
+      Hazardous: ['weather.aqiHazardous', 'Hazardous'],
+      Fair: ['weather.aqiEurFair', 'Fair'],
+      Poor: ['weather.aqiEurPoor', 'Poor'],
+      VeryPoor: ['weather.aqiEurVeryPoor', 'Very poor'],
+      ExtremelyPoor: ['weather.aqiEurExtremelyPoor', 'Extremely poor']
     };
     return band ? t(labels[band][0], labels[band][1]) : '';
   }
-  function aqiBandKey(v) {
-    if (v == null || v === '' || !Number.isFinite(Number(v)) || Number(v) < 0) return '';
-    // AQI is an integer index; use the same rounded value shown in the interface.
-    const n = Math.round(Number(v));
-    if (n <= 50) return 'Good';
-    if (n <= 100) return 'Moderate';
-    if (n <= 150) return 'UnhealthySG';
-    if (n <= 200) return 'Unhealthy';
-    if (n <= 300) return 'VeryUnhealthy';
-    return 'Hazardous';
+  function aqiBandKey(v, scale) {
+    return window.DusklineAqiMath.band(v, scale || aqiScale());
   }
-  function aqiDescription(v) {
-    const band = aqiBandKey(v);
+  function aqiDescription(v, scale) {
+    scale = scale || aqiScale();
+    if (scale === 'eu') return '';
+    const band = aqiBandKey(v, scale);
     return band ? t('weather.aqiDesc' + band, '') : '';
   }
-  function aqiGreetingDescription(v) {
-    const band = aqiBandKey(v);
-    return band ? t('weather.aqiGreeting' + band, aqiLabel(v)) : '';
-  }
-  function aqiRange(v) {
-    const band = aqiBandKey(v);
+  function aqiGreetingDescription(v, scale) {
+    scale = scale || aqiScale();
+    const band = aqiBandKey(v, scale);
     if (!band) return '';
+    if (scale === 'eu') return aqiScaleLabel(scale) + ': ' + aqiLabel(v, scale) + '.';
+    return t('weather.aqiGreeting' + band, aqiLabel(v, scale));
+  }
+  function aqiRange(v, scale) {
+    scale = scale || aqiScale();
+    const band = aqiBandKey(v, scale);
+    if (!band) return '';
+    if (scale === 'eu') {
+      const euRanges = {
+        Good: [0, 20], Fair: [21, 40], Moderate: [41, 60],
+        Poor: [61, 80], VeryPoor: [81, 100]
+      };
+      if (band === 'ExtremelyPoor') return '101+';
+      const range = euRanges[band];
+      return range[0] + '–' + range[1];
+    }
     const ranges = {
       Good: [0, 50], Moderate: [51, 100], UnhealthySG: [101, 150],
       Unhealthy: [151, 200], VeryUnhealthy: [201, 300]
@@ -1278,14 +1305,16 @@
     'us_aqi_sulphur_dioxide', 'us_aqi_carbon_monoxide', 'pm2_5', 'pm10', 'ozone',
     'nitrogen_dioxide', 'sulphur_dioxide', 'carbon_monoxide', 'dust', 'aerosol_optical_depth',
     'ammonia', 'alder_pollen', 'birch_pollen', 'grass_pollen', 'mugwort_pollen',
-    'olive_pollen', 'ragweed_pollen', 'european_aqi', 'uv_index', 'uv_index_clear_sky'
+    'olive_pollen', 'ragweed_pollen', 'european_aqi', 'european_aqi_pm2_5', 'european_aqi_pm10',
+    'european_aqi_nitrogen_dioxide', 'european_aqi_ozone', 'european_aqi_sulphur_dioxide',
+    'uv_index', 'uv_index_clear_sky'
   ];
   const AQI_POLLUTANTS = [
-    { key: 'pm2_5', label: 'PM₂.₅', sub: 'us_aqi_pm2_5' },
-    { key: 'pm10', label: 'PM₁₀', sub: 'us_aqi_pm10' },
-    { key: 'ozone', label: 'O₃', sub: 'us_aqi_ozone' },
-    { key: 'nitrogen_dioxide', label: 'NO₂', sub: 'us_aqi_nitrogen_dioxide' },
-    { key: 'sulphur_dioxide', label: 'SO₂', sub: 'us_aqi_sulphur_dioxide' },
+    { key: 'pm2_5', label: 'PM₂.₅', sub: 'us_aqi_pm2_5', euSub: 'european_aqi_pm2_5' },
+    { key: 'pm10', label: 'PM₁₀', sub: 'us_aqi_pm10', euSub: 'european_aqi_pm10' },
+    { key: 'ozone', label: 'O₃', sub: 'us_aqi_ozone', euSub: 'european_aqi_ozone' },
+    { key: 'nitrogen_dioxide', label: 'NO₂', sub: 'us_aqi_nitrogen_dioxide', euSub: 'european_aqi_nitrogen_dioxide' },
+    { key: 'sulphur_dioxide', label: 'SO₂', sub: 'us_aqi_sulphur_dioxide', euSub: 'european_aqi_sulphur_dioxide' },
     { key: 'carbon_monoxide', label: 'CO', sub: 'us_aqi_carbon_monoxide' },
     { key: 'dust', label: 'Dust', labelKey: 'weather.aqiDust' },
     { key: 'aerosol_optical_depth', label: 'Aerosol optical depth', labelKey: 'weather.aqiAerosolOpticalDepth' },
@@ -1306,38 +1335,47 @@
     catch (e) { formatted = String(Math.round(n * (digits ? 10 : 1)) / (digits ? 10 : 1)); }
     return formatted + (unit ? ' ' + unit : '');
   }
-  function aqiExtendedHtml(air) {
+  function aqiExtendedHtml(air, scale) {
+    scale = scale || aqiScale();
     const current = air && air.current || {};
     const units = air && air.current_units || {};
     const rows = AQI_POLLUTANTS.filter(function (p) {
       return current[p.key] != null && Number.isFinite(Number(current[p.key]));
     });
+    const secondaryIndex = scale === 'eu'
+      ? { key: 'us_aqi', label: aqiScaleLabel('us'), unitless: true }
+      : { key: 'european_aqi', label: t('weather.aqiEuropeanAqi', 'European AQI'), unitless: true };
     const additional = [
-      { key: 'european_aqi', label: t('weather.aqiEuropeanAqi', 'European AQI'), unitless: true },
+      secondaryIndex,
       { key: 'uv_index', label: t('weather.uv', 'UV Index'), unitless: true },
       { key: 'uv_index_clear_sky', label: t('weather.aqiClearSkyUv', 'Clear-sky UV'), unitless: true }
     ].filter(function (item) { return current[item.key] != null && Number.isFinite(Number(current[item.key])); });
     if (!rows.length && !additional.length) return '';
     const contributors = AQI_POLLUTANTS.filter(function (p) {
-      return p.sub && current[p.sub] != null && Number.isFinite(Number(current[p.sub]));
-    }).map(function (p) { return { pollutant: p, value: Number(current[p.sub]) }; });
+      const sub = scale === 'eu' ? p.euSub : p.sub;
+      return sub && current[sub] != null && Number.isFinite(Number(current[sub]));
+    }).map(function (p) {
+      const sub = scale === 'eu' ? p.euSub : p.sub;
+      return { pollutant: p, value: Number(current[sub]) };
+    });
     contributors.sort(function (a, b) { return b.value - a.value; });
     let html = '<div class="wx-air-detail">';
     if (rows.length && contributors.length) {
       const top = contributors[0];
       const mainLabel = top.pollutant.labelKey ? t(top.pollutant.labelKey, top.pollutant.label) : top.pollutant.label;
-      html += `<div class="wx-air-main"><span class="wx-air-main-label">${escapeHtml(t('weather.aqiMainPollutant', 'Main pollutant'))}</span><strong>${escapeHtml(mainLabel)}</strong><span class="wx-air-main-score" style="--wx-aqi-color:${aqiColor(top.value)};--wx-aqi-light:${aqiLightColor(top.value)}">${Math.round(top.value)}</span></div>`;
+      html += `<div class="wx-air-main"><span class="wx-air-main-label">${escapeHtml(t('weather.aqiMainPollutant', 'Main pollutant'))}</span><strong>${escapeHtml(mainLabel)}</strong><span class="wx-air-main-score" style="--wx-aqi-color:${aqiColor(top.value, scale)};--wx-aqi-light:${aqiLightColor(top.value, scale)}">${Math.round(top.value)}</span></div>`;
     }
     if (rows.length) {
       html += `<div class="wx-air-list-title">${escapeHtml(t('weather.aqiPollutantLevels', 'Pollutant levels'))}</div><div class="wx-air-list">`;
       rows.forEach(function (p) {
-        const contribution = p.sub && current[p.sub] != null && Number.isFinite(Number(current[p.sub]))
-          ? Number(current[p.sub]) : null;
+        const sub = scale === 'eu' ? p.euSub : p.sub;
+        const contribution = sub && current[sub] != null && Number.isFinite(Number(current[sub]))
+          ? Number(current[sub]) : null;
         const unit = units[p.key] || (p.key.indexOf('_pollen') >= 0 ? 'grains/m³' : 'µg/m³');
         const amount = airValueText(current[p.key], p.key === 'aerosol_optical_depth' ? '' : unit);
         const label = p.labelKey ? t(p.labelKey, p.label) : p.label;
         const contributionHtml = contribution == null ? ''
-          : `<span class="wx-air-contribution${contribution > 100 ? ' is-elevated' : ''}" style="--wx-air-color:${aqiColor(contribution)};--wx-aqi-light:${aqiLightColor(contribution)}"><span>${escapeHtml(t('weather.aqiContribution', 'AQI contribution'))}</span><strong>${Math.round(contribution)}</strong></span>`;
+          : `<span class="wx-air-contribution${contribution > (scale === 'eu' ? 60 : 100) ? ' is-elevated' : ''}" style="--wx-air-color:${aqiColor(contribution, scale)};--wx-aqi-light:${aqiLightColor(contribution, scale)}"><span>${escapeHtml(t('weather.aqiContribution', 'AQI contribution'))}</span><strong>${Math.round(contribution)}</strong></span>`;
         html += `<div class="wx-air-row"><span class="wx-air-name">${escapeHtml(label)}</span><span class="wx-air-amount">${escapeHtml(amount)}</span>${contributionHtml}</div>`;
       });
       html += '</div>';
@@ -1355,16 +1393,15 @@
   }
   function loadAqiDetail(pack) {
     if (!pack || !pack.city || !dataApi || typeof dataApi.fetchJson !== 'function') return Promise.resolve(null);
-    // Cache a successful detailed response even if a region omits the optional
-    // PM2.5-specific AQI field; otherwise reopening the sheet refetches forever.
+    // Cache a successful detailed response even if a region omits optional fields.
     if (pack.air && pack.air._detailFetchedAt) return Promise.resolve(pack);
-    if (pack.air && pack.air.current && pack.air.current.us_aqi_pm2_5 != null) return Promise.resolve(pack);
     const key = cityKey(pack.city);
     if (aqiDetailInflight.has(key)) return aqiDetailInflight.get(key);
     const fields = AQI_DETAIL_FIELDS.join(',');
     const url = AIR + '?latitude=' + encodeURIComponent(pack.city.lat)
       + '&longitude=' + encodeURIComponent(pack.city.lon)
-      + '&current=' + encodeURIComponent(fields) + '&timezone=auto';
+      + '&current=' + encodeURIComponent(fields)
+      + '&hourly=us_aqi,european_aqi&forecast_hours=24&timezone=auto';
     const request = dataApi.fetchJson(url).then(function (detail) {
       if (!detail || !detail.current) return null;
       const oldAir = pack.air || {};
@@ -1380,46 +1417,101 @@
     aqiDetailInflight.set(key, request);
     return request;
   }
-  function aqiColor(v) {
-    const band = aqiBandKey(v);
+  function aqiOutlookHtml(air, scale, timeZone, loading) {
+    scale = scale || aqiScale();
+    const key = scale === 'eu' ? 'european_aqi' : 'us_aqi';
+    const hourly = air && air.hourly || {};
+    const times = hourly.time || [];
+    const values = hourly[key] || [];
+    const title = escapeHtml(t('weather.hourly', 'Hourly Forecast') + ' · ' + aqiScaleLabel(scale));
+    if (loading) {
+      return `<section id="wxAqiOutlook" class="wx-aqi-outlook" aria-busy="true" role="status"><div class="wx-air-list-title">${title}</div><p class="wx-aqi-outlook-status"><span class="loader" aria-hidden="true"></span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</p></section>`;
+    }
+    const now = Date.now();
+    const candidates = [];
+    for (let i = 0; i < times.length; i++) {
+      const at = stampToMs(times[i], timeZone);
+      const value = Number(values[i]);
+      if (!Number.isFinite(at) || !Number.isFinite(value) || at < now - 45 * 60 * 1000 || at > now + 24 * 60 * 60 * 1000) continue;
+      candidates.push({ time: times[i], at: at, value: value });
+    }
+    if (!candidates.length) {
+      return `<section id="wxAqiOutlook" class="wx-aqi-outlook"><div class="wx-air-list-title">${title}</div><p class="wx-aqi-outlook-status">${escapeHtml(t('weather.unavailable', 'Unavailable'))}</p></section>`;
+    }
+    const samples = candidates.length <= 8 ? candidates : Array.from({ length: 8 }, function (_, i) {
+      return candidates[Math.round(i * (candidates.length - 1) / 7)];
+    });
+    const max = Math.max(1, ...samples.map(function (sample) { return sample.value; }));
+    const upper = max * 1.15;
+    const items = samples.map(function (sample) {
+      const value = Math.round(sample.value);
+      const band = aqiLabel(value, scale);
+      let time = formatClock(sample.time, timeZone);
+      if (!time) time = String(sample.time).slice(11, 16);
+      const height = Math.max(8, Math.min(100, sample.value / upper * 100));
+      const color = aqiColor(sample.value, scale);
+      const aria = aqiScaleLabel(scale) + ', ' + time + ', ' + value + ', ' + band;
+      return `<li class="wx-aqi-outlook-item" aria-label="${escapeHtml(aria)}"><span class="wx-aqi-outlook-time" aria-hidden="true">${escapeHtml(time)}</span><span class="wx-aqi-outlook-value" aria-hidden="true">${value}</span><span class="wx-aqi-outlook-track" aria-hidden="true"><span style="height:${height.toFixed(1)}%;background:${color}"></span></span></li>`;
+    }).join('');
+    return `<section id="wxAqiOutlook" class="wx-aqi-outlook"><div class="wx-air-list-title">${title}</div><div class="wx-aqi-outlook-scroll"><ol class="wx-aqi-outlook-grid" aria-label="${escapeHtml(aqiScaleLabel(scale))} for the next 24 hours">${items}</ol></div></section>`;
+  }
+  function aqiColor(v, scale) {
+    const band = aqiBandKey(v, scale);
     return ({
-      Good: '#34c759', Moderate: '#ffd60a', UnhealthySG: '#ff9f0a',
-      Unhealthy: '#ff453a', VeryUnhealthy: '#bf5af2', Hazardous: '#9b2335'
+      Good: '#34c759', Fair: '#8bcf71', Moderate: '#ffd60a',
+      UnhealthySG: '#ff9f0a', Poor: '#ff9f0a', Unhealthy: '#ff453a',
+      VeryUnhealthy: '#bf5af2', VeryPoor: '#ff453a', Hazardous: '#9b2335',
+      ExtremelyPoor: '#bf5af2'
     })[band] || '#8e8e93';
   }
-  function aqiLightColor(v) {
-    const band = aqiBandKey(v);
+  function aqiLightColor(v, scale) {
+    const band = aqiBandKey(v, scale);
     return ({
-      Good: '#176b32', Moderate: '#765300', UnhealthySG: '#934600',
-      Unhealthy: '#b3261e', VeryUnhealthy: '#7130a0', Hazardous: '#7b1832'
+      Good: '#176b32', Fair: '#3c6b31', Moderate: '#765300', UnhealthySG: '#934600',
+      Poor: '#934600', Unhealthy: '#b3261e', VeryUnhealthy: '#7130a0',
+      VeryPoor: '#b3261e', Hazardous: '#7b1832', ExtremelyPoor: '#7130a0'
     })[band] || '#40556a';
   }
-  function aqiPct(v) {
-    const band = aqiBandKey(v);
+  function aqiPct(v, scale) {
+    const band = aqiBandKey(v, scale);
     if (!band) return 0;
-    return Math.max(0, Math.min(100, (Math.round(Number(v)) / 300) * 100));
+    return window.DusklineAqiMath.percent(v, scale || aqiScale());
   }
-  function aqiBarHtml(v, compact) {
-    const pct = aqiPct(v);
-    const col = aqiColor(v);
+  function aqiBarHtml(v, compact, scale) {
+    scale = scale || aqiScale();
+    const pct = aqiPct(v, scale);
+    const col = aqiColor(v, scale);
     if (compact) {
+      const gradient = scale === 'eu'
+        ? 'linear-gradient(90deg,#34c759,#8bcf71 20%,#ffd60a 40%,#ff9f0a 60%,#ff453a 80%,#bf5af2)'
+        : 'linear-gradient(90deg,#34c759,#ffd60a 10%,#ff9f0a 20%,#ff453a 30%,#bf5af2 40%,#9b2335 60%)';
       return `<div class="wx-aqi-bar wx-aqi-bar--compact" aria-hidden="true">
-        <span class="wx-aqi-track"><span class="wx-aqi-fill" style="width:${pct.toFixed(1)}%;background:${col}"></span></span>
-        <span class="wx-aqi-dot" style="left:${pct.toFixed(1)}%;background:${col}"></span>
+        <span class="wx-aqi-track" style="background:${gradient}"><span class="wx-aqi-fill" style="width:${pct.toFixed(1)}%;background:${col}"></span></span>
+        <span class="wx-aqi-dot" style="left:${Math.max(1.5, Math.min(98.5, pct)).toFixed(1)}%;background:${col}"></span>
       </div>`;
     }
+    const eu = scale === 'eu';
+    const colors = eu
+      ? ['#34c759', '#8bcf71', '#ffd60a', '#ff9f0a', '#ff453a', '#bf5af2']
+      : ['#34c759', '#ffd60a', '#ff9f0a', '#ff453a', '#bf5af2', '#9b2335'];
+    const weights = eu ? [1, 1, 1, 1, 1, 1] : [1, 1, 1, 1, 2, 4];
+    const thresholds = eu
+      ? [['0', 0], ['20', 20], ['40', 40], ['60', 60], ['80', 80], ['100+', 100]]
+      : [['0', 0], ['50', 50], ['100', 100], ['150', 150], ['200', 200], ['300', 300], ['500+', 500]];
+    const scaleMax = eu ? 100 : 500;
+    const marker = Math.max(1.5, Math.min(98.5, pct));
+    const tickHtml = thresholds.map(function (tick, index) {
+      const position = Math.min(100, tick[1] / scaleMax * 100);
+      const edgeClass = index === 0 ? ' is-start' : (index === thresholds.length - 1 ? ' is-end' : '');
+      return `<span class="${edgeClass.trim()}" style="left:${position}%">${tick[0]}</span>`;
+    }).join('');
     return `<div class="wx-aqi-scale" aria-hidden="true">
       <div class="wx-aqi-scale-track">
-        <span class="wx-aqi-seg" style="background:#34c759"></span>
-        <span class="wx-aqi-seg" style="background:#ffd60a"></span>
-        <span class="wx-aqi-seg" style="background:#ff9f0a"></span>
-        <span class="wx-aqi-seg" style="background:#ff453a"></span>
-        <span class="wx-aqi-seg" style="background:#bf5af2"></span>
-        <span class="wx-aqi-seg" style="background:#9b2335"></span>
+        ${colors.map(function (color, index) { return `<span class="wx-aqi-seg" style="flex:${weights[index]};background:${color}"></span>`; }).join('')}
       </div>
-      <span class="wx-aqi-marker" style="left:${pct.toFixed(1)}%"></span>
+      <span class="wx-aqi-marker" style="left:${marker.toFixed(1)}%"></span>
     </div>
-    <div class="wx-aqi-labels"><span>0</span><span>50</span><span>100</span><span>150</span><span>200</span><span>300</span></div>`;
+    <div class="wx-aqi-labels">${tickHtml}</div>`;
   }
   function humidityBarHtml(pct) {
     const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
@@ -1837,6 +1929,31 @@
     if (peak >= 20) return 48;
     return 10;
   }
+  function forecastWindGustInsight(pack, timeZone) {
+    const weather = pack && pack.weather || {};
+    const current = weather.current || {};
+    const hourly = weather.hourly || {};
+    const times = hourly.time || [];
+    const gusts = hourly.wind_gusts_10m || [];
+    const now = Date.now();
+    let peak = null;
+    for (let i = 0; i < times.length; i++) {
+      const at = stampToMs(times[i], timeZone);
+      const gust = Number(gusts[i]);
+      if (!Number.isFinite(at) || at < now - 30 * 60 * 1000 || at > now + 18 * 60 * 60 * 1000
+          || !Number.isFinite(gust)) continue;
+      if (!peak || gust > peak.value) peak = { value: gust, time: times[i] };
+    }
+    if ((!peak || current.wind_gusts_10m != null && Number(current.wind_gusts_10m) > peak.value)
+        && current.wind_gusts_10m != null && Number.isFinite(Number(current.wind_gusts_10m))) {
+      peak = { value: Number(current.wind_gusts_10m), time: current.time };
+    }
+    if (!peak || peak.value < 18) return '';
+    const time = peak.time ? formatClock(peak.time, timeZone) : '';
+    return t('weather.context.wind.gusts', 'Wind gusts may reach {value} around {time}; exposed areas can feel much windier.')
+      .replace('{value}', fmtWind(peak.value))
+      .replace('{time}', time || t('weather.today', 'today'));
+  }
   function greetingIsDaylight(daily, timeZone, parts, currentUv) {
     const dayIndex = dailyTodayIndex(daily, timeZone);
     const sunrise = dailyFieldAt(daily, 'sunrise', dayIndex);
@@ -1893,19 +2010,20 @@
     const precipitation = sheetContextText('precip', pack, timeZone);
     add(greetingPrecipitationScore(pack, timeZone), precipitation);
 
-    const airRaw = pack.air && pack.air.current && pack.air.current.us_aqi;
+    const selectedScale = aqiScale();
+    const airRaw = aqiCurrentValue(pack.air && pack.air.current, selectedScale);
     const airValue = Number(airRaw);
     if (airRaw != null && airRaw !== '' && Number.isFinite(airValue)) {
-      const description = aqiGreetingDescription(airValue);
-      const band = aqiBandKey(airValue);
+      const description = aqiGreetingDescription(airValue, selectedScale);
+      const band = aqiBandKey(airValue, selectedScale);
       // Satisfactory air quality is useful in the detail sheet, but adds little
       // to a personal hello. Keep the greeting focused on timely conditions.
-      const score = ({
-        Moderate: 25, UnhealthySG: 76, Unhealthy: 84,
-        VeryUnhealthy: 90, Hazardous: 96
-      })[band];
+      const score = selectedScale === 'eu'
+        ? ({ Moderate: 25, Poor: 76, VeryPoor: 90, ExtremelyPoor: 96 })[band]
+        : ({ Moderate: 25, UnhealthySG: 76, Unhealthy: 84, VeryUnhealthy: 90, Hazardous: 96 })[band];
       add(score, description);
     }
+    add(78, forecastWindGustInsight(pack, timeZone));
 
     const localHour = parts ? Number(parts.hour) : NaN;
     if (Number.isFinite(localHour) && (localHour >= 17 || localHour < 5)) {
@@ -2009,9 +2127,15 @@
     const wind = Number(current.wind_speed_10m);
     const windText = current.wind_speed_10m != null && Number.isFinite(wind)
       ? t('weather.wind', 'Wind') + ': ' + fmtWind(wind) + '.' : '';
-    const aqi = Number(pack.air && pack.air.current && pack.air.current.us_aqi);
+    const scale = aqiScale();
+    const aqi = Number(aqiCurrentValue(pack.air && pack.air.current, scale));
     const aqiText = Number.isFinite(aqi) && pack.air && pack.air.current
-      ? aqiGreetingDescription(aqi) : '';
+      ? aqiGreetingDescription(aqi, scale) : '';
+    const aqiBand = aqiBandKey(aqi, scale);
+    const poorAir = scale === 'eu'
+      ? ['Poor', 'VeryPoor', 'ExtremelyPoor'].indexOf(aqiBand) >= 0
+      : aqi >= 101;
+    const gustText = forecastWindGustInsight(pack, tz);
     const dayIndex = dailyTodayIndex(daily, tz);
     const uvMax = Number(dailyFieldAt(daily, 'uv_index_max', dayIndex));
     const uvNow = hourlyNowValue(hourly, 'uv_index', tz);
@@ -2019,14 +2143,15 @@
     const uvText = greetingIsDaylight(daily, tz, parts, uvNow) && uv >= 3
       ? sheetContextText('uv', pack, tz) : '';
     if (precipScore >= 62 && precip) return precip;
-    if (aqi >= 101 && aqiText) return aqiText;
+    if (poorAir && aqiText) return aqiText;
+    if (gustText) return gustText;
     if (wind >= 14 && windText) return windText;
     if (uv >= 6 && uvText) return uvText;
     if ((parts.hour >= 20 || parts.hour < 5) && tomorrow) return tomorrow;
     if (precipScore >= 48 && precip) return precip;
     if (wind >= 8 && windText) return windText;
     if (uvText) return uvText;
-    if (aqi >= 51 && aqiText) return aqiText;
+    if (scale === 'us' && aqi >= 51 && aqiText) return aqiText;
     return tomorrow || '';
   }
   function finishGreetingTyping(text) {
@@ -2903,7 +3028,8 @@
     // NWS severe weather / disaster alerts (Apple Weather–style banner stack)
     alertsApi.ensureNwsAlerts(pack);
 
-    const aqi = pack.air && pack.air.current && pack.air.current.us_aqi;
+    const selectedAqiScale = aqiScale();
+    const aqi = aqiCurrentValue(pack.air && pack.air.current, selectedAqiScale);
     const mods = [];
     let hasAlertBlock = false;
     {
@@ -2913,8 +3039,8 @@
     mods.push(modHtml(
       'aqi', t('weather.aqi', 'Air Quality'),
       aqi != null ? String(Math.round(aqi)) : '—',
-      aqiLabel(aqi) || '',
-      true, false, aqiBarHtml(aqi, true)
+      aqi != null ? aqiScaleLabel(selectedAqiScale) + ' · ' + aqiLabel(aqi, selectedAqiScale) : aqiScaleLabel(selectedAqiScale),
+      true, false, aqiBarHtml(aqi, true, selectedAqiScale)
     ));
     {
       const feels = cur.apparent_temperature;
@@ -3338,10 +3464,16 @@
       openSheetInner(kind, pack);
       if (kind === 'aqi') {
         loadAqiDetail(pack).then(function (updated) {
-          if (!updated || !sheetOpen || activeSheetKind !== 'aqi') return;
-          if (!openCity || !openCity.city || !sameCity(openCity.city, updated.city)) return;
+          if (!sheetOpen || activeSheetKind !== 'aqi') return;
+          const responseCity = updated && updated.city || pack.city;
+          if (!openCity || !openCity.city || !sameCity(openCity.city, responseCity)) return;
           const host = document.getElementById('wxAqiExtended');
-          if (host) host.innerHTML = aqiExtendedHtml(updated.air);
+          const scale = aqiScale();
+          const data = updated || pack;
+          if (host) host.innerHTML = aqiExtendedHtml(data && data.air, scale);
+          const outlook = document.getElementById('wxAqiOutlook');
+          if (outlook) outlook.outerHTML = aqiOutlookHtml(data && data.air, scale,
+            cityTimeZone(data, data && data.city), false);
         });
       }
     } catch (err) {
@@ -3447,13 +3579,20 @@
         body += `<p class="wx-sheet-context">${escapeHtml(t('weather.uvMax', 'Today’s max'))} ${Math.round(uvMax * 10) / 10}</p>`;
       }
     } else if (kind === 'aqi') {
-      const aqi = pack.air && pack.air.current && pack.air.current.us_aqi;
+      const scale = aqiScale();
+      const aqi = aqiCurrentValue(pack.air && pack.air.current, scale);
       body += `<div class="wx-sheet-hero">
-        <div class="weather-chart-readout wx-aqi-readout" style="--wx-aqi-color:${aqiColor(aqi)};--wx-aqi-light:${aqiLightColor(aqi)}">${aqi != null ? Math.round(aqi) : '—'}</div>
-        <div class="weather-chart-sub">${escapeHtml(aqiLabel(aqi) || t('weather.aqi', 'Air Quality'))}${aqi != null ? ' · ' + escapeHtml(aqiRange(aqi)) : ''}</div>
+        <div class="weather-chart-readout wx-aqi-readout" style="--wx-aqi-color:${aqiColor(aqi, scale)};--wx-aqi-light:${aqiLightColor(aqi, scale)}">${aqi != null ? Math.round(aqi) : '—'}</div>
+        <div class="weather-chart-sub">${escapeHtml(aqiLabel(aqi, scale) || t('weather.aqi', 'Air Quality'))}${aqi != null ? ' · ' + escapeHtml(aqiRange(aqi, scale)) : ''}</div>
       </div>`;
-      body += aqiBarHtml(aqi, false);
-      const description = aqiDescription(aqi);
+      body += `<p class="weather-mod-label" id="wxAqiScaleLabel">${escapeHtml(t('weather.aqi', 'Air Quality'))}</p><div class="weather-units-row" id="wxAqiScale" role="radiogroup" aria-labelledby="wxAqiScaleLabel"><span class="wx-units-pill" aria-hidden="true"></span>`;
+      [['us', aqiScaleLabel('us')], ['eu', aqiScaleLabel('eu')]].forEach(function (option) {
+        const on = scale === option[0];
+        body += `<button type="button" role="radio" aria-checked="${on ? 'true' : 'false'}" tabindex="${on ? '0' : '-1'}" data-u="${option[0]}" class="${on ? 'active' : ''}">${escapeHtml(option[1])}</button>`;
+      });
+      body += '</div>';
+      body += aqiBarHtml(aqi, false, scale);
+      const description = aqiDescription(aqi, scale);
       if (description) body += `<p class="wx-sheet-context wx-sheet-aqi-description">${escapeHtml(description)}</p>`;
       if (pack.air && pack.air.current) {
         const pm = pack.air.current.pm2_5;
@@ -3463,7 +3602,8 @@
           <div class="wx-sheet-stat"><span class="wx-sheet-stat-lab">PM10</span><span class="wx-sheet-stat-val">${pm10 != null ? pm10.toFixed(1) : '—'} µg/m³</span></div>
         </div>`;
       }
-      body += `<div id="wxAqiExtended">${aqiExtendedHtml(pack.air)}</div>`;
+      body += `<div id="wxAqiExtended">${aqiExtendedHtml(pack.air, scale)}</div>`;
+      body += aqiOutlookHtml(pack.air, scale, chartTz, !(pack.air && pack.air._detailFetchedAt));
     } else if (kind === 'precip') {
       if (hourly.precipitation) body += chartsApi.buildTempChart(hourly, 'precipitation', (v) => fmtPrecip(v), chartTz);
       else {
@@ -3488,7 +3628,9 @@
       body += unitsPickerHtml('wxVisUnits', [['km', 'km'], ['mi', 'mi']], useMi() ? 'mi' : 'km');
     }
 
-    const aboutText = t('weather.about.' + kind, '');
+    const aboutText = kind === 'aqi' && aqiScale() === 'eu'
+      ? t('weather.about.aqi.eu', '')
+      : t('weather.about.' + kind, '');
     if (aboutText) {
       const contextText = sheetContextText(kind, pack, chartTz);
       if (contextText) body += `<p class="wx-sheet-context wx-sheet-intelligence">${escapeHtml(contextText)}</p>`;
@@ -3538,6 +3680,7 @@
     bind('wxWindUnits', setWindUnit);
     bind('wxPrecipUnits', setPrecipUnit);
     bind('wxPressUnits', setPressUnit);
+    bind('wxAqiScale', setAqiScale);
     bind('wxTempUnitsSheet', function (u) {
       if (typeof window.setTempUnitPreference === 'function') window.setTempUnitPreference(u);
     });

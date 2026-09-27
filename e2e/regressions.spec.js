@@ -83,6 +83,7 @@ async function stubWeather(page, log) {
         light, coords: lats.length,
         hasHourly: u.searchParams.has('hourly'),
         hasPastDays: u.searchParams.has('past_days'),
+        hourly: u.searchParams.get('hourly') || '',
         daily: u.searchParams.get('daily') || ''
       });
     }
@@ -107,6 +108,7 @@ test('the list loads the light query and the detail upgrades itself to full', as
   for (const b of batches) {
     expect(b.light, `list batch requested the full shape: ${JSON.stringify(b)}`).toBe(true);
     expect(b.hasHourly).toBe(false);
+    expect(b.hourly).toBe('');
     expect(b.hasPastDays).toBe(false);
     expect(b.daily).toBe(LIGHT_DAILY);
   }
@@ -122,7 +124,10 @@ test('the list loads the light query and the detail upgrades itself to full', as
   const before = log.length;
   await tokyo.click();
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
-  expect(log.slice(before).some((r) => r.hasHourly), 'opening the detail never requested the full shape').toBe(true);
+  const fullRequest = log.slice(before).find((r) => r.hasHourly);
+  expect(fullRequest, 'opening the detail never requested the full shape').toBeTruthy();
+  expect(fullRequest.hourly).toContain('wind_gusts_10m');
+  expect(fullRequest.daily).toContain('wind_gusts_10m_max');
 
   await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 10000 });
   expect(await page.locator('#weatherModules .weather-hourly-item').count()).toBeGreaterThan(12);
@@ -611,6 +616,20 @@ test('a strong wind replaces the rain insight with timely wind guidance', async 
   await page.goto('/?city=tokyo');
   await expect(page.locator('#weatherDetailHero .weather-detail-insight')).toContainText('Wind');
   await expect(page.locator('#weatherDetailHero .weather-detail-insight')).not.toContainText('Precipitation');
+});
+
+test('a forecast wind gust surfaces its expected local time', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route(/api\.open-meteo\.com/, async route => {
+    if (!route.request().url().includes('hourly=')) return route.fallback();
+    const forecast = body(false, Date.now(), 1);
+    forecast.hourly.wind_gusts_10m = forecast.hourly.time.map((_, i) => i === 17 ? 22 : 4);
+    return route.fulfill({ json: forecast });
+  });
+  await page.goto('/?city=tokyo');
+  const insight = page.locator('#weatherDetailHero .weather-detail-insight');
+  await expect(insight).toContainText('Gusts may reach');
+  await expect(insight).toContainText('around');
 });
 
 test('the detail insight looks ahead to tomorrow near bedtime', async ({ page }) => {

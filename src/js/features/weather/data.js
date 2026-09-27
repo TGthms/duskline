@@ -455,7 +455,7 @@
         }
         const cur = pack.weather.current || {};
         const ocur = om.weather.current || {};
-        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility'].forEach(function (k) {
+        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility', 'wind_gusts_10m'].forEach(function (k) {
           if (cur[k] == null && ocur[k] != null) cur[k] = ocur[k];
         });
         if (ocur.precipitation != null) cur.precipitation = ocur.precipitation;
@@ -474,7 +474,8 @@
             'sunset',
             'uv_index_max',
             'precipitation_sum',
-            'precipitation_probability_max'
+            'precipitation_probability_max',
+            'wind_gusts_10m_max'
           ];
           const byDay = {};
           function ingest(src) {
@@ -535,6 +536,7 @@
             precipitation: oh.precipitation || h.precipitation || null,
             precipitation_probability: oh.precipitation_probability || h.precipitation_probability || null,
             wind_speed_10m: oh.wind_speed_10m || h.wind_speed_10m || null,
+            wind_gusts_10m: oh.wind_gusts_10m || h.wind_gusts_10m || null,
             wind_direction_10m: oh.wind_direction_10m || h.wind_direction_10m || null,
             uv_index: oh.uv_index || h.uv_index || null
           };
@@ -543,7 +545,7 @@
             pack.weather.timezone = om.weather.timezone;
           }
         } else {
-          ['relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'uv_index', 'precipitation', 'precipitation_probability'].forEach(function (k) {
+          ['relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'uv_index', 'precipitation', 'precipitation_probability', 'wind_gusts_10m'].forEach(function (k) {
             if ((h[k] == null || !h[k].length) && oh[k] && oh[k].length) h[k] = oh[k];
           });
           if ((!h.time || !h.time.length) && oh.time) {

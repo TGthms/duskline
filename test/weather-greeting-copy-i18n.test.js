@@ -30,7 +30,8 @@ test('every picker language has complete, localized greeting and context pools',
   const contexts = [
     'weather.context.humidity.low', 'weather.context.humidity.high',
     'weather.context.wind.strong', 'weather.context.sun.daylight',
-    'weather.context.conditions.range', 'weather.context.tomorrow.outlook'
+    'weather.context.conditions.range', 'weather.context.tomorrow.outlook',
+    'weather.context.wind.gusts'
   ];
 
   for (const locale of win.DUSKLINE_LANG_CODES) {
@@ -55,6 +56,9 @@ test('every picker language has complete, localized greeting and context pools',
     for (const key of contexts) {
       assert.ok(dict[key] && dict[key].trim(), 'missing ' + locale + ' ' + key);
       if (locale !== 'en') assert.notEqual(dict[key], english[key], 'English fallback: ' + locale + ' ' + key);
+    }
+    for (const placeholder of ['{value}', '{time}']) {
+      assert.ok(dict['weather.context.wind.gusts'].includes(placeholder), 'missing ' + locale + ' gust placeholder ' + placeholder);
     }
     for (const placeholder of ['{condition}', '{high}', '{low}']) {
       assert.ok(dict['weather.context.tomorrow.outlook'].includes(placeholder), 'missing ' + locale + ' tomorrow placeholder ' + placeholder);
