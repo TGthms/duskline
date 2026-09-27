@@ -33,6 +33,9 @@
     }
 
     const SEVERITY_RANK = { extreme: 0, severe: 1, moderate: 2, minor: 3, unknown: 4 };
+    function normalizeAlertIdentity(value) {
+      return String(value || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
 
     function severityRank(s) {
       const k = String(s || 'unknown').toLowerCase();
@@ -74,6 +77,7 @@
       var out = [];
       var seenId = new Set();
       var seenSoft = new Set();
+      var seenCapContent = new Set();
       for (var i = 0; i < list.length; i++) {
         var a = list[i];
         if (!a) continue;
@@ -81,6 +85,21 @@
         if (a.providerName === 'IFRC Alert Hub') {
           if (id && seenId.has(id)) continue;
           if (id) seenId.add(id);
+          const parsedEnds = Date.parse(a.ends || '');
+          const endsKey = Number.isFinite(parsedEnds) ? String(parsedEnds) : normalizeAlertIdentity(a.ends);
+          const capContentKey = [
+            a.senderName || a.sender,
+            a.category,
+            a.event,
+            a.severity,
+            a.headline || a.description,
+            a.areaDesc,
+            endsKey
+          ].map(normalizeAlertIdentity).join('|');
+          // CAP publishers may send the same bulletin under a new identifier
+          // while preserving the warning content and affected area.
+          if (seenCapContent.has(capContentKey)) continue;
+          seenCapContent.add(capContentKey);
           out.push(a);
           continue;
         }
@@ -126,12 +145,12 @@
           areaDesc: normalizeNwsText(p.areaDesc || '')
         });
       }
-      return dedupeAlerts(out).slice(0, 5);
+      return dedupeAlerts(out);
     }
 
     function topAlert(pack) {
       if (!pack || !Array.isArray(pack.alerts) || !pack.alerts.length) return null;
-      const current = pack.alerts.filter(alertIsCurrent);
+      const current = currentAlerts(pack.alerts);
       return current[0] || null;
     }
 
@@ -143,6 +162,11 @@
         return Number.isFinite(sent) && sent > Date.now() - 24 * 60 * 60 * 1000;
       }
       return true;
+    }
+
+    function currentAlerts(alerts) {
+      if (!Array.isArray(alerts)) return [];
+      return dedupeAlerts(alerts.filter(alertIsCurrent));
     }
 
     function applyAlertsToPack(pack, alerts, meta) {
@@ -418,12 +442,14 @@
       }
     }
 
-    function loadInternationalAlerts(city) {
+    function requestInternationalAlerts(city, admin1) {
       const code = String(city && city.country_code || '').trim().toUpperCase();
       const country = String(city && city.country || '').trim();
       if ((code && !/^[A-Z]{2}$/.test(code)) || !country) return Promise.reject(new Error('Missing international alert location'));
       const language = String(lang() || 'en');
-      const key = (code || ('name-' + normalizeAreaName(country))) + '|' + language.toLowerCase();
+      const region = String(admin1 || '').trim();
+      const key = (code || ('name-' + normalizeAreaName(country))) + '|'
+        + (region ? 'admin1:' + normalizeAreaName(region) + '|' : '') + language.toLowerCase();
       const hit = capCountryRequests.get(key);
       if (hit && hit.data && Date.now() - hit.at < CAP_CLIENT_CACHE_MS) return Promise.resolve(hit.data);
       if (hit && hit.data) capCountryRequests.delete(key);
@@ -431,6 +457,7 @@
 
       const params = new URLSearchParams({ country: country, lang: language });
       if (code) params.set('cc', code);
+      if (region) params.set('admin1', region);
       const controller = new AbortController();
       const timer = global.setTimeout(function () { controller.abort(); }, 15000);
       const promise = global.fetch('/api/international-alerts?' + params.toString(), {
@@ -455,21 +482,38 @@
       return promise;
     }
 
+    function loadInternationalAlerts(city) {
+      return requestInternationalAlerts(city, '').then(function (countryPayload) {
+        const region = String(city && city.admin1 || '').trim();
+        if (!countryPayload.truncated || !region) return countryPayload;
+        // The country feed is capped to protect startup cost. When it is
+        // incomplete, ask IFRC for this first-level region and combine results;
+        // city coordinates remain local and still gate the final display.
+        return requestInternationalAlerts(city, region).then(function (regionPayload) {
+          if (!regionPayload || !regionPayload.scoped) return countryPayload;
+          return Object.assign({}, regionPayload, {
+            alerts: currentAlerts((countryPayload.alerts || []).concat(regionPayload.alerts || [])),
+            truncated: !!regionPayload.truncated
+          });
+        }).catch(function () {
+          // Retain any location-matched results from the country response if
+          // the optional, narrower request is unavailable.
+          return countryPayload;
+        });
+      });
+    }
+
     function applyInternationalAlerts(pack, payload) {
       if (!payload || payload.availability !== 'available') {
         applyAlertsToPack(pack, null, { error: true, reason: 'unsupported', provider: 'IFRC Alert Hub' });
         return;
       }
-      const cityAlerts = (payload.alerts || []).filter(function (alert) {
+      const cityAlerts = currentAlerts((payload.alerts || []).filter(function (alert) {
         return capAlertMatchesCity(alert, pack.city);
-      });
-      // If the provider returned only a partial country set and none matched, do
-      // not turn the truncated response into an implied all-clear.
-      if (payload.truncated && !cityAlerts.length) {
-        applyAlertsToPack(pack, null, { error: true, reason: 'partial', provider: 'IFRC Alert Hub' });
-      } else {
-        applyAlertsToPack(pack, cityAlerts, { provider: 'IFRC Alert Hub', partial: payload.truncated });
-      }
+      }));
+      // A capped feed is incomplete, but a miss is not useful UI. Keep the
+      // matched alerts, if any, and silently omit unavailable coverage copy.
+      applyAlertsToPack(pack, cityAlerts, { provider: 'IFRC Alert Hub', partial: payload.truncated });
     }
 
     /**
@@ -668,6 +712,7 @@
                 }
                 applyInternationalAlerts(pack, payload);
                 patchDetailAlerts(pack);
+                scheduleListPaintFromAlerts(pack);
                 await new Promise(function (r) { window.setTimeout(r, 40); });
                 oneDone();
                 continue;
@@ -677,6 +722,7 @@
                 return;
               }
               applyAlertsToPack(pack, alerts || [], { provider: 'National Weather Service' });
+              scheduleListPaintFromAlerts(pack);
               await new Promise(function (r) { window.setTimeout(r, 40); });
             } catch (e) {
               if (gen !== alertsPrefetchGen) {
@@ -684,6 +730,8 @@
                 return;
               }
               applyAlertsToPack(pack, null, { error: true, provider: isLikelyUs(pack.city) ? 'National Weather Service' : 'IFRC Alert Hub' });
+              patchDetailAlerts(pack);
+              scheduleListPaintFromAlerts(pack);
             }
             oneDone();
           }
@@ -735,30 +783,10 @@
         alerts = alertsOrPack.alerts;
         failed = !!alertsOrPack.alertsError;
       }
-      if (Array.isArray(alerts)) {
-        alerts = alerts.filter(alertIsCurrent);
-      }
-      if (failed && !(alerts && alerts.length)) {
-        const title = t('weather.alerts', 'Public Alerts');
-        const unavailableCopy = alertsOrPack && alertsOrPack.alertsUnavailableReason === 'partial'
-          ? t('weather.alertsPartial', 'This source returned many alerts; check local official sources for a complete list.')
-          : t('weather.alertsUnavailable', 'Official public alerts are unavailable for this place right now.');
-        return (
-          '<div class="weather-alerts weather-alerts--unavailable" role="status">' +
-            '<div class="weather-alerts-label">' + escapeHtml(title) + '</div>' +
-            '<p class="weather-alert-unavailable">' +
-              escapeHtml(unavailableCopy) +
-            '</p>' +
-          '</div>'
-        );
-      }
+      if (Array.isArray(alerts)) alerts = currentAlerts(alerts);
+      if (failed && !(alerts && alerts.length)) return '';
       if (!alerts || !alerts.length) return '';
       const title = t('weather.alerts', 'Public Alerts');
-      const coverageNote = alertsOrPack && !Array.isArray(alertsOrPack) && alertsOrPack.alertsPartial
-        ? '<p class="weather-alert-unavailable" role="note">' +
-          escapeHtml(t('weather.alertsPartial', 'This source returned many alerts; check local official sources for a complete list.')) +
-          '</p>'
-        : '';
       const cards = alerts.map(function (a) {
         const sev = String(a.severity || 'Unknown').toLowerCase();
         const sevClass = sev === 'extreme' || sev === 'severe'
@@ -824,7 +852,6 @@
       return (
         '<div class="weather-alerts" role="region" aria-label="' + escapeHtml(title) + '">' +
           '<div class="weather-alerts-label">' + escapeHtml(title) + '</div>' +
-          coverageNote +
           cards +
         '</div>'
       );
@@ -835,6 +862,7 @@
       normalizeNwsText: normalizeNwsText,
       capPolygonContains: capPolygonContains,
       capAlertMatchesCity: capAlertMatchesCity,
+      currentAlerts: currentAlerts,
       dedupeAlerts: dedupeAlerts,
       loadNwsAlerts: loadNwsAlerts,
       topAlert: topAlert,

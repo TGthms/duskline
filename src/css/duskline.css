@@ -435,8 +435,6 @@ html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLangua
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .weather-search { background: rgba(255,255,255,.72); border-color: rgba(31,74,109,.22); color: #15263b; }
 html[dir="rtl"] body.duskline .weather-toolbar-actions { flex-direction: row-reverse; }
 html[dir="rtl"] body.duskline .weather-detail-back svg { transform: scaleX(-1); }
-.weather-alerts--unavailable { opacity: .9; }
-.weather-alert-unavailable { margin: 8px 0 0; font-size: .92rem; }
 /* Keep the compact language control consistent even when the shared theme
    layer applies a background shorthand later in the cascade. */
 html[data-theme="minimal"] body.duskline #dusklineLanguage {

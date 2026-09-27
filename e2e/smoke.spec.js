@@ -770,32 +770,86 @@ test('non-US featured cities do not call NWS', async ({ page }) => {
 test('international detail shows a location-matched official CAP alert and source', async ({ page }) => {
   const now = Date.now();
   let capUrl = '';
+  let capRegionUrl = '';
+  await page.route(/api\.open-meteo\.com\/v1\/forecast(?:\?|$)/, async (route) => {
+    const url = new URL(route.request().url());
+    const latitudes = (url.searchParams.get('latitude') || '').split(',').map(Number);
+    const longitudes = (url.searchParams.get('longitude') || '').split(',').map(Number);
+    const time = new Date(now).toISOString();
+    const times = Array.from({ length: 24 }, (_, index) => new Date(now + index * 3600000).toISOString());
+    const days = Array.from({ length: 10 }, (_, index) => new Date(now + index * 86400000).toISOString().slice(0, 10));
+    const makeWeather = (latitude, longitude) => ({
+      latitude, longitude, timezone: 'Asia/Tokyo', current: {
+        time, temperature_2m: 22, apparent_temperature: 22, relative_humidity_2m: 55,
+        weather_code: 2, wind_speed_10m: 3, wind_gusts_10m: 5, wind_direction_10m: 180,
+        surface_pressure: 1012, visibility: 10000, precipitation: 0
+      },
+      hourly: {
+        time: times, temperature_2m: times.map(() => 22), apparent_temperature: times.map(() => 22),
+        weather_code: times.map(() => 2), precipitation_probability: times.map(() => 10),
+        precipitation: times.map(() => 0), wind_speed_10m: times.map(() => 3),
+        wind_gusts_10m: times.map(() => 5), wind_direction_10m: times.map(() => 180),
+        relative_humidity_2m: times.map(() => 55), surface_pressure: times.map(() => 1012), uv_index: times.map(() => 2)
+      },
+      daily: {
+        time: days, weather_code: days.map(() => 2), temperature_2m_max: days.map(() => 25),
+        temperature_2m_min: days.map(() => 16), sunrise: days.map((day) => day + 'T06:00:00'),
+        sunset: days.map((day) => day + 'T18:00:00'), uv_index_max: days.map(() => 4),
+        precipitation_sum: days.map(() => 0), precipitation_probability_max: days.map(() => 10),
+        wind_gusts_10m_max: days.map(() => 5)
+      }
+    });
+    const locations = latitudes.map((latitude, index) => makeWeather(latitude, longitudes[index]));
+    return route.fulfill({ json: locations.length === 1 ? locations[0] : locations });
+  });
+  const capAlert = (id, sent, event, category, headline, description, severity) => ({
+    id: id, capIdentifier: id, sent: sent, providerName: 'IFRC Alert Hub', official: true, rebroadcastable: true,
+    event: event, severity: severity, urgency: 'Expected', certainty: 'Likely',
+    headline: headline, senderName: 'Japan Meteorological Agency', category: category, categoryDisplay: category,
+    description: description, instruction: 'Follow local authority guidance.',
+    ends: new Date(now + 4 * 3600000).toISOString(), sourceUrl: 'https://alerts.example.jp/warnings/tokyo',
+    areaDesc: 'Tokyo', admin1s: ['Tokyo'],
+    areas: [{ areaDesc: 'Tokyo', polygons: [{ valuePolygon: {
+      type: 'Polygon', coordinates: [[[139.60, 35.60], [139.90, 35.60], [139.90, 35.80], [139.60, 35.80], [139.60, 35.60]]]
+    } }], circles: [] }]
+  });
   await page.route(/\/api\/international-alerts(?:\?|$)/, async (route) => {
-    capUrl = route.request().url();
+    const requestUrl = new URL(route.request().url());
+    const scoped = requestUrl.searchParams.has('admin1');
+    if (requestUrl.searchParams.get('cc') === 'JP') {
+      if (scoped) capRegionUrl = requestUrl.href;
+      else capUrl = requestUrl.href;
+    }
     return route.fulfill({ json: {
-      availability: 'available', provider: 'IFRC Alert Hub', country: 'Japan', truncated: false,
-      alerts: [{
-        id: 'tokyo-warning:0', providerName: 'IFRC Alert Hub', official: true, rebroadcastable: true,
-        event: 'Typhoon Warning', severity: 'Severe', urgency: 'Expected', certainty: 'Likely',
-        senderName: 'Japan Meteorological Agency', categoryDisplay: 'Meteorological',
-        description: 'Strong winds are expected.', instruction: 'Stay indoors.', ends: new Date(now + 4 * 3600000).toISOString(),
-        sourceUrl: 'https://alerts.example.jp/warnings/tokyo', areaDesc: 'Tokyo', admin1s: ['Tokyo'],
-        areas: [{ areaDesc: 'Tokyo', polygons: [{ valuePolygon: {
-          type: 'Polygon', coordinates: [[[139.60, 35.60], [139.90, 35.60], [139.90, 35.80], [139.60, 35.80], [139.60, 35.60]]]
-        } }], circles: [] }]
-      }]
+      availability: 'available', provider: 'IFRC Alert Hub', country: 'Japan',
+      truncated: !scoped, scoped: scoped,
+      alerts: scoped
+        ? [
+          capAlert('wind-latest', new Date(now - 1 * 60000).toISOString(), 'Wind', 'MET', 'Strong Wind Warning for Tokyo', 'Strong winds are expected.', 'Severe'),
+          capAlert('heat-latest', new Date(now - 1 * 60000).toISOString(), 'Heat', 'HEALTH', 'Heat Health Warning for Tokyo', 'Take care in the heat.', 'Moderate')
+        ]
+        : [
+          capAlert('wind-older', new Date(now - 5 * 60000).toISOString(), 'Wind', 'MET', 'Strong Wind Warning for Tokyo', 'Strong winds are expected.', 'Severe'),
+          capAlert('wind-latest-country', new Date(now - 1 * 60000).toISOString(), 'Wind', 'MET', 'Strong Wind Warning for Tokyo', 'Strong winds are expected.', 'Severe')
+        ]
     } });
   });
 
   await page.goto('/');
   const tokyo = page.locator('#weatherList .weather-row').filter({ hasText: 'Tokyo' }).first();
   await expect(tokyo).toBeVisible({ timeout: 15000 });
+  await expect(tokyo.locator('.weather-row-cond')).toBeVisible();
+  await expect(tokyo.locator('.weather-row-alert')).toContainText('2 alerts', { timeout: 10000 });
   await tokyo.click();
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
-  const warning = page.locator('.weather-alert-title').filter({ hasText: 'Typhoon Warning' });
+  await expect(page.locator('.weather-alert')).toHaveCount(2);
+  expect(new URL(capRegionUrl).searchParams.get('admin1')).toBe('Tokyo');
+  expect(new URL(capRegionUrl).searchParams.has('lat')).toBe(false);
+  expect(new URL(capRegionUrl).searchParams.has('lon')).toBe(false);
+  const warning = page.locator('.weather-alert-title').filter({ hasText: 'Wind' });
   await expect(warning).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('.weather-alert-source a')).toContainText('IFRC Alert Hub');
-  await expect(page.locator('.weather-alert-source')).toContainText('Japan Meteorological Agency');
+  await expect(page.locator('.weather-alert-source a').first()).toContainText('IFRC Alert Hub');
+  await expect(page.locator('.weather-alert-source').first()).toContainText('Japan Meteorological Agency');
   expect(new URL(capUrl).searchParams.get('cc')).toBe('JP');
   expect(new URL(capUrl).searchParams.has('lat')).toBe(false);
   expect(new URL(capUrl).searchParams.has('lon')).toBe(false);

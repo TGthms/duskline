@@ -4,6 +4,7 @@ const ALERT_HUB_GRAPHQL = 'https://alerthub-api.ifrc.org/graphql/';
 const PAGE_SIZE = 100;
 const MAX_CATALOG_PAGES = 10;
 const MAX_ALERT_PAGES = 2;
+const MAX_ADMIN1_ALERT_PAGES = 5;
 const MAX_CATALOG_ITEMS = PAGE_SIZE * MAX_CATALOG_PAGES;
 const COUNTRY_CACHE_SECONDS = 24 * 60 * 60;
 const FEED_CACHE_SECONDS = 6 * 60 * 60;
@@ -89,6 +90,14 @@ const ALERTS_QUERY = `query($filter: AlertFilter, $page: OffsetPaginationInput) 
   }
 }`;
 
+const COUNTRY_ADMIN1_QUERY = `query($pk: ID!) {
+  public {
+    country(pk: $pk) {
+      admin1s { id name }
+    }
+  }
+}`;
+
 function jsonResponse(body, status, cacheSeconds) {
   const headers = new Headers({
     'Content-Type': 'application/json; charset=utf-8',
@@ -109,6 +118,22 @@ function normalizeName(value) {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ');
+}
+
+function normalizeAdmin1Name(value) {
+  const normalized = String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+  const simplified = normalized
+    .replace(/\b(state|province|prefecture|metropolis|metropolitan|region|county|district|department|governorate|oblast|territory|municipality|autonomous|community|national capital)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^of\s+/, '');
+  return simplified || normalized;
 }
 
 function countryNameCandidates(code) {
@@ -249,6 +274,29 @@ async function getFeedCatalog(context) {
   return value;
 }
 
+async function getCountryAdmin1s(context, countryId) {
+  const cache = getCache(context);
+  const key = cacheKey(context, 'cap/admin1s/' + encodeURIComponent(String(countryId)) + '-v1');
+  const cached = await readCached(cache, key);
+  if (cached) return cached;
+  const data = await graphQL(context, COUNTRY_ADMIN1_QUERY, { pk: String(countryId) });
+  const country = data.country;
+  if (!country || !Array.isArray(country.admin1s)) throw new Error('Alert Hub administrative regions are invalid');
+  const value = { items: country.admin1s.filter(function (region) { return region && region.id && region.name; }) };
+  await writeCached(context, cache, key, value, COUNTRY_CACHE_SECONDS);
+  return value;
+}
+
+async function findAdmin1(context, countryId, name) {
+  const wanted = normalizeAdmin1Name(name);
+  if (!wanted) return null;
+  const catalog = await getCountryAdmin1s(context, countryId);
+  const matches = catalog.items.filter(function (region) {
+    return normalizeAdmin1Name(region.name) === wanted;
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
 function parseDate(value) {
   const result = Date.parse(value || '');
   return Number.isFinite(result) ? result : null;
@@ -342,14 +390,15 @@ function normaliseInfo(alert, info, index, countryName) {
   };
 }
 
-async function fetchCountryAlerts(context, countryId, countryName, language) {
+async function fetchCountryAlerts(context, countryId, countryName, language, admin1Id) {
   const items = [];
   let total = null;
   let truncated = false;
-  for (let page = 0; page < MAX_ALERT_PAGES; page++) {
+  const maxPages = admin1Id ? MAX_ADMIN1_ALERT_PAGES : MAX_ALERT_PAGES;
+  for (let page = 0; page < maxPages; page++) {
     const offset = page * PAGE_SIZE;
     const data = await graphQL(context, ALERTS_QUERY, {
-      filter: { country: { pk: String(countryId) } },
+      filter: Object.assign({ country: { pk: String(countryId) } }, admin1Id ? { admin1: String(admin1Id) } : {}),
       page: { limit: PAGE_SIZE, offset: offset }
     });
     const collection = data.alerts;
@@ -361,7 +410,7 @@ async function fetchCountryAlerts(context, countryId, countryName, language) {
       truncated = true;
       break;
     }
-    if (page === MAX_ALERT_PAGES - 1) truncated = true;
+    if (page === maxPages - 1) truncated = true;
   }
 
   const superseded = new Set();
@@ -395,6 +444,7 @@ async function onRequest(context) {
   const url = new URL(context.request.url);
   const countryCode = String(url.searchParams.get('cc') || '').trim().toUpperCase();
   const countryName = String(url.searchParams.get('country') || '').trim().slice(0, 120);
+  const admin1Name = String(url.searchParams.get('admin1') || '').trim().slice(0, 120);
   const requestedLanguage = String(url.searchParams.get('lang') || 'en').trim().slice(0, 24).toLowerCase();
   const language = SUPPORTED_LANGUAGES[requestedLanguage] || 'en';
   if ((countryCode && !/^[A-Z]{2}$/.test(countryCode)) || !countryName) {
@@ -403,9 +453,15 @@ async function onRequest(context) {
 
   const responseCache = getCache(context);
   const locationKey = countryCode || ('name-' + normalizeName(countryName).replace(/[^a-z0-9]+/g, '-'));
-  const alertKey = cacheKey(context, 'cap/alerts/' + locationKey + '/' + encodeURIComponent(language.toLowerCase()));
+  const regionKey = admin1Name ? '/admin1-' + encodeURIComponent(normalizeAdmin1Name(admin1Name).replace(/\s+/g, '-')) : '';
+  const alertKey = cacheKey(context, 'cap/alerts/' + locationKey + regionKey + '/' + encodeURIComponent(language.toLowerCase()));
   const cachedAlerts = await readCached(responseCache, alertKey);
-  if (cachedAlerts) return jsonResponse(cachedAlerts, 200, ALERT_CACHE_SECONDS);
+  if (cachedAlerts) {
+    const cachedTtl = cachedAlerts.availability === 'available'
+      ? alertCacheSeconds(cachedAlerts.alerts, Date.now())
+      : ALERT_CACHE_SECONDS;
+    return jsonResponse(cachedAlerts, 200, cachedTtl);
+  }
 
   try {
     const [countries, feedCatalog] = await Promise.all([
@@ -426,7 +482,8 @@ async function onRequest(context) {
       return jsonResponse(body, 200, ALERT_CACHE_SECONDS);
     }
 
-    const result = await fetchCountryAlerts(context, country.id, country.name, language);
+    const matchedAdmin1 = admin1Name ? await findAdmin1(context, country.id, admin1Name) : null;
+    const result = await fetchCountryAlerts(context, country.id, country.name, language, matchedAdmin1 && matchedAdmin1.id);
     const alertTtl = alertCacheSeconds(result.alerts, Date.now());
     const body = {
       availability: 'available',
@@ -434,6 +491,7 @@ async function onRequest(context) {
       country: country.name,
       alerts: result.alerts,
       truncated: result.truncated,
+      scoped: !!matchedAdmin1,
       fetchedAt: Date.now()
     };
     await writeCached(context, responseCache, alertKey, body, alertTtl);

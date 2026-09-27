@@ -1708,15 +1708,20 @@
       visibility: cur.visibility
     });
 
-    const alert = alertsApi.topAlert(pack);
+    const rowAlerts = alertsApi.currentAlerts(pack.alerts);
+    const alert = rowAlerts[0] || null;
     const alertSev = alert ? String(alert.severity || '').toLowerCase() : '';
     const alertTone = alertSev === 'extreme' || alertSev === 'severe'
       ? 'weather-row-alert--severe'
       : (alertSev === 'moderate' ? 'weather-row-alert--moderate' : 'weather-row-alert--minor');
-    // Apple-style list: when an alert is active, surface it as the primary status line
-    const statusLine = alert
-      ? `<div class="weather-row-alert ${alertTone}"><span class="weather-row-alert-ico" aria-hidden="true">!</span><span>${escapeHtml(alert.event || t('weather.alert', 'Alert'))}</span></div>`
-      : `<div class="weather-row-cond">${condIcon(code, night)}<span>${escapeHtml(condLabel(code))}</span></div>`;
+    const alertRowLabel = rowAlerts.length > 1
+      ? t('weather.alertsCount', '{count} alerts').replace('{count}', String(rowAlerts.length))
+      : (alert ? String(alert.event || t('weather.alert', 'Alert')) : '');
+    // Keep the weather condition visible and give warnings their own count badge.
+    const statusLine = `<div class="weather-row-status">
+        <div class="weather-row-cond">${condIcon(code, night)}<span>${escapeHtml(condLabel(code))}</span></div>
+        ${alert ? `<span class="weather-row-alert ${alertTone}" aria-label="${escapeHtml(alertRowLabel)}"><span class="weather-row-alert-ico" aria-hidden="true">!</span><span>${escapeHtml(alertRowLabel)}</span></span>` : ''}
+      </div>`;
 
     const main = document.createElement('div');
     const stamp = rowUpdatedLabel(pack);
@@ -1767,7 +1772,7 @@
 
     const cityLab = displayCityName(c) || c.name || '';
     const tempLab = fmtTemp(cur.temperature_2m);
-    row.setAttribute('aria-label', [cityLab, tempLab, condLabel(code),
+    row.setAttribute('aria-label', [cityLab, tempLab, condLabel(code), alertRowLabel,
       t('weather.high', 'H') + ' ' + fmtTemp(hi),
       t('weather.low', 'L') + ' ' + fmtTemp(lo), stampLine].filter(Boolean).join(', '));
 

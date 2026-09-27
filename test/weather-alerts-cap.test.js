@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-function createAlertsModule() {
+function createAlertsModule(deps) {
   const window = {
     DusklineWeather: { active: true, factories: {} },
     setTimeout,
@@ -16,7 +16,7 @@ function createAlertsModule() {
   const context = { window, URL, URLSearchParams, AbortController, document: undefined };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/js/features/weather/alerts.js'), 'utf8'), context);
-  return window.DusklineWeather.factories.alerts({});
+  return window.DusklineWeather.factories.alerts(deps || {});
 }
 
 test('CAP GeoJSON polygons match the city point and do not widen precise shapes to the admin area', () => {
@@ -89,7 +89,7 @@ test('CAP circles and admin-area descriptions provide narrow fallbacks when poly
   assert.equal(alerts.capAlertMatchesCity(areaOnly, { lat: 34.69, lon: 135.50, admin1: 'Osaka' }), false);
 });
 
-test('partial CAP result warns users to check the local official source', () => {
+test('partial and unavailable CAP coverage stays quiet while matched alerts remain visible', () => {
   const alerts = createAlertsModule();
   const html = alerts.alertsBlockHtml({
     alertsPartial: true,
@@ -98,9 +98,53 @@ test('partial CAP result warns users to check the local official source', () => 
       sent: new Date().toISOString(), ends: new Date(Date.now() + 3600000).toISOString()
     }]
   });
-  assert.match(html, /This source returned many alerts/);
+  assert.match(html, /Public warning/);
+  assert.doesNotMatch(html, /This source returned many alerts/);
   const incomplete = alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'partial' });
-  assert.match(incomplete, /This source returned many alerts/);
+  assert.equal(incomplete, '');
+  assert.equal(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'upstream' }), '');
+  assert.equal(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'unsupported' }), '');
   const expired = alerts.alertsBlockHtml([{ event: 'Expired alert', severity: 'Extreme', ends: '2020-01-01T00:00:00Z' }]);
   assert.equal(expired, '');
+});
+
+test('CAP feed copies collapse by warning content while distinct hazards remain', () => {
+  const alerts = createAlertsModule();
+  const base = {
+    providerName: 'IFRC Alert Hub', senderName: 'Australian Government Bureau of Meteorology',
+    event: 'Wind', category: 'MET', severity: 'MODERATE',
+    headline: 'Strong Wind Warning for Sydney Coast', areaDesc: 'New South Wales: Sydney Coast',
+    ends: '2026-09-27T14:00:00Z'
+  };
+  const distinct = Object.assign({}, base, {
+    id: 'heat', event: 'Heat', category: 'HEALTH', headline: 'Heat Health Warning for Sydney'
+  });
+  const deduped = alerts.currentAlerts([
+    Object.assign({ id: 'wind-1', sent: '2026-09-27T03:00:00Z' }, base),
+    Object.assign({ id: 'wind-2', sent: '2026-09-27T04:00:00Z' }, base, { headline: '  Strong Wind Warning for Sydney Coast  ' }),
+    distinct
+  ]);
+  assert.equal(deduped.length, 2);
+  assert.equal(deduped.filter((alert) => alert.event === 'Wind').length, 1);
+});
+
+test('NWS detail results are not silently capped at five alerts', async () => {
+  const now = Date.now();
+  const alerts = createAlertsModule({
+    isLikelyUs: () => true,
+    nwsFetchJson: async () => ({
+      features: Array.from({ length: 7 }, (_, index) => ({
+        id: 'nws-' + index,
+        properties: {
+          id: 'https://api.weather.gov/alerts/nws-' + index,
+          event: 'Public safety warning ' + index,
+          severity: 'Severe',
+          ends: new Date(now + (index + 1) * 3600000).toISOString()
+        }
+      }))
+    })
+  });
+
+  const result = await alerts.loadNwsAlerts(38.9, -77.0);
+  assert.equal(result.length, 7);
 });
