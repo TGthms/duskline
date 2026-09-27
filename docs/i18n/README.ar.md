@@ -11,7 +11,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · **العربية** · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-لا حساب ولا خلفية خاصة بنا ولا معرّف إعلاني. تبقى اللغة والوحدات والمفضّلات وموقع محفوظ تقريبًا عن قصد في متصفحك.
+لا حاجة إلى حساب أو معرّف إعلاني. تبقى التفضيلات والتوقعات المحفوظة في المتصفح.
 
 ## الميزات
 
@@ -23,10 +23,13 @@
 - سماء وهطول متحركان في العرض التفصيلي
 - وحدات الحرارة والمسافة والرياح والهطول والضغط
 - 30 لغة للواجهة، منها العربية والعبرية (من اليمين إلى اليسار)
+- في المواقع الدولية المدعومة: تنبيهات CAP عامة من مصادر رسمية عبر IFRC Alert Hub
 
 ## الخصوصية والبيانات
 
 تغادر طلبات الطقس متصفحك إلى [Open-Meteo](https://open-meteo.com/) وإلى [National Weather Service](https://www.weather.gov/) للمواقع الأمريكية. إن استخدمت الموقع، يذهب الترميز الجغرافي العكسي إلى BigDataCloud وقد يعود إلى OpenStreetMap Nominatim. قد ترى الاستضافة وGoogle Fonts بيانات تقنية معتادة للطلب.
+
+للتنبيهات الدولية، يُرسل رمز البلد المحدد واسمه ولغة الواجهة إلى وظيفة duskline على Cloudflare Pages؛ وتبقى إحداثيات المدينة في المتصفح. تطلب الوظيفة تنبيهات CAP عامة من IFRC Alert Hub.
 
 لا يبيع duskline هذه المعلومات. التوقعات للتخطيط والاستكشاف لا لقرارات الطوارئ. التفاصيل: [سياسة الخصوصية](https://dusklineweather.pages.dev/privacy.html) و[شروط الاستخدام](https://dusklineweather.pages.dev/terms.html).
 
@@ -50,6 +53,8 @@ npm run serve
 ## النشر
 
 جذر المستودع هو الموقع. [Cloudflare Pages](https://dusklineweather.pages.dev/) هو المضيف الأساسي المقصود؛ GitHub Pages للنسخ الاحتياطي. كلاهما ينشر الملفات الثابتة كما هي.
+
+تتطلب التنبيهات الدولية وظيفة Cloudflare Pages، ولا تتوفر على النسخة الثابتة في GitHub Pages.
 
 ## الترخيص
 

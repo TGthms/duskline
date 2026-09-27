@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · **Română** · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Fără cont, fără backend propriu, fără identificator publicitar. Limba, unitățile, favoritele și o locație salvată intenționat aproximativă rămân în browser.
+Nu ai nevoie de cont sau identificator publicitar. Preferințele și prognozele salvate rămân în browser.
 
 ## Funcții
 
@@ -21,10 +21,13 @@ Fără cont, fără backend propriu, fără identificator publicitar. Limba, uni
 - Cer și precipitații animate în vederea detaliată
 - Unități de temperatură, distanță, vânt, precipitații și presiune
 - 30 de limbi de interfață, inclusiv arabă și ebraică (de la dreapta la stânga)
+- În locurile internaționale acceptate: alerte publice CAP din surse oficiale, prin IFRC Alert Hub
 
 ## Confidențialitate și date
 
 Cererile meteo pleacă din browser către [Open-Meteo](https://open-meteo.com/) și, pentru locații din SUA, [National Weather Service](https://www.weather.gov/). Dacă folosiți locația, geocodarea inversă merge la BigDataCloud și poate trece la OpenStreetMap Nominatim. Găzduirea și Google Fonts pot vedea date tehnice obișnuite ale cererii.
+
+Pentru alertele internaționale, codul și numele țării alese și limba interfeței sunt trimise funcției Cloudflare Pages a duskline; coordonatele orașului rămân în browser. Funcția solicită alerte publice CAP de la IFRC Alert Hub.
 
 duskline nu vinde aceste informații. Prognozele sunt pentru planificare și explorare, nu pentru decizii de urgență. Detalii: [Politica de confidențialitate](https://dusklineweather.pages.dev/privacy.html) și [Termeni de utilizare](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Publicare
 
 Rădăcina depozitului este situl. [Cloudflare Pages](https://dusklineweather.pages.dev/) este gazda principală prevăzută; GitHub Pages este copia de rezervă. Ambele publică fișierele statice ca atare.
+
+Alertele internaționale necesită o funcție Cloudflare Pages și nu sunt disponibile pe copia statică GitHub Pages.
 
 ## Licență
 

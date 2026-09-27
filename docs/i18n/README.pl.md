@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · **Polski** · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Bez konta, bez własnego backendu, bez identyfikatora reklamowego. Język, jednostki, ulubione i celowo przybliżona zapisana lokalizacja zostają w przeglądarce.
+Konto ani identyfikator reklamowy nie są potrzebne. Preferencje i zapisane prognozy pozostają w przeglądarce.
 
 ## Funkcje
 
@@ -21,10 +21,13 @@ Bez konta, bez własnego backendu, bez identyfikatora reklamowego. Język, jedno
 - Animowane niebo i opady w widoku szczegółowym
 - Jednostki temperatury, odległości, wiatru, opadów i ciśnienia
 - 30 języków interfejsu, w tym arabski i hebrajski (od prawej do lewej)
+- W obsługiwanych miejscach poza USA: alerty publiczne CAP z oficjalnych źródeł przez IFRC Alert Hub
 
 ## Prywatność i dane
 
 Żądania pogodowe wychodzą z przeglądarki do [Open-Meteo](https://open-meteo.com/) oraz, dla lokalizacji w USA, do [National Weather Service](https://www.weather.gov/). Jeśli używasz lokalizacji, odwrotne geokodowanie idzie do BigDataCloud i może wrócić do OpenStreetMap Nominatim. Hosting i Google Fonts mogą widzieć zwykłe techniczne dane żądania.
+
+W przypadku alertów międzynarodowych kod i nazwa wybranego kraju oraz język interfejsu są wysyłane do funkcji Cloudflare Pages duskline; współrzędne miasta pozostają w przeglądarce. Funkcja pobiera publiczne alerty CAP z IFRC Alert Hub.
 
 duskline nie sprzedaje tych informacji. Prognozy służą planowaniu i eksploracji, nie decyzjom awaryjnym. Szczegóły: [Polityka prywatności](https://dusklineweather.pages.dev/privacy.html) i [Warunki korzystania](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Wdrożenie
 
 Korzeń repozytorium jest witryną. [Cloudflare Pages](https://dusklineweather.pages.dev/) to planowany główny host; GitHub Pages to kopia zapasowa. Oba publikują pliki statyczne bez zmian.
+
+Alerty międzynarodowe wymagają funkcji Cloudflare Pages i nie są dostępne w statycznej kopii GitHub Pages.
 
 ## Licencja
 

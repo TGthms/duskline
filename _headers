@@ -24,10 +24,11 @@
 #     yet safe across the browsers this app supports.
 #
 #  connect-src
-#     Exactly the five providers the app calls from the browser: Open-Meteo forecast and
-#     air quality, its geocoding endpoint, the US National Weather Service, and the
-#     reverse-geocoding pair (BigDataCloud, then OpenStreetMap Nominatim as fallback).
-#     Adding a provider means adding it here, or the request fails silently in production.
+#     External browser providers: Open-Meteo forecast and air quality, its geocoding
+#     endpoint, the US National Weather Service, and reverse geocoding (BigDataCloud,
+#     then OpenStreetMap Nominatim as fallback). International CAP alerts use the
+#     same-origin /api/international-alerts Pages Function, which calls IFRC Alert Hub
+#     server-side, so no external browser origin needs to be added here.
 #
 #  Deliberately absent: upgrade-insecure-requests. Cloudflare serves HTTPS with HSTS and
 #  redirects plain HTTP, and the directive would break same-origin subresources when this

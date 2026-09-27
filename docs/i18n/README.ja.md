@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · **日本語** · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-アカウントも独自バックエンドも広告識別子もありません。言語、単位、お気に入り、意図的に粗くした保存位置はブラウザ内に残ります。
+アカウントや広告識別子は不要です。設定と保存した予報はブラウザー内に保持されます。
 
 ## 機能
 
@@ -21,10 +21,13 @@
 - 詳細ビューのアニメーションの空と降水
 - 気温・距離・風・降水・気圧の単位
 - アラビア語とヘブライ語（右から左）を含む 30 のインターフェース言語
+- 対応する海外地域では、IFRC Alert Hub を通じて公式ソースの公的 CAP 警報を表示
 
 ## プライバシーとデータ
 
 天気リクエストはブラウザから [Open-Meteo](https://open-meteo.com/) へ、米国の地点では [National Weather Service](https://www.weather.gov/) へ直接送られます。位置情報を使う場合の逆ジオコーディングは BigDataCloud、失敗時は OpenStreetMap Nominatim です。ホスティングと Google Fonts は通常の技術的リクエストデータを見ることがあります。
+
+海外の警報では、選択した国のコードと名称、画面の言語を duskline の Cloudflare Pages 機能に送信します。都市の座標はブラウザー内に保持されます。この機能は IFRC Alert Hub に公的 CAP 警報を問い合わせます。
 
 duskline はこの情報を販売しません。予報は計画と探索のためであり、緊急判断用ではありません。詳細は [プライバシーポリシー](https://dusklineweather.pages.dev/privacy.html) と [利用規約](https://dusklineweather.pages.dev/terms.html)。
 
@@ -48,6 +51,8 @@ npm run serve
 ## 公開
 
 リポジトリのルートがサイトです。想定の主ホストは [Cloudflare Pages](https://dusklineweather.pages.dev/)、GitHub Pages は予備です。どちらも静的ファイルをそのまま公開します。
+
+海外の警報には Cloudflare Pages 機能が必要です。静的な GitHub Pages のコピーでは利用できません。
 
 ## ライセンス
 

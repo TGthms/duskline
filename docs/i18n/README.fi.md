@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · **Suomi** · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Ei tiliä, ei omaa taustajärjestelmää, ei mainostunnistetta. Kieli, yksiköt, suosikit ja tahallaan karkea tallennettu sijainti jäävät selaimeen.
+Tiliä tai mainostunnistetta ei tarvita. Asetukset ja tallennetut ennusteet pysyvät selaimessa.
 
 ## Ominaisuudet
 
@@ -21,10 +21,13 @@ Ei tiliä, ei omaa taustajärjestelmää, ei mainostunnistetta. Kieli, yksiköt,
 - Animoitu taivas ja sade yksityiskohtanäkymässä
 - Lämpötilan, etäisyyden, tuulen, sateen ja paineen yksiköt
 - 30 käyttöliittymäkieltä, mukaan lukien arabia ja heprea (oikealta vasemmalle)
+- Kansainvälisissä paikoissa, joissa virallinen lähde on tuettu: julkiset CAP-varoitukset IFRC Alert Hubin kautta
 
 ## Tietosuoja ja tiedot
 
 Sääpyynnöt lähtevät selaimesta [Open-Meteoon](https://open-meteo.com/) ja Yhdysvaltain sijainneissa [National Weather Serviceen](https://www.weather.gov/). Jos käytät sijaintia, käänteinen geokoodaus menee BigDataCloudille ja voi siirtyä OpenStreetMap Nominatimiin. Isännöinti ja Google Fonts voivat nähdä tavanomaisia teknisiä pyyntötietoja.
+
+Kansainvälisiä varoituksia varten valitun maan koodi ja nimi sekä käyttöliittymän kieli lähetetään duskline Cloudflare Pages -toiminnolle; kaupungin koordinaatit pysyvät selaimessa. Toiminto pyytää julkiset CAP-varoitukset IFRC Alert Hubilta.
 
 duskline ei myy näitä tietoja. Ennusteet ovat suunnittelua ja tutkimista varten, eivät hätäpäätöksiä. Tiedot: [Tietosuojakäytäntö](https://dusklineweather.pages.dev/privacy.html) ja [Käyttöehdot](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Julkaisu
 
 Tietovaraston juuri on sivusto. [Cloudflare Pages](https://dusklineweather.pages.dev/) on tarkoitettu pääisäntä; GitHub Pages on varmuuskopio. Molemmat julkaisevat staattiset tiedostot sellaisinaan.
+
+Kansainväliset varoitukset tarvitsevat Cloudflare Pages -toiminnon eivätkä ole käytettävissä staattisessa GitHub Pages -kopiossa.
 
 ## Lisenssi
 

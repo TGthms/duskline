@@ -12,20 +12,21 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `aqi-math.js` | Pure US and European AQI band and scale helpers |
 | `sky.js` | Sky / ambient FX (`W.factories.sky`) |
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
-| `alerts.js` | NWS alerts accordion + prefetch (`W.factories.alerts`) |
+| `alerts.js` | NWS U.S. + international CAP alerts, area matching, accordion, and prefetch (`W.factories.alerts`) |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
 | `app.js` | UI state, list/detail/sheets, boot |
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone.
 
-Keep this order explicit when adding scripts. All three HTML entry points link the CSS files directly in the shared cascade order so the browser discovers them without an `@import` request step. Same-origin scripts and stylesheets must also appear in the service worker `SHELL`; `npm run test:unit` checks each page's offline dependency contract and CSS imports.
+Keep this order explicit when adding scripts. All three HTML entry points link the CSS files directly in the shared cascade order so the browser discovers them without an `@import` request step. Same-origin scripts and stylesheets must also appear in the service worker `SHELL`; `npm run test:unit` checks each page's offline dependency contract and CSS imports. The international alerts route is provided by a Cloudflare Pages Function and intentionally remains network-only in the service worker.
 
 ## Editing
 
 - Sky visuals → `sky.js`
 - Chart geometry / daily range colors → `charts.js`
-- Alert cards / collapse animation → `alerts.js`
+- Alert provider routing, CAP location matching, cards / collapse animation → `alerts.js`
+- International CAP aggregation proxy → `functions/api/international-alerts.js` (Cloudflare Pages only)
 - API + hybrid NWS/OM → `data.js`
 - Local forecast retention → `snapshots.js`
 - List, detail, units sheet, refresh → `app.js`

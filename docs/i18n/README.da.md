@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · **Dansk** · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Ingen konto, intet eget backend og intet reklame-id. Sprog, enheder, favoritter og en bevidst omtrentlig gemt placering bliver i din browser.
+Du behøver hverken en konto eller et annonce-id. Dine præferencer og gemte prognoser bliver i browseren.
 
 ## Funktioner
 
@@ -21,10 +21,13 @@ Ingen konto, intet eget backend og intet reklame-id. Sprog, enheder, favoritter 
 - Animeret himmel og nedbør i detaljevisningen
 - Enheder for temperatur, afstand, vind, nedbør og tryk
 - 30 grænsefladesprog, herunder arabisk og hebraisk (højre-til-venstre)
+- På internationale steder med en understøttet officiel kilde: offentlige CAP-varsler via IFRC Alert Hub
 
 ## Privatliv og data
 
 Vejrforespørgsler går fra din browser til [Open-Meteo](https://open-meteo.com/) og, for amerikanske steder, [National Weather Service](https://www.weather.gov/). Hvis du bruger placering, går omvendt geokodning til BigDataCloud og kan falde tilbage til OpenStreetMap Nominatim. Hosting og Google Fonts kan se almindelige tekniske forespørgselsdata.
+
+Til internationale varsler sendes koden og navnet på det valgte land samt grænsefladens sprog til duskline-funktionen på Cloudflare Pages; bykoordinater bliver i browseren. Funktionen henter offentlige CAP-varsler fra IFRC Alert Hub.
 
 duskline sælger ikke de oplysninger. Udsigter er til planlægning og udforskning, ikke nødbeslutninger. Detaljer: [Privatlivspolitik](https://dusklineweather.pages.dev/privacy.html) og [Brugsvilkår](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Udgivelse
 
 Lagerets rod er sitet. [Cloudflare Pages](https://dusklineweather.pages.dev/) er den tilsigtede primære vært; GitHub Pages er backup. Begge udgiver de statiske filer som de er.
+
+Internationale varsler kræver en Cloudflare Pages-funktion og er ikke tilgængelige på den statiske GitHub Pages-kopi.
 
 ## Licens
 

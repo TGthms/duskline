@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · **Magyar** · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Nincs fiók, nincs saját háttérrendszer, nincs hirdetési azonosító. A nyelv, az egységek, a kedvencek és egy szándékosan hozzávetőleges mentett hely a böngészőben marad.
+Nincs szükség fiókra vagy hirdetési azonosítóra. A beállítások és a mentett előrejelzések a böngészőben maradnak.
 
 ## Funkciók
 
@@ -21,10 +21,13 @@ Nincs fiók, nincs saját háttérrendszer, nincs hirdetési azonosító. A nyel
 - Animált ég és csapadék a részletes nézetben
 - Hőmérséklet, távolság, szél, csapadék és nyomás egységei
 - 30 felületi nyelv, köztük az arab és a héber (jobbról balra)
+- Támogatott nemzetközi helyeken: hivatalos forrásból származó nyilvános CAP-riasztások az IFRC Alert Hubon keresztül
 
 ## Adatvédelem és adatok
 
 Az időjárási kérések a böngészőből mennek az [Open-Meteo](https://open-meteo.com/) felé, amerikai helyeken a [National Weather Service](https://www.weather.gov/) felé. Ha helyzetet használ, a fordított geokódolás a BigDataCloudhoz megy, és visszaeshet az OpenStreetMap Nominatimre. A tárhely és a Google Fonts láthatja a szokásos technikai kérésadatokat.
+
+A nemzetközi riasztásokhoz a kiválasztott ország kódja és neve, valamint a felület nyelve a duskline Cloudflare Pages-funkciójához kerül; a város koordinátái a böngészőben maradnak. A funkció nyilvános CAP-riasztásokat kér le az IFRC Alert Hubtól.
 
 A duskline nem adja el ezeket az információkat. Az előrejelzések tervezésre és felfedezésre valók, nem vészhelyzeti döntésekre. Részletek: [Adatvédelmi szabályzat](https://dusklineweather.pages.dev/privacy.html) és [Felhasználási feltételek](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Közzététel
 
 A tároló gyökere a webhely. A [Cloudflare Pages](https://dusklineweather.pages.dev/) a tervezett elsődleges host; a GitHub Pages a biztonsági másolat. Mindkettő változatlanul közzéteszi a statikus fájlokat.
+
+A nemzetközi riasztásokhoz Cloudflare Pages-funkció szükséges; a statikus GitHub Pages-másolaton nem érhetők el.
 
 ## Licenc
 

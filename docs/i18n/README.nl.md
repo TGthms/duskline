@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · **Nederlands** · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Geen account, geen eigen backend, geen advertentie-identificatie. Taal, eenheden, favorieten en een expres benaderde opgeslagen locatie blijven in je browser.
+Je hebt geen account of advertentie-ID nodig. Je voorkeuren en opgeslagen verwachtingen blijven in je browser.
 
 ## Functies
 
@@ -21,10 +21,13 @@ Geen account, geen eigen backend, geen advertentie-identificatie. Taal, eenheden
 - Geanimeerde hemel en neerslag in de detailweergave
 - Eenheden voor temperatuur, afstand, wind, neerslag en luchtdruk
 - 30 interfacetalen, waaronder Arabisch en Hebreeuws (rechts-naar-links)
+- Op internationale locaties met een ondersteunde officiële bron: openbare CAP-waarschuwingen via IFRC Alert Hub
 
 ## Privacy en gegevens
 
 Weerverzoeken gaan vanuit je browser naar [Open-Meteo](https://open-meteo.com/) en, voor Amerikaanse locaties, de [National Weather Service](https://www.weather.gov/). Reverse geocoding bij locatiegebruik gaat naar BigDataCloud en kan terugvallen op OpenStreetMap Nominatim. Hosting en Google Fonts kunnen gewone technische verzoekgegevens zien.
+
+Voor internationale waarschuwingen worden de code en naam van het gekozen land en de interfacetaal naar de Cloudflare Pages-functie van duskline gestuurd; stadcoördinaten blijven in de browser. De functie vraagt openbare CAP-waarschuwingen op bij IFRC Alert Hub.
 
 duskline verkoopt die informatie niet. Verwachtingen zijn voor planning en verkenning, niet voor noodbeslissingen. Details: [Privacybeleid](https://dusklineweather.pages.dev/privacy.html) en [Gebruiksvoorwaarden](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Publicatie
 
 De repositorywortel is de site. [Cloudflare Pages](https://dusklineweather.pages.dev/) is de beoogde primaire host; GitHub Pages de back-up. Beide publiceren de statische bestanden ongewijzigd.
+
+Internationale waarschuwingen vereisen een Cloudflare Pages-functie en zijn niet beschikbaar op de statische GitHub Pages-kopie.
 
 ## Licentie
 

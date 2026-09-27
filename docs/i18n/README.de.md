@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · **Deutsch** · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Kein Konto, kein eigenes Backend, keine Werbekennung. Sprache, Einheiten, Favoriten und ein bewusst ungefährer gespeicherter Standort bleiben in Ihrem Browser.
+Es wird weder ein Konto noch eine Werbekennung benötigt. Ihre Einstellungen und gespeicherten Vorhersagen bleiben im Browser.
 
 ## Funktionen
 
@@ -21,10 +21,13 @@ Kein Konto, kein eigenes Backend, keine Werbekennung. Sprache, Einheiten, Favori
 - Animierter Himmel und Niederschlag in der Detailansicht
 - Einheiten für Temperatur, Distanz, Wind, Niederschlag und Druck
 - 30 Oberflächensprachen, einschließlich Arabisch und Hebräisch (rechts nach links)
+- An internationalen Orten mit offizieller Quelle: öffentliche CAP-Warnungen über IFRC Alert Hub
 
 ## Datenschutz und Daten
 
 Wetteranfragen gehen direkt aus Ihrem Browser an [Open-Meteo](https://open-meteo.com/) und für US-Standorte an den [National Weather Service](https://www.weather.gov/). Reverse Geocoding bei Standortnutzung geht an BigDataCloud und kann auf OpenStreetMap Nominatim zurückfallen. Hosting und Google Fonts können gewöhnliche technische Anfragedaten sehen.
+
+Für internationale Warnungen werden Code und Name des gewählten Landes sowie die Oberflächensprache an die Cloudflare-Pages-Funktion von duskline gesendet; Stadtkoordinaten bleiben im Browser. Die Funktion ruft öffentliche CAP-Warnungen bei IFRC Alert Hub ab.
 
 duskline verkauft diese Informationen nicht. Vorhersagen dienen der Planung und Erkundung, nicht Notfallentscheidungen. Details: [Datenschutz](https://dusklineweather.pages.dev/privacy.html) und [Nutzungsbedingungen](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Bereitstellung
 
 Die Repository-Wurzel ist die Website. [Cloudflare Pages](https://dusklineweather.pages.dev/) ist der vorgesehene Haupthost; GitHub Pages die Absicherung. Beide veröffentlichen die statischen Dateien unverändert.
+
+Internationale Warnungen benötigen eine Cloudflare-Pages-Funktion und sind auf der statischen GitHub-Pages-Kopie nicht verfügbar.
 
 ## Lizenz
 

@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · **ไทย** · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-ไม่มีบัญชี ไม่มีแบ็กเอนด์ของเราเอง ไม่มีตัวระบุโฆษณา ภาษา หน่วย รายการโปรด และตำแหน่งที่บันทึกแบบประมาณโดยตั้งใจอยู่ในเบราว์เซอร์ของคุณ
+ไม่ต้องใช้บัญชีหรือรหัสโฆษณา การตั้งค่าและพยากรณ์ที่บันทึกไว้จะอยู่ในเบราว์เซอร์
 
 ## คุณสมบัติ
 
@@ -21,10 +21,13 @@
 - ท้องฟ้าและหยาดน้ำฟ้าเคลื่อนไหวในมุมมองรายละเอียด
 - หน่วยอุณหภูมิ ระยะทาง ลม หยาดน้ำฟ้า และความกดอากาศ
 - 30 ภาษาของส่วนติดต่อ รวมอาหรับและฮีบรู (ขวาไปซ้าย)
+- ในสถานที่ต่างประเทศที่รองรับ: การแจ้งเตือน CAP สาธารณะจากแหล่งทางการผ่าน IFRC Alert Hub
 
 ## ความเป็นส่วนตัวและข้อมูล
 
 คำขอสภาพอากาศออกจากเบราว์เซอร์ไปยัง [Open-Meteo](https://open-meteo.com/) และสำหรับสถานที่ในสหรัฐฯ ไปยัง [National Weather Service](https://www.weather.gov/) หากใช้ตำแหน่ง การถอดรหัสพิกัดย้อนกลับไปที่ BigDataCloud และอาจถอยไป OpenStreetMap Nominatim การโฮสต์และ Google Fonts อาจเห็นข้อมูลคำขอทางเทคนิคทั่วไป
+
+สำหรับการแจ้งเตือนระหว่างประเทศ เบราว์เซอร์จะส่งรหัสและชื่อประเทศที่เลือกพร้อมภาษาของอินเทอร์เฟซไปยังฟังก์ชัน Cloudflare Pages ของ duskline โดยพิกัดเมืองจะอยู่ในเบราว์เซอร์ ฟังก์ชันจะขอการแจ้งเตือน CAP สาธารณะจาก IFRC Alert Hub
 
 duskline ไม่ขายข้อมูลนั้น พยากรณ์มีไว้เพื่อวางแผนและสำรวจ ไม่ใช่การตัดสินใจฉุกเฉิน รายละเอียด: [นโยบายความเป็นส่วนตัว](https://dusklineweather.pages.dev/privacy.html) และ [ข้อกำหนดการใช้งาน](https://dusklineweather.pages.dev/terms.html)
 
@@ -48,6 +51,8 @@ npm run serve
 ## การเผยแพร่
 
 รากของที่เก็บคือเว็บไซต์ [Cloudflare Pages](https://dusklineweather.pages.dev/) เป็นโฮสต์หลักที่ตั้งใจไว้ GitHub Pages เป็นสำรอง ทั้งคู่เผยแพร่ไฟล์สถิตตามเดิม
+
+การแจ้งเตือนระหว่างประเทศต้องใช้ฟังก์ชัน Cloudflare Pages และไม่มีให้บริการบนสำเนา GitHub Pages แบบคงที่
 
 ## สัญญาอนุญาต
 

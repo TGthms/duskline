@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · **繁體中文**
 
-沒有帳戶、沒有自有後端、沒有廣告識別碼。語言、單位、收藏以及刻意降低精度的儲存位置都留在瀏覽器中。
+不需要帳號或廣告識別碼。偏好設定和已儲存的預報會留在瀏覽器中。
 
 ## 功能
 
@@ -21,10 +21,13 @@
 - 詳細檢視中的動態天空與降水
 - 溫度、距離、風、降水與氣壓單位
 - 30 種介面語言，包括阿拉伯文與希伯來文（從右到左）
+- 在支援的國際地點，透過 IFRC Alert Hub 提供來自官方來源的公共 CAP 警報
 
 ## 隱私與資料
 
 天氣請求由瀏覽器直接發往 [Open-Meteo](https://open-meteo.com/)；美國地點發往 [國家氣象局](https://www.weather.gov/)。若使用位置，反向地理編碼發往 BigDataCloud，失敗時回退到 OpenStreetMap Nominatim。託管與 Google Fonts 可能看到一般技術請求資料。
+
+查詢國際警報時，瀏覽器會將所選國家／地區的代碼、名稱和介面語言傳送至 duskline 的 Cloudflare Pages 函式；城市座標仍留在瀏覽器中。該函式會向 IFRC Alert Hub 請求公共 CAP 警報。
 
 duskline 不出售這些資訊。預報用於規劃與探索，不用於緊急決策。詳情見 [隱私權政策](https://dusklineweather.pages.dev/privacy.html) 與 [使用條款](https://dusklineweather.pages.dev/terms.html)。
 
@@ -48,6 +51,8 @@ npm run serve
 ## 部署
 
 儲存庫根目錄就是網站。預定的主要託管是 [Cloudflare Pages](https://dusklineweather.pages.dev/)；GitHub Pages 為備份。兩者都按原樣發布靜態檔案。
+
+國際警報需要 Cloudflare Pages 函式；靜態 GitHub Pages 副本無法提供此功能。
 
 ## 授權
 

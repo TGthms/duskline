@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · **Čeština** · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Žádný účet, žádný vlastní backend, žádný reklamní identifikátor. Jazyk, jednotky, oblíbené položky a záměrně přibližná uložená poloha zůstanou v prohlížeči.
+Účet ani reklamní identifikátor nejsou potřeba. Vaše předvolby a uložené předpovědi zůstávají v prohlížeči.
 
 ## Funkce
 
@@ -21,10 +21,13 @@
 - Animovaná obloha a srážky v podrobném zobrazení
 - Jednotky teploty, vzdálenosti, větru, srážek a tlaku
 - 30 jazyků rozhraní včetně arabštiny a hebrejštiny (zprava doleva)
+- V podporovaných mezinárodních místech: veřejná upozornění CAP z oficiálních zdrojů přes IFRC Alert Hub
 
 ## Soukromí a data
 
 Požadavky na počasí odcházejí z prohlížeče na [Open-Meteo](https://open-meteo.com/) a u amerických míst na [National Weather Service](https://www.weather.gov/). Pokud použijete polohu, reverzní geokódování jde na BigDataCloud a může spadnout na OpenStreetMap Nominatim. Hosting a Google Fonts mohou vidět běžná technická data požadavku.
+
+U mezinárodních upozornění se kód a název zvolené země a jazyk rozhraní odesílají funkci duskline na Cloudflare Pages; souřadnice města zůstávají v prohlížeči. Funkce získává veřejná upozornění CAP z IFRC Alert Hub.
 
 duskline tyto informace neprodává. Předpovědi slouží k plánování a zkoumání, ne k nouzovým rozhodnutím. Podrobnosti: [Zásady ochrany soukromí](https://dusklineweather.pages.dev/privacy.html) a [Podmínky použití](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Nasazení
 
 Kořen repozitáře je web. [Cloudflare Pages](https://dusklineweather.pages.dev/) je zamýšlený hlavní hostitel; GitHub Pages je záloha. Oba publikují statické soubory beze změny.
+
+Mezinárodní upozornění vyžadují funkci Cloudflare Pages a na statické kopii GitHub Pages nejsou dostupná.
 
 ## Licence
 

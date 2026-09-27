@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · **Українська** · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Немає облікового запису, власного бекенду чи рекламного ідентифікатора. Мова, одиниці, обране та навмисно наближене збережене місцезнаходження лишаються в браузері.
+Обліковий запис і рекламний ідентифікатор не потрібні. Налаштування та збережені прогнози залишаються у браузері.
 
 ## Можливості
 
@@ -21,10 +21,13 @@
 - Анімоване небо й опади в докладному вигляді
 - Одиниці температури, відстані, вітру, опадів і тиску
 - 30 мов інтерфейсу, зокрема арабська та іврит (справа наліво)
+- У підтримуваних міжнародних місцях: публічні сповіщення CAP з офіційних джерел через IFRC Alert Hub
 
 ## Конфіденційність і дані
 
 Погодні запити виходять із браузера до [Open-Meteo](https://open-meteo.com/) і для місць у США — до [National Weather Service](https://www.weather.gov/). Якщо ви використовуєте місцезнаходження, зворотне геокодування йде до BigDataCloud і може перейти до OpenStreetMap Nominatim. Хостинг і Google Fonts можуть бачити звичайні технічні дані запиту.
+
+Для міжнародних сповіщень код і назва вибраної країни та мова інтерфейсу надсилаються функції duskline на Cloudflare Pages; координати міста залишаються у браузері. Функція запитує публічні сповіщення CAP в IFRC Alert Hub.
 
 duskline не продає цю інформацію. Прогнози потрібні для планування й дослідження, а не для екстрених рішень. Подробиці: [Політика конфіденційності](https://dusklineweather.pages.dev/privacy.html) і [Умови використання](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Публікація
 
 Корінь репозиторію і є сайт. [Cloudflare Pages](https://dusklineweather.pages.dev/) — основний хост; GitHub Pages — запасний. Обидва публікують статичні файли як є.
+
+Міжнародні сповіщення потребують функції Cloudflare Pages і недоступні у статичній копії GitHub Pages.
 
 ## Ліцензія
 

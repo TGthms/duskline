@@ -1019,6 +1019,195 @@ C.id = cloneFrom('es', {
   licenseBody: 'Kode berlisensi [MIT](../../LICENSE). Data cuaca milik penyedia di atas dan tunduk pada ketentuan mereka. Bukan untuk keselamatan jiwa atau darurat.'
 });
 
+// Provider note for the CAP-backed international alert path. Keep this beside the
+// locale catalog so regenerated READMEs do not revert to the old U.S.-only model.
+const INTERNATIONAL_ALERT_COPY = {
+  es: {
+    intro: 'No se necesita una cuenta ni un identificador publicitario. Tus preferencias y previsiones guardadas permanecen en el navegador.',
+    feature: 'En lugares internacionales con fuentes oficiales disponibles, alertas públicas CAP a través de IFRC Alert Hub',
+    privacy: 'Para las alertas internacionales, se envían el código y el nombre del país elegido y el idioma de la interfaz a la función de Cloudflare Pages de duskline; las coordenadas de la ciudad permanecen en el navegador. La función solicita alertas públicas CAP a IFRC Alert Hub.',
+    hosting: 'Las alertas internacionales requieren una función de Cloudflare Pages; no están disponibles en la copia estática de GitHub Pages.'
+  },
+  fr: {
+    intro: 'Aucun compte ni identifiant publicitaire n’est nécessaire. Vos préférences et prévisions enregistrées restent dans votre navigateur.',
+    feature: 'Pour les lieux internationaux couverts par une source officielle, alertes publiques CAP via IFRC Alert Hub',
+    privacy: 'Pour les alertes internationales, le code et le nom du pays choisi ainsi que la langue de l’interface sont envoyés à la fonction Cloudflare Pages de duskline ; les coordonnées de la ville restent dans le navigateur. La fonction demande les alertes publiques CAP à IFRC Alert Hub.',
+    hosting: 'Les alertes internationales nécessitent une fonction Cloudflare Pages ; elles ne sont pas disponibles sur la copie statique GitHub Pages.'
+  },
+  de: {
+    intro: 'Es wird weder ein Konto noch eine Werbekennung benötigt. Ihre Einstellungen und gespeicherten Vorhersagen bleiben im Browser.',
+    feature: 'An internationalen Orten mit offizieller Quelle: öffentliche CAP-Warnungen über IFRC Alert Hub',
+    privacy: 'Für internationale Warnungen werden Code und Name des gewählten Landes sowie die Oberflächensprache an die Cloudflare-Pages-Funktion von duskline gesendet; Stadtkoordinaten bleiben im Browser. Die Funktion ruft öffentliche CAP-Warnungen bei IFRC Alert Hub ab.',
+    hosting: 'Internationale Warnungen benötigen eine Cloudflare-Pages-Funktion und sind auf der statischen GitHub-Pages-Kopie nicht verfügbar.'
+  },
+  it: {
+    intro: 'Non servono account né identificatori pubblicitari. Preferenze e previsioni salvate restano nel browser.',
+    feature: 'Nei luoghi internazionali con una fonte ufficiale supportata, allerte pubbliche CAP tramite IFRC Alert Hub',
+    privacy: 'Per le allerte internazionali, il codice e il nome del paese scelto e la lingua dell’interfaccia vengono inviati alla funzione Cloudflare Pages di duskline; le coordinate della città restano nel browser. La funzione richiede allerte pubbliche CAP a IFRC Alert Hub.',
+    hosting: 'Le allerte internazionali richiedono una funzione Cloudflare Pages e non sono disponibili sulla copia statica GitHub Pages.'
+  },
+  'pt-BR': {
+    intro: 'Não é necessária uma conta nem um identificador de anúncios. Suas preferências e previsões salvas ficam no navegador.',
+    feature: 'Em locais internacionais com uma fonte oficial compatível, alertas públicos CAP via IFRC Alert Hub',
+    privacy: 'Para alertas internacionais, o código e o nome do país escolhido e o idioma da interface são enviados à função Cloudflare Pages do duskline; as coordenadas da cidade ficam no navegador. A função solicita alertas públicos CAP ao IFRC Alert Hub.',
+    hosting: 'Alertas internacionais exigem uma função Cloudflare Pages e não estão disponíveis na cópia estática do GitHub Pages.'
+  },
+  'pt-PT': {
+    intro: 'Não é necessária uma conta nem um identificador publicitário. As suas preferências e previsões guardadas ficam no navegador.',
+    feature: 'Em locais internacionais com uma fonte oficial suportada, alertas públicos CAP através do IFRC Alert Hub',
+    privacy: 'Para alertas internacionais, o código e o nome do país escolhido e o idioma da interface são enviados para a função Cloudflare Pages do duskline; as coordenadas da cidade ficam no navegador. A função pede alertas públicos CAP ao IFRC Alert Hub.',
+    hosting: 'Os alertas internacionais requerem uma função Cloudflare Pages e não estão disponíveis na cópia estática do GitHub Pages.'
+  },
+  nl: {
+    intro: 'Je hebt geen account of advertentie-ID nodig. Je voorkeuren en opgeslagen verwachtingen blijven in je browser.',
+    feature: 'Op internationale locaties met een ondersteunde officiële bron: openbare CAP-waarschuwingen via IFRC Alert Hub',
+    privacy: 'Voor internationale waarschuwingen worden de code en naam van het gekozen land en de interfacetaal naar de Cloudflare Pages-functie van duskline gestuurd; stadcoördinaten blijven in de browser. De functie vraagt openbare CAP-waarschuwingen op bij IFRC Alert Hub.',
+    hosting: 'Internationale waarschuwingen vereisen een Cloudflare Pages-functie en zijn niet beschikbaar op de statische GitHub Pages-kopie.'
+  },
+  da: {
+    intro: 'Du behøver hverken en konto eller et annonce-id. Dine præferencer og gemte prognoser bliver i browseren.',
+    feature: 'På internationale steder med en understøttet officiel kilde: offentlige CAP-varsler via IFRC Alert Hub',
+    privacy: 'Til internationale varsler sendes koden og navnet på det valgte land samt grænsefladens sprog til duskline-funktionen på Cloudflare Pages; bykoordinater bliver i browseren. Funktionen henter offentlige CAP-varsler fra IFRC Alert Hub.',
+    hosting: 'Internationale varsler kræver en Cloudflare Pages-funktion og er ikke tilgængelige på den statiske GitHub Pages-kopi.'
+  },
+  sv: {
+    intro: 'Du behöver inget konto eller annons-ID. Dina inställningar och sparade prognoser stannar i webbläsaren.',
+    feature: 'På internationella platser med en stödd officiell källa: offentliga CAP-varningar via IFRC Alert Hub',
+    privacy: 'För internationella varningar skickas koden och namnet för det valda landet samt gränssnittsspråket till duskline-funktionen på Cloudflare Pages; stadens koordinater stannar i webbläsaren. Funktionen hämtar offentliga CAP-varningar från IFRC Alert Hub.',
+    hosting: 'Internationella varningar kräver en Cloudflare Pages-funktion och är inte tillgängliga på den statiska GitHub Pages-kopian.'
+  },
+  nb: {
+    intro: 'Du trenger verken konto eller annonse-ID. Innstillinger og lagrede prognoser blir i nettleseren.',
+    feature: 'På internasjonale steder med en støttet offisiell kilde: offentlige CAP-varsler via IFRC Alert Hub',
+    privacy: 'For internasjonale varsler sendes koden og navnet på det valgte landet og grensesnittspråket til duskline-funksjonen på Cloudflare Pages; bykoordinater blir i nettleseren. Funksjonen henter offentlige CAP-varsler fra IFRC Alert Hub.',
+    hosting: 'Internasjonale varsler krever en Cloudflare Pages-funksjon og er ikke tilgjengelige på den statiske GitHub Pages-kopien.'
+  },
+  fi: {
+    intro: 'Tiliä tai mainostunnistetta ei tarvita. Asetukset ja tallennetut ennusteet pysyvät selaimessa.',
+    feature: 'Kansainvälisissä paikoissa, joissa virallinen lähde on tuettu: julkiset CAP-varoitukset IFRC Alert Hubin kautta',
+    privacy: 'Kansainvälisiä varoituksia varten valitun maan koodi ja nimi sekä käyttöliittymän kieli lähetetään duskline Cloudflare Pages -toiminnolle; kaupungin koordinaatit pysyvät selaimessa. Toiminto pyytää julkiset CAP-varoitukset IFRC Alert Hubilta.',
+    hosting: 'Kansainväliset varoitukset tarvitsevat Cloudflare Pages -toiminnon eivätkä ole käytettävissä staattisessa GitHub Pages -kopiossa.'
+  },
+  pl: {
+    intro: 'Konto ani identyfikator reklamowy nie są potrzebne. Preferencje i zapisane prognozy pozostają w przeglądarce.',
+    feature: 'W obsługiwanych miejscach poza USA: alerty publiczne CAP z oficjalnych źródeł przez IFRC Alert Hub',
+    privacy: 'W przypadku alertów międzynarodowych kod i nazwa wybranego kraju oraz język interfejsu są wysyłane do funkcji Cloudflare Pages duskline; współrzędne miasta pozostają w przeglądarce. Funkcja pobiera publiczne alerty CAP z IFRC Alert Hub.',
+    hosting: 'Alerty międzynarodowe wymagają funkcji Cloudflare Pages i nie są dostępne w statycznej kopii GitHub Pages.'
+  },
+  cs: {
+    intro: 'Účet ani reklamní identifikátor nejsou potřeba. Vaše předvolby a uložené předpovědi zůstávají v prohlížeči.',
+    feature: 'V podporovaných mezinárodních místech: veřejná upozornění CAP z oficiálních zdrojů přes IFRC Alert Hub',
+    privacy: 'U mezinárodních upozornění se kód a název zvolené země a jazyk rozhraní odesílají funkci duskline na Cloudflare Pages; souřadnice města zůstávají v prohlížeči. Funkce získává veřejná upozornění CAP z IFRC Alert Hub.',
+    hosting: 'Mezinárodní upozornění vyžadují funkci Cloudflare Pages a na statické kopii GitHub Pages nejsou dostupná.'
+  },
+  hu: {
+    intro: 'Nincs szükség fiókra vagy hirdetési azonosítóra. A beállítások és a mentett előrejelzések a böngészőben maradnak.',
+    feature: 'Támogatott nemzetközi helyeken: hivatalos forrásból származó nyilvános CAP-riasztások az IFRC Alert Hubon keresztül',
+    privacy: 'A nemzetközi riasztásokhoz a kiválasztott ország kódja és neve, valamint a felület nyelve a duskline Cloudflare Pages-funkciójához kerül; a város koordinátái a böngészőben maradnak. A funkció nyilvános CAP-riasztásokat kér le az IFRC Alert Hubtól.',
+    hosting: 'A nemzetközi riasztásokhoz Cloudflare Pages-funkció szükséges; a statikus GitHub Pages-másolaton nem érhetők el.'
+  },
+  ro: {
+    intro: 'Nu ai nevoie de cont sau identificator publicitar. Preferințele și prognozele salvate rămân în browser.',
+    feature: 'În locurile internaționale acceptate: alerte publice CAP din surse oficiale, prin IFRC Alert Hub',
+    privacy: 'Pentru alertele internaționale, codul și numele țării alese și limba interfeței sunt trimise funcției Cloudflare Pages a duskline; coordonatele orașului rămân în browser. Funcția solicită alerte publice CAP de la IFRC Alert Hub.',
+    hosting: 'Alertele internaționale necesită o funcție Cloudflare Pages și nu sunt disponibile pe copia statică GitHub Pages.'
+  },
+  el: {
+    intro: 'Δεν χρειάζεται λογαριασμός ή αναγνωριστικό διαφημίσεων. Οι προτιμήσεις και οι αποθηκευμένες προγνώσεις μένουν στο πρόγραμμα περιήγησης.',
+    feature: 'Σε υποστηριζόμενες διεθνείς τοποθεσίες: δημόσιες ειδοποιήσεις CAP από επίσημες πηγές μέσω του IFRC Alert Hub',
+    privacy: 'Για τις διεθνείς ειδοποιήσεις, ο κωδικός και το όνομα της επιλεγμένης χώρας και η γλώσσα της διεπαφής αποστέλλονται στη λειτουργία Cloudflare Pages του duskline· οι συντεταγμένες της πόλης μένουν στο πρόγραμμα περιήγησης. Η λειτουργία ζητά δημόσιες ειδοποιήσεις CAP από το IFRC Alert Hub.',
+    hosting: 'Οι διεθνείς ειδοποιήσεις απαιτούν λειτουργία Cloudflare Pages και δεν διατίθενται στο στατικό αντίγραφο GitHub Pages.'
+  },
+  tr: {
+    intro: 'Hesap veya reklam kimliği gerekmez. Tercihleriniz ve kaydedilmiş tahminler tarayıcınızda kalır.',
+    feature: 'Desteklenen uluslararası konumlarda resmî kaynaklardan kamuya açık CAP uyarıları: IFRC Alert Hub üzerinden',
+    privacy: 'Uluslararası uyarılar için seçilen ülkenin kodu ve adı ile arayüz dili duskline’ın Cloudflare Pages işlevine gönderilir; şehir koordinatları tarayıcıda kalır. İşlev, IFRC Alert Hub’dan kamuya açık CAP uyarıları ister.',
+    hosting: 'Uluslararası uyarılar Cloudflare Pages işlevi gerektirir ve statik GitHub Pages kopyasında kullanılamaz.'
+  },
+  ru: {
+    intro: 'Аккаунт и рекламный идентификатор не нужны. Настройки и сохранённые прогнозы остаются в браузере.',
+    feature: 'В поддерживаемых странах: публичные оповещения CAP из официальных источников через IFRC Alert Hub',
+    privacy: 'Для международных оповещений код и название выбранной страны и язык интерфейса отправляются функции duskline на Cloudflare Pages; координаты города остаются в браузере. Функция запрашивает публичные оповещения CAP у IFRC Alert Hub.',
+    hosting: 'Для международных оповещений нужна функция Cloudflare Pages; в статической копии GitHub Pages они недоступны.'
+  },
+  uk: {
+    intro: 'Обліковий запис і рекламний ідентифікатор не потрібні. Налаштування та збережені прогнози залишаються у браузері.',
+    feature: 'У підтримуваних міжнародних місцях: публічні сповіщення CAP з офіційних джерел через IFRC Alert Hub',
+    privacy: 'Для міжнародних сповіщень код і назва вибраної країни та мова інтерфейсу надсилаються функції duskline на Cloudflare Pages; координати міста залишаються у браузері. Функція запитує публічні сповіщення CAP в IFRC Alert Hub.',
+    hosting: 'Міжнародні сповіщення потребують функції Cloudflare Pages і недоступні у статичній копії GitHub Pages.'
+  },
+  ar: {
+    intro: 'لا حاجة إلى حساب أو معرّف إعلاني. تبقى التفضيلات والتوقعات المحفوظة في المتصفح.',
+    feature: 'في المواقع الدولية المدعومة: تنبيهات CAP عامة من مصادر رسمية عبر IFRC Alert Hub',
+    privacy: 'للتنبيهات الدولية، يُرسل رمز البلد المحدد واسمه ولغة الواجهة إلى وظيفة duskline على Cloudflare Pages؛ وتبقى إحداثيات المدينة في المتصفح. تطلب الوظيفة تنبيهات CAP عامة من IFRC Alert Hub.',
+    hosting: 'تتطلب التنبيهات الدولية وظيفة Cloudflare Pages، ولا تتوفر على النسخة الثابتة في GitHub Pages.'
+  },
+  he: {
+    intro: 'אין צורך בחשבון או במזהה פרסום. ההעדפות והתחזיות השמורות נשארות בדפדפן.',
+    feature: 'במיקומים בינלאומיים נתמכים: התרעות CAP ציבוריות ממקורות רשמיים דרך IFRC Alert Hub',
+    privacy: 'עבור התרעות בינלאומיות, קוד המדינה שנבחר ושמה ושפת הממשק נשלחים לפונקציית Cloudflare Pages של duskline; קואורדינטות העיר נשארות בדפדפן. הפונקציה מבקשת התרעות CAP ציבוריות מ-IFRC Alert Hub.',
+    hosting: 'התרעות בינלאומיות דורשות פונקציית Cloudflare Pages ואינן זמינות בעותק הסטטי של GitHub Pages.'
+  },
+  hi: {
+    intro: 'खाते या विज्ञापन पहचानकर्ता की आवश्यकता नहीं है। आपकी प्राथमिकताएँ और सहेजे गए पूर्वानुमान ब्राउज़र में रहते हैं।',
+    feature: 'समर्थित अंतरराष्ट्रीय स्थानों में आधिकारिक स्रोतों से सार्वजनिक CAP अलर्ट, IFRC Alert Hub के माध्यम से',
+    privacy: 'अंतरराष्ट्रीय अलर्ट के लिए चुने गए देश का कोड और नाम तथा इंटरफ़ेस भाषा duskline के Cloudflare Pages फ़ंक्शन को भेजी जाती है; शहर के निर्देशांक ब्राउज़र में रहते हैं। फ़ंक्शन IFRC Alert Hub से सार्वजनिक CAP अलर्ट माँगता है।',
+    hosting: 'अंतरराष्ट्रीय अलर्ट के लिए Cloudflare Pages फ़ंक्शन आवश्यक है; वे स्थिर GitHub Pages प्रति पर उपलब्ध नहीं हैं।'
+  },
+  th: {
+    intro: 'ไม่ต้องใช้บัญชีหรือรหัสโฆษณา การตั้งค่าและพยากรณ์ที่บันทึกไว้จะอยู่ในเบราว์เซอร์',
+    feature: 'ในสถานที่ต่างประเทศที่รองรับ: การแจ้งเตือน CAP สาธารณะจากแหล่งทางการผ่าน IFRC Alert Hub',
+    privacy: 'สำหรับการแจ้งเตือนระหว่างประเทศ เบราว์เซอร์จะส่งรหัสและชื่อประเทศที่เลือกพร้อมภาษาของอินเทอร์เฟซไปยังฟังก์ชัน Cloudflare Pages ของ duskline โดยพิกัดเมืองจะอยู่ในเบราว์เซอร์ ฟังก์ชันจะขอการแจ้งเตือน CAP สาธารณะจาก IFRC Alert Hub',
+    hosting: 'การแจ้งเตือนระหว่างประเทศต้องใช้ฟังก์ชัน Cloudflare Pages และไม่มีให้บริการบนสำเนา GitHub Pages แบบคงที่'
+  },
+  vi: {
+    intro: 'Không cần tài khoản hay mã định danh quảng cáo. Tùy chọn và dự báo đã lưu vẫn ở trong trình duyệt.',
+    feature: 'Tại các địa điểm quốc tế được hỗ trợ: cảnh báo công cộng CAP từ nguồn chính thức qua IFRC Alert Hub',
+    privacy: 'Đối với cảnh báo quốc tế, mã và tên quốc gia đã chọn cùng ngôn ngữ giao diện được gửi đến hàm Cloudflare Pages của duskline; tọa độ thành phố vẫn ở trong trình duyệt. Hàm này yêu cầu cảnh báo công cộng CAP từ IFRC Alert Hub.',
+    hosting: 'Cảnh báo quốc tế cần hàm Cloudflare Pages và không có trên bản sao GitHub Pages tĩnh.'
+  },
+  id: {
+    intro: 'Tidak perlu akun atau ID iklan. Preferensi dan prakiraan tersimpan tetap di browser.',
+    feature: 'Di lokasi internasional yang didukung: peringatan publik CAP dari sumber resmi melalui IFRC Alert Hub',
+    privacy: 'Untuk peringatan internasional, kode dan nama negara yang dipilih serta bahasa antarmuka dikirim ke fungsi Cloudflare Pages duskline; koordinat kota tetap di browser. Fungsi tersebut meminta peringatan publik CAP dari IFRC Alert Hub.',
+    hosting: 'Peringatan internasional memerlukan fungsi Cloudflare Pages dan tidak tersedia di salinan statis GitHub Pages.'
+  },
+  ja: {
+    intro: 'アカウントや広告識別子は不要です。設定と保存した予報はブラウザー内に保持されます。',
+    feature: '対応する海外地域では、IFRC Alert Hub を通じて公式ソースの公的 CAP 警報を表示',
+    privacy: '海外の警報では、選択した国のコードと名称、画面の言語を duskline の Cloudflare Pages 機能に送信します。都市の座標はブラウザー内に保持されます。この機能は IFRC Alert Hub に公的 CAP 警報を問い合わせます。',
+    hosting: '海外の警報には Cloudflare Pages 機能が必要です。静的な GitHub Pages のコピーでは利用できません。'
+  },
+  ko: {
+    intro: '계정이나 광고 식별자가 필요하지 않습니다. 설정과 저장된 예보는 브라우저에 남습니다.',
+    feature: '지원되는 국제 지역에서 IFRC Alert Hub를 통해 공식 출처의 공개 CAP 경보 제공',
+    privacy: '국제 경보를 위해 선택한 국가의 코드와 이름, 인터페이스 언어를 duskline의 Cloudflare Pages 함수로 보냅니다. 도시 좌표는 브라우저에 남으며, 함수는 IFRC Alert Hub에 공개 CAP 경보를 요청합니다.',
+    hosting: '국제 경보는 Cloudflare Pages 함수가 필요하며 정적 GitHub Pages 복사본에서는 이용할 수 없습니다.'
+  },
+  zh: {
+    intro: '无需账户或广告标识符。偏好设置和已保存的预报保留在浏览器中。',
+    feature: '在支持的国际地点，通过 IFRC Alert Hub 提供来自官方来源的公共 CAP 预警',
+    privacy: '查询国际预警时，浏览器会将所选国家/地区的代码、名称和界面语言发送至 duskline 的 Cloudflare Pages 函数；城市坐标仍保留在浏览器中。该函数会向 IFRC Alert Hub 请求公共 CAP 预警。',
+    hosting: '国际预警需要 Cloudflare Pages 函数；静态 GitHub Pages 副本无法提供此功能。'
+  },
+  'zh-TW': {
+    intro: '不需要帳號或廣告識別碼。偏好設定和已儲存的預報會留在瀏覽器中。',
+    feature: '在支援的國際地點，透過 IFRC Alert Hub 提供來自官方來源的公共 CAP 警報',
+    privacy: '查詢國際警報時，瀏覽器會將所選國家／地區的代碼、名稱和介面語言傳送至 duskline 的 Cloudflare Pages 函式；城市座標仍留在瀏覽器中。該函式會向 IFRC Alert Hub 請求公共 CAP 警報。',
+    hosting: '國際警報需要 Cloudflare Pages 函式；靜態 GitHub Pages 副本無法提供此功能。'
+  }
+};
+
+Object.keys(INTERNATIONAL_ALERT_COPY).forEach(function (code) {
+  const source = C[code];
+  const copy = INTERNATIONAL_ALERT_COPY[code];
+  if (!source) throw new Error('missing README catalog for CAP copy: ' + code);
+  source.intro = copy.intro;
+  source.features.push(copy.feature);
+  source.privacyBody = source.privacyBody.replace('\n\n', '\n\n' + copy.privacy + '\n\n');
+  source.deployBody += '\n\n' + copy.hosting;
+});
+
 function writeAll() {
   fs.mkdirSync(OUT, { recursive: true });
   const missing = LOCALES.filter(function (item) { return item[0] !== 'en' && !C[item[0]]; }).map(function (item) { return item[0]; });

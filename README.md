@@ -23,25 +23,25 @@ duskline balances a quiet, atmospheric sky with the details that help you decide
 - **Current conditions, hourly detail, and a 10-day outlook** make it easy to move from “right now” to “what should I plan for?”
 - **Useful weather context** includes air quality, feels-like temperature, wind, humidity, UV, pressure, precipitation, and sun times.
 - **Saved places and direct links** make it simple to return to the forecasts that matter to you or share a city.
-- **U.S. forecasts and public alerts** are supplemented with data from the National Weather Service where available.
+- **Public alerts use authoritative sources:** the National Weather Service for eligible U.S. places and official, rebroadcastable CAP feeds through IFRC Alert Hub for supported international places.
 - **A living sky** brings day, night, cloud, and precipitation conditions into the city detail view.
 - **30 interface languages** include Arabic and Hebrew, with right-to-left layouts.
 
 ## Ready when you come back
 
-duskline is an installable progressive web app. Its cached app shell and recent saved forecasts can be opened offline; saved data is labeled with its original check time, and weather alerts need a connection. Forecast snapshots are kept in your browser for up to seven days.
+duskline is an installable progressive web app. Its cached app shell and recent saved forecasts can be opened offline; saved data is labeled with its original check time, and public alerts need a connection. International alert coverage depends on whether an official CAP feed is available for the place. Forecast snapshots are kept in your browser for up to seven days.
 
-No account or advertising identifier is needed, and duskline has no weather backend of its own. Your language, units, favorites, recent places, and saved forecasts stay in local browser storage. If you use your location, duskline requests permission through your browser and rounds coordinates before storage or weather requests.
+No account or advertising identifier is needed. Your language, units, favorites, recent places, and saved forecasts stay in local browser storage. If you use your location, duskline requests permission through your browser and rounds coordinates before storage or weather requests.
 
 ## Privacy and weather data
 
-Weather requests go directly from your browser to [Open-Meteo](https://open-meteo.com/) and, for eligible U.S. locations, the [National Weather Service](https://www.weather.gov/). Reverse geocoding for device location uses BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may receive ordinary technical request data.
+Forecast requests go directly from your browser to [Open-Meteo](https://open-meteo.com/) and, for eligible U.S. locations, the [National Weather Service](https://www.weather.gov/). For international public alerts, duskline sends the selected country code, country name, and interface language to its same-origin Cloudflare Pages function, which requests official CAP data from [IFRC Alert Hub](https://alerthub.ifrc.org/). City coordinates stay in your browser for alert-area matching. Reverse geocoding for device location uses BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may receive ordinary technical request data.
 
 Forecasts are for planning and exploration, not emergency decisions. Read the [Privacy Policy](https://dusklineweather.pages.dev/privacy.html) and [Terms of Use](https://dusklineweather.pages.dev/terms.html) for details. Removing a saved place removes its forecast snapshot unless the same place remains saved elsewhere; clear the site's browser data to remove all local history.
 
 ## For contributors
 
-The app is static HTML, CSS, and classic JavaScript; it has no build step. With Node.js 18 or newer:
+The app shell is static HTML, CSS, and classic JavaScript; it has no build step. Cloudflare Pages runs one small function for international CAP alerts. With Node.js 18 or newer:
 
 ```bash
 npm install
@@ -62,7 +62,7 @@ Playwright tests mock the weather providers, so they do not use live API quotas.
 
 ## Hosting
 
-The repository root is the static site. [Cloudflare Pages](https://dusklineweather.pages.dev/) is the primary host; GitHub Pages is the backup. Both publish the repository's static files as-is.
+The repository root is the static site. [Cloudflare Pages](https://dusklineweather.pages.dev/) is the primary host and runs the international alert function. Function requests count toward the account’s Cloudflare Workers allowance; static asset requests remain separate. GitHub Pages can serve the static shell, but does not run that function, so international alerts are unavailable on that backup host.
 
 ## License
 

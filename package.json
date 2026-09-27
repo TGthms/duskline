@@ -2,7 +2,7 @@
   "name": "duskline",
   "version": "0.1.0",
   "private": false,
-  "description": "Free worldwide weather app: city forecasts, air quality, and U.S. NWS alerts.",
+  "description": "Free worldwide weather app: city forecasts, air quality, U.S. NWS alerts, and international CAP public alerts.",
   "scripts": {
     "serve": "node tools/static-server.js 8000",
     "check": "node tools/check-js.js",

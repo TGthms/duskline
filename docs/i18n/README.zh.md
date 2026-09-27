@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **简体中文** · [繁體中文](README.zh-TW.md)
 
-没有账户、没有自有后端、没有广告标识符。语言、单位、收藏以及有意降低精度的保存位置都留在浏览器中。
+无需账户或广告标识符。偏好设置和已保存的预报保留在浏览器中。
 
 ## 功能
 
@@ -21,10 +21,13 @@
 - 详细视图中的动态天空与降水
 - 温度、距离、风、降水与气压单位
 - 30 种界面语言，包括阿拉伯语和希伯来语（从右到左）
+- 在支持的国际地点，通过 IFRC Alert Hub 提供来自官方来源的公共 CAP 预警
 
 ## 隐私与数据
 
 天气请求由浏览器直接发往 [Open-Meteo](https://open-meteo.com/)；美国地点发往 [国家气象局](https://www.weather.gov/)。若使用位置，反向地理编码发往 BigDataCloud，失败时回退到 OpenStreetMap Nominatim。托管与 Google Fonts 可能看到常规技术请求数据。
+
+查询国际预警时，浏览器会将所选国家/地区的代码、名称和界面语言发送至 duskline 的 Cloudflare Pages 函数；城市坐标仍保留在浏览器中。该函数会向 IFRC Alert Hub 请求公共 CAP 预警。
 
 duskline 不出售这些信息。预报用于规划与探索，不用于紧急决策。详情见 [隐私政策](https://dusklineweather.pages.dev/privacy.html) 与 [使用条款](https://dusklineweather.pages.dev/terms.html)。
 
@@ -48,6 +51,8 @@ npm run serve
 ## 部署
 
 仓库根目录就是站点。预定的主托管是 [Cloudflare Pages](https://dusklineweather.pages.dev/)；GitHub Pages 为备份。两者都按原样发布静态文件。
+
+国际预警需要 Cloudflare Pages 函数；静态 GitHub Pages 副本无法提供此功能。
 
 ## 许可
 

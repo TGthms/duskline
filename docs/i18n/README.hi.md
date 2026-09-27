@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · **हिन्दी** · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-कोई खाता नहीं, कोई अपना बैकएंड नहीं, कोई विज्ञापन पहचानकर्ता नहीं। भाषा, इकाइयाँ, पसंदीदा और जानबूझकर अनुमानित सहेजा गया स्थान आपके ब्राउज़र में रहता है।
+खाते या विज्ञापन पहचानकर्ता की आवश्यकता नहीं है। आपकी प्राथमिकताएँ और सहेजे गए पूर्वानुमान ब्राउज़र में रहते हैं।
 
 ## सुविधाएँ
 
@@ -21,10 +21,13 @@
 - विस्तृत दृश्य में एनिमेटेड आकाश और वर्षा
 - तापमान, दूरी, हवा, वर्षा और दबाव की इकाइयाँ
 - 30 इंटरफ़ेस भाषाएँ, जिनमें अरबी और हिब्रू (दाएँ से बाएँ) शामिल हैं
+- समर्थित अंतरराष्ट्रीय स्थानों में आधिकारिक स्रोतों से सार्वजनिक CAP अलर्ट, IFRC Alert Hub के माध्यम से
 
 ## गोपनीयता और डेटा
 
 मौसम अनुरोध आपके ब्राउज़र से [Open-Meteo](https://open-meteo.com/) और अमेरिकी स्थानों के लिए [National Weather Service](https://www.weather.gov/) को जाते हैं। यदि आप स्थान उपयोग करते हैं, रिवर्स जियोकोडिंग BigDataCloud को जाती है और OpenStreetMap Nominatim पर लौट सकती है। होस्टिंग और Google Fonts सामान्य तकनीकी अनुरोध डेटा देख सकते हैं।
+
+अंतरराष्ट्रीय अलर्ट के लिए चुने गए देश का कोड और नाम तथा इंटरफ़ेस भाषा duskline के Cloudflare Pages फ़ंक्शन को भेजी जाती है; शहर के निर्देशांक ब्राउज़र में रहते हैं। फ़ंक्शन IFRC Alert Hub से सार्वजनिक CAP अलर्ट माँगता है।
 
 duskline उस जानकारी को नहीं बेचता। पूर्वानुमान योजना और अन्वेषण के लिए हैं, आपातकालीन निर्णयों के लिए नहीं। विवरण: [गोपनीयता नीति](https://dusklineweather.pages.dev/privacy.html) और [उपयोग की शर्तें](https://dusklineweather.pages.dev/terms.html)।
 
@@ -48,6 +51,8 @@ npm run serve
 ## प्रकाशन
 
 रिपॉज़िटरी रूट ही साइट है। [Cloudflare Pages](https://dusklineweather.pages.dev/) मुख्य होस्ट है; GitHub Pages बैकअप है। दोनों स्थैतिक फ़ाइलें ज्यों की त्यों प्रकाशित करते हैं।
+
+अंतरराष्ट्रीय अलर्ट के लिए Cloudflare Pages फ़ंक्शन आवश्यक है; वे स्थिर GitHub Pages प्रति पर उपलब्ध नहीं हैं।
 
 ## लाइसेंस
 

@@ -11,7 +11,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · **עברית** · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-אין חשבון, אין שרת אחורי משלנו ואין מזהה פרסום. השפה, היחידות, המועדפים ומיקום שמור במכוון מקורב נשארים בדפדפן.
+אין צורך בחשבון או במזהה פרסום. ההעדפות והתחזיות השמורות נשארות בדפדפן.
 
 ## יכולות
 
@@ -23,10 +23,13 @@
 - שמים ומשקעים מונפשים בתצוגה המפורטת
 - יחידות טמפרטורה, מרחק, רוח, משקעים ולחץ
 - 30 שפות ממשק, כולל ערבית ועברית (מימין לשמאל)
+- במיקומים בינלאומיים נתמכים: התרעות CAP ציבוריות ממקורות רשמיים דרך IFRC Alert Hub
 
 ## פרטיות ונתונים
 
 בקשות מזג האוויר יוצאות מהדפדפן אל [Open-Meteo](https://open-meteo.com/) ואל [National Weather Service](https://www.weather.gov/) למקומות בארה״ב. אם משתמשים במיקום, geocoding הפוך הולך ל־BigDataCloud ועשוי ליפול ל־OpenStreetMap Nominatim. אירוח ו־Google Fonts עשויים לראות נתוני בקשה טכניים רגילים.
+
+עבור התרעות בינלאומיות, קוד המדינה שנבחר ושמה ושפת הממשק נשלחים לפונקציית Cloudflare Pages של duskline; קואורדינטות העיר נשארות בדפדפן. הפונקציה מבקשת התרעות CAP ציבוריות מ-IFRC Alert Hub.
 
 duskline אינו מוכר מידע זה. התחזיות הן לתכנון ולחקירה, לא להחלטות חירום. פרטים: [מדיניות פרטיות](https://dusklineweather.pages.dev/privacy.html) ו[תנאי שימוש](https://dusklineweather.pages.dev/terms.html).
 
@@ -50,6 +53,8 @@ npm run serve
 ## פרסום
 
 שורש המאגר הוא האתר. [Cloudflare Pages](https://dusklineweather.pages.dev/) הוא המארח העיקרי המיועד; GitHub Pages הוא הגיבוי. שניהם מפרסמים את הקבצים הסטטיים כפי שהם.
+
+התרעות בינלאומיות דורשות פונקציית Cloudflare Pages ואינן זמינות בעותק הסטטי של GitHub Pages.
 
 ## רישיון
 

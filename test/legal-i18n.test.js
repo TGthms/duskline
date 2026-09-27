@@ -30,6 +30,7 @@ test('legal packs exist for every picker language and share English keys', () =>
       assert.equal(typeof row[key], 'string', code + ' ' + key);
       assert.ok(row[key].trim().length > 0, 'empty ' + code + ' ' + key);
     }
+    assert.match(row['legal.privacy.p3'], /IFRC Alert Hub/, code + ' privacy disclosure omits the international CAP provider');
     assert.deepEqual(Object.keys(row).sort(), keys.slice().sort());
   }
 });

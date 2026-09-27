@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · **Português (Portugal)** · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Não há conta, backend próprio nem identificador publicitário. O idioma, as unidades, os favoritos e uma localização guardada de propósito aproximada ficam no browser.
+Não é necessária uma conta nem um identificador publicitário. As suas preferências e previsões guardadas ficam no navegador.
 
 ## Funcionalidades
 
@@ -21,10 +21,13 @@ Não há conta, backend próprio nem identificador publicitário. O idioma, as u
 - Céu e precipitação animados na vista detalhada
 - Unidades de temperatura, distância, vento, precipitação e pressão
 - 30 idiomas de interface, incluindo árabe e hebraico (direita para a esquerda)
+- Em locais internacionais com uma fonte oficial suportada, alertas públicos CAP através do IFRC Alert Hub
 
 ## Privacidade e dados
 
 Os pedidos meteorológicos saem do browser para o [Open-Meteo](https://open-meteo.com/) e, em localizações dos EUA, o [National Weather Service](https://www.weather.gov/). Se usar a localização, a geocodificação inversa vai para o BigDataCloud e pode recorrer ao OpenStreetMap Nominatim. O alojamento e o Google Fonts podem ver dados técnicos habituais do pedido.
+
+Para alertas internacionais, o código e o nome do país escolhido e o idioma da interface são enviados para a função Cloudflare Pages do duskline; as coordenadas da cidade ficam no navegador. A função pede alertas públicos CAP ao IFRC Alert Hub.
 
 O duskline não vende essas informações. As previsões servem para planear e explorar, não para decisões de emergência. Detalhes: [Política de privacidade](https://dusklineweather.pages.dev/privacy.html) e [Termos de utilização](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Publicação
 
 A raiz do repositório é o sítio. [Cloudflare Pages](https://dusklineweather.pages.dev/) é o anfitrião principal previsto; o GitHub Pages é a cópia de segurança. Ambos publicam os ficheiros estáticos tal como estão.
+
+Os alertas internacionais requerem uma função Cloudflare Pages e não estão disponíveis na cópia estática do GitHub Pages.
 
 ## Licença
 

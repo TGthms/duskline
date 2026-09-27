@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · [Ελληνικά](README.el.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · **Tiếng Việt** · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Không tài khoản, không backend riêng, không mã nhận dạng quảng cáo. Ngôn ngữ, đơn vị, mục yêu thích và vị trí đã lưu được làm tròn có chủ đích ở lại trình duyệt.
+Không cần tài khoản hay mã định danh quảng cáo. Tùy chọn và dự báo đã lưu vẫn ở trong trình duyệt.
 
 ## Tính năng
 
@@ -21,10 +21,13 @@ Không tài khoản, không backend riêng, không mã nhận dạng quảng cá
 - Bầu trời và mưa chuyển động trong chế độ chi tiết
 - Đơn vị nhiệt độ, khoảng cách, gió, mưa và áp suất
 - 30 ngôn ngữ giao diện, gồm Ả Rập và Do Thái (phải sang trái)
+- Tại các địa điểm quốc tế được hỗ trợ: cảnh báo công cộng CAP từ nguồn chính thức qua IFRC Alert Hub
 
 ## Quyền riêng tư và dữ liệu
 
 Yêu cầu thời tiết rời trình duyệt tới [Open-Meteo](https://open-meteo.com/) và, với vị trí Hoa Kỳ, [National Weather Service](https://www.weather.gov/). Nếu dùng vị trí, geocoding ngược tới BigDataCloud và có thể về OpenStreetMap Nominatim. Hosting và Google Fonts có thể thấy dữ liệu kỹ thuật thông thường của yêu cầu.
+
+Đối với cảnh báo quốc tế, mã và tên quốc gia đã chọn cùng ngôn ngữ giao diện được gửi đến hàm Cloudflare Pages của duskline; tọa độ thành phố vẫn ở trong trình duyệt. Hàm này yêu cầu cảnh báo công cộng CAP từ IFRC Alert Hub.
 
 duskline không bán thông tin đó. Dự báo dành cho lập kế hoạch và khám phá, không phải quyết định khẩn cấp. Chi tiết: [Chính sách quyền riêng tư](https://dusklineweather.pages.dev/privacy.html) và [Điều khoản sử dụng](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Triển khai
 
 Thư mục gốc kho chứa là trang web. [Cloudflare Pages](https://dusklineweather.pages.dev/) là máy chủ chính dự kiến; GitHub Pages là bản sao lưu. Cả hai xuất bản tệp tĩnh nguyên trạng.
+
+Cảnh báo quốc tế cần hàm Cloudflare Pages và không có trên bản sao GitHub Pages tĩnh.
 
 ## Giấy phép
 

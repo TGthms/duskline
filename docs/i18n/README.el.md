@@ -9,7 +9,7 @@
 
 [English](../../README.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Italiano](README.it.md) · [Português (Brasil)](README.pt-BR.md) · [Português (Portugal)](README.pt-PT.md) · [Nederlands](README.nl.md) · [Dansk](README.da.md) · [Svenska](README.sv.md) · [Norsk bokmål](README.nb.md) · [Suomi](README.fi.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Magyar](README.hu.md) · [Română](README.ro.md) · **Ελληνικά** · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [Українська](README.uk.md) · [العربية](README.ar.md) · [עברית](README.he.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) · [Bahasa Indonesia](README.id.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.zh-TW.md)
 
-Χωρίς λογαριασμό, χωρίς δικό μας backend, χωρίς αναγνωριστικό διαφήμισης. Η γλώσσα, οι μονάδες, τα αγαπημένα και μια σκόπιμα προσεγγιστική αποθηκευμένη τοποθεσία μένουν στο πρόγραμμα περιήγησης.
+Δεν χρειάζεται λογαριασμός ή αναγνωριστικό διαφημίσεων. Οι προτιμήσεις και οι αποθηκευμένες προγνώσεις μένουν στο πρόγραμμα περιήγησης.
 
 ## Δυνατότητες
 
@@ -21,10 +21,13 @@
 - Κινούμενος ουρανός και υετός στην αναλυτική προβολή
 - Μονάδες θερμοκρασίας, απόστασης, ανέμου, υετού και πίεσης
 - 30 γλώσσες διεπαφής, συμπεριλαμβανομένων αραβικών και εβραϊκών (δεξιά προς τα αριστερά)
+- Σε υποστηριζόμενες διεθνείς τοποθεσίες: δημόσιες ειδοποιήσεις CAP από επίσημες πηγές μέσω του IFRC Alert Hub
 
 ## Απόρρητο και δεδομένα
 
 Τα αιτήματα καιρού φεύγουν από το πρόγραμμα περιήγησης προς το [Open-Meteo](https://open-meteo.com/) και, για τοποθεσίες στις ΗΠΑ, το [National Weather Service](https://www.weather.gov/). Αν χρησιμοποιείτε τοποθεσία, η αντίστροφη γεωκωδικοποίηση πηγαίνει στο BigDataCloud και μπορεί να καταλήξει στο OpenStreetMap Nominatim. Η φιλοξενία και το Google Fonts μπορεί να βλέπουν συνήθη τεχνικά δεδομένα αιτήματος.
+
+Για τις διεθνείς ειδοποιήσεις, ο κωδικός και το όνομα της επιλεγμένης χώρας και η γλώσσα της διεπαφής αποστέλλονται στη λειτουργία Cloudflare Pages του duskline· οι συντεταγμένες της πόλης μένουν στο πρόγραμμα περιήγησης. Η λειτουργία ζητά δημόσιες ειδοποιήσεις CAP από το IFRC Alert Hub.
 
 Το duskline δεν πουλά αυτές τις πληροφορίες. Οι προγνώσεις είναι για σχεδιασμό και εξερεύνηση, όχι για αποφάσεις έκτακτης ανάγκης. Λεπτομέρειες: [Πολιτική απορρήτου](https://dusklineweather.pages.dev/privacy.html) και [Όροι χρήσης](https://dusklineweather.pages.dev/terms.html).
 
@@ -48,6 +51,8 @@ npm run serve
 ## Δημοσίευση
 
 Η ρίζα του αποθετηρίου είναι ο ιστότοπος. Το [Cloudflare Pages](https://dusklineweather.pages.dev/) είναι ο προβλεπόμενος κύριος οικοδεσπότης· το GitHub Pages είναι το αντίγραφο ασφαλείας. Και τα δύο δημοσιεύουν τα στατικά αρχεία ως έχουν.
+
+Οι διεθνείς ειδοποιήσεις απαιτούν λειτουργία Cloudflare Pages και δεν διατίθενται στο στατικό αντίγραφο GitHub Pages.
 
 ## Άδεια
 
