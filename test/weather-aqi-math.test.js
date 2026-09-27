@@ -34,11 +34,23 @@ test('European AQI uses the separate six-band scale and caps its visual marker a
 });
 
 test('AQI helpers reject unavailable and invalid readings and default to the US scale', () => {
-  assert.equal(aqi.scale('unknown'), 'us');
   assert.equal(aqi.band(null, 'us'), '');
   assert.equal(aqi.band(-1, 'eu'), '');
   assert.equal(aqi.band('not-a-number', 'eu'), '');
   assert.equal(aqi.percent(null, 'us'), 0);
   assert.equal(aqi.maxValue('eu'), 100);
   assert.equal(aqi.maxValue('us'), 500);
+});
+
+test('AQI standard follows EU country metadata and uses the US scale as fallback', () => {
+  assert.equal(aqi.defaultScale({ country_code: 'FR' }), 'eu');
+  assert.equal(aqi.defaultScale({ countryCode: 'de' }), 'eu');
+  assert.equal(aqi.defaultScale({ country_code: 'EL' }), 'eu');
+  assert.equal(aqi.defaultScale({ country: 'France' }), 'eu');
+  assert.equal(aqi.defaultScale({ country: 'The Netherlands' }), 'eu');
+  assert.equal(aqi.defaultScale({ country_code: 'US', country: 'France' }), 'us');
+  assert.equal(aqi.defaultScale({ country_code: 'CA', country: 'Canada' }), 'us');
+  assert.equal(aqi.defaultScale({ country: 'United Kingdom' }), 'us');
+  assert.equal(aqi.defaultScale({}), 'us');
+  assert.equal(aqi.defaultScale(null), 'us');
 });

@@ -467,7 +467,7 @@ test('U.S. AQI detail follows all six official bands and boundaries', async ({ p
   }
 });
 
-test('AQI defaults to the U.S. scale and offers a localized European scale with an on-demand outlook', async ({ page }) => {
+test('U.S. cities use U.S. AQI and load the 24-hour outlook on demand', async ({ page }) => {
   let detailUrl = '';
   await page.route(/air-quality-api\.open-meteo\.com/, async route => {
     const url = new URL(route.request().url());
@@ -494,19 +494,31 @@ test('AQI defaults to the U.S. scale and offers a localized European scale with 
 
   await page.locator('#weatherModules [data-sheet="aqi"]').click();
   const sheet = page.locator('#weatherSheetBody');
-  await expect(sheet.locator('#wxAqiScale [data-u="us"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(sheet.locator('#wxAqiScale')).toHaveCount(0);
   await expect(sheet.locator('#wxAqiOutlook[aria-busy="true"]')).toBeVisible();
   await expect(sheet.locator('#wxAqiOutlook .wx-aqi-outlook-item')).toHaveCount(8);
   expect(detailUrl).toContain('forecast_hours=24');
   expect(new URL(detailUrl).searchParams.get('hourly')).toBe('us_aqi,european_aqi');
 
-  await sheet.locator('#wxAqiScale [data-u="eu"]').click();
-  await expect(sheet.locator('.wx-aqi-readout')).toHaveText('67');
-  await expect(sheet.locator('.weather-chart-sub')).toContainText('Poor · 61–80');
-  await expect(sheet.locator('.wx-sheet-about')).toContainText('European AQI');
+  await expect(sheet.locator('.wx-aqi-readout')).toHaveText('45');
+  await expect(sheet.locator('.weather-chart-sub')).toContainText('Good · 0–50');
   await expect(sheet.locator('.wx-air-main')).toContainText('PM₂.₅');
-  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('European AQI');
-  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('Poor');
+  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('United States AQI');
+});
+
+test('EU cities use European AQI automatically without showing a scale switcher', async ({ page }) => {
+  await page.goto('/?city=paris');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const aqiTile = page.locator('#weatherModules [data-sheet="aqi"]');
+  await expect(aqiTile).toContainText('European AQI');
+  await expect(aqiTile).toContainText('Fair');
+
+  await aqiTile.click();
+  const sheet = page.locator('#weatherSheetBody');
+  await expect(sheet.locator('#wxAqiScale')).toHaveCount(0);
+  await expect(sheet.locator('.wx-aqi-readout')).toHaveText('30');
+  await expect(sheet.locator('.weather-chart-sub')).toContainText('Fair · 21–40');
+  await expect(sheet.locator('.wx-sheet-about')).toContainText('European AQI');
 });
 
 test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
@@ -665,11 +677,25 @@ test('terms page translates body copy for every picker language', async ({ page 
 
 test('units sheet opens', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#weatherUnitsBtn').click();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 320));
+  const scrollBeforeOpen = await page.evaluate(() => window.scrollY);
+  expect(scrollBeforeOpen).toBeGreaterThan(0);
+  const bodyTopBeforeOpen = await page.evaluate(() => document.body.getBoundingClientRect().top);
+  await page.locator('#weatherUnitsBtn').evaluate(button => button.click());
   await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
   await expect(page.locator('#wxTempUnits')).toBeVisible();
+  const bodyTopWhileOpen = await page.evaluate(() => document.body.getBoundingClientRect().top);
+  expect(Math.abs(bodyTopWhileOpen - bodyTopBeforeOpen)).toBeLessThan(1);
+  await page.mouse.move(40, Math.round((await page.evaluate(() => window.innerHeight)) / 2));
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => document.body.getBoundingClientRect().top)).toBe(bodyTopWhileOpen);
   await page.locator('#weatherSheetClose').click();
   await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollBeforeOpen);
+  await page.mouse.move(40, Math.round((await page.evaluate(() => window.innerHeight)) / 2));
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBeforeOpen);
 });
 
 test('weather unit choices persist and carry into their detail sheets', async ({ page }) => {

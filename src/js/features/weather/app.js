@@ -17,7 +17,6 @@
   const WIND_KEY = 'duskline-weather-wind';
   const PRECIP_KEY = 'duskline-weather-precip';
   const PRESS_KEY = 'duskline-weather-pressure';
-  const AQI_SCALE_KEY = 'duskline-weather-aqi-scale';
   const FAV_KEY = 'duskline-weather-favorites';
   const MYLOC_KEY = 'duskline-weather-myloc';
   const MODE_KEY = 'duskline-weather-mode';
@@ -439,11 +438,9 @@
 
 
   /* ── Wire factory modules ── */
-  function aqiScale() {
-    try { return window.DusklineAqiMath.scale(localStorage.getItem(AQI_SCALE_KEY)); }
-    catch (e) { return 'us'; }
+  function aqiScale(city) {
+    return window.DusklineAqiMath.defaultScale(city);
   }
-  function setAqiScale(value) { if (value === 'us' || value === 'eu') try { localStorage.setItem(AQI_SCALE_KEY, value); } catch (e) {} }
 
   var skyApi = (W.factories.sky && W.factories.sky({
     motionLevel: motionLevel,
@@ -2010,7 +2007,7 @@
     const precipitation = sheetContextText('precip', pack, timeZone);
     add(greetingPrecipitationScore(pack, timeZone), precipitation);
 
-    const selectedScale = aqiScale();
+    const selectedScale = aqiScale(pack.city);
     const airRaw = aqiCurrentValue(pack.air && pack.air.current, selectedScale);
     const airValue = Number(airRaw);
     if (airRaw != null && airRaw !== '' && Number.isFinite(airValue)) {
@@ -2127,7 +2124,7 @@
     const wind = Number(current.wind_speed_10m);
     const windText = current.wind_speed_10m != null && Number.isFinite(wind)
       ? t('weather.wind', 'Wind') + ': ' + fmtWind(wind) + '.' : '';
-    const scale = aqiScale();
+    const scale = aqiScale(pack.city);
     const aqi = Number(aqiCurrentValue(pack.air && pack.air.current, scale));
     const aqiText = Number.isFinite(aqi) && pack.air && pack.air.current
       ? aqiGreetingDescription(aqi, scale) : '';
@@ -3028,7 +3025,7 @@
     // NWS severe weather / disaster alerts (Apple Weather–style banner stack)
     alertsApi.ensureNwsAlerts(pack);
 
-    const selectedAqiScale = aqiScale();
+    const selectedAqiScale = aqiScale(c);
     const aqi = aqiCurrentValue(pack.air && pack.air.current, selectedAqiScale);
     const mods = [];
     let hasAlertBlock = false;
@@ -3468,7 +3465,7 @@
           const responseCity = updated && updated.city || pack.city;
           if (!openCity || !openCity.city || !sameCity(openCity.city, responseCity)) return;
           const host = document.getElementById('wxAqiExtended');
-          const scale = aqiScale();
+          const scale = aqiScale(responseCity);
           const data = updated || pack;
           if (host) host.innerHTML = aqiExtendedHtml(data && data.air, scale);
           const outlook = document.getElementById('wxAqiOutlook');
@@ -3579,18 +3576,12 @@
         body += `<p class="wx-sheet-context">${escapeHtml(t('weather.uvMax', 'Today’s max'))} ${Math.round(uvMax * 10) / 10}</p>`;
       }
     } else if (kind === 'aqi') {
-      const scale = aqiScale();
+      const scale = aqiScale(pack.city);
       const aqi = aqiCurrentValue(pack.air && pack.air.current, scale);
       body += `<div class="wx-sheet-hero">
         <div class="weather-chart-readout wx-aqi-readout" style="--wx-aqi-color:${aqiColor(aqi, scale)};--wx-aqi-light:${aqiLightColor(aqi, scale)}">${aqi != null ? Math.round(aqi) : '—'}</div>
         <div class="weather-chart-sub">${escapeHtml(aqiLabel(aqi, scale) || t('weather.aqi', 'Air Quality'))}${aqi != null ? ' · ' + escapeHtml(aqiRange(aqi, scale)) : ''}</div>
       </div>`;
-      body += `<p class="weather-mod-label" id="wxAqiScaleLabel">${escapeHtml(t('weather.aqi', 'Air Quality'))}</p><div class="weather-units-row" id="wxAqiScale" role="radiogroup" aria-labelledby="wxAqiScaleLabel"><span class="wx-units-pill" aria-hidden="true"></span>`;
-      [['us', aqiScaleLabel('us')], ['eu', aqiScaleLabel('eu')]].forEach(function (option) {
-        const on = scale === option[0];
-        body += `<button type="button" role="radio" aria-checked="${on ? 'true' : 'false'}" tabindex="${on ? '0' : '-1'}" data-u="${option[0]}" class="${on ? 'active' : ''}">${escapeHtml(option[1])}</button>`;
-      });
-      body += '</div>';
       body += aqiBarHtml(aqi, false, scale);
       const description = aqiDescription(aqi, scale);
       if (description) body += `<p class="wx-sheet-context wx-sheet-aqi-description">${escapeHtml(description)}</p>`;
@@ -3628,7 +3619,7 @@
       body += unitsPickerHtml('wxVisUnits', [['km', 'km'], ['mi', 'mi']], useMi() ? 'mi' : 'km');
     }
 
-    const aboutText = kind === 'aqi' && aqiScale() === 'eu'
+    const aboutText = kind === 'aqi' && aqiScale(pack.city) === 'eu'
       ? t('weather.about.aqi.eu', '')
       : t('weather.about.' + kind, '');
     if (aboutText) {
@@ -3680,7 +3671,6 @@
     bind('wxWindUnits', setWindUnit);
     bind('wxPrecipUnits', setPrecipUnit);
     bind('wxPressUnits', setPressUnit);
-    bind('wxAqiScale', setAqiScale);
     bind('wxTempUnitsSheet', function (u) {
       if (typeof window.setTempUnitPreference === 'function') window.setTempUnitPreference(u);
     });
@@ -3802,8 +3792,68 @@
     else detailEl.style.pointerEvents = '';
   }
 
+  let sheetPageScrollSnapshot = null;
+  function lockSheetPageScroll() {
+    const root = document.documentElement;
+    const body = document.body;
+    if (!root || !body || sheetPageScrollSnapshot
+      || root.classList.contains('weather-detail-open')
+      || body.classList.contains('weather-detail-open')) return;
+
+    const properties = ['position', 'top', 'left', 'right', 'bottom', 'width', 'overflow'];
+    const bodyStyles = {};
+    properties.forEach(function (property) {
+      bodyStyles[property] = {
+        value: body.style.getPropertyValue(property),
+        priority: body.style.getPropertyPriority(property)
+      };
+    });
+    const x = window.scrollX || window.pageXOffset || 0;
+    const y = window.scrollY || window.pageYOffset || 0;
+    const bodyWidth = body.getBoundingClientRect().width;
+    sheetPageScrollSnapshot = {
+      x: x,
+      y: y,
+      rootOverflow: {
+        value: root.style.getPropertyValue('overflow'),
+        priority: root.style.getPropertyPriority('overflow')
+      },
+      bodyStyles: bodyStyles
+    };
+
+    // Keep the body at its current viewport position while the sheet is open.
+    // This also blocks touch scrolling on iOS, where overflow:hidden alone can
+    // still allow the document underneath a fixed overlay to move.
+    root.style.setProperty('overflow', 'hidden');
+    body.style.setProperty('position', 'fixed');
+    body.style.setProperty('top', (-y) + 'px');
+    body.style.setProperty('left', (-x) + 'px');
+    body.style.setProperty('right', 'auto');
+    body.style.setProperty('bottom', 'auto');
+    body.style.setProperty('width', bodyWidth + 'px');
+    body.style.setProperty('overflow', 'hidden');
+  }
+
+  function unlockSheetPageScroll() {
+    const snapshot = sheetPageScrollSnapshot;
+    if (!snapshot) return;
+    sheetPageScrollSnapshot = null;
+    const root = document.documentElement;
+    const body = document.body;
+    function restore(style, property, saved) {
+      if (!saved.value) style.removeProperty(property);
+      else style.setProperty(property, saved.value, saved.priority);
+    }
+    restore(root.style, 'overflow', snapshot.rootOverflow);
+    Object.keys(snapshot.bodyStyles).forEach(function (property) {
+      restore(body.style, property, snapshot.bodyStyles[property]);
+    });
+    window.scrollTo(snapshot.x, snapshot.y);
+  }
+
   function inertSheet() {
     sheetIntentOpen = false;
+    unlockSheetPageScroll();
     if (!sheetEl) return;
     sheetEl.classList.remove('open', 'is-raised', 'is-leaving');
     sheetEl.setAttribute('aria-hidden', 'true');
@@ -3861,6 +3911,7 @@
     const gen = sheetGen;
     sheetOpen = true;
     sheetIntentOpen = true;
+    lockSheetPageScroll();
     try { sheetEl.inert = false; } catch (e) { /* older browsers */ }
     sheetEl.setAttribute('aria-hidden', 'false');
     sheetEl.style.pointerEvents = 'auto';

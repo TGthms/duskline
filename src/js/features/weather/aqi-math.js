@@ -19,8 +19,28 @@
       { key: 'ExtremelyPoor', min: 101, max: Infinity }
     ]
   };
+  const EU_COUNTRY_CODES = new Set([
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'EL', 'HU',
+    'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
+  ]);
+  const EU_COUNTRY_NAMES = new Set([
+    'austria', 'belgium', 'bulgaria', 'croatia', 'cyprus', 'czechia', 'czech republic',
+    'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary', 'ireland',
+    'italy', 'latvia', 'lithuania', 'luxembourg', 'malta', 'netherlands', 'the netherlands',
+    'poland', 'portugal', 'romania', 'slovakia', 'slovenia', 'spain', 'sweden'
+  ]);
 
   function scale(value) { return value === 'eu' ? 'eu' : 'us'; }
+
+  function defaultScale(city) {
+    if (!city) return 'us';
+    const code = String(city.country_code || city.countryCode || '').trim().toUpperCase();
+    // A recognized country code is authoritative. Unknown/non-EU codes use the
+    // requested US fallback instead of trusting a potentially localized label.
+    if (code) return EU_COUNTRY_CODES.has(code) ? 'eu' : 'us';
+    const country = String(city.country || '').trim().toLowerCase();
+    return EU_COUNTRY_NAMES.has(country) ? 'eu' : 'us';
+  }
 
   function band(value, standard) {
     if (value == null || value === '' || !Number.isFinite(Number(value)) || Number(value) < 0) return '';
@@ -44,6 +64,6 @@
   }
 
   global.DusklineAqiMath = Object.freeze({
-    scale: scale, band: band, maxValue: maxValue, percent: percent, bands: bands
+    defaultScale: defaultScale, band: band, maxValue: maxValue, percent: percent, bands: bands
   });
 })(window);
