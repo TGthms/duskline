@@ -278,6 +278,34 @@ test('the installed app opens a saved forecast offline', async ({ page }) => {
   await page.context().setOffline(false);
 });
 
+test('all legal language packs remain available offline after install', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller, undefined, { timeout: 15000 });
+  await page.goto('/terms.html');
+  const title = page.locator('[data-i18n="legal.terms.title"]');
+  const englishTitle = (await title.textContent() || '').trim();
+  const englishBody = (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim();
+
+  await page.context().setOffline(true);
+
+  const locales = await page.locator('#dusklineLanguage option').evaluateAll(options => options.map(option => option.value));
+  expect(locales).toHaveLength(30);
+  for (const locale of locales) {
+    await page.locator('#dusklineLanguage').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('data-lang', locale);
+    if (locale === 'en') {
+      await expect(title).toHaveText(englishTitle);
+      continue;
+    }
+    await expect(title).not.toHaveText(englishTitle);
+    await expect.poll(async () => (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim())
+      .not.toBe(englishBody);
+  }
+  await page.context().setOffline(false);
+});
+
 test('detail and info sheet return focus to the control that opened them', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
@@ -350,6 +378,32 @@ test('the empty My Sky message uses dark readable text on the light canvas', asy
   const message = page.locator('#weatherMySkyEmpty p');
   await expect(message).toBeVisible();
   expect(await message.evaluate(el => getComputedStyle(el).color)).toBe('rgb(36, 73, 102)');
+});
+
+test('mobile city details keep the reduced blur treatment while scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stubWeather(page, null);
+  await page.goto('/');
+  await page.locator('#weatherList .weather-row').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const card = page.locator('#weatherModules .weather-mod').first();
+  await expect(card).toBeVisible();
+
+  const appearance = await card.evaluate(element => ({
+    mobileLite: document.documentElement.getAttribute('data-mobile-lite'),
+    backdrop: getComputedStyle(element).backdropFilter
+  }));
+  expect(appearance.mobileLite).toBe('true');
+  expect(appearance.backdrop).toContain('blur(20px)');
+
+  const scroll = page.locator('#weatherDetailScroll');
+  const dimensions = await scroll.evaluate(element => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight
+  }));
+  expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+  await scroll.evaluate(element => { element.scrollTop = element.scrollHeight; });
+  await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
 });
 
 test('detail actions stay in the top right and the footer uses the current year', async ({ page }) => {

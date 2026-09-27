@@ -14,6 +14,11 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const PAGES = ['index.html', 'privacy.html', 'terms.html'];
+const STYLESHEETS = [
+  'src/css/tokens.css', 'src/css/icons.css', 'src/css/chrome.css', 'src/css/weather.css',
+  'src/css/legal.css', 'src/css/motion.css', 'src/css/responsive.css', 'src/css/motion-levels.css',
+  'src/css/tools-miniapp.css', 'src/css/weather-app.css', 'src/css/duskline.css'
+];
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
 test('no page ships an inline script', () => {
@@ -24,12 +29,15 @@ test('no page ships an inline script', () => {
     assert.equal(inline.length, 0, `${page} contains an inline <script> — add it to a file or add a CSP hash`);
     assert.match(html, /src\/js\/boot\.js/, `${page} must load the shared boot script`);
   }
-  // the pre-paint bootstrap must stay ahead of the stylesheet so data-theme is set first
+  // The pre-paint bootstrap must stay ahead of styles, and every page must preserve the
+  // direct-link cascade order so no @import discovery step delays the render-blocking CSS.
   for (const page of PAGES) {
     const html = read(page);
     const boot = html.indexOf('src/js/boot.js');
-    const css = html.indexOf('src/css/styles.css');
-    assert.ok(boot > -1 && css > -1 && boot < css, `${page}: boot.js must precede the stylesheet`);
+    const styles = [...html.matchAll(/<link\b(?=[^>]*\brel=["'][^"']*stylesheet[^"']*["'])[^>]*\bhref=["']([^"']+)["'][^>]*>/gi)]
+      .map((match) => match[1]).filter((href) => !/^(?:https?:)?\/\//i.test(href));
+    assert.ok(boot > -1 && styles.length > 0 && boot < html.indexOf(styles[0]), `${page}: boot.js must precede stylesheets`);
+    assert.deepEqual(styles, STYLESHEETS, `${page}: preserve direct stylesheet order`);
   }
   assert.match(read('index.html'), /src\/js\/sw-register\.js/, 'index.html must register the service worker from a file');
 });
@@ -76,7 +84,8 @@ test('the service worker precaches only what the app needs offline', () => {
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/)[1];
   // Social preview images are for crawlers, not offline use; 100 KB of precache for nothing.
   assert.ok(!/duskline-og\.jpg/.test(shell), 'the OG share image must not be precached');
-  assert.match(shell, /duskline-icon\.jpg/, 'the in-page logo is needed offline');
+  assert.match(shell, /duskline-logo-96\.jpg/, 'the in-page logo is needed offline');
+  assert.doesNotMatch(shell, /assets\/duskline-icon\.jpg/, 'the unused 960px icon must not be precached');
   assert.match(shell, /src\/js\/boot\.js/, 'boot.js must be available offline or first paint breaks');
   assert.match(sw, /const CACHE = 'duskline-shell-v\d+';/);
 });

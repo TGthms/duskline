@@ -18,7 +18,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone.
 
-Keep this order explicit when adding scripts. Same-origin scripts in `index.html` and stylesheets imported by `src/css/styles.css` must also appear in the service worker `SHELL`; `npm run test:unit` checks that offline dependency contract.
+Keep this order explicit when adding scripts. All three HTML entry points link the CSS files directly in the shared cascade order so the browser discovers them without an `@import` request step. Same-origin scripts and stylesheets must also appear in the service worker `SHELL`; `npm run test:unit` checks each page's offline dependency contract and CSS imports.
 
 ## Editing
 
