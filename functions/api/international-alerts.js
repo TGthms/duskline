@@ -453,7 +453,9 @@ async function onRequest(context) {
 
   const responseCache = getCache(context);
   const locationKey = countryCode || ('name-' + normalizeName(countryName).replace(/[^a-z0-9]+/g, '-'));
-  const regionKey = admin1Name ? '/admin1-' + encodeURIComponent(normalizeAdmin1Name(admin1Name).replace(/\s+/g, '-')) : '';
+  // Matching rules can change between deploys; isolate region results so a
+  // short-lived previous miss cannot hide a newly resolvable admin1.
+  const regionKey = admin1Name ? '/admin1-v2-' + encodeURIComponent(normalizeAdmin1Name(admin1Name).replace(/\s+/g, '-')) : '';
   const alertKey = cacheKey(context, 'cap/alerts/' + locationKey + regionKey + '/' + encodeURIComponent(language.toLowerCase()));
   const cachedAlerts = await readCached(responseCache, alertKey);
   if (cachedAlerts) {
