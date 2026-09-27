@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v34';
+const CACHE = 'duskline-shell-v35';
 const SHELL = [
   './',
   './index.html',
@@ -99,6 +99,9 @@ self.addEventListener('fetch', (event) => {
   let url;
   try { url = new URL(request.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;
+  // Public-safety alerts are time-sensitive; never serve a cached alert payload
+  // when an international source is offline or the device has no connection.
+  if (url.pathname.startsWith('/api/')) return;
 
   const dest = request.destination;
   const isNav = request.mode === 'navigate' || dest === 'document';

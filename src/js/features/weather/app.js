@@ -495,7 +495,7 @@
       },
       loadNwsAlerts: function () { return alertsApi.loadNwsAlerts.apply(null, arguments); },
       applyAlertsToPack: function () { return alertsApi.applyAlertsToPack.apply(null, arguments); },
-      ensureNwsAlerts: function () { return alertsApi.ensureNwsAlerts.apply(null, arguments); }
+      ensureAlerts: function () { return alertsApi.ensureAlerts.apply(null, arguments); }
     });
     alertsApi = W.factories.alerts({
       t: t, escapeHtml: escapeHtml, lang: lang, formatClock: formatClock, motionLevel: motionLevel,
@@ -2676,7 +2676,7 @@
   }
 
   /**
-   * @param {boolean} force  Re-fetch from NWS + Open-Meteo (not cache-only paint)
+   * @param {boolean} force  Re-fetch weather and refresh public alerts (not cache-only paint)
    * @param {{ quiet?: boolean, reason?: string }} [opts]
    *   quiet: background refresh (auto/resume) — keep list visible, no progress lock
    */
@@ -3022,8 +3022,8 @@
     }
     syncDetailFav(c);
 
-    // NWS severe weather / disaster alerts (Apple Weather–style banner stack)
-    alertsApi.ensureNwsAlerts(pack);
+    // Public alerts: NWS in the U.S.; official, rebroadcastable CAP alerts elsewhere.
+    alertsApi.ensureAlerts(pack);
 
     const selectedAqiScale = aqiScale(c);
     const aqi = aqiCurrentValue(pack.air && pack.air.current, selectedAqiScale);

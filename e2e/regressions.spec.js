@@ -68,6 +68,9 @@ function body(light, base, seed) {
 /** Stub the providers, answering in the shape the request actually asked for. */
 async function stubWeather(page, log) {
   const base = Date.now();
+  await page.route(/\/api\/international-alerts(?:\?|$)/, route => route.fulfill({
+    json: { availability: 'available', provider: 'IFRC Alert Hub', country: 'Japan', alerts: [], truncated: false, fetchedAt: Date.now() }
+  }));
   await page.route(/api\.weather\.gov|api\.open-meteo\.com|air-quality-api\.open-meteo\.com|geocoding-api\.open-meteo\.com/, async (route) => {
     const url = route.request().url();
     if (url.includes('geocoding')) return route.fulfill({ json: { results: [] } });

@@ -9,6 +9,8 @@ const root = path.join(__dirname, '..');
 
 test('service worker SHELL paths exist on disk', () => {
   const src = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  assert.match(src, /url\.pathname\.startsWith\('\/api\/'\)/,
+    'same-origin alert APIs must remain network-only so offline cache cannot show stale warnings');
   const m = src.match(/const SHELL = \[([\s\S]*?)\];/);
   assert.ok(m, 'SHELL array missing');
   const urls = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
@@ -27,6 +29,12 @@ test('service worker SHELL paths exist on disk', () => {
     }
     assert.ok(fs.existsSync(path.join(root, rel)), 'missing SHELL file ' + url);
   }
+});
+
+test('Cloudflare Pages routes only the international alert API through Functions', () => {
+  const routes = JSON.parse(fs.readFileSync(path.join(root, '_routes.json'), 'utf8'));
+  assert.deepEqual(routes.include, ['/api/*']);
+  assert.deepEqual(routes.exclude, []);
 });
 
 test('all HTML entrypoints and manifest icons are covered by the offline shell', () => {

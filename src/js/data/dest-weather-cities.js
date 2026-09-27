@@ -40,6 +40,16 @@
     { region: 'Oceania', name: 'Melbourne', admin1: 'Victoria', country: 'Australia', lat: -37.8136, lon: 144.9631, tz: 'Australia/Melbourne', slug: 'melbourne' },
     { region: 'Oceania', name: 'Auckland', admin1: 'Auckland', country: 'New Zealand', lat: -36.8509, lon: 174.7645, tz: 'Pacific/Auckland', slug: 'auckland' }
   ];
+  var COUNTRY_CODES = {
+    'United States': 'US', Canada: 'CA', Mexico: 'MX', Brazil: 'BR', Argentina: 'AR', Chile: 'CL', Peru: 'PE',
+    'United Kingdom': 'GB', France: 'FR', Spain: 'ES', Italy: 'IT', Germany: 'DE', Türkiye: 'TR', Iceland: 'IS',
+    'United Arab Emirates': 'AE', 'Saudi Arabia': 'SA', Israel: 'IL', Egypt: 'EG', Kenya: 'KE', 'South Africa': 'ZA',
+    Japan: 'JP', 'South Korea': 'KR', China: 'CN', 'Hong Kong': 'HK', Singapore: 'SG', Thailand: 'TH', India: 'IN',
+    Australia: 'AU', 'New Zealand': 'NZ'
+  };
+  CITIES.forEach(function (city) {
+    if (!city.country_code) city.country_code = COUNTRY_CODES[city.country] || '';
+  });
   var slugs = {};
   CITIES.forEach(function (c) { slugs[c.slug] = c; });
   window.WEATHER_CITIES = CITIES;

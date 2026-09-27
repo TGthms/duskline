@@ -19,6 +19,8 @@
     var nwsFetchJson = deps.nwsFetchJson;
     var cityKey = deps.cityKey;
     var cache = deps.cache;
+    const ALERTS_REFRESH_MS = 3 * 60 * 1000;
+    const ALERTS_ERROR_RETRY_MS = 60 * 1000;
     function getDetailMods() { return typeof deps.getDetailMods === 'function' ? deps.getDetailMods() : null; }
     function isDetailVisible() { return typeof deps.isDetailVisible === 'function' ? deps.isDetailVisible() : false; }
     function getOpenCity() { return typeof deps.getOpenCity === 'function' ? deps.getOpenCity() : null; }
@@ -76,6 +78,12 @@
         var a = list[i];
         if (!a) continue;
         var id = a.id ? String(a.id) : '';
+        if (a.providerName === 'IFRC Alert Hub') {
+          if (id && seenId.has(id)) continue;
+          if (id) seenId.add(id);
+          out.push(a);
+          continue;
+        }
         // Same event + end time = same product (NWS often duplicates multi-geometry)
         var soft = String(a.event || '').toLowerCase() + '|' + String(a.ends || '');
         if (id && seenId.has(id)) continue;
@@ -123,7 +131,18 @@
 
     function topAlert(pack) {
       if (!pack || !Array.isArray(pack.alerts) || !pack.alerts.length) return null;
-      return pack.alerts[0];
+      const current = pack.alerts.filter(alertIsCurrent);
+      return current[0] || null;
+    }
+
+    function alertIsCurrent(alert) {
+      const expires = Date.parse(alert && alert.ends || '');
+      if (Number.isFinite(expires)) return expires > Date.now();
+      if (alert && alert.providerName === 'IFRC Alert Hub') {
+        const sent = Date.parse(alert.sent || '');
+        return Number.isFinite(sent) && sent > Date.now() - 24 * 60 * 60 * 1000;
+      }
+      return true;
     }
 
     function applyAlertsToPack(pack, alerts, meta) {
@@ -131,6 +150,11 @@
       const failed = !!(meta && meta.error);
       pack.alertsError = failed;
       pack.alerts = failed ? null : (Array.isArray(alerts) ? alerts : []);
+      pack.alertsFetchedAt = failed ? 0 : Date.now();
+      pack.alertsErrorAt = failed ? Date.now() : 0;
+      pack.alertsProvider = meta && meta.provider ? meta.provider : (isLikelyUs(pack.city) ? 'National Weather Service' : 'IFRC Alert Hub');
+      pack.alertsUnavailableReason = failed && meta ? (meta.reason || '') : '';
+      pack.alertsPartial = !failed && !!(meta && meta.partial);
       pack._alertsLoading = false;
       const key = pack.city ? cityKey(pack.city) : null;
       if (key) {
@@ -138,9 +162,25 @@
         if (cached && cached.city && pack.city && sameCity(cached.city, pack.city)) {
           cached.alerts = pack.alerts;
           cached.alertsError = pack.alertsError;
+          cached.alertsFetchedAt = pack.alertsFetchedAt;
+          cached.alertsErrorAt = pack.alertsErrorAt;
+          cached.alertsProvider = pack.alertsProvider;
+          cached.alertsUnavailableReason = pack.alertsUnavailableReason;
+          cached.alertsPartial = pack.alertsPartial;
           cached._alertsLoading = false;
         }
       }
+    }
+
+    function needsAlertFetch(pack) {
+      if (!pack || pack._alertsLoading) return false;
+      if (pack.alertsError) {
+        const retryMs = pack.alertsUnavailableReason === 'partial' || pack.alertsUnavailableReason === 'unsupported'
+          ? ALERTS_REFRESH_MS
+          : ALERTS_ERROR_RETRY_MS;
+        return Date.now() - (pack.alertsErrorAt || 0) >= retryMs;
+      }
+      return !Array.isArray(pack.alerts) || Date.now() - (pack.alertsFetchedAt || 0) >= ALERTS_REFRESH_MS;
     }
 
     function captureOpenAlertTitles() {
@@ -193,6 +233,243 @@
       else getDetailMods().insertAdjacentElement('afterbegin', node);
       restoreOpenAlertTitles(openTitles);
       bindAlertCollapseAnimation(getDetailMods());
+    }
+
+    function pointOnSegment(px, py, ax, ay, bx, by) {
+      const cross = (px - ax) * (by - ay) - (py - ay) * (bx - ax);
+      if (Math.abs(cross) > 1e-9) return false;
+      const dot = (px - ax) * (bx - ax) + (py - ay) * (by - ay);
+      const length = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
+      if (length <= 1e-18) return Math.abs(px - ax) <= 1e-9 && Math.abs(py - ay) <= 1e-9;
+      if (dot < -1e-9) return false;
+      return dot <= length + 1e-9;
+    }
+
+    function pointInRing(lon, lat, ring) {
+      if (!Array.isArray(ring) || ring.length < 3) return false;
+      const unwrapped = [];
+      let previousLon = null;
+      for (let i = 0; i < ring.length; i++) {
+        const point = ring[i];
+        if (!Array.isArray(point)) continue;
+        let pointLon = Number(point[0]);
+        const pointLat = Number(point[1]);
+        if (![pointLon, pointLat].every(Number.isFinite)) continue;
+        if (previousLon != null) {
+          while (pointLon - previousLon > 180) pointLon -= 360;
+          while (pointLon - previousLon < -180) pointLon += 360;
+        }
+        unwrapped.push([pointLon, pointLat]);
+        previousLon = pointLon;
+      }
+      if (unwrapped.length < 3) return false;
+      const center = unwrapped.reduce(function (sum, point) { return sum + point[0]; }, 0) / unwrapped.length;
+      const shift = 360 * Math.round((lon - center) / 360);
+      const testLon = lon;
+      let inside = false;
+      for (let i = 0, j = unwrapped.length - 1; i < unwrapped.length; j = i++) {
+        const a = unwrapped[j];
+        const b = unwrapped[i];
+        const ax = a[0] + shift; const ay = a[1];
+        const bx = b[0] + shift; const by = b[1];
+        if (pointOnSegment(testLon, lat, ax, ay, bx, by)) return true;
+        const intersects = ((ay > lat) !== (by > lat))
+          && (testLon < ((bx - ax) * (lat - ay)) / (by - ay) + ax);
+        if (intersects) inside = !inside;
+      }
+      return inside;
+    }
+
+    function pointInPolygonCoordinates(lon, lat, rings) {
+      if (!Array.isArray(rings) || !rings.length || !pointInRing(lon, lat, rings[0])) return false;
+      for (let i = 1; i < rings.length; i++) {
+        if (pointInRing(lon, lat, rings[i])) return false;
+      }
+      return true;
+    }
+
+    function parsedGeoJson(value) {
+      if (!value) return null;
+      if (typeof value === 'object') return value;
+      if (typeof value === 'string') {
+        try { return JSON.parse(value); } catch (e) { return null; }
+      }
+      return null;
+    }
+
+    function capPolygonContains(value, lon, lat) {
+      const geometry = parsedGeoJson(value);
+      if (!geometry || !Array.isArray(geometry.coordinates)) return null;
+      if (geometry.type === 'Polygon') return pointInPolygonCoordinates(lon, lat, geometry.coordinates);
+      if (geometry.type === 'MultiPolygon') {
+        return geometry.coordinates.some(function (rings) { return pointInPolygonCoordinates(lon, lat, rings); });
+      }
+      return null;
+    }
+
+    function capPolygonValueContains(value, lon, lat) {
+      const points = String(value || '').trim().split(/\s+/).map(function (pair) {
+        const values = pair.split(',');
+        if (values.length !== 2) return null;
+        const latitude = Number(values[0]);
+        const longitude = Number(values[1]);
+        return Number.isFinite(latitude) && Number.isFinite(longitude) ? [longitude, latitude] : null;
+      }).filter(Boolean);
+      if (points.length < 3) return null;
+      return pointInPolygonCoordinates(lon, lat, [points]);
+    }
+
+    function capCircleContains(raw, lon, lat) {
+      const value = raw && typeof raw === 'object' ? raw.value : raw;
+      const match = String(value || '').trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/);
+      if (!match) return null;
+      const centerLat = Number(match[1]);
+      const centerLon = Number(match[2]);
+      const radiusKm = Number(match[3]);
+      if (![centerLat, centerLon, radiusKm].every(Number.isFinite)) return null;
+      const rad = Math.PI / 180;
+      const dLat = (lat - centerLat) * rad;
+      const dLon = (lon - centerLon) * rad;
+      const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(centerLat * rad) * Math.cos(lat * rad) * Math.sin(dLon / 2) ** 2;
+      const distanceKm = 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return distanceKm <= radiusKm;
+    }
+
+    function normalizeAreaName(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\b(state|province|prefecture|metropolis|region|county|district|department|governorate|oblast|territory)\b/g, ' ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
+    }
+
+    function capAlertMatchesCity(alert, city) {
+      if (!alert || !city) return false;
+      if (!alertIsCurrent(alert)) return false;
+      const expires = Date.parse(alert.ends || '');
+      const effective = Date.parse(alert.effective || '');
+      if (Number.isFinite(effective) && effective > Date.now()) return false;
+      if (city.lat == null || city.lon == null) return false;
+      const lat = Number(city.lat);
+      const lon = Number(city.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+      const areas = Array.isArray(alert.areas) ? alert.areas : [];
+      let hasUsableGeometry = false;
+      for (let i = 0; i < areas.length; i++) {
+        const area = areas[i] || {};
+        const polygons = Array.isArray(area.polygons) ? area.polygons : [];
+        for (let p = 0; p < polygons.length; p++) {
+          const polygon = polygons[p] || {};
+          const geoMatch = capPolygonContains(polygon.valuePolygon, lon, lat);
+          const match = geoMatch == null ? capPolygonValueContains(polygon.value, lon, lat) : geoMatch;
+          if (match !== null) {
+            hasUsableGeometry = true;
+            if (match) return true;
+          }
+        }
+        const circles = Array.isArray(area.circles) ? area.circles : [];
+        for (let c = 0; c < circles.length; c++) {
+          const match = capCircleContains(circles[c], lon, lat);
+          if (match !== null) {
+            hasUsableGeometry = true;
+            if (match) return true;
+          }
+        }
+      }
+      // A valid CAP shape is definitive: never broaden it to an entire province.
+      if (hasUsableGeometry) return false;
+
+      const cityAreas = [city.admin1, city.admin2].filter(Boolean).map(normalizeAreaName);
+      const alertAreas = Array.isArray(alert.admin1s) ? alert.admin1s.map(normalizeAreaName) : [];
+      if (cityAreas.some(function (cityArea) {
+        return cityArea && alertAreas.some(function (alertArea) { return alertArea === cityArea; });
+      })) return true;
+
+      const cityNames = [city.name, city.displayName].filter(Boolean).map(normalizeAreaName);
+      const descriptions = areas.map(function (area) { return normalizeAreaName(area && area.areaDesc); }).filter(Boolean);
+      return cityNames.some(function (cityName) {
+        return cityName && descriptions.some(function (description) {
+          return description === cityName || (' ' + description + ' ').includes(' ' + cityName + ' ');
+        });
+      });
+    }
+
+    const capCountryRequests = new Map();
+    const CAP_CLIENT_CACHE_MS = 3 * 60 * 1000;
+    const CAP_CLIENT_CACHE_MAX = 8;
+
+    function rememberCapPayload(key, payload) {
+      const now = Date.now();
+      capCountryRequests.forEach(function (entry, entryKey) {
+        if (entry && entry.data && now - entry.at >= CAP_CLIENT_CACHE_MS) capCountryRequests.delete(entryKey);
+      });
+      capCountryRequests.delete(key);
+      capCountryRequests.set(key, { data: payload, at: now });
+      while (capCountryRequests.size > CAP_CLIENT_CACHE_MAX) {
+        const oldest = Array.from(capCountryRequests.entries()).find(function (entry) {
+          return entry[1] && entry[1].data;
+        });
+        if (!oldest) break;
+        capCountryRequests.delete(oldest[0]);
+      }
+    }
+
+    function loadInternationalAlerts(city) {
+      const code = String(city && city.country_code || '').trim().toUpperCase();
+      const country = String(city && city.country || '').trim();
+      if ((code && !/^[A-Z]{2}$/.test(code)) || !country) return Promise.reject(new Error('Missing international alert location'));
+      const language = String(lang() || 'en');
+      const key = (code || ('name-' + normalizeAreaName(country))) + '|' + language.toLowerCase();
+      const hit = capCountryRequests.get(key);
+      if (hit && hit.data && Date.now() - hit.at < CAP_CLIENT_CACHE_MS) return Promise.resolve(hit.data);
+      if (hit && hit.data) capCountryRequests.delete(key);
+      if (hit && hit.promise) return hit.promise;
+
+      const params = new URLSearchParams({ country: country, lang: language });
+      if (code) params.set('cc', code);
+      const controller = new AbortController();
+      const timer = global.setTimeout(function () { controller.abort(); }, 15000);
+      const promise = global.fetch('/api/international-alerts?' + params.toString(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal
+      }).then(async function (response) {
+        if (!response.ok) throw new Error('International alerts unavailable');
+        const payload = await response.json();
+        if (!payload || !Array.isArray(payload.alerts) || !payload.availability) {
+          throw new Error('Invalid international alert response');
+        }
+        rememberCapPayload(key, payload);
+        return payload;
+      }).finally(function () {
+        global.clearTimeout(timer);
+        const current = capCountryRequests.get(key);
+        if (current && current.promise === promise) capCountryRequests.delete(key);
+      });
+      capCountryRequests.set(key, { promise: promise, at: Date.now() });
+      return promise;
+    }
+
+    function applyInternationalAlerts(pack, payload) {
+      if (!payload || payload.availability !== 'available') {
+        applyAlertsToPack(pack, null, { error: true, reason: 'unsupported', provider: 'IFRC Alert Hub' });
+        return;
+      }
+      const cityAlerts = (payload.alerts || []).filter(function (alert) {
+        return capAlertMatchesCity(alert, pack.city);
+      });
+      // If the provider returned only a partial country set and none matched, do
+      // not turn the truncated response into an implied all-clear.
+      if (payload.truncated && !cityAlerts.length) {
+        applyAlertsToPack(pack, null, { error: true, reason: 'partial', provider: 'IFRC Alert Hub' });
+      } else {
+        applyAlertsToPack(pack, cityAlerts, { provider: 'IFRC Alert Hub', partial: payload.truncated });
+      }
     }
 
     /**
@@ -290,15 +567,23 @@
       });
     }
 
-    function ensureNwsAlerts(pack) {
+    function ensureAlerts(pack) {
       if (!pack || !pack.city || pack.error) return;
       if (!isLikelyUs(pack.city)) {
-        if (pack.alerts == null) pack.alerts = [];
-        pack.alertsError = false;
+        if (!needsAlertFetch(pack)) return;
+        pack._alertsLoading = true;
+        loadInternationalAlerts(pack.city).then(function (payload) {
+          applyInternationalAlerts(pack, payload);
+          patchDetailAlerts(pack);
+          scheduleListPaintFromAlerts(pack);
+        }).catch(function () {
+          applyAlertsToPack(pack, null, { error: true, reason: 'upstream', provider: 'IFRC Alert Hub' });
+          patchDetailAlerts(pack);
+          scheduleListPaintFromAlerts(pack);
+        });
         return;
       }
-      if (Array.isArray(pack.alerts) && !pack.alertsError) return;
-      if (pack._alertsLoading) return;
+      if (!needsAlertFetch(pack)) return;
       pack._alertsLoading = true;
       const city = pack.city;
       const lat = roundCoord(city.lat);
@@ -316,7 +601,7 @@
     }
 
     /**
-     * Prefetch NWS alerts into cache. Returns a Promise — does NOT paint the list.
+     * Prefetch supported public alerts into cache. Returns a Promise — does NOT paint the list.
      * Cheap: 1 worker, skips when tab hidden, yield between cities (battery).
      */
     var alertsPrefetchGen = 0;
@@ -326,8 +611,7 @@
       cache.forEach(function (pack) {
         if (!pack || !pack.city || pack.error || !pack.weather) return;
         if (allowedKeys && !allowedKeys.has(cityKey(pack.city))) return;
-        if (!isLikelyUs(pack.city)) return;
-        if ((Array.isArray(pack.alerts) && !pack.alertsError) || pack._alertsLoading) return;
+        if (!needsAlertFetch(pack)) return;
         pending.push(pack);
       });
       if (!pending.length) return Promise.resolve(0);
@@ -364,27 +648,42 @@
               if (gen !== alertsPrefetchGen) { resolve(finished); return; }
             }
             const pack = pending[idx++];
-            if (!pack || (Array.isArray(pack.alerts) && !pack.alertsError) || pack._alertsLoading) {
+            if (!needsAlertFetch(pack)) {
               oneDone();
               continue;
             }
             pack._alertsLoading = true;
             try {
-              const lat = roundCoord(pack.city.lat);
-              const lon = roundCoord(pack.city.lon);
-              const alerts = await loadNwsAlerts(lat, lon, null);
+              let alerts;
+              const isUs = isLikelyUs(pack.city);
+              if (isUs) {
+                const lat = roundCoord(pack.city.lat);
+                const lon = roundCoord(pack.city.lon);
+                alerts = await loadNwsAlerts(lat, lon, null);
+              } else {
+                const payload = await loadInternationalAlerts(pack.city);
+                if (gen !== alertsPrefetchGen) {
+                  resolve(finished);
+                  return;
+                }
+                applyInternationalAlerts(pack, payload);
+                patchDetailAlerts(pack);
+                await new Promise(function (r) { window.setTimeout(r, 40); });
+                oneDone();
+                continue;
+              }
               if (gen !== alertsPrefetchGen) {
                 resolve(finished);
                 return;
               }
-              applyAlertsToPack(pack, alerts || []);
+              applyAlertsToPack(pack, alerts || [], { provider: 'National Weather Service' });
               await new Promise(function (r) { window.setTimeout(r, 40); });
             } catch (e) {
               if (gen !== alertsPrefetchGen) {
                 resolve(finished);
                 return;
               }
-              applyAlertsToPack(pack, null, { error: true });
+              applyAlertsToPack(pack, null, { error: true, provider: isLikelyUs(pack.city) ? 'National Weather Service' : 'IFRC Alert Hub' });
             }
             oneDone();
           }
@@ -436,19 +735,30 @@
         alerts = alertsOrPack.alerts;
         failed = !!alertsOrPack.alertsError;
       }
+      if (Array.isArray(alerts)) {
+        alerts = alerts.filter(alertIsCurrent);
+      }
       if (failed && !(alerts && alerts.length)) {
-        const title = t('weather.alerts', 'Weather Alerts');
+        const title = t('weather.alerts', 'Public Alerts');
+        const unavailableCopy = alertsOrPack && alertsOrPack.alertsUnavailableReason === 'partial'
+          ? t('weather.alertsPartial', 'This source returned many alerts; check local official sources for a complete list.')
+          : t('weather.alertsUnavailable', 'Official public alerts are unavailable for this place right now.');
         return (
           '<div class="weather-alerts weather-alerts--unavailable" role="status">' +
             '<div class="weather-alerts-label">' + escapeHtml(title) + '</div>' +
             '<p class="weather-alert-unavailable">' +
-              escapeHtml(t('weather.alertsUnavailable', 'Weather alerts could not be loaded.')) +
+              escapeHtml(unavailableCopy) +
             '</p>' +
           '</div>'
         );
       }
       if (!alerts || !alerts.length) return '';
-      const title = t('weather.alerts', 'Weather Alerts');
+      const title = t('weather.alerts', 'Public Alerts');
+      const coverageNote = alertsOrPack && !Array.isArray(alertsOrPack) && alertsOrPack.alertsPartial
+        ? '<p class="weather-alert-unavailable" role="note">' +
+          escapeHtml(t('weather.alertsPartial', 'This source returned many alerts; check local official sources for a complete list.')) +
+          '</p>'
+        : '';
       const cards = alerts.map(function (a) {
         const sev = String(a.severity || 'Unknown').toLowerCase();
         const sevClass = sev === 'extreme' || sev === 'severe'
@@ -483,10 +793,19 @@
           if (area.length > 140) area = area.slice(0, 140).replace(/\s+\S*$/, '') + '…';
           bodyParts.push('<p class="weather-alert-area">' + escapeHtml(area) + '</p>');
         }
-        bodyParts.push('<p class="weather-alert-source">' +
-          escapeHtml(t('weather.alertSource', 'National Weather Service')) +
-          (a.senderName ? ' · ' + escapeHtml(a.senderName) : '') +
-          '</p>');
+        const sourceName = a.providerName || t('weather.alertSource', 'National Weather Service');
+        const sourceParts = [sourceName];
+        if (a.senderName && String(a.senderName).toLowerCase() !== String(sourceName).toLowerCase()) sourceParts.push(a.senderName);
+        if (a.categoryDisplay) sourceParts.push(a.categoryDisplay);
+        const sourceText = sourceParts.map(escapeHtml).join(' · ');
+        let sourceUrl = '';
+        try {
+          const candidate = new URL(String(a.sourceUrl || '').trim());
+          if (candidate.protocol === 'https:' || candidate.protocol === 'http:') sourceUrl = candidate.href;
+        } catch (e) {}
+        bodyParts.push('<p class="weather-alert-source">' + (sourceUrl
+          ? '<a href="' + escapeHtml(sourceUrl) + '" target="_blank" rel="noopener noreferrer">' + sourceText + '</a>'
+          : sourceText) + '</p>');
         return (
           // Class-based accordion (not <details>) — pixel height animate open/close
           '<div class="weather-alert ' + sevClass + '">' +
@@ -505,6 +824,7 @@
       return (
         '<div class="weather-alerts" role="region" aria-label="' + escapeHtml(title) + '">' +
           '<div class="weather-alerts-label">' + escapeHtml(title) + '</div>' +
+          coverageNote +
           cards +
         '</div>'
       );
@@ -513,6 +833,8 @@
     return {
       severityRank: severityRank,
       normalizeNwsText: normalizeNwsText,
+      capPolygonContains: capPolygonContains,
+      capAlertMatchesCity: capAlertMatchesCity,
       dedupeAlerts: dedupeAlerts,
       loadNwsAlerts: loadNwsAlerts,
       topAlert: topAlert,
@@ -521,7 +843,8 @@
       restoreOpenAlertTitles: restoreOpenAlertTitles,
       patchDetailAlerts: patchDetailAlerts,
       bindAlertCollapseAnimation: bindAlertCollapseAnimation,
-      ensureNwsAlerts: ensureNwsAlerts,
+      ensureAlerts: ensureAlerts,
+      ensureNwsAlerts: ensureAlerts,
       prefetchAlertsForCache: prefetchAlertsForCache,
       formatAlertDescHtml: formatAlertDescHtml,
       alertsBlockHtml: alertsBlockHtml,

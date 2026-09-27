@@ -33,6 +33,9 @@ test.beforeEach(async ({ page }) => {
   await page.route(/api\.bigdatacloud\.net/, route => route.fulfill({
     json: { locality: 'Portland', principalSubdivision: 'Oregon', countryName: 'United States', countryCode: 'US' }
   }));
+  await page.route(/\/api\/international-alerts(?:\?|$)/, route => route.fulfill({
+    json: { availability: 'available', provider: 'IFRC Alert Hub', country: 'Japan', alerts: [], truncated: false, fetchedAt: Date.now() }
+  }));
 });
 
 test('home page exposes Search Console verification and SEO head', async ({ page }) => {
@@ -762,6 +765,40 @@ test('non-US featured cities do not call NWS', async ({ page }) => {
   await page.waitForTimeout(1500);
   const tokyoHits = nws.filter((u) => /35\.67|139\.65/.test(u));
   expect(tokyoHits, nws.join('\n')).toEqual([]);
+});
+
+test('international detail shows a location-matched official CAP alert and source', async ({ page }) => {
+  const now = Date.now();
+  let capUrl = '';
+  await page.route(/\/api\/international-alerts(?:\?|$)/, async (route) => {
+    capUrl = route.request().url();
+    return route.fulfill({ json: {
+      availability: 'available', provider: 'IFRC Alert Hub', country: 'Japan', truncated: false,
+      alerts: [{
+        id: 'tokyo-warning:0', providerName: 'IFRC Alert Hub', official: true, rebroadcastable: true,
+        event: 'Typhoon Warning', severity: 'Severe', urgency: 'Expected', certainty: 'Likely',
+        senderName: 'Japan Meteorological Agency', categoryDisplay: 'Meteorological',
+        description: 'Strong winds are expected.', instruction: 'Stay indoors.', ends: new Date(now + 4 * 3600000).toISOString(),
+        sourceUrl: 'https://alerts.example.jp/warnings/tokyo', areaDesc: 'Tokyo', admin1s: ['Tokyo'],
+        areas: [{ areaDesc: 'Tokyo', polygons: [{ valuePolygon: {
+          type: 'Polygon', coordinates: [[[139.60, 35.60], [139.90, 35.60], [139.90, 35.80], [139.60, 35.80], [139.60, 35.60]]]
+        } }], circles: [] }]
+      }]
+    } });
+  });
+
+  await page.goto('/');
+  const tokyo = page.locator('#weatherList .weather-row').filter({ hasText: 'Tokyo' }).first();
+  await expect(tokyo).toBeVisible({ timeout: 15000 });
+  await tokyo.click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const warning = page.locator('.weather-alert-title').filter({ hasText: 'Typhoon Warning' });
+  await expect(warning).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.weather-alert-source a')).toContainText('IFRC Alert Hub');
+  await expect(page.locator('.weather-alert-source')).toContainText('Japan Meteorological Agency');
+  expect(new URL(capUrl).searchParams.get('cc')).toBe('JP');
+  expect(new URL(capUrl).searchParams.has('lat')).toBe(false);
+  expect(new URL(capUrl).searchParams.has('lon')).toBe(false);
 });
 
 test('NWS outage still renders via Open-Meteo', async ({ page }) => {

@@ -10,10 +10,13 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const root = process.cwd();
 const port = Number(process.argv[2] || 4173);
 const HEADERS_FILE = path.join(root, '_headers');
+const INTERNATIONAL_ALERTS_FUNCTION = path.join(root, 'functions', 'api', 'international-alerts.js');
+let internationalAlertsFunction;
 const types = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -67,8 +70,31 @@ function headersFor(urlPath) {
   return out;
 }
 
-const server = http.createServer((req, res) => {
-  const requested = decodeURIComponent((req.url || '/').split('?')[0]);
+const server = http.createServer(async (req, res) => {
+  const requestUrl = new URL(req.url || '/', 'http://' + (req.headers.host || '127.0.0.1'));
+  const requested = decodeURIComponent(requestUrl.pathname);
+  if (requested === '/api/international-alerts' || requested === '/api/international-alerts/') {
+    try {
+      internationalAlertsFunction = internationalAlertsFunction || import(pathToFileURL(INTERNATIONAL_ALERTS_FUNCTION).href);
+      const handler = await internationalAlertsFunction;
+      const pending = [];
+      const request = new Request(requestUrl.href, { method: req.method || 'GET' });
+      const response = await handler.onRequest({
+        request: request,
+        env: {},
+        waitUntil: function (promise) { pending.push(promise); }
+      });
+      response.headers.forEach(function (value, name) { res.setHeader(name, value); });
+      res.writeHead(response.status);
+      res.end(await response.text());
+      Promise.allSettled(pending);
+    } catch (error) {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end('{"error":"upstream_unavailable"}');
+    }
+    return;
+  }
+  if (requested.startsWith('/functions/')) { res.writeHead(404); return res.end('Not found'); }
   const file = path.resolve(root, '.' + (requested === '/' ? '/index.html' : requested));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); return res.end('Forbidden'); }
   fs.stat(file, (err, stat) => {
