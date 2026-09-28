@@ -58,11 +58,14 @@ test('sitemap, robots, and legal canonicals use the live origin', () => {
   const robots = fs.readFileSync(path.join(root, 'robots.txt'), 'utf8');
   const privacy = fs.readFileSync(path.join(root, 'privacy.html'), 'utf8');
   const terms = fs.readFileSync(path.join(root, 'terms.html'), 'utf8');
+  const licenses = fs.readFileSync(path.join(root, 'licenses.html'), 'utf8');
   assert.match(sitemap, new RegExp('<loc>' + ORIGIN + '/</loc>'));
   assert.match(sitemap, new RegExp('<loc>' + ORIGIN + '/privacy.html</loc>'));
   assert.match(sitemap, new RegExp('<loc>' + ORIGIN + '/terms.html</loc>'));
+  assert.match(sitemap, new RegExp('<loc>' + ORIGIN + '/licenses.html</loc>'));
   assert.doesNotMatch(sitemap, /duskline\.pages\.dev/);
   assert.match(robots, new RegExp('Sitemap: ' + ORIGIN + '/sitemap.xml'));
   assert.match(privacy, new RegExp('rel="canonical" href="' + ORIGIN + '/privacy.html"'));
   assert.match(terms, new RegExp('rel="canonical" href="' + ORIGIN + '/terms.html"'));
+  assert.match(licenses, new RegExp('rel="canonical" href="' + ORIGIN + '/licenses.html"'));
 });

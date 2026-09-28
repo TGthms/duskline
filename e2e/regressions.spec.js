@@ -269,6 +269,25 @@ test('hourly charts can be explored with a keyboard', async ({ page }) => {
   await expect(chart).toHaveAttribute('aria-valuenow', String(last));
 });
 
+test('hourly chart values update on pointer hover and reset when the pointer leaves', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/?city=nyc');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherModules [data-sheet="conditions"]').click();
+  const chart = page.locator('#weatherSheet .weather-chart-wrap[role="slider"]').first();
+  await expect(chart).toBeVisible();
+  const initialIndex = await chart.getAttribute('aria-valuenow');
+  const svg = chart.locator('svg');
+  const box = await svg.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box.x + box.width * 0.22, box.y + box.height * 0.55);
+  await expect.poll(() => chart.getAttribute('aria-valuenow')).not.toBe(initialIndex);
+  const hoveredReadout = await chart.locator('[data-readout]').textContent();
+  expect(hoveredReadout).toBeTruthy();
+  await page.mouse.move(0, 0);
+  await expect(chart).toHaveAttribute('aria-valuenow', initialIndex);
+});
+
 test('the installed app opens a saved forecast offline', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
@@ -327,6 +346,44 @@ test('detail and info sheet return focus to the control that opened them', async
   await expect(tile).toBeFocused();
   await page.locator('#weatherDetailBack').click();
   await expect(page.locator('#weatherList .weather-row').first()).toBeFocused();
+});
+
+test('Units sheet locks background scrolling and restores the previous page position', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stubWeather(page, null);
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
+  const before = await page.evaluate(() => window.scrollY);
+
+  await page.locator('#weatherUnitsBtn').click();
+  const sheet = page.locator('#weatherSheet');
+  await expect(sheet).toHaveClass(/open/);
+  await page.waitForTimeout(500); // Allow an in-flight city-list refresh to finish under the sheet.
+  const locked = await page.evaluate(() => ({
+    rootOverflow: document.documentElement.style.getPropertyValue('overflow'),
+    bodyPosition: document.body.style.getPropertyValue('position'),
+    bodyTop: parseFloat(document.body.style.getPropertyValue('top')),
+    bodyOverflow: document.body.style.getPropertyValue('overflow')
+  }));
+  expect(locked.rootOverflow).toBe('hidden');
+  expect(locked.bodyPosition).toBe('fixed');
+  expect(Math.abs(locked.bodyTop + before)).toBeLessThan(1);
+  expect(locked.bodyOverflow).toBe('hidden');
+
+  await page.mouse.move(24, 800);
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => parseFloat(document.body.style.top))).toBe(locked.bodyTop);
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue('overflow'))).toBe('hidden');
+
+  await page.locator('#weatherSheetClose').click();
+  await expect(sheet).not.toHaveClass(/open/, { timeout: 4000 });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
+  const restored = await page.evaluate(() => ({
+    rootOverflow: document.documentElement.style.getPropertyValue('overflow'),
+    bodyPosition: document.body.style.getPropertyValue('position'),
+    bodyTop: document.body.style.getPropertyValue('top')
+  }));
+  expect(restored).toEqual({ rootOverflow: '', bodyPosition: '', bodyTop: '' });
 });
 
 test('closing a city does not dismiss a place picker opened during its exit transition', async ({ page }) => {
@@ -661,4 +718,111 @@ test('light air quality sheet uses readable dark band colors', async ({ page }) 
   const color = await page.locator('#wxAqiExtended .wx-air-contribution strong').first()
     .evaluate(node => getComputedStyle(node).color);
   expect(color).toBe('rgb(118, 83, 0)');
+});
+
+test('weather map opens as an accessible dialog with Lucide controls and selectable layers', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route('https://tiles.openfreemap.org/**', route => route.abort());
+  await page.goto('/');
+  const locationControl = await page.locator('#weatherLocate').evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, radius: getComputedStyle(element).borderRadius,
+      glyph: element.querySelector('use')?.getAttribute('href') };
+  });
+  expect(locationControl.width).toBe(44);
+  expect(locationControl.height).toBe(44);
+  expect(locationControl.radius).toContain('50%');
+  expect(locationControl.glyph).toBe('#lucide-map-pin');
+  await expect(page.locator('use[href*="assets/icons/"]')).toHaveCount(0);
+
+  const openMap = page.locator('#weatherMapOpen');
+  await expect(openMap).toBeVisible();
+  await openMap.click();
+
+  const dialog = page.getByRole('dialog', { name: 'Weather map' });
+  await expect(dialog).toBeVisible({ timeout: 5000 });
+  await expect(dialog.locator('[data-weather-layer="temperature"]')).toHaveAttribute('aria-pressed', 'true');
+  await dialog.locator('[data-weather-layer="wind"]').click();
+  await expect(dialog.locator('[data-weather-layer="wind"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(dialog.locator('#weatherMapGradient')).toHaveAttribute('data-layer', 'wind');
+  await expect(dialog.locator('#weatherMapZoomIn svg use')).toHaveAttribute('href', '#lucide-zoom-in');
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(openMap).toBeFocused();
+});
+
+test('weather map falls back to the local schematic when map tiles fail', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route('https://tiles.openfreemap.org/**', route => route.abort());
+  await page.goto('/');
+  await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMapFallback')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#weatherMapStatus')).toContainText('Detailed map tiles are unavailable');
+  await expect(page.locator('#weatherMapCredit')).toContainText('Schematic map');
+  await expect(page.locator('#weatherMapFallback .weather-map-fallback-marker').first()).toBeVisible();
+  await page.locator('#weatherMapPlacesSummary').click();
+  await expect(page.locator('#weatherMapPlaces .weather-map-place').first()).toBeVisible();
+  expect(await page.locator('#weatherMapPlaces .weather-map-place').first().getAttribute('aria-label')).toContain('New York');
+  await page.locator('#weatherMapPlaces .weather-map-place').first().click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherMap')).toBeHidden();
+});
+
+test('daily forecast rows open a date-aware, keyboardable forecast sheet', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/?city=nyc');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+
+  const monday = page.locator('#weatherModules .weather-daily-row').nth(1);
+  await monday.press('Enter');
+  const sheet = page.locator('#weatherSheet');
+  await expect(sheet).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheetTitle')).toHaveText('Monday, September 28, 2026');
+  await expect(page.locator('#weatherSheetBody .wx-day-facts')).toContainText('High');
+  await expect(page.locator('#weatherSheetBody .wx-day-facts')).toContainText('Low');
+  await expect(page.locator('#weatherSheetBody [data-day-temp-mode="actual"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap')).toHaveCount(2);
+
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toHaveAttribute('data-kind', 'temperature_2m');
+  await page.locator('#weatherSheetBody [data-day-temp-mode="feels"]').click();
+  await expect(page.locator('#weatherSheetBody [data-day-temp-mode="feels"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toHaveAttribute('data-kind', 'apparent_temperature');
+  await page.locator('#weatherSheetBody [data-day-select]').nth(2).click();
+  await expect(page.locator('#weatherSheetTitle')).toHaveText('Tuesday, September 29, 2026');
+
+  await page.locator('#weatherSheetClose').click();
+  await expect(sheet).toBeHidden();
+  await expect(monday).toBeFocused();
+});
+
+test('NWS alert details open and collapse on repeated activation', async ({ page }) => {
+  const expires = new Date(Date.now() + 4 * 3600000).toISOString();
+  await stubWeather(page, null);
+  await page.route(/api\.weather\.gov/, async route => {
+    if (!route.request().url().includes('/alerts/')) return route.fallback();
+    return route.fulfill({ json: { features: [{
+      id: 'https://api.weather.gov/alerts/urn:uuid:duskline-test-flood',
+      properties: {
+        id: 'urn:uuid:duskline-test-flood', event: 'Coastal Flood Warning', severity: 'Severe',
+        urgency: 'Expected', certainty: 'Likely', headline: 'Coastal Flood Warning for New York',
+        effective: new Date().toISOString(), expires,
+        description: 'Minor coastal flooding is expected near vulnerable shorelines.',
+        instruction: 'Avoid flooded roads and follow local emergency guidance.', areaDesc: 'New York County'
+      }
+    }] } });
+  });
+  await page.goto('/?city=nyc');
+  const card = page.locator('#weatherModules .weather-alert').first();
+  const summary = card.locator('.weather-alert-summary');
+  await expect(summary).toBeVisible({ timeout: 15000 });
+  await expect(summary).toHaveAttribute('aria-expanded', 'false');
+  await summary.click();
+  await expect(summary).toHaveAttribute('aria-expanded', 'true');
+  await expect(card).toHaveClass(/is-open/);
+  await expect(card.locator('.weather-alert-instruction')).toContainText('Avoid flooded roads');
+  await expect(card).not.toHaveClass(/is-animating/, { timeout: 2000 });
+  await summary.click();
+  await expect(summary).toHaveAttribute('aria-expanded', 'false');
+  await expect(card).not.toHaveClass(/is-open/);
 });

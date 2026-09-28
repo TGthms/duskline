@@ -16,6 +16,9 @@ test('service worker SHELL paths exist on disk', () => {
   const urls = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
   assert.ok(urls.includes('./privacy.html'));
   assert.ok(urls.includes('./terms.html'));
+  assert.ok(urls.includes('./licenses.html'));
+  assert.ok(urls.includes('./assets/icons/LUCIDE-LICENSE.txt'));
+  assert.ok(urls.includes('./assets/vendor/maplibre-gl/LICENSE.txt'));
   assert.ok(urls.includes('./src/js/data/legal/packs/en.json'));
   assert.ok(urls.includes('./src/js/data/weather-aqi-i18n.js'));
   assert.ok(urls.includes('./src/js/data/weather-copy-i18n.js'));
@@ -40,7 +43,7 @@ test('Cloudflare Pages routes only the international alert API through Functions
 test('all HTML entrypoints and manifest icons are covered by the offline shell', () => {
   const src = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const contributorNotes = fs.readFileSync(path.join(root, 'src/js/features/weather/README.md'), 'utf8');
-  const htmlPaths = ['index.html', 'privacy.html', 'terms.html'];
+  const htmlPaths = ['index.html', 'privacy.html', 'terms.html', 'licenses.html'];
   const m = src.match(/const SHELL = \[([\s\S]*?)\];/);
   assert.ok(m, 'SHELL array missing');
   const shell = new Set([...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1].replace(/^\.\//, '')));

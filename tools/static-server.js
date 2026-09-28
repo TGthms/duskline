@@ -20,6 +20,7 @@ let internationalAlertsFunction;
 const types = {
   '.html': 'text/html',
   '.js': 'text/javascript',
+  '.mjs': 'text/javascript',
   '.css': 'text/css',
   '.json': 'application/json',
   '.txt': 'text/plain',

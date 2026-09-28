@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const PAGES = ['index.html', 'privacy.html', 'terms.html'];
+const PAGES = ['index.html', 'privacy.html', 'terms.html', 'licenses.html'];
 const STYLESHEETS = [
   'src/css/tokens.css', 'src/css/icons.css', 'src/css/chrome.css', 'src/css/weather.css',
   'src/css/legal.css', 'src/css/motion.css', 'src/css/responsive.css', 'src/css/motion-levels.css',
@@ -37,7 +37,10 @@ test('no page ships an inline script', () => {
     const styles = [...html.matchAll(/<link\b(?=[^>]*\brel=["'][^"']*stylesheet[^"']*["'])[^>]*\bhref=["']([^"']+)["'][^>]*>/gi)]
       .map((match) => match[1]).filter((href) => !/^(?:https?:)?\/\//i.test(href));
     assert.ok(boot > -1 && styles.length > 0 && boot < html.indexOf(styles[0]), `${page}: boot.js must precede stylesheets`);
-    assert.deepEqual(styles, STYLESHEETS, `${page}: preserve direct stylesheet order`);
+    const expected = page === 'index.html'
+      ? STYLESHEETS.slice(0, -1).concat('src/css/weather-map.css', STYLESHEETS[STYLESHEETS.length - 1])
+      : STYLESHEETS;
+    assert.deepEqual(styles, expected, `${page}: preserve direct stylesheet order`);
   }
   assert.match(read('index.html'), /src\/js\/sw-register\.js/, 'index.html must register the service worker from a file');
 });
@@ -63,7 +66,8 @@ test('every host the app fetches from is allowed by connect-src', () => {
   // provider fails this test until the policy is updated with it.
   const netFiles = [
     'src/js/features/weather/data.js',
-    'src/js/features/weather/app.js'
+    'src/js/features/weather/app.js',
+    'src/js/features/weather/map.js'
   ];
   const hosts = new Set();
   for (const rel of netFiles) {
@@ -77,6 +81,10 @@ test('every host the app fetches from is allowed by connect-src', () => {
     assert.ok(connectSrc.includes(host), `connect-src is missing ${host} — the request would be blocked in production`);
   }
   assert.deepEqual(skipped.sort(), ['fonts.googleapis.com', 'fonts.gstatic.com'].filter((h) => hosts.has(h)).sort());
+  assert.match(policy, /img-src 'self' data: https:\/\/tiles\.openfreemap\.org/,
+    'OpenFreeMap map sprites need to be allowed by img-src');
+  assert.match(read('privacy.html'), /data-i18n="legal\.privacy\.map"/,
+    'the privacy page must disclose map tile and forecast-grid requests');
 });
 
 test('the service worker precaches only what the app needs offline', () => {
@@ -88,6 +96,11 @@ test('the service worker precaches only what the app needs offline', () => {
   assert.doesNotMatch(shell, /assets\/duskline-icon\.jpg/, 'the unused 960px icon must not be precached');
   assert.match(shell, /src\/js\/boot\.js/, 'boot.js must be available offline or first paint breaks');
   assert.match(sw, /const CACHE = 'duskline-shell-v\d+';/);
+});
+
+test('the local static server serves lazily loaded ES modules with a JavaScript MIME type', () => {
+  assert.match(read('tools/static-server.js'), /'\.mjs': 'text\/javascript'/,
+    'MapLibre ES modules and its worker need a JavaScript content type locally');
 });
 
 test('air-quality attribution names both CAMS ENSEMBLE and Open-Meteo', () => {

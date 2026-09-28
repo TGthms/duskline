@@ -24,6 +24,8 @@ test('legal packs exist for every picker language and share English keys', () =>
   assert.equal(fs.readdirSync(packsDir).filter((n) => n.endsWith('.json')).length, codes.length);
   assert.match(en['legal.privacy.p3'], /first-level administrative region/);
   assert.match(en['legal.privacy.p3'], /city coordinates remain in your browser/);
+  assert.match(en['legal.privacy.map'], /visible map area and zoom level to OpenFreeMap/);
+  assert.match(en['legal.privacy.map'], /sampled grid of coordinates/);
   for (const code of codes) {
     const file = path.join(packsDir, code + '.json');
     assert.ok(fs.existsSync(file), 'missing pack ' + code);
@@ -33,6 +35,8 @@ test('legal packs exist for every picker language and share English keys', () =>
       assert.ok(row[key].trim().length > 0, 'empty ' + code + ' ' + key);
     }
     assert.match(row['legal.privacy.p3'], /IFRC Alert Hub/, code + ' privacy disclosure omits the international CAP provider');
+    assert.match(row['legal.privacy.map'], /OpenFreeMap/, code + ' privacy disclosure omits map tiles');
+    assert.match(row['legal.privacy.map'], /Open-Meteo/, code + ' privacy disclosure omits map weather coordinates');
     assert.deepEqual(Object.keys(row).sort(), keys.slice().sort());
   }
 });

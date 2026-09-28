@@ -114,7 +114,7 @@ test('CAP feed copies collapse by warning content while distinct hazards remain'
     providerName: 'IFRC Alert Hub', senderName: 'Australian Government Bureau of Meteorology',
     event: 'Wind', category: 'MET', severity: 'MODERATE',
     headline: 'Strong Wind Warning for Sydney Coast', areaDesc: 'New South Wales: Sydney Coast',
-    ends: '2026-09-27T14:00:00Z'
+    ends: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString()
   };
   const distinct = Object.assign({}, base, {
     id: 'heat', event: 'Heat', category: 'HEALTH', headline: 'Heat Health Warning for Sydney'
