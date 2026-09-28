@@ -27,5 +27,6 @@
   "legal.terms.h4": "Zulässige Nutzung",
   "legal.terms.p4": "Nutzen Sie duskline rechtmäßig und verantwortungsvoll. Stören Sie die App nicht, überlasten Sie keine Anbieterdienste und verlassen Sie sich nicht darauf, wo eine professionelle oder amtliche Quelle erforderlich ist.",
   "legal.terms.h5": "Änderungen",
-  "legal.terms.p5": "Diese Bedingungen können mit der Weiterentwicklung der App überarbeitet werden. Die weitere Nutzung nach dem Gültigkeitsdatum bedeutet, dass Sie die aktualisierten Bedingungen akzeptieren."
+  "legal.terms.p5": "Diese Bedingungen können mit der Weiterentwicklung der App überarbeitet werden. Die weitere Nutzung nach dem Gültigkeitsdatum bedeutet, dass Sie die aktualisierten Bedingungen akzeptieren.",
+  "legal.privacy.map": "Kartenkachelanfragen senden den sichtbaren Kartenausschnitt und die Zoomstufe an OpenFreeMap. Beim Laden der detaillierten Karte sendet duskline außerdem ein abgetastetes Koordinatenraster für diesen Ausschnitt an Open-Meteo. Beim Verschieben der Karte wird ein neues Raster angefragt; ein Wechsel der Ebene oder Stunde nutzt bereits geladene Daten."
 }

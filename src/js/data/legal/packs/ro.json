@@ -27,5 +27,6 @@
   "legal.terms.h4": "Utilizare acceptabilă",
   "legal.terms.p4": "Folosiți duskline în mod legal și responsabil. Nu interferați cu aplicația, nu supraîncărcați serviciile furnizorilor și nu vă bazați pe ea acolo unde este necesară o sursă profesională sau oficială.",
   "legal.terms.h5": "Modificări",
-  "legal.terms.p5": "Acești termeni pot fi revizuiți pe măsură ce aplicația evoluează. Continuarea utilizării după data de intrare în vigoare înseamnă că acceptați termenii actualizați."
+  "legal.terms.p5": "Acești termeni pot fi revizuiți pe măsură ce aplicația evoluează. Continuarea utilizării după data de intrare în vigoare înseamnă că acceptați termenii actualizați.",
+  "legal.privacy.map": "Solicitările dalelor hărții trimit către OpenFreeMap zona vizibilă și nivelul de zoom. Când se încarcă harta detaliată, duskline trimite și către Open-Meteo o grilă eșantionată de coordonate pentru acea vizualizare. Mutarea hărții solicită o altă grilă; schimbarea stratului sau a orei folosește datele deja încărcate."
 }

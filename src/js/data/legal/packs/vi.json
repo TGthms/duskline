@@ -27,5 +27,6 @@
   "legal.terms.h4": "Sử dụng được chấp nhận",
   "legal.terms.p4": "Hãy dùng duskline hợp pháp và có trách nhiệm. Đừng can thiệp vào ứng dụng, đừng quá tải dịch vụ của nhà cung cấp, và đừng dựa vào nó khi cần nguồn chuyên môn hoặc chính thức.",
   "legal.terms.h5": "Thay đổi",
-  "legal.terms.p5": "Các điều khoản này có thể được sửa khi ứng dụng phát triển. Tiếp tục sử dụng sau ngày hiệu lực nghĩa là bạn chấp nhận điều khoản đã cập nhật."
+  "legal.terms.p5": "Các điều khoản này có thể được sửa khi ứng dụng phát triển. Tiếp tục sử dụng sau ngày hiệu lực nghĩa là bạn chấp nhận điều khoản đã cập nhật.",
+  "legal.privacy.map": "Yêu cầu ô bản đồ gửi vùng bản đồ đang hiển thị và mức thu phóng đến OpenFreeMap. Khi bản đồ chi tiết tải xong, duskline cũng gửi một lưới tọa độ lấy mẫu của chế độ xem đó đến Open-Meteo. Di chuyển bản đồ sẽ yêu cầu lưới mới; đổi lớp hoặc giờ sẽ dùng dữ liệu đã tải."
 }

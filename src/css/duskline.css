@@ -83,6 +83,14 @@ body.duskline .weather-more[hidden] { display: none; }
 body.duskline .weather-more:hover { background: rgba(255,255,255,.16); }
 body.duskline .weather-more:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
 body.duskline .weather-btn-icon { min-width: 44px; width: 44px; min-height: 44px; height: 44px; }
+body.duskline .weather-btn-pill.weather-location-button {
+  box-sizing: border-box;
+  min-width: 44px !important; width: 44px !important;
+  min-height: 44px !important; height: 44px !important;
+  padding: 0 !important;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
+}
 body.duskline .weather-row-save { min-width: 44px; width: 44px; min-height: 44px; height: 44px; }
 body.duskline .weather-mod-label { font-size: 12px; opacity: .86; }
 body.duskline .weather-mod-sub { opacity: .95; }
@@ -168,6 +176,15 @@ body.duskline .weather-detail.wx-mods-light .weather-mod {
   backdrop-filter: blur(36px) saturate(165%) !important;
   -webkit-backdrop-filter: blur(36px) saturate(165%) !important;
   box-shadow: 0 10px 28px rgba(18, 42, 72, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+/* Reapply the low-GPU phone blur after the brand skin's higher-specificity glass rules. */
+html[data-mobile-lite="true"] body.duskline .weather-detail .weather-mod {
+  backdrop-filter: blur(20px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(145%) !important;
+}
+html[data-mobile-lite="true"] body.duskline .weather-detail.wx-mods-light .weather-mod {
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
 }
 html.has-fine-pointer body.duskline .weather-mod:hover {
   background: linear-gradient(180deg, rgba(20, 38, 66, 0.52), rgba(12, 24, 44, 0.4)) !important;
@@ -255,6 +272,7 @@ body.duskline.weather-sky-light .weather-detail-loading-panel { color: var(--wx-
 body.duskline.weather-sky-light .weather-row-city,
 body.duskline.weather-sky-light .weather-row-meta,
 body.duskline.weather-sky-light .weather-row-cond,
+body.duskline.weather-sky-light .weather-row-insight,
 body.duskline.weather-sky-light .weather-row-hl,
 body.duskline.weather-sky-light .weather-row-updated { color: rgba(255,255,255,.92) !important; text-shadow: 0 1px 3px rgba(0,0,0,.48); }
 body.duskline.weather-sky-light .weather-row-updated { color: rgba(255,255,255,.72) !important; }
@@ -262,6 +280,7 @@ body.duskline.weather-sky-light .weather-row-updated { color: rgba(255,255,255,.
 body.duskline .weather-row-city,
 body.duskline .weather-row-meta,
 body.duskline .weather-row-cond,
+body.duskline .weather-row-insight,
 body.duskline .weather-row-hl,
 body.duskline .weather-row-updated,
 body.duskline .weather-row-temp { color: var(--wx-content, #fff) !important; text-shadow: 0 1px 3px var(--wx-content-shadow, rgba(0,0,0,.48)); }

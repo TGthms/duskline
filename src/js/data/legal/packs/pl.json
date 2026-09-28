@@ -27,5 +27,6 @@
   "legal.terms.h4": "Dopuszczalne użycie",
   "legal.terms.p4": "Korzystaj z duskline zgodnie z prawem i odpowiedzialnie. Nie zakłócaj działania aplikacji, nie przeciążaj usług dostawców i nie polegaj na niej tam, gdzie wymagane jest źródło profesjonalne lub oficjalne.",
   "legal.terms.h5": "Zmiany",
-  "legal.terms.p5": "Niniejsze warunki mogą być rewidowane wraz z rozwojem aplikacji. Dalsze korzystanie po dacie wejścia w życie oznacza akceptację zaktualizowanych warunków."
+  "legal.terms.p5": "Niniejsze warunki mogą być rewidowane wraz z rozwojem aplikacji. Dalsze korzystanie po dacie wejścia w życie oznacza akceptację zaktualizowanych warunków.",
+  "legal.privacy.map": "Żądania kafelków wysyłają do OpenFreeMap widoczny obszar mapy i poziom powiększenia. Po załadowaniu szczegółowej mapy duskline wysyła też do Open-Meteo próbkowaną siatkę współrzędnych dla tego widoku. Przesunięcie mapy pobiera nową siatkę; zmiana warstwy lub godziny korzysta z już wczytanych danych."
 }

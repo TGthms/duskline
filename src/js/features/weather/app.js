@@ -193,6 +193,7 @@
   const searchClear = $('weatherSearchClear');
   const suggestEl = $('weatherSuggest');
   const refreshBtn = $('weatherRefresh');
+  const mapOpenBtn = $('weatherMapOpen');
   const locateBtn = $('weatherLocate');
   const mySkyLocateBtn = $('weatherMySkyLocate');
   const mySkySearchBtn = $('weatherMySkySearch');
@@ -452,6 +453,7 @@
   var chartsApi = null;
   var alertsApi = null;
   var dataApi = null;
+  var mapApi = null;
 
   function wireRemainingModules() {
     if (!W.factories.charts || !W.factories.alerts || !W.factories.data) {
@@ -461,7 +463,7 @@
     chartsApi = W.factories.charts({
       t: t, escapeHtml: escapeHtml, lang: lang, localeTag: localeTag,
       fmtTemp: fmtTemp, fmtWind: fmtWind, fmtPress: fmtPress, fmtPrecip: fmtPrecip,
-      degToCompass: degToCompass,
+      degToCompass: degToCompass, condLabel: condLabel,
       motionLevel: motionLevel, formatClock: formatClock, formatChartAxisHour: formatChartAxisHour,
       useF: useF, condIcon: condIcon
     });
@@ -483,6 +485,7 @@
           if (pack.stored && updatedEl) updatedEl.textContent = rowUpdatedLabel(pack);
           else setUpdated(pack.fetchedAt);
         }
+        if (mapApi && mapApi.isOpen()) mapApi.updatePlaces(getMapPlaces());
         if (pack && pack.city && pack.city.isMyLocation) applyAmbientPageSky();
         // The greeting starts with a lightweight “checking” line while the
         // selected place loads. Refresh it as soon as that place's real pack
@@ -499,6 +502,7 @@
     });
     alertsApi = W.factories.alerts({
       t: t, escapeHtml: escapeHtml, lang: lang, formatClock: formatClock, motionLevel: motionLevel,
+      weatherIcon: weatherIcon,
       roundCoord: roundCoord, isLikelyUs: function (c) { return dataApi.isLikelyUs(c); }, sameCity: sameCity,
       NWS_BASE: NWS_BASE,
       nwsFetchJson: function (url, signal) { return dataApi.nwsFetchJson(url, signal); },
@@ -510,6 +514,18 @@
         if (typeof scheduleListPaintFromAlerts === 'function') scheduleListPaintFromAlerts(pack);
       }
     });
+    if (W.factories.map) {
+      mapApi = W.factories.map({
+        t: t,
+        localeTag: localeTag,
+        useF: useF,
+        motionLevel: motionLevel,
+        fmtTemp: fmtTemp,
+        fmtWind: fmtWind,
+        getPlaces: getMapPlaces,
+        onSelectCity: openMapCity
+      });
+    }
   }
 
 
@@ -858,6 +874,54 @@
     return list;
   }
 
+  function getMapPlaces() {
+    const favorites = loadFavorites();
+    const candidates = [myLocationCity, selectedGreetingCity].concat(favorites, MAJOR,
+      savedSnapshots.map(function (pack) { return pack && pack.city; }));
+    const seen = new Set();
+    const places = [];
+    candidates.forEach(function (city, index) {
+      if (!city || !Number.isFinite(Number(city.lat)) || !Number.isFinite(Number(city.lon))) return;
+      const key = cityKey(city);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      const pack = cache.get(key) || savedSnapshotFor(city);
+      const current = pack && pack.weather && pack.weather.current || {};
+      places.push({
+        city: city,
+        name: displayCityName(city),
+        temperature: current.temperature_2m,
+        weatherCode: current.weather_code,
+        saved: !!((myLocationCity && sameCity(city, myLocationCity)) || favorites.some(function (fav) { return sameCity(city, fav); })),
+        featured: index < (2 + favorites.length + 18)
+      });
+    });
+    return places.slice(0, 120);
+  }
+
+  function openMapCity(city) {
+    if (!city) return;
+    const existing = cache.get(cityKey(city)) || savedSnapshotFor(city);
+    if (mapApi) mapApi.close();
+    if (existing && existing.weather) {
+      openDetail(existing);
+      return;
+    }
+    openDetailLoading(city);
+    dataApi.loadCity(city, null, { enrich: true }).then(function (pack) {
+      if (!pack || !pack.weather) {
+        if (openCity && sameCity(openCity.city, city)) closeDetail();
+        showError(t('weather.error', 'Could not load weather data.'));
+        return;
+      }
+      cache.set(cityKey(city), pack);
+      if (openCity && sameCity(openCity.city, city)) openDetail(pack);
+    }).catch(function () {
+      if (openCity && sameCity(openCity.city, city)) closeDetail();
+      showError(t('weather.error', 'Could not load weather data.'));
+    });
+  }
+
   function loadMyLocation() {
     try {
       const raw = localStorage.getItem(MYLOC_KEY);
@@ -1047,83 +1111,59 @@
     return pickLangMap(row, row.en);
   }
 
-  /* SF Symbols–inspired stroke glyphs (24×24, consistent optical weight) */
-  function sfIcon(name, cls) {
-    const c = cls || 'weather-sf';
-    const base = `class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
-    const fillBase = `class="${c}" viewBox="0 0 24 24" fill="currentColor"`;
-    const map = {
-      'sun.max': `<svg ${base}><circle cx="12" cy="12" r="3.25"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.05 5.05l1.55 1.55M17.4 17.4l1.55 1.55M5.05 18.95l1.55-1.55M17.4 6.6l1.55-1.55"/></svg>`,
-      /* Clean crescent (SF-style) + small star — no ambiguous filled disc */
-      'moon.stars': `<svg ${base}><path d="M14 4.2a6.8 6.8 0 1 0 5.5 10.6 5.2 5.2 0 0 1-5.5-10.6z"/><path d="m18.2 5.1.4 1.15h1.2l-.95.7.35 1.15-.95-.7-.95.7.35-1.15-.95-.7h1.2z"/></svg>`,
-      moon: `<svg ${base}><path d="M14.2 4a7 7 0 1 0 5.8 11 5.4 5.4 0 0 1-5.8-11z"/></svg>`,
-      cloud: `<svg ${base}><path d="M7 18h10.2A3.8 3.8 0 0 0 18 10.5a5.6 5.6 0 0 0-10.7 1.5A3.6 3.6 0 0 0 7 18z"/></svg>`,
-      'cloud.sun': `<svg ${base}><circle cx="8.2" cy="9" r="2.4"/><path d="M8.2 3.8v1.4M8.2 12.8v1.4M3.4 9h1.4M11.6 9h1.4M4.7 5.5l1 1M10.7 11.5l1 1M4.7 12.5l1-1M10.7 6.5l1-1"/><path d="M8.5 18h8.8A3.3 3.3 0 0 0 18 11.6a4.8 4.8 0 0 0-8.6 1.6A3.1 3.1 0 0 0 8.5 18z"/></svg>`,
-      'cloud.moon': `<svg ${base}><path d="M14.5 5.2A4.2 4.2 0 1 0 17.8 11a3.4 3.4 0 0 1-3.3-5.8z"/><path d="M7.2 18.2h9.2A3.4 3.4 0 0 0 17 11.8a5 5 0 0 0-9.5 1.5A3.2 3.2 0 0 0 7.2 18.2z"/></svg>`,
-      'cloud.rain': `<svg ${base}><path d="M7 15.2h10.2A3.8 3.8 0 0 0 18 7.7a5.6 5.6 0 0 0-10.7 1.5A3.6 3.6 0 0 0 7 15.2z"/><path d="m9.2 17.5-1 2.6M12.2 17.5l-1 2.6M15.2 17.5l-1 2.6"/></svg>`,
-      'cloud.drizzle': `<svg ${base}><path d="M7 15h10.2A3.8 3.8 0 0 0 18 7.5a5.6 5.6 0 0 0-10.7 1.5A3.6 3.6 0 0 0 7 15z"/><path d="M9.5 17.2v1.6M12.2 18v1.6M14.9 17.2v1.6"/></svg>`,
-      'cloud.heavyrain': `<svg ${base}><path d="M7 14.5h10.2A3.8 3.8 0 0 0 18 7a5.6 5.6 0 0 0-10.7 1.5A3.6 3.6 0 0 0 7 14.5z"/><path d="m8.8 16.5-1.2 3.2M11.5 16.5l-1.2 3.2M14.2 16.5l-1.2 3.2M16.9 16.5l-1.2 3.2"/></svg>`,
-      'cloud.snow': `<svg ${base}><path d="M7 15h10.2A3.8 3.8 0 0 0 18 7.5a5.6 5.6 0 0 0-10.7 1.5A3.6 3.6 0 0 0 7 15z"/><path d="M9.2 17.6h.01M12.2 19h.01M15.2 17.6h.01M10.7 19.8h.01M13.7 18.2h.01"/></svg>`,
-      'cloud.bolt': `<svg ${base}><path d="M7 15.5h9.5A3.6 3.6 0 0 0 17 8.2a5.4 5.4 0 0 0-10.2 1.4A3.5 3.5 0 0 0 7 15.5z"/><path d="m12.2 13.2-2.2 4.2h2.1l-1 3.4 3.5-5.2h-2.1l1.2-2.4z"/></svg>`,
-      'cloud.fog': `<svg ${base}><path d="M7 11.5h10.2A3.8 3.8 0 0 0 18 4a5.6 5.6 0 0 0-10.7 1.5A3.6 3.6 0 0 0 7 11.5z"/><path d="M4 15h16M5.5 18h13M7 21h10"/></svg>`,
-      wind: `<svg ${base}><path d="M3.5 9.5h11.2a2.4 2.4 0 1 0-1.2-4.5"/><path d="M3.5 13.5h14a2.6 2.6 0 1 1-1.3 4.9"/><path d="M3.5 17.5h7"/></svg>`,
-      snowflake: `<svg ${base}><path d="M12 3v18M5.2 6.5l13.6 11M5.2 17.5l13.6-11"/><path d="M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>`,
-      thermometer: `<svg ${base}><path d="M10 14.2V6.5a2 2 0 1 1 4 0v7.7a3.2 3.2 0 1 1-4 0z"/><path d="M12 17.5v0"/></svg>`,
-      drop: `<svg ${base}><path d="M12 3.5c0 0 5.5 6.2 5.5 10.2a5.5 5.5 0 1 1-11 0C6.5 9.7 12 3.5 12 3.5z"/></svg>`,
-      eye: `<svg ${base}><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.4"/></svg>`,
-      gauge: `<svg ${base}><path d="M5.2 16.2a7.5 7.5 0 1 1 13.6 0"/><path d="M12 13.5 15.5 8"/><circle cx="12" cy="13.5" r="1.2"/></svg>`,
-      barometer: `<svg ${base}><circle cx="12" cy="13" r="7"/><path d="M12 6.5V4.8M8 7.8 6.8 6.6M16 7.8l1.2-1.2"/><path d="M12 13 15 9.5"/></svg>`,
-      umbrella: `<svg ${base}><path d="M12 3.5v1.2M4.5 12.5a7.5 7.5 0 0 1 15 0H4.5z"/><path d="M12 12.5v6a1.8 1.8 0 0 0 3.5.4"/></svg>`,
-      sunrise: `<svg ${base}><path d="M3.5 17.5h17"/><path d="M12 14.5V8M7.5 12.5 5.8 10.8M16.5 12.5l1.7-1.7M4.5 17.5a7.5 7.5 0 0 1 15 0"/><path d="M9 7.2 12 4.5l3 2.7"/></svg>`,
-      location: `<svg ${base}><path d="M12 21s6.5-5.4 6.5-11A6.5 6.5 0 0 0 5.5 10c0 5.6 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`,
-      'location.fill': `<svg ${fillBase}><path d="M12 21s6.5-5.4 6.5-11A6.5 6.5 0 0 0 5.5 10c0 5.6 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.1" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/></svg>`,
-      star: `<svg ${base}><path d="m12 3.5 2.2 4.5 5 .7-3.6 3.5.9 5L12 14.8 7.5 17l.9-5L4.8 8.7l5-.7z"/></svg>`,
-      'star.fill': `<svg ${fillBase}><path d="m12 3.5 2.2 4.5 5 .7-3.6 3.5.9 5L12 14.8 7.5 17l.9-5L4.8 8.7l5-.7z"/></svg>`,
-      plus: `<svg ${base}><path d="M12 5v14M5 12h14"/></svg>`,
-      checkmark: `<svg ${base}><path d="m5 12.5 4.4 4.2L19 7"/></svg>`,
-      xmark: `<svg ${base}><path d="m6 6 12 12M18 6 6 18"/></svg>`,
-      'arrow.clockwise': `<svg ${base}><path d="M20 7.5v5h-5"/><path d="M19.2 12.5A7.2 7.2 0 1 1 17 6.6L20 7.5"/></svg>`,
-      sparkles: `<svg ${base}><path d="M12 3.5 13.2 8l4.8 1.2-4.8 1.2L12 15l-1.2-4.6L6 9.2l4.8-1.2z"/><path d="m18 14 .6 2 2 .5-2 .5-.6 2-.6-2-2-.5 2-.5z"/></svg>`
+  /* Lucide SVG sprite aliases keep weather, action, and navigation glyphs consistent. */
+  /* Lucide icon sprite is bundled locally; no third-party font or icon request. */
+  function weatherIcon(name, cls) {
+    const aliases = {
+      'sun.max': 'sun', 'moon.stars': 'moon-star', 'cloud.sun': 'cloud-sun',
+      'cloud.moon': 'cloud-moon', 'cloud.rain': 'cloud-rain', 'cloud.drizzle': 'cloud-drizzle',
+      'cloud.heavyrain': 'cloud-rain', 'cloud.snow': 'cloud-snow', 'cloud.bolt': 'cloud-lightning',
+      'cloud.fog': 'cloud-fog', drop: 'droplets', barometer: 'gauge', location: 'map-pin',
+      'location.fill': 'map-pin', 'star.fill': 'star', checkmark: 'check', xmark: 'x',
+      'arrow.clockwise': 'refresh-cw'
     };
-    return map[name] || map.cloud;
+    const glyph = aliases[name] || name || 'cloud';
+    const className = cls || 'weather-icon';
+    const href = '#lucide-' + glyph;
+    return `<svg class="${escapeHtml(className)}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="${href}" xlink:href="${href}"/></svg>`;
   }
 
   function condIcon(code, night, cls) {
     const c = cls || 'weather-row-icon';
-    if (code >= 95) return sfIcon('cloud.bolt', c);
-    if (code >= 71 && code < 80) return sfIcon('cloud.snow', c);
-    if (code >= 85 && code < 90) return sfIcon('cloud.snow', c);
-    if (code >= 80 && code < 85) return sfIcon('cloud.heavyrain', c);
-    if (code >= 61 && code < 70) return sfIcon(code >= 65 ? 'cloud.heavyrain' : 'cloud.rain', c);
-    if (code >= 51 && code < 60) return sfIcon('cloud.drizzle', c);
-    if (code === 45 || code === 48) return sfIcon('cloud.fog', c);
-    if (code === 3) return sfIcon('cloud', c);
-    if (code === 2) return sfIcon(night ? 'cloud.moon' : 'cloud.sun', c);
-    if (code === 1) return sfIcon(night ? 'moon.stars' : 'cloud.sun', c);
-    return sfIcon(night ? 'moon.stars' : 'sun.max', c);
+    if (code >= 95) return weatherIcon('cloud.bolt', c);
+    if (code >= 71 && code < 80) return weatherIcon('cloud.snow', c);
+    if (code >= 85 && code < 90) return weatherIcon('cloud.snow', c);
+    if (code >= 80 && code < 85) return weatherIcon('cloud.heavyrain', c);
+    if (code >= 61 && code < 70) return weatherIcon(code >= 65 ? 'cloud.heavyrain' : 'cloud.rain', c);
+    if (code >= 51 && code < 60) return weatherIcon('cloud.drizzle', c);
+    if (code === 45 || code === 48) return weatherIcon('cloud.fog', c);
+    if (code === 3) return weatherIcon('cloud', c);
+    if (code === 2) return weatherIcon(night ? 'cloud.moon' : 'cloud.sun', c);
+    if (code === 1) return weatherIcon(night ? 'moon.stars' : 'cloud.sun', c);
+    return weatherIcon(night ? 'moon.stars' : 'sun.max', c);
   }
 
   function modLabelIcon(key) {
     const map = {
-      aqi: 'sparkles', feels: 'thermometer', humidity: 'drop', wind: 'wind',
+      aqi: 'cloud.fog', feels: 'thermometer', humidity: 'drop', wind: 'wind',
       uv: 'sun.max', vis: 'eye', pressure: 'barometer', precip: 'umbrella',
       sun: 'sunrise', conditions: 'cloud.sun'
     };
-    return sfIcon(map[key] || 'cloud', 'weather-mod-sf');
+    return weatherIcon(map[key] || 'cloud', 'weather-mod-icon');
   }
 
   function savedPlaceIcon(saved) {
-    return sfIcon(saved ? 'checkmark' : 'plus', 'weather-save-icon');
+    return weatherIcon(saved ? 'checkmark' : 'plus', 'weather-save-icon');
   }
   function removeLocationIcon() {
-    return sfIcon('xmark', 'weather-save-icon');
+    return weatherIcon('xmark', 'weather-save-icon');
   }
   function savedPlaceLabel(saved) {
     return t(saved ? 'weather.removeFromMySky' : 'weather.addToMySky', saved ? 'Remove from My Sky' : 'Add to My Sky');
   }
 
   function locBadgeHtml() {
-    return `<span class="weather-row-loc" aria-hidden="true">${sfIcon('location.fill', 'weather-loc-sf')}</span>`;
+    return `<span class="weather-row-loc" aria-hidden="true">${weatherIcon('location.fill', 'weather-loc-icon')}</span>`;
   }
 
   function fmtTemp(c) {
@@ -1717,10 +1757,11 @@
     const alertRowLabel = rowAlerts.length > 1
       ? t('weather.alertsCount', '{count} alerts').replace('{count}', String(rowAlerts.length))
       : (alert ? String(alert.event || t('weather.alert', 'Alert')) : '');
+    const rowInsight = rowWeatherInsight(pack);
     // Keep the weather condition visible and give warnings their own count badge.
     const statusLine = `<div class="weather-row-status">
         <div class="weather-row-cond">${condIcon(code, night)}<span>${escapeHtml(condLabel(code))}</span></div>
-        ${alert ? `<span class="weather-row-alert ${alertTone}" aria-label="${escapeHtml(alertRowLabel)}"><span class="weather-row-alert-ico" aria-hidden="true">!</span><span>${escapeHtml(alertRowLabel)}</span></span>` : ''}
+        ${alert ? `<span class="weather-row-alert ${alertTone}" aria-label="${escapeHtml(alertRowLabel)}">${weatherIcon('alert-circle', 'weather-row-alert-icon')}<span>${escapeHtml(alertRowLabel)}</span></span>` : ''}
       </div>`;
 
     const main = document.createElement('div');
@@ -1732,7 +1773,9 @@
         <div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c))}</span></div>
         <div class="weather-row-meta">${escapeHtml(localTime)}${displayAdmin1(c) ? ' · ' + escapeHtml(displayAdmin1(c)) : ''}</div>
         ${statusLine}
-        ${stampLine ? '<div class="weather-row-updated">' + escapeHtml(stampLine) + '</div>' : ''}`;
+        ${rowInsight
+          ? '<div class="weather-row-insight">' + escapeHtml(rowInsight) + '</div>'
+          : (stampLine ? '<div class="weather-row-updated">' + escapeHtml(stampLine) + '</div>' : '')}`;
 
     const temps = document.createElement('div');
     temps.className = 'weather-row-temps';
@@ -1774,7 +1817,7 @@
     const tempLab = fmtTemp(cur.temperature_2m);
     row.setAttribute('aria-label', [cityLab, tempLab, condLabel(code), alertRowLabel,
       t('weather.high', 'H') + ' ' + fmtTemp(hi),
-      t('weather.low', 'L') + ' ' + fmtTemp(lo), stampLine].filter(Boolean).join(', '));
+      t('weather.low', 'L') + ' ' + fmtTemp(lo), rowInsight || stampLine].filter(Boolean).join(', '));
 
     const open = () => {
       restoreFocus(row);
@@ -2155,6 +2198,51 @@
     if (uvText) return uvText;
     if (scale === 'us' && aqi >= 51 && aqiText) return aqiText;
     return tomorrow || '';
+  }
+
+  /** Compact, actionable context for the saved-city list. Keep routine weather quiet. */
+  function rowWeatherInsight(pack) {
+    if (!pack || !pack.weather || !pack.weather.current) return '';
+    const tz = cityTimeZone(pack, pack.city);
+    const current = pack.weather.current || {};
+    const hourly = pack.weather.hourly || {};
+    const daily = pack.weather.daily || {};
+    const precipScore = greetingPrecipitationScore(pack, tz);
+    if (precipScore >= 62) {
+      const precipitation = sheetContextText('precip', pack, tz);
+      if (precipitation) return precipitation;
+    }
+
+    const scale = aqiScale(pack.city);
+    const aqiRaw = aqiCurrentValue(pack.air && pack.air.current, scale);
+    const aqi = Number(aqiRaw);
+    const band = aqiBandKey(aqi, scale);
+    const poorAir = scale === 'eu'
+      ? ['Poor', 'VeryPoor', 'ExtremelyPoor'].indexOf(band) >= 0
+      : Number.isFinite(aqi) && aqi >= 101;
+    if (poorAir && aqiRaw != null) return aqiGreetingDescription(aqi, scale);
+
+    const gusts = forecastWindGustInsight(pack, tz);
+    if (gusts) return gusts;
+
+    const wind = Number(current.wind_speed_10m);
+    if (current.wind_speed_10m != null && Number.isFinite(wind) && wind >= 14) {
+      const windInsight = sheetContextText('wind', pack, tz);
+      if (windInsight) return windInsight;
+    }
+
+    const dayIndex = dailyTodayIndex(daily, tz);
+    const uvNow = hourlyNowValue(hourly, 'uv_index', tz);
+    const uvMax = dailyFieldAt(daily, 'uv_index_max', dayIndex);
+    const uvPeak = uvMax != null && uvMax !== '' && Number.isFinite(Number(uvMax))
+      ? Number(uvMax) : uvNow;
+    const uv = Math.max(Number.isFinite(Number(uvPeak)) ? Number(uvPeak) : 0,
+      Number.isFinite(Number(uvNow)) ? Number(uvNow) : 0);
+    const parts = localDateTimeParts(tz);
+    if (uv >= 6 && greetingIsDaylight(daily, tz, parts, uvNow)) {
+      return sheetContextText('uv', pack, tz);
+    }
+    return '';
   }
   function finishGreetingTyping(text) {
     window.clearTimeout(greetingTypeTimer);
@@ -3459,11 +3547,11 @@
 
 
 
-  function openSheet(kind, pack) {
+  function openSheet(kind, pack, sheetOptions) {
     if (!sheetEl || !sheetBody || !pack || !pack.weather) return;
     if (kind === 'hourly' || kind === 'daily') return;
     try {
-      openSheetInner(kind, pack);
+      openSheetInner(kind, pack, sheetOptions || {});
       if (kind === 'aqi') {
         loadAqiDetail(pack).then(function (updated) {
           if (!sheetOpen || activeSheetKind !== 'aqi') return;
@@ -3492,7 +3580,8 @@
     }
   }
 
-  function openSheetInner(kind, pack) {
+  function openSheetInner(kind, pack, sheetOptions) {
+    sheetOptions = sheetOptions || {};
     activeSheetKind = kind;
     const cur = pack.weather.current || {};
     const hourly = pack.weather.hourly || {};
@@ -3510,19 +3599,47 @@
       conditions: t('weather.hourly', 'Hourly Forecast')
     };
 
-    const aboutTitle = t('weather.about', 'About');
-    // Title row is rendered into the drag zone (grabber + icon + title) like about hub Preferences
-    const sheetTitleHtml = `
-      <div class="wx-sheet-head" data-sheet-title>
-        <div class="wx-sheet-icon">${modLabelIcon(kind === 'conditions' ? 'conditions' : kind)}</div>
-        <h3 class="wx-sheet-title">${escapeHtml(titleMap[kind] || t('weather.about', 'About'))}</h3>
-      </div>`;
     let body = '';
 
     // City-local calendar day for charts (Apple Weather style 00–24)
     const chartTz = (pack.weather && pack.weather.timezone)
       || (pack.city && pack.city.tz)
       || undefined;
+    const dailyTimes = daily.time || [];
+    const currentDateKey = chartsApi.localDateKey(Date.now(), chartTz);
+    let firstDayIndex = dailyTimes.findIndex(function (value) {
+      return String(value || '').slice(0, 10) >= currentDateKey;
+    });
+    if (firstDayIndex < 0) firstDayIndex = Math.max(0, dailyTodayIndex(daily, chartTz));
+    const dayCount = chartsApi.dailySliceCount ? chartsApi.dailySliceCount(daily, {
+      timeZone: chartTz, currentTemp: cur.temperature_2m, hourly: hourly
+    }) : Math.min(10, Math.max(0, dailyTimes.length - firstDayIndex));
+    const dayChoices = dailyTimes.slice(firstDayIndex, firstDayIndex + dayCount);
+    let selectedDayKey = sheetOptions.dayKey || dailyTimes[dailyTodayIndex(daily, chartTz)] || dailyTimes[firstDayIndex] || '';
+    if (dayChoices.length && dayChoices.indexOf(selectedDayKey) < 0) selectedDayKey = dayChoices[0];
+    const foundDayIndex = dailyTimes.findIndex(function (value) {
+      return String(value || '').slice(0, 10) === String(selectedDayKey || '').slice(0, 10);
+    });
+    const selectedDayIndex = foundDayIndex >= 0 ? foundDayIndex : dailyTodayIndex(daily, chartTz);
+    const selectedDate = selectedDayKey ? new Date(String(selectedDayKey).slice(0, 10) + 'T12:00:00Z') : null;
+    let selectedDateTitle = '';
+    if (selectedDate && Number.isFinite(selectedDate.getTime())) {
+      try {
+        selectedDateTitle = new Intl.DateTimeFormat(localeTag(), {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+        }).format(selectedDate);
+      } catch (e) { selectedDateTitle = String(selectedDayKey).slice(0, 10); }
+    }
+    if (kind === 'day') titleMap.day = selectedDateTitle || t('weather.daily', '10-Day Forecast');
+
+    const aboutTitle = t('weather.about', 'About');
+    const dayMode = sheetOptions.tempMode === 'feels' ? 'feels' : 'actual';
+    // Build after the selected day is known so the sheet title matches the date in the body.
+    const sheetTitleHtml = `
+      <div class="wx-sheet-head" data-sheet-title>
+        <div class="wx-sheet-icon">${modLabelIcon(kind === 'conditions' || kind === 'day' ? 'conditions' : kind)}</div>
+        <h3 class="wx-sheet-title">${escapeHtml(titleMap[kind] || t('weather.about', 'About'))}</h3>
+      </div>`;
 
     function unitsPickerHtml(id, pairs, current) {
       let html = `<p class="weather-mod-label" id="${id}-label">${escapeHtml(t('weather.units', 'Units'))}</p><div class="weather-units-row" id="${id}" role="radiogroup" aria-labelledby="${id}-label"><span class="wx-units-pill" aria-hidden="true"></span>`;
@@ -3534,8 +3651,83 @@
       return html;
     }
 
+    // A selected forecast day opens a date-aware chart sheet, rather than a static row.
+    if (kind === 'day') {
+      const dayCode = dailyFieldAt(daily, 'weather_code', selectedDayIndex);
+      const high = dailyFieldAt(daily, 'temperature_2m_max', selectedDayIndex);
+      const low = dailyFieldAt(daily, 'temperature_2m_min', selectedDayIndex);
+      const totalPrecip = dailyFieldAt(daily, 'precipitation_sum', selectedDayIndex);
+      let pop = dailyFieldAt(daily, 'precipitation_probability_max', selectedDayIndex);
+      const dayWindow = chartsApi.hourlyDateWindow(hourly, chartTz, String(selectedDayKey).slice(0, 10));
+      const dayHours = dayWindow.end - dayWindow.start;
+      const probability = hourly.precipitation_probability || [];
+      const temperatures = hourly.temperature_2m || [];
+      if (pop == null && dayHours > 0) {
+        const values = probability.slice(dayWindow.start, dayWindow.end)
+          .map(Number).filter(Number.isFinite);
+        if (values.length) pop = Math.max.apply(null, values);
+      }
+      const timeNear = function (series, target) {
+        const value = Number(target);
+        if (target == null || !Number.isFinite(value) || dayHours <= 0) return '';
+        let nearest = null;
+        let difference = Infinity;
+        for (let i = dayWindow.start; i < dayWindow.end; i++) {
+          const sample = Number(series[i]);
+          if (!Number.isFinite(sample)) continue;
+          const delta = Math.abs(sample - value);
+          if (delta < difference) { nearest = i; difference = delta; }
+        }
+        return nearest != null && difference <= 1.1 ? formatClock(hourly.time[nearest], chartTz) : '';
+      };
+      const highTime = timeNear(temperatures, high);
+      const lowTime = timeNear(temperatures, low);
+      const dayDateButtons = dayChoices.map(function (key) {
+        const date = new Date(String(key).slice(0, 10) + 'T12:00:00Z');
+        let weekday = '';
+        let number = String(key).slice(8, 10);
+        let accessibleDate = String(key).slice(0, 10);
+        try {
+          weekday = new Intl.DateTimeFormat(localeTag(), { weekday: 'short', timeZone: 'UTC' }).format(date);
+          number = new Intl.DateTimeFormat(localeTag(), { day: 'numeric', timeZone: 'UTC' }).format(date);
+          accessibleDate = new Intl.DateTimeFormat(localeTag(), {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+          }).format(date);
+        } catch (eDate) { /* retain the ISO date fallback */ }
+        if (String(key).slice(0, 10) === currentDateKey) weekday = t('weather.today', 'Today');
+        const selected = String(key).slice(0, 10) === String(selectedDayKey).slice(0, 10);
+        return `<button type="button" class="wx-day-choice${selected ? ' is-selected' : ''}" data-day-select="${escapeHtml(String(key).slice(0, 10))}" aria-label="${escapeHtml(accessibleDate)}" aria-pressed="${selected ? 'true' : 'false'}"><span>${escapeHtml(weekday)}</span><strong>${escapeHtml(number)}</strong></button>`;
+      }).join('');
+      const selectedChartKey = dayMode === 'feels' ? 'apparent_temperature' : 'temperature_2m';
+      const selectedSeries = hourly[selectedChartKey] || [];
+      const hasTemperatureHours = dayHours >= 2 && selectedSeries.slice(dayWindow.start, dayWindow.end)
+        .some(function (value) { return value != null && Number.isFinite(Number(value)); });
+      const hasProbabilityHours = dayHours >= 2 && probability.slice(dayWindow.start, dayWindow.end)
+        .some(function (value) { return value != null && Number.isFinite(Number(value)); });
+
+      body += `<div class="wx-day-choices" role="group" aria-label="${escapeHtml(t('weather.daily', '10-Day Forecast'))}">${dayDateButtons}</div>`;
+      body += `<div class="wx-day-condition">${condIcon(dayCode, false)}<span>${escapeHtml(condLabel(dayCode))}</span></div>`;
+      body += `<div class="wx-day-facts">
+        <div class="wx-day-fact"><span>${escapeHtml(t('weather.highFull', 'High'))}</span><strong>${escapeHtml(fmtTemp(high))}</strong>${highTime ? `<small>${escapeHtml(highTime)}</small>` : ''}</div>
+        <div class="wx-day-fact"><span>${escapeHtml(t('weather.lowFull', 'Low'))}</span><strong>${escapeHtml(fmtTemp(low))}</strong>${lowTime ? `<small>${escapeHtml(lowTime)}</small>` : ''}</div>
+        <div class="wx-day-fact"><span>${escapeHtml(t('weather.precip', 'Precipitation'))}</span><strong>${escapeHtml(fmtPrecip(totalPrecip))}</strong></div>
+        <div class="wx-day-fact"><span>${escapeHtml(t('weather.chanceOfPrecipitation', 'Chance of precipitation'))}</span><strong>${pop != null && Number.isFinite(Number(pop)) ? Math.round(Number(pop)) + '%' : '—'}</strong></div>
+      </div>`;
+      body += `<div class="wx-day-mode" role="group" aria-label="${escapeHtml(t('settings.temperature', 'Temperature'))}">
+        <button type="button" data-day-temp-mode="actual" aria-pressed="${dayMode === 'actual' ? 'true' : 'false'}" class="${dayMode === 'actual' ? 'active' : ''}">${escapeHtml(t('weather.actual', 'Actual'))}</button>
+        <button type="button" data-day-temp-mode="feels" aria-pressed="${dayMode === 'feels' ? 'true' : 'false'}" class="${dayMode === 'feels' ? 'active' : ''}">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</button>
+      </div>`;
+      if (hasTemperatureHours) {
+        body += chartsApi.buildTempChart(hourly, selectedChartKey, (v) => fmtTemp(v), chartTz, String(selectedDayKey).slice(0, 10));
+      }
+      if (hasProbabilityHours) {
+        body += `<p class="weather-mod-label wx-day-chart-label">${escapeHtml(t('weather.chanceOfPrecipitation', 'Chance of precipitation'))}</p>`;
+        body += chartsApi.buildTempChart(hourly, 'precipitation_probability', (v) => Math.round(v) + '%', chartTz, String(selectedDayKey).slice(0, 10));
+      }
+      const aboutDay = t('weather.about.conditions', '');
+      if (aboutDay) body += `<p class="wx-sheet-context wx-day-about">${escapeHtml(aboutDay)}</p>`;
     // Chart sheets: Apple pattern = title → large live value lives in chart readout → scrub chart → about
-    if (kind === 'conditions') {
+    } else if (kind === 'conditions') {
       // Chart owns the big readout (scrub updates it). Secondary context line above.
       body += `<p class="wx-sheet-context">${escapeHtml(condLabel(cur.weather_code))}</p>`;
       body += chartsApi.buildTempChart(hourly, 'temperature_2m', (v) => fmtTemp(v), chartTz);
@@ -3642,6 +3834,32 @@
     sheetBody.innerHTML = body;
     setSheetTitle(sheetTitleHtml);
     chartsApi.bindCharts(sheetBody);
+
+    if (kind === 'day') {
+      const focusDayControl = function (attribute, value) {
+        requestAnimationFrame(function () {
+          const controls = Array.from(sheetBody.querySelectorAll('[' + attribute + ']'));
+          const target = controls.find(function (button) { return button.getAttribute(attribute) === value; });
+          if (target && target.isConnected) target.focus({ preventScroll: true });
+        });
+      };
+      sheetBody.querySelectorAll('[data-day-select]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          const nextDay = button.getAttribute('data-day-select');
+          if (!nextDay || nextDay === String(selectedDayKey).slice(0, 10)) return;
+          openSheet('day', pack, { dayKey: nextDay, tempMode: dayMode });
+          focusDayControl('data-day-select', nextDay);
+        });
+      });
+      sheetBody.querySelectorAll('[data-day-temp-mode]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          const nextMode = button.getAttribute('data-day-temp-mode');
+          if (!nextMode || nextMode === dayMode) return;
+          openSheet('day', pack, { dayKey: String(selectedDayKey).slice(0, 10), tempMode: nextMode });
+          focusDayControl('data-day-temp-mode', nextMode);
+        });
+      });
+    }
 
     const bind = (id, setter) => {
       const row = document.getElementById(id);
@@ -4229,10 +4447,9 @@
     if (openCity && detailEl && !detailEl.classList.contains('is-closing')) return;
     if (detailEl && detailEl.classList.contains('is-closing')) return;
 
-    // Stuck body lock without a visible detail = list dead to taps
-    if (document.body.classList.contains('weather-detail-open')) {
-      unlockDetailPage();
-    }
+    // A refresh may repaint the list while an info sheet is open. Clean up a
+    // stale detail state without removing the sheet's independent scroll lock.
+    const sheetVisible = isSheetOpen();
     try {
       if (detailEl) {
         detailEl.classList.remove('open', 'wx-detail-enter');
@@ -4241,8 +4458,8 @@
         try { detailEl.inert = true; } catch (eInert) { /* older browsers */ }
       }
     } catch (e) { /* ignore */ }
-    unlockDetailPage();
-    if (!isSheetOpen()) {
+    if (!sheetVisible) {
+      unlockDetailPage();
       try { inertSheet(); } catch (e2) { /* ignore */ }
     }
   }
@@ -4744,6 +4961,14 @@
   }
 
   // Wire UI — manual refresh always works (re-click cancels prior load via refreshGen)
+  if (mapOpenBtn && mapApi) {
+    mapOpenBtn.addEventListener('click', function () {
+      closeSuggest();
+      const preferred = (openCity && openCity.city) || myLocationCity || selectedGreetingCity
+        || loadFavorites()[0] || MAJOR[0] || null;
+      mapApi.open({ initialCity: preferred, places: getMapPlaces() });
+    });
+  }
   if (refreshBtn) {
     refreshBtn.disabled = false;
     refreshBtn.addEventListener('click', function () {
@@ -4768,6 +4993,13 @@
       sheetPtr = { x: e.clientX, y: e.clientY };
     });
     detailMods.addEventListener('click', function (e) {
+      const day = e.target && e.target.closest ? e.target.closest('[data-day-date]') : null;
+      if (day && detailMods.contains(day) && openCity) {
+        e.preventDefault();
+        restoreFocus(day);
+        openSheet('day', openCity, { dayKey: day.getAttribute('data-day-date'), tempMode: 'actual' });
+        return;
+      }
       const btn = e.target && e.target.closest ? e.target.closest('[data-sheet]') : null;
       if (!btn || !detailMods.contains(btn)) return;
       const kind = btn.getAttribute('data-sheet');

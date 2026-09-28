@@ -27,5 +27,6 @@
   "legal.terms.h4": "Kabul edilebilir kullanım",
   "legal.terms.p4": "duskline’ı yasalara uygun ve sorumlu şekilde kullanın. Uygulamaya müdahale etmeyin, sağlayıcı hizmetlerini aşırı yüklemeyin ve profesyonel veya resmi bir kaynağın gerektiği yerde ona güvenmeyin.",
   "legal.terms.h5": "Değişiklikler",
-  "legal.terms.p5": "Uygulama geliştikçe bu koşullar gözden geçirilebilir. Yürürlük tarihinden sonra kullanıma devam etmek, güncellenmiş koşulları kabul ettiğiniz anlamına gelir."
+  "legal.terms.p5": "Uygulama geliştikçe bu koşullar gözden geçirilebilir. Yürürlük tarihinden sonra kullanıma devam etmek, güncellenmiş koşulları kabul ettiğiniz anlamına gelir.",
+  "legal.privacy.map": "Harita döşemesi istekleri, görünür harita alanını ve yakınlaştırma düzeyini OpenFreeMap’e gönderir. Ayrıntılı harita yüklendiğinde duskline bu görünüm için örneklenmiş koordinat ızgarasını da Open-Meteo’ya gönderir. Haritayı taşımak yeni bir ızgara ister; katmanı veya saati değiştirmek zaten yüklenmiş verileri kullanır."
 }

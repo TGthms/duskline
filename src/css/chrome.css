@@ -521,7 +521,7 @@ html[data-motion-effective="off"] .settings-panel {
   outline: 2px solid var(--accent-1);
   outline-offset: 2px;
 }
-.settings-close .sf-icon {
+.settings-close .ui-icon {
   width: 16px;
   height: 16px;
   display: block;
@@ -612,7 +612,7 @@ html[data-motion-effective="off"] .settings-panel {
   align-items: center;
   justify-content: center;
 }
-.pill-check .sf-icon { width: 14px; height: 14px; display: block; }
+.pill-check .ui-icon { width: 14px; height: 14px; display: block; }
 .settings-subgroup + .settings-subgroup { margin-top: 18px; }
 .settings-subgroup-label {
   font-size: 11px;

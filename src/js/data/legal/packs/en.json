@@ -27,5 +27,6 @@
   "legal.terms.h4": "Acceptable use",
   "legal.terms.p4": "Use duskline lawfully and responsibly. Do not interfere with the app, overload provider services, or rely on it where a professional or official source is required.",
   "legal.terms.h5": "Changes",
-  "legal.terms.p5": "These terms may be revised as the app evolves. Continued use after the effective date means you accept the updated terms."
+  "legal.terms.p5": "These terms may be revised as the app evolves. Continued use after the effective date means you accept the updated terms.",
+  "legal.privacy.map": "Map tile requests send the visible map area and zoom level to OpenFreeMap. When the detailed map loads, duskline also sends a sampled grid of coordinates for that view to Open-Meteo. Moving the map requests another grid; changing the displayed layer or hour uses data already loaded."
 }

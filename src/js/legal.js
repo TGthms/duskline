@@ -79,9 +79,12 @@
     current = lang;
     setDocumentLang(lang);
 
-    var titleKey = page === 'terms' ? 'legal.terms.title' : 'legal.privacy.title';
-    var metaKey = page === 'terms' ? 'legal.terms.meta' : 'legal.privacy.meta';
-    var title = t(titleKey, lang) || (page === 'terms' ? 'Terms of Use' : 'Privacy Policy');
+    var titleKey = page === 'terms' ? 'legal.terms.title'
+      : page === 'licenses' ? 'legal.licenses.title' : 'legal.privacy.title';
+    var metaKey = page === 'terms' ? 'legal.terms.meta'
+      : page === 'licenses' ? 'legal.licenses.meta' : 'legal.privacy.meta';
+    var title = t(titleKey, lang) || (page === 'terms' ? 'Terms of Use'
+      : page === 'licenses' ? 'Open-source licenses' : 'Privacy Policy');
     document.title = 'duskline — ' + title;
     var meta = document.querySelector('meta[name="description"]');
     if (meta) {

@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.weather.gov https://api.bigdatacloud.net https://nominatim.openstreetmap.org; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://tiles.openfreemap.org; connect-src 'self' https://api.open-meteo.com https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.weather.gov https://api.bigdatacloud.net https://nominatim.openstreetmap.org https://tiles.openfreemap.org; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(), usb=()
@@ -25,9 +25,10 @@
 #
 #  connect-src
 #     External browser providers: Open-Meteo forecast and air quality, its geocoding
-#     endpoint, the US National Weather Service, and reverse geocoding (BigDataCloud,
-#     then OpenStreetMap Nominatim as fallback). International CAP alerts use the
-#     same-origin /api/international-alerts Pages Function, which calls IFRC Alert Hub
+#     endpoint, the US National Weather Service, reverse geocoding (BigDataCloud then
+#     OpenStreetMap Nominatim), and visible OpenFreeMap style/tile requests when the
+#     map opens. International CAP alerts use the same-origin /api/international-alerts
+#     Pages Function, which calls IFRC Alert Hub
 #     server-side, so no external browser origin needs to be added here.
 #
 #  Deliberately absent: upgrade-insecure-requests. Cloudflare serves HTTPS with HSTS and

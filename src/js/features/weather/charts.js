@@ -21,6 +21,7 @@
     function formatChartAxisHour(iso, zone) { return typeof deps.formatChartAxisHour === 'function' ? deps.formatChartAxisHour(iso, zone) : ''; }
     function useF() { return typeof deps.useF === 'function' ? deps.useF() : false; }
     function condIcon(code, night, cls) { return typeof deps.condIcon === 'function' ? deps.condIcon(code, night, cls) : ''; }
+    function condLabel(code) { return typeof deps.condLabel === 'function' ? deps.condLabel(code) : ''; }
 
     /**
      * Apple Weather–style temp → RGB (°C absolute). Cold blues → warm yellows → hot reds.
@@ -155,6 +156,12 @@
         const c1 = tempToBarColor(hi);
         const barBg = 'linear-gradient(90deg,' + c0 + ',' + c1 + ')';
         const icon = condIcon(codes[i] || 0, false);
+        let fullDate = day;
+        try {
+          fullDate = new Intl.DateTimeFormat(localeTag(), {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+          }).format(new Date(dayKey + 'T12:00:00Z'));
+        } catch (eDate) { /* keep the compact weekday fallback */ }
 
         // Precip % under icon when meaningful (Apple-style)
         let popHtml = '';
@@ -169,7 +176,14 @@
           nowDot = '<span class="weather-daily-now" style="left:' + nowLeft.toFixed(1) + '%" aria-hidden="true"></span>';
         }
 
-        html += '<div class="weather-daily-row' + (isToday ? ' weather-daily-row--today' : '') + '">' +
+        const highLabel = t('weather.high', 'H') + ' ' + fmtTemp(hi);
+        const lowLabel = t('weather.low', 'L') + ' ' + fmtTemp(lo);
+        const accessible = [fullDate, condLabel(codes[i]), highLabel, lowLabel,
+          pops && pops[i] != null && Number(pops[i]) >= 20 ? Math.round(Number(pops[i])) + '%' : '']
+          .filter(Boolean).join(', ');
+        html += '<button type="button" class="weather-daily-row' + (isToday ? ' weather-daily-row--today' : '') + '"' +
+          ' data-day-date="' + escapeHtml(dayKey) + '" aria-haspopup="dialog" aria-controls="weatherSheet"' +
+          ' aria-label="' + escapeHtml(accessible) + '">' +
           '<span class="weather-daily-day">' + escapeHtml(day) + '</span>' +
           '<span class="weather-daily-icon">' + icon + popHtml + '</span>' +
           '<span class="weather-daily-lo">' + escapeHtml(fmtTemp(lo)) + '</span>' +
@@ -178,7 +192,7 @@
             nowDot +
           '</span>' +
           '<span class="weather-daily-hi">' + escapeHtml(fmtTemp(hi)) + '</span>' +
-        '</div>';
+        '</button>';
       }
       html += '</div>';
       return html;
@@ -268,6 +282,26 @@
       return hourlyWindow(hourly, 24, timeZone);
     }
 
+    /** Exact location-local calendar day selected from the daily forecast. */
+    function hourlyDateWindow(hourly, timeZone, dateKey) {
+      const times = hourly && hourly.time || [];
+      if (!times.length || !dateKey) return { start: 0, end: 0, times: times };
+      let start = -1;
+      let end = -1;
+      for (let i = 0; i < times.length; i++) {
+        const key = stampDateKey(times[i], timeZone);
+        if (key === dateKey) {
+          if (start < 0) start = i;
+          end = i + 1;
+        } else if (start >= 0) {
+          break;
+        }
+      }
+      return start >= 0
+        ? { start: start, end: end, times: times }
+        : { start: 0, end: 0, times: times };
+    }
+
     /**
      * Smooth open cubic path through points (Catmull–Rom → Bezier).
      * Avoids the jagged “connect the dots” look on hourly charts.
@@ -342,6 +376,7 @@
     function axisTickLabel(v, key, unitFmt) {
       if (v == null || !Number.isFinite(v)) return '';
       if (key === 'relative_humidity_2m') return Math.round(v) + '%';
+      if (key === 'precipitation_probability') return Math.round(v) + '%';
       if (key === 'uv_index') return String(Math.round(v * 10) / 10);
       if (key === 'precipitation') {
         try {
@@ -380,9 +415,11 @@
     }
 
     /** Apple-style scrub chart used by Wind, Hourly, Humidity, etc. */
-    function buildTempChart(hourly, key, unitFmt, timeZone) {
+    function buildTempChart(hourly, key, unitFmt, timeZone, dateKey) {
       const tz = timeZone || hourly.timezone || undefined;
-      const { start, end, times } = hourlyLocalDay(hourly, tz);
+      const { start, end, times } = dateKey
+        ? hourlyDateWindow(hourly, tz, dateKey)
+        : hourlyLocalDay(hourly, tz);
       const vals = [];
       for (let i = start; i < end; i++) {
         const v = hourly[key] && hourly[key][i];
@@ -434,14 +471,16 @@
       // Prefer the latest sample at-or-before now — never wrap 23:00 → 00:00 on the right.
       const nowH = nowLocalHour(tz);
       const todayKey = localDateKey(Date.now(), tz);
+      const activeDayKey = dateKey || todayKey;
+      const chartTracksNow = !dateKey || dateKey === todayKey;
       let midIdx = 0;
       let midBest = Infinity;
       let foundAtOrBefore = false;
       for (let mi = 0; mi < pts.length; mi++) {
         const day = stampDateKey(pts[mi].t, tz);
         const ph = stampLocalHour(pts[mi].t);
-        // Wrong calendar day (e.g. next-day 00:00 left in the series) — heavy penalty
-        const dayPenalty = (day && todayKey && day !== todayKey) ? 100 : 0;
+        // Wrong calendar day (e.g. next-day 00:00 left in a rolling window) — heavy penalty
+        const dayPenalty = (day && activeDayKey && day !== activeDayKey) ? 100 : 0;
         // Prefer at-or-before now so 23:00 wins over 00:00 when local time is 23:xx
         let d;
         if (ph <= nowH + 1 / 120) {
@@ -451,9 +490,9 @@
           d = (ph - nowH) + 0.25; // slight penalty for future hours
         }
         // Late evening: do not snap across midnight to 00:00
-        if (nowH >= 18 && ph < 6) d += 50;
+        if (chartTracksNow && nowH >= 18 && ph < 6) d += 50;
         // Early morning: do not snap back to yesterday evening
-        if (nowH < 6 && ph > 18) d += 50;
+        if (chartTracksNow && nowH < 6 && ph > 18) d += 50;
         d += dayPenalty;
         if (d < midBest) { midBest = d; midIdx = mi; }
       }
@@ -464,8 +503,8 @@
       // Split past / future at “now” (Apple: muted dashed past, solid future).
       // CRITICAL: never fall back to a full solid path when future is short (e.g. 11 PM) —
       // that painted over the dashed past and made the cursor look stuck at the right edge.
-      const pastPts = pts.slice(0, midIdx + 1);
-      const futurePts = pts.slice(midIdx);
+      const pastPts = chartTracksNow ? pts.slice(0, midIdx + 1) : [];
+      const futurePts = chartTracksNow ? pts.slice(midIdx) : pts;
       const pastLine = pastPts.length >= 2 ? pathThrough(pastPts) : '';
       const futureLine = futurePts.length >= 2 ? pathThrough(futurePts) : '';
       const fullLine = pathThrough(pts);
@@ -628,6 +667,7 @@
           wind_speed_10m: t('weather.wind', 'Wind'),
           relative_humidity_2m: t('weather.humidity', 'Humidity'),
           precipitation: t('weather.precip', 'Precipitation'),
+          precipitation_probability: t('weather.chanceOfPrecipitation', 'Chance of precipitation'),
           uv_index: t('weather.uv', 'UV Index')
         };
         wrap.setAttribute('aria-label', t('weather.hourly', 'Hourly Forecast') + ': ' + (chartLabels[kind] || kind));
@@ -639,6 +679,7 @@
           if (kind === 'wind_speed_10m') return fmtWind(v);
           if (kind === 'relative_humidity_2m') return Math.round(v) + '%';
           if (kind === 'precipitation') return fmtPrecip(v);
+          if (kind === 'precipitation_probability') return Math.round(v) + '%';
           if (kind === 'uv_index') return String(Math.round(v * 10) / 10);
           return String(Math.round(v * 10) / 10);
         };
@@ -1219,6 +1260,7 @@
       localDateKey: localDateKey,
       wallClockInZoneToUtcMs: wallClockInZoneToUtcMs,
       hourlyLocalDay: hourlyLocalDay,
+      hourlyDateWindow: hourlyDateWindow,
       smoothLinePath: smoothLinePath,
       buildTempChart: buildTempChart,
       bindCharts: bindCharts,

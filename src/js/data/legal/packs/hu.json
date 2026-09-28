@@ -27,5 +27,6 @@
   "legal.terms.h4": "Elfogadható használat",
   "legal.terms.p4": "Használja a duskline-t jogszerűen és felelősséggel. Ne zavarja az alkalmazást, ne terhelje túl a szolgáltatók rendszereit, és ne támaszkodjon rá ott, ahol szakmai vagy hivatalos forrás szükséges.",
   "legal.terms.h5": "Változások",
-  "legal.terms.p5": "Ezek a feltételek az alkalmazás fejlődésével módosulhatnak. A hatálybalépési dátum utáni további használat a frissített feltételek elfogadását jelenti."
+  "legal.terms.p5": "Ezek a feltételek az alkalmazás fejlődésével módosulhatnak. A hatálybalépési dátum utáni további használat a frissített feltételek elfogadását jelenti.",
+  "legal.privacy.map": "A térképcsempe-kérések elküldik a látható térképterületet és a nagyítási szintet az OpenFreeMap szolgáltatásnak. A részletes térkép betöltésekor a duskline az adott nézet mintavételezett koordinátarácsát is elküldi az Open-Meteo szolgáltatásnak. A térkép mozgatása új rácsot kér; a réteg vagy az óra módosítása a már betöltött adatokat használja."
 }

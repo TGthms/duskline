@@ -12,6 +12,7 @@
     function lang() { return typeof deps.lang === 'function' ? deps.lang() : 'en'; }
     function formatClock(iso) { return typeof deps.formatClock === 'function' ? deps.formatClock(iso) : ''; }
     function motionLevel() { return typeof deps.motionLevel === 'function' ? deps.motionLevel() : 'full'; }
+    function weatherIcon(name, cls) { return typeof deps.weatherIcon === 'function' ? deps.weatherIcon(name, cls) : ''; }
     function roundCoord(n) { return typeof deps.roundCoord === 'function' ? deps.roundCoord(n) : n; }
     function isLikelyUs(c) { return typeof deps.isLikelyUs === 'function' ? deps.isLikelyUs(c) : false; }
     function sameCity(a, b) { return typeof deps.sameCity === 'function' ? deps.sameCity(a, b) : false; }
@@ -838,7 +839,7 @@
           // Class-based accordion (not <details>) — pixel height animate open/close
           '<div class="weather-alert ' + sevClass + '">' +
             '<button type="button" class="weather-alert-summary" aria-expanded="false">' +
-              '<span class="weather-alert-badge" aria-hidden="true">!</span>' +
+              '<span class="weather-alert-badge" aria-hidden="true">' + weatherIcon('alert-circle', 'weather-alert-icon') + '</span>' +
               '<span class="weather-alert-title">' + escapeHtml(head) + '</span>' +
               (until ? '<span class="weather-alert-until">' + escapeHtml(until) + '</span>' : '') +
               '<span class="weather-alert-chevron" aria-hidden="true"></span>' +

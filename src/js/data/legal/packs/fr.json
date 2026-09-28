@@ -27,5 +27,6 @@
   "legal.terms.h4": "Utilisation acceptable",
   "legal.terms.p4": "Utilisez duskline de manière licite et responsable. N’interférez pas avec l’application, ne surchargez pas les services des fournisseurs et ne vous y fiez pas lorsqu’une source professionnelle ou officielle est requise.",
   "legal.terms.h5": "Modifications",
-  "legal.terms.p5": "Ces conditions peuvent être révisées à mesure que l’application évolue. Continuer à l’utiliser après la date d’entrée en vigueur vaut acceptation des conditions mises à jour."
+  "legal.terms.p5": "Ces conditions peuvent être révisées à mesure que l’application évolue. Continuer à l’utiliser après la date d’entrée en vigueur vaut acceptation des conditions mises à jour.",
+  "legal.privacy.map": "Les demandes de tuiles envoient à OpenFreeMap la zone visible et le niveau de zoom. Au chargement de la carte détaillée, duskline envoie aussi à Open-Meteo une grille échantillonnée de coordonnées pour cette vue. Déplacer la carte demande une nouvelle grille ; changer de couche ou d’heure utilise les données déjà chargées."
 }

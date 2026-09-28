@@ -27,5 +27,6 @@
   "legal.terms.h4": "Penggunaan yang dapat diterima",
   "legal.terms.p4": "Gunakan duskline secara sah dan bertanggung jawab. Jangan mengganggu aplikasi, membebani layanan penyedia, atau mengandalkannya jika sumber profesional atau resmi diperlukan.",
   "legal.terms.h5": "Perubahan",
-  "legal.terms.p5": "Ketentuan ini dapat direvisi seiring perkembangan aplikasi. Penggunaan berkelanjutan setelah tanggal berlaku berarti Anda menerima ketentuan yang diperbarui."
+  "legal.terms.p5": "Ketentuan ini dapat direvisi seiring perkembangan aplikasi. Penggunaan berkelanjutan setelah tanggal berlaku berarti Anda menerima ketentuan yang diperbarui.",
+  "legal.privacy.map": "Permintaan ubin peta mengirim area peta yang terlihat dan tingkat zoom ke OpenFreeMap. Saat peta terperinci dimuat, duskline juga mengirim kisi koordinat sampel untuk tampilan itu ke Open-Meteo. Menggeser peta meminta kisi baru; mengganti lapisan atau jam menggunakan data yang sudah dimuat."
 }

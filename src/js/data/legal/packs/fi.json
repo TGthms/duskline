@@ -27,5 +27,6 @@
   "legal.terms.h4": "Hyväksyttävä käyttö",
   "legal.terms.p4": "Käytä dusklinea lainmukaisesti ja vastuullisesti. Älä häiritse sovellusta, ylikuormita tarjoajien palveluita äläkä luota siihen, kun tarvitaan ammattimaista tai virallista lähdettä.",
   "legal.terms.h5": "Muutokset",
-  "legal.terms.p5": "Näitä ehtoja voidaan tarkistaa sovelluksen kehittyessä. Jatkuva käyttö voimaantulopäivän jälkeen merkitsee päivitettyjen ehtojen hyväksymistä."
+  "legal.terms.p5": "Näitä ehtoja voidaan tarkistaa sovelluksen kehittyessä. Jatkuva käyttö voimaantulopäivän jälkeen merkitsee päivitettyjen ehtojen hyväksymistä.",
+  "legal.privacy.map": "Karttaruutupyynnöt lähettävät näkyvän kartta-alueen ja zoomaustason OpenFreeMapille. Kun yksityiskohtainen kartta latautuu, duskline lähettää Open-Meteolle myös näytön koordinaateista muodostetun näyteruudukon. Kartan siirtäminen pyytää uuden ruudukon; kerroksen tai tunnin vaihtaminen käyttää jo ladattuja tietoja."
 }

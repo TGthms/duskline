@@ -1,9 +1,14 @@
-/* ═══════════════════════════════════════════════════════════════════
-   SF Symbols–style stroke icons (site-wide)
-   Use .sf-icon inline SVG; never emoji for UI chrome.
-   ═══════════════════════════════════════════════════════════════════ */
+/* Shared sizing utilities for inline vector icons used across the site. */
 
-.sf-icon {
+.duskline-icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ui-icon {
   display: inline-block;
   width: 1em;
   height: 1em;
@@ -11,47 +16,47 @@
   vertical-align: -0.125em;
   overflow: visible;
 }
-.sf-icon--label {
+.ui-icon--label {
   width: 1.15em;
   height: 1.15em;
   vertical-align: -0.2em;
   opacity: 0.92;
 }
-.sf-icon--check {
+.ui-icon--check {
   width: 14px;
   height: 14px;
   vertical-align: middle;
   display: block;
 }
-.sf-icon--close {
+.ui-icon--close {
   width: 16px;
   height: 16px;
   display: block;
   margin: 0;
   flex-shrink: 0;
 }
-/* Brand mark is the original ✦ character in HTML (not an SVG). */
-.sf-icon--sparkle,
-.sf-icon--brand {
+/* Retained hooks for older decorative icon slots; the duskline logo is a separate asset. */
+.ui-icon--sparkle,
+.ui-icon--brand {
   /* legacy classes — unused after Phase 1 brand restore */
   display: none;
 }
-.sf-icon--chevron {
+.ui-icon--chevron {
   width: 1em;
   height: 1em;
   opacity: 0.75;
 }
-.sf-icon--nav {
+.ui-icon--nav {
   width: 18px;
   height: 18px;
   display: block;
 }
-.sf-icon--hero {
+.ui-icon--hero {
   width: 1em;
   height: 1em;
   display: block;
 }
-.sf-icon--star {
+.ui-icon--star {
   width: 12px;
   height: 12px;
   display: block;
@@ -60,23 +65,23 @@
 }
 
 /* Settings / pills already use flex — keep icon + label aligned */
-.settings-group-label .sf-icon--label {
+.settings-group-label .ui-icon--label {
   color: var(--accent-1);
 }
-.pill-check .sf-icon {
+.pill-check .ui-icon {
   display: block;
 }
 
 /* Phase 4 keepers: practical + seasons/culture/tips card icons */
-.prac-icon .sf-icon--prac {
+.prac-icon .ui-icon--prac {
   width: 2.25rem;
   height: 2.25rem;
   display: block;
   color: currentColor;
 }
-.sf-icon--season,
-.sf-icon--culture,
-.sf-icon--tip {
+.ui-icon--season,
+.ui-icon--culture,
+.ui-icon--tip {
   display: block;
   color: currentColor;
   stroke-width: 1.75;
@@ -87,7 +92,7 @@
   display: block;
   stroke-width: 1.75;
 }
-.dest-arrow .sf-icon {
+.dest-arrow .ui-icon {
   width: 14px;
   height: 14px;
   display: block;
@@ -104,7 +109,7 @@
   font-size: 0; /* hide any leftover glyph */
   line-height: 0;
 }
-.dest-star .sf-icon--star {
+.dest-star .ui-icon--star {
   width: 12px;
   height: 12px;
 }
@@ -112,7 +117,7 @@
   position: relative;
   color: rgba(255, 255, 255, 0.28);
 }
-.dest-star.half .sf-icon--star-fill {
+.dest-star.half .ui-icon--star-fill {
   position: absolute;
   left: 0;
   top: 0;
@@ -121,7 +126,7 @@
   overflow: hidden;
   color: var(--accent-1);
 }
-.dest-star.half .sf-icon--star-fill .sf-icon--star {
+.dest-star.half .ui-icon--star-fill .ui-icon--star {
   width: 12px;
   height: 12px;
 }
@@ -147,29 +152,29 @@
 }
 
 /* Tools hub chevron */
-.tools-hub-chevron .sf-icon {
+.tools-hub-chevron .ui-icon {
   width: 16px;
   height: 16px;
   display: block;
 }
 
 /* Modal / lightbox close already sized by button; ensure SVG centers */
-.modal-close .sf-icon,
-.settings-close .sf-icon,
-.lightbox-close .sf-icon,
-.weather-sheet-close .sf-icon {
+.modal-close .ui-icon,
+.settings-close .ui-icon,
+.lightbox-close .ui-icon,
+.weather-sheet-close .ui-icon {
   pointer-events: none;
 }
 
 /* Gallery empty / decode placeholder */
-.ph-icon .sf-icon {
+.ph-icon .ui-icon {
   width: 2rem;
   height: 2rem;
   opacity: 0.55;
 }
 
 /* Learn-more trailing chevron (optional inline) */
-.prac-more .sf-icon--chevron {
+.prac-more .ui-icon--chevron {
   width: 0.85em;
   height: 0.85em;
   margin-left: 0.15em;

@@ -8,7 +8,7 @@
 
 <p align="center">A calmer way to check the next hour, plan the week, and see what the sky is doing around the world.</p>
 
-<p align="center"><a href="https://dusklineweather.pages.dev/"><strong>Open duskline ↗</strong></a> · <a href="https://dusklineweather.pages.dev/privacy.html">Privacy</a> · <a href="https://dusklineweather.pages.dev/terms.html">Terms</a></p>
+<p align="center"><a href="https://dusklineweather.pages.dev/"><strong>Open duskline ↗</strong></a> · <a href="https://dusklineweather.pages.dev/privacy.html">Privacy</a> · <a href="https://dusklineweather.pages.dev/terms.html">Terms</a> · <a href="https://dusklineweather.pages.dev/licenses.html">Open-source licenses</a></p>
 
 ---
 
@@ -23,6 +23,7 @@ duskline balances a quiet, atmospheric sky with the details that help you decide
 - **Current conditions, hourly detail, and a 10-day outlook** make it easy to move from “right now” to “what should I plan for?”
 - **Useful weather context** includes air quality, feels-like temperature, wind, humidity, UV, pressure, precipitation, and sun times.
 - **Saved places and direct links** make it simple to return to the forecasts that matter to you or share a city.
+- **Weather maps** layer temperature, precipitation chance, and wind over a global map, with a forecast-hour scrubber and a local schematic fallback.
 - **Public alerts use authoritative sources:** the National Weather Service for eligible U.S. places and official, rebroadcastable CAP feeds through IFRC Alert Hub for supported international places.
 - **A living sky** brings day, night, cloud, and precipitation conditions into the city detail view.
 - **30 interface languages** include Arabic and Hebrew, with right-to-left layouts.
@@ -35,7 +36,7 @@ No account or advertising identifier is needed. Your language, units, favorites,
 
 ## Privacy and weather data
 
-Forecast requests go directly from your browser to [Open-Meteo](https://open-meteo.com/) and, for eligible U.S. locations, the [National Weather Service](https://www.weather.gov/). For international public alerts, duskline sends the selected country code, country name, and interface language to its same-origin Cloudflare Pages function, which requests official CAP data from [IFRC Alert Hub](https://alerthub.ifrc.org/). When available, the selected place’s first-level administrative region (such as a state or province) is also sent for alert matching; city coordinates stay in your browser. Reverse geocoding for device location uses BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may receive ordinary technical request data.
+Forecast requests go directly from your browser to [Open-Meteo](https://open-meteo.com/) and, for eligible U.S. locations, the [National Weather Service](https://www.weather.gov/). For international public alerts, duskline sends the selected country code, country name, and interface language to its same-origin Cloudflare Pages function, which requests official CAP data from [IFRC Alert Hub](https://alerthub.ifrc.org/). When available, the selected place’s first-level administrative region (such as a state or province) is also sent for alert matching; city coordinates stay in your browser. Opening the weather map sends the visible map area and zoom level to [OpenFreeMap](https://openfreemap.org/) for map tiles and sampled forecast-grid coordinates to Open-Meteo. Reverse geocoding for device location uses BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may receive ordinary technical request data.
 
 Forecasts are for planning and exploration, not emergency decisions. Read the [Privacy Policy](https://dusklineweather.pages.dev/privacy.html) and [Terms of Use](https://dusklineweather.pages.dev/terms.html) for details. Removing a saved place removes its forecast snapshot unless the same place remains saved elsewhere; clear the site's browser data to remove all local history.
 
@@ -66,4 +67,4 @@ The repository root is the static site. [Cloudflare Pages](https://dusklineweath
 
 ## License
 
-The code is available under the [MIT License](LICENSE). Weather data belongs to its providers and remains subject to their terms. duskline is not an emergency or life-safety service.
+The code is available under the [MIT License](LICENSE). Bundled icon and map-rendering licenses are listed on the [open-source licenses page](https://dusklineweather.pages.dev/licenses.html). Weather data belongs to its providers and remains subject to their terms. duskline is not an emergency or life-safety service.

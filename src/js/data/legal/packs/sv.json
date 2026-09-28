@@ -27,5 +27,6 @@
   "legal.terms.h4": "Tillåten användning",
   "legal.terms.p4": "Använd duskline lagligt och ansvarsfullt. Stör inte appen, överbelasta inte leverantörernas tjänster och förlita dig inte på den där en professionell eller officiell källa krävs.",
   "legal.terms.h5": "Ändringar",
-  "legal.terms.p5": "Dessa villkor kan revideras när appen utvecklas. Fortsatt användning efter ikraftträdandedatumet innebär att du godtar de uppdaterade villkoren."
+  "legal.terms.p5": "Dessa villkor kan revideras när appen utvecklas. Fortsatt användning efter ikraftträdandedatumet innebär att du godtar de uppdaterade villkoren.",
+  "legal.privacy.map": "Kartförfrågningar skickar det synliga kartområdet och zoomnivån till OpenFreeMap. När den detaljerade kartan laddas skickar duskline också ett samplat koordinatnät för vyn till Open-Meteo. Om du flyttar kartan hämtas ett nytt nät; byte av lager eller tid använder redan inlästa data."
 }

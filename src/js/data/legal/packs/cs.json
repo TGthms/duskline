@@ -27,5 +27,6 @@
   "legal.terms.h4": "Přípustné použití",
   "legal.terms.p4": "Používejte duskline zákonně a odpovědně. Nerušte aplikaci, nepřetěžujte služby poskytovatelů a nespoléhejte na ni tam, kde je vyžadován profesionální nebo oficiální zdroj.",
   "legal.terms.h5": "Změny",
-  "legal.terms.p5": "Tyto podmínky se mohou revidovat s vývojem aplikace. Pokračující používání po datu účinnosti znamená, že přijímáte aktualizované podmínky."
+  "legal.terms.p5": "Tyto podmínky se mohou revidovat s vývojem aplikace. Pokračující používání po datu účinnosti znamená, že přijímáte aktualizované podmínky.",
+  "legal.privacy.map": "Požadavky na mapové dlaždice odesílají do OpenFreeMap viditelnou oblast mapy a úroveň přiblížení. Po načtení podrobné mapy odešle duskline do Open-Meteo také vzorkovanou síť souřadnic pro tento pohled. Posunutím mapy se vyžádá nová síť; změna vrstvy nebo hodiny používá již načtená data."
 }

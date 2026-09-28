@@ -27,5 +27,6 @@
   "legal.terms.h4": "Aanvaardbaar gebruik",
   "legal.terms.p4": "Gebruik duskline wettig en verantwoord. Verstoor de app niet, overbelast geen diensten van aanbieders en vertrouw er niet op waar een professionele of officiële bron vereist is.",
   "legal.terms.h5": "Wijzigingen",
-  "legal.terms.p5": "Deze voorwaarden kunnen worden herzien naarmate de app evolueert. Voortgezet gebruik na de ingangsdatum betekent dat je de bijgewerkte voorwaarden accepteert."
+  "legal.terms.p5": "Deze voorwaarden kunnen worden herzien naarmate de app evolueert. Voortgezet gebruik na de ingangsdatum betekent dat je de bijgewerkte voorwaarden accepteert.",
+  "legal.privacy.map": "Kaarttegelverzoeken sturen het zichtbare kaartgebied en zoomniveau naar OpenFreeMap. Wanneer de gedetailleerde kaart wordt geladen, stuurt duskline ook een bemonsterd coördinatenraster voor die weergave naar Open-Meteo. Als je de kaart verplaatst, wordt een nieuw raster opgevraagd; een andere laag of tijd gebruikt de al geladen gegevens."
 }

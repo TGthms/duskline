@@ -27,5 +27,6 @@
   "legal.terms.h4": "Utilização aceitável",
   "legal.terms.p4": "Utilize o duskline de forma lícita e responsável. Não interfira com a aplicação, não sobrecarregue os serviços dos fornecedores nem confie nela quando for necessária uma fonte profissional ou oficial.",
   "legal.terms.h5": "Alterações",
-  "legal.terms.p5": "Estes termos podem ser revistos à medida que a aplicação evolui. A utilização continuada após a data de entrada em vigor significa que aceita os termos atualizados."
+  "legal.terms.p5": "Estes termos podem ser revistos à medida que a aplicação evolui. A utilização continuada após a data de entrada em vigor significa que aceita os termos atualizados.",
+  "legal.privacy.map": "Os pedidos de mapas enviam para o OpenFreeMap a área visível e o nível de zoom. Quando o mapa detalhado carrega, o duskline também envia para o Open-Meteo uma grelha amostrada de coordenadas dessa vista. Mover o mapa pede outra grelha; mudar a camada ou a hora apresentada utiliza os dados já carregados."
 }

@@ -1,9 +1,13 @@
-const CACHE = 'duskline-shell-v35';
+const CACHE = 'duskline-shell-v40';
 const SHELL = [
   './',
   './index.html',
   './privacy.html',
   './terms.html',
+  './licenses.html',
+  './LICENSE',
+  './assets/icons/LUCIDE-LICENSE.txt',
+  './assets/vendor/maplibre-gl/LICENSE.txt',
   './src/js/data/legal/packs/en.json',
   './src/js/data/legal/packs/es.json',
   './src/js/data/legal/packs/fr.json',
@@ -51,6 +55,7 @@ const SHELL = [
   './src/css/motion-levels.css',
   './src/css/tools-miniapp.css',
   './src/css/weather-app.css',
+  './src/css/weather-map.css',
   './src/css/duskline.css',
   './src/js/app.js',
   './src/js/boot.js',
@@ -73,6 +78,7 @@ const SHELL = [
   './src/js/features/weather/aqi-math.js',
   './src/js/features/weather/sky.js',
   './src/js/features/weather/charts.js',
+  './src/js/features/weather/map.js',
   './src/js/features/weather/alerts.js',
   './src/js/features/weather/data.js',
   './src/js/features/weather/snapshots.js',
