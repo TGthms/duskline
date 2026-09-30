@@ -14,6 +14,8 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
 | `map.js` | Lazy OpenFreeMap renderer, Open-Meteo weather grid, and local schematic fallback (`W.factories.map`) |
 | `alerts.js` | NWS U.S. + international CAP alerts, area matching, accordion, and prefetch (`W.factories.alerts`) |
+| `search-places.js` | Geocoder deduplication and minimum forecast validation |
+| `network-policy.js` | Provider retry timing and cancellable backoff |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
 | `navigation.js` | Browser history for city details and forecast sheets |
@@ -37,6 +39,6 @@ Keep this order explicit when adding scripts. All four HTML entry points link th
 
 After edits: `npm run check` and Playwright `e2e/smoke.spec.js`.
 
-Weather-page locale catalogs are generated with `npm run weather:i18n`. The page loads English as a fallback and fetches only the active locale. All locale JSON files are precached for offline language changes.
+Weather-page locale catalogs are generated with `npm run weather:i18n`. The page loads English as a fallback and fetches only the active locale. English is precached. Other weather and legal packs are cached on demand in a separate cache capped at eight packs; offline language changes require a previously used pack.
 
 Product layout rules live in `src/css/weather-product.css`; avoid adding them to the atmospheric brand layer. Saved-place rearrangement is available inside the Units/preferences sheet.

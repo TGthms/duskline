@@ -12,12 +12,38 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run weather:i18n && git diff --exit-code -- src/js/data/weather-packs src/js/data/weather-locale-registry.js
       - run: npm run test:unit
-      - run: npx playwright install --with-deps chromium
-      - run: npm test
+  browsers:
+    needs: check-and-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {project: chromium, browser: chromium}
+          - {project: firefox, browser: firefox}
+          - {project: webkit, browser: webkit}
+          - {project: mobile-webkit, browser: webkit}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx playwright test --project=${{ matrix.project }}
         env:
           CI: true
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: browser-failures-${{ matrix.project }}
+          path: test-results/
+          retention-days: 14

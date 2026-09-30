@@ -2,11 +2,28 @@
 (function () {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js').then(function (registration) {
+    navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).then(function (registration) {
+      function retainActiveLocale() {
+        const code = document.documentElement.dataset.lang || 'en';
+        const worker = registration.active;
+        if (worker) worker.postMessage({type:'CACHE_LOCALE',code:code,legal:!document.getElementById('weatherList')});
+      }
+      navigator.serviceWorker.ready.then(retainActiveLocale);
+      document.addEventListener('duskline:prefs', function () {
+        retainActiveLocale();
+        const notice = document.getElementById('weatherUpdateToast');
+        if (notice && !notice.querySelector('button:disabled')) offerUpdate();
+      });
       function offerUpdate() {
         if (!registration.waiting) return;
-        const toast = document.getElementById('weatherToast');
-        if (!toast) return;
+        let toast = document.getElementById('weatherUpdateToast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'weatherUpdateToast';
+          toast.className = 'weather-toast weather-update-toast';
+          toast.setAttribute('role','status');
+          document.body.append(toast);
+        }
         toast.replaceChildren();
         const label = document.createElement('span');
         label.textContent = typeof tKey === 'function' ? tKey('weather.updateReady', 'A duskline update is ready') : 'A duskline update is ready';
@@ -14,8 +31,11 @@
         action.type = 'button';
         action.textContent = typeof tKey === 'function' ? tKey('weather.update', 'Update') : 'Update';
         action.addEventListener('click', function () {
+          const waiting = registration.waiting;
+          if (!waiting) return;
+          action.disabled = true;
           navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); }, {once: true});
-          registration.waiting.postMessage({type: 'ACTIVATE_UPDATE'});
+          waiting.postMessage({type: 'ACTIVATE_UPDATE'});
         });
         toast.append(label, action);
         toast.classList.add('is-visible');

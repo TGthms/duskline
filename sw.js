@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v51';
+const CACHE = 'duskline-shell-v55';
 const SHELL = [
   './',
   './index.html',
@@ -9,35 +9,6 @@ const SHELL = [
   './assets/icons/LUCIDE-LICENSE.txt',
   './assets/vendor/maplibre-gl/LICENSE.txt',
   './src/js/data/legal/packs/en.json',
-  './src/js/data/legal/packs/es.json',
-  './src/js/data/legal/packs/fr.json',
-  './src/js/data/legal/packs/de.json',
-  './src/js/data/legal/packs/it.json',
-  './src/js/data/legal/packs/pt-BR.json',
-  './src/js/data/legal/packs/pt-PT.json',
-  './src/js/data/legal/packs/nl.json',
-  './src/js/data/legal/packs/da.json',
-  './src/js/data/legal/packs/sv.json',
-  './src/js/data/legal/packs/nb.json',
-  './src/js/data/legal/packs/fi.json',
-  './src/js/data/legal/packs/pl.json',
-  './src/js/data/legal/packs/cs.json',
-  './src/js/data/legal/packs/hu.json',
-  './src/js/data/legal/packs/ro.json',
-  './src/js/data/legal/packs/el.json',
-  './src/js/data/legal/packs/tr.json',
-  './src/js/data/legal/packs/ru.json',
-  './src/js/data/legal/packs/uk.json',
-  './src/js/data/legal/packs/ar.json',
-  './src/js/data/legal/packs/he.json',
-  './src/js/data/legal/packs/hi.json',
-  './src/js/data/legal/packs/th.json',
-  './src/js/data/legal/packs/vi.json',
-  './src/js/data/legal/packs/id.json',
-  './src/js/data/legal/packs/ja.json',
-  './src/js/data/legal/packs/ko.json',
-  './src/js/data/legal/packs/zh.json',
-  './src/js/data/legal/packs/zh-TW.json',
   './assets/world-land.svg',
   './assets/WORLD-MAP-LICENSE.txt',
   './manifest.webmanifest',
@@ -65,43 +36,8 @@ const SHELL = [
   './src/js/sw-register.js',
   './src/js/data/weather-locale-registry.js',
   './src/js/data/weather-locale-loader.js',
-  './src/js/data/weather-packs/ar.json',
-  './src/js/data/weather-packs/cs.json',
-  './src/js/data/weather-packs/da.json',
-  './src/js/data/weather-packs/de.json',
-  './src/js/data/weather-packs/el.json',
   './src/js/data/weather-packs/en.json',
-  './src/js/data/weather-packs/es.json',
-  './src/js/data/weather-packs/fi.json',
-  './src/js/data/weather-packs/fr.json',
-  './src/js/data/weather-packs/he.json',
-  './src/js/data/weather-packs/hi.json',
-  './src/js/data/weather-packs/hu.json',
-  './src/js/data/weather-packs/id.json',
-  './src/js/data/weather-packs/it.json',
-  './src/js/data/weather-packs/ja.json',
-  './src/js/data/weather-packs/ko.json',
-  './src/js/data/weather-packs/nb.json',
-  './src/js/data/weather-packs/nl.json',
-  './src/js/data/weather-packs/pl.json',
-  './src/js/data/weather-packs/pt-BR.json',
-  './src/js/data/weather-packs/pt-PT.json',
-  './src/js/data/weather-packs/ro.json',
-  './src/js/data/weather-packs/ru.json',
-  './src/js/data/weather-packs/sv.json',
-  './src/js/data/weather-packs/th.json',
-  './src/js/data/weather-packs/tr.json',
-  './src/js/data/weather-packs/uk.json',
-  './src/js/data/weather-packs/vi.json',
-  './src/js/data/weather-packs/zh-TW.json',
-  './src/js/data/weather-packs/zh.json',
-  './src/js/data/i18n.js',
   './src/js/data/duskline-locales.js',
-  './src/js/data/weather-about-i18n.js',
-  './src/js/data/weather-aqi-i18n.js',
-  './src/js/data/weather-copy-i18n.js',
-  './src/js/data/weather-greeting-pools-i18n.js',
-  './src/js/data/weather-greeting-settings-i18n.js',
   './src/js/data/legal-i18n.js',
   './src/js/legal.js',
   './src/js/data/dest-weather-cities.js',
@@ -115,6 +51,8 @@ const SHELL = [
   './src/js/features/weather/charts.js',
   './src/js/features/weather/map.js',
   './src/js/features/weather/alerts.js',
+  './src/js/features/weather/search-places.js',
+  './src/js/features/weather/network-policy.js',
   './src/js/features/weather/data.js',
   './src/js/features/weather/snapshots.js',
   './src/js/features/weather/navigation.js',
@@ -122,22 +60,53 @@ const SHELL = [
   './src/js/features/weather/app.js'
 ];
 
+// A followed host redirect carries internal URL-list metadata. WebKit rejects
+// that response for a navigation with redirect mode "manual", including a reload
+// after controllerchange. Rebuild it both at install and at the response boundary.
+function navigationResponse(response) {
+  if (!response || response.type === 'error' || response.type === 'opaque') return response;
+  return new Response(response.body, {
+    status: response.status, statusText: response.statusText, headers: response.headers
+  });
+}
+const LOCALES = 'duskline-locales-v55';
+const LOCALE_LIMIT = 8; // Four recently used languages, weather + legal packs.
+function isLocale(url) {
+  return /\/src\/js\/data\/(?:weather-packs|legal\/packs)\/[a-zA-Z-]+\.json$/.test(url.pathname);
+}
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL))
-  );
+  event.waitUntil(caches.open(CACHE).then(async (cache) => {
+    await Promise.all(SHELL.map(async (path) => {
+      const response = await fetch(new Request(new URL(path, self.location.href), {cache: 'reload'}));
+      if (!response.ok) throw new Error('Shell install failed: ' + path);
+      await cache.put(path, navigationResponse(response));
+    }));
+  }));
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key.startsWith('duskline-shell-') && key !== CACHE).map((key) => caches.delete(key))
+      keys.filter((key) => (key.startsWith('duskline-shell-') && key !== CACHE) || (key.startsWith('duskline-locales-') && key !== LOCALES)).map((key) => caches.delete(key))
     )).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'ACTIVATE_UPDATE') self.skipWaiting();
+  if (event.data && event.data.type === 'CACHE_LOCALE' && /^[a-z]{2}(?:-[A-Za-z]{2})?$/.test(event.data.code)) {
+    const folder = event.data.legal ? 'legal/packs/' : 'weather-packs/';
+    event.waitUntil(caches.open(LOCALES).then(async cache => {
+      const url = new URL('./src/js/data/' + folder + event.data.code + '.json', self.location.href);
+      if (await cache.match(url) || await (await caches.open(CACHE)).match(url)) return;
+      const response = await fetch(url);
+      if (response.ok) {
+        await cache.put(url, response);
+        const keys = await cache.keys();
+        await Promise.all(keys.slice(0, Math.max(0, keys.length - LOCALE_LIMIT)).map(key => cache.delete(key)));
+      }
+    }).catch(() => {}));
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -148,21 +117,36 @@ self.addEventListener('fetch', (event) => {
   const navigation = request.mode === 'navigate' || request.destination === 'document';
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
+    if (isLocale(url)) {
+      const localeCache = await caches.open(LOCALES);
+      const cached = await localeCache.match(request, {ignoreSearch: true});
+      if (cached) return cached;
+      const english = await cache.match(request, {ignoreSearch: true});
+      if (english) return english;
+      const response = await fetch(request);
+      if (response.ok) {
+        await localeCache.put(url.origin + url.pathname, response.clone());
+        const keys = await localeCache.keys();
+        await Promise.all(keys.slice(0, Math.max(0, keys.length - LOCALE_LIMIT)).map(key => localeCache.delete(key)));
+      }
+      return response;
+    }
     if (!navigation) {
       const cached = await cache.match(request, {ignoreSearch: true});
       if (cached) return cached;
       return fetch(request);
     }
-    // Keep the installed shell coherent; deploy changes activate with a user-visible update.
-    const path = url.pathname.endsWith('/') ? './index.html' : url.pathname;
+    // Keep the installed shell coherent; support Pages' extensionless legal URLs.
+    const path = url.pathname.endsWith('/') ? './index.html' :
+      /\/(privacy|terms|licenses)$/.test(url.pathname) ? url.pathname + '.html' : url.pathname;
     const cached = await cache.match(path, {ignoreSearch: true});
-    if (cached) return cached;
+    if (cached) return navigationResponse(cached);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2500);
     try {
-      return await fetch(request, {signal: controller.signal});
+      return navigationResponse(await fetch(request, {signal: controller.signal}));
     } catch (error) {
-      return await cache.match('./index.html') || Response.error();
+      return navigationResponse(await cache.match('./index.html')) || Response.error();
     } finally { clearTimeout(timer); }
   })());
 });

@@ -54,8 +54,39 @@
       for (let i = start; i < Math.min(start+8,times.length); i++) {
         hours += `<div class="weather-hourly-item"><div>${esc(deps.clock(times[i],pack))}</div><div class="ic">${deps.icon((hourly.weather_code || [])[i],deps.night(pack,times[i]))}</div><div class="t">${esc(fmtTemp((hourly.temperature_2m || [])[i]))}</div><div class="p">${(hourly.precipitation_probability || [])[i] != null ? Math.round(hourly.precipitation_probability[i])+'%' : '—'}</div></div>`;
       }
-      home.innerHTML = `<div class="weather-home-top"><div><h3>${esc(deps.cityName(city))}</h3><p class="weather-home-condition">${deps.icon(current.weather_code,deps.night(pack))}${esc(condLabel(current.weather_code))}</p><p>${esc(t('weather.feelsLike','Feels like'))} ${esc(fmtTemp(current.apparent_temperature))}</p><p class="weather-home-range">${esc(t('weather.high','H'))}: ${esc(fmtTemp(range.hi))} · ${esc(t('weather.low','L'))}: ${esc(fmtTemp(range.lo))}</p></div><span class="weather-home-temperature">${esc(fmtTemp(current.temperature_2m))}</span></div><p class="weather-home-insight">${esc(deps.insight(pack))}</p><small>${esc(deps.updated(pack))}</small><div class="weather-home-hours"><p class="weather-home-hours-label">${esc(pack.stored ? t("weather.savedHourlyForecast", "Saved hourly forecast") : t("weather.nextHours", "Next hours"))}</p><div class="weather-hourly">${hours || `<div class="weather-hourly-loading">${!pack.stored && !pack.enrichmentError ? '<span class="loader" aria-hidden="true"></span>' : ''}<span>${esc(pack.stored || pack.enrichmentError ? t('weather.hourlyUnavailable','Hourly forecast unavailable') : t('weather.loadingForecast','Loading forecast…'))}</span></div>`}</div></div><div class="weather-home-actions"><button type="button" data-home-open>${esc(t('weather.viewForecast','View forecast'))}</button></div>`;
+      const insight = deps.insight(pack);
+      home.innerHTML = `
+        <div class="weather-home-current">
+          <h3>${esc(deps.cityName(city))}</h3>
+          <div class="weather-home-reading">
+            <span class="weather-home-temperature">${esc(fmtTemp(current.temperature_2m))}</span>
+            <div class="weather-home-description">
+              <p class="weather-home-condition">${deps.icon(current.weather_code,deps.night(pack))}${esc(condLabel(current.weather_code))}</p>
+              <p class="weather-home-feels">${esc(t('weather.feelsLike','Feels like'))} ${esc(fmtTemp(current.apparent_temperature))}</p>
+            </div>
+          </div>
+          <p class="weather-home-range"><span>${esc(t('weather.high','H'))}: <strong>${esc(fmtTemp(range.hi))}</strong></span><span>${esc(t('weather.low','L'))}: <strong>${esc(fmtTemp(range.lo))}</strong></span></p>
+        </div>
+        <div class="weather-home-hours">
+          <p class="weather-home-hours-label">${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}</p>
+          <div class="weather-hourly" tabindex="0" role="group" aria-label="${esc(t('weather.nextHours', 'Next hours'))}">${hours || `<div class="weather-hourly-loading">${!pack.stored && !pack.enrichmentError ? '<span class="loader" aria-hidden="true"></span>' : ''}<span>${esc(pack.stored || pack.enrichmentError ? t('weather.hourlyUnavailable','Hourly forecast unavailable') : t('weather.loadingForecast','Loading forecast…'))}</span></div>`}</div>
+        </div>
+        <div class="weather-home-footer">
+          ${insight ? `<p class="weather-home-insight">${esc(insight)}</p>` : ''}
+          <div class="weather-home-meta"><small>${esc(deps.updated(pack))}</small><div class="weather-home-actions"><button type="button" data-home-open>${esc(t('weather.viewForecast','View forecast'))}</button></div></div>
+        </div>`;
       home.querySelector('[data-home-open]').addEventListener('click', () => deps.open(city));
+      home.querySelector('.weather-hourly').addEventListener('keydown', function (event) {
+        const strip = event.currentTarget;
+        const direction = getComputedStyle(strip).direction === 'rtl' ? -1 : 1;
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+          strip.scrollBy({left:event.key === 'ArrowRight' ? 70 : -70,behavior:'auto'});
+        } else if (event.key === 'Home' || event.key === 'End') {
+          event.preventDefault();
+          strip.scrollTo({left:event.key === 'Home' ? 0 : direction * (strip.scrollWidth-strip.clientWidth),behavior:'auto'});
+        }
+      });
 
       if (pack.needsEnrich && !pack.stored && !pack.enrichmentError && !enriching.has(cityKey(city))) {
         enriching.add(cityKey(city));

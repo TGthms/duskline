@@ -64,6 +64,7 @@
         if (res.status === 429) {
           const err = new Error('HTTP 429');
           err.name = 'RateLimitError';
+          err.retryAfter = res.headers.get('Retry-After');
           throw err;
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -330,6 +331,7 @@
         if (res.status === 429) {
           const err = new Error('NWS 429');
           err.name = 'RateLimitError';
+          err.retryAfter = res.headers.get('Retry-After');
           throw err;
         }
         if (res.status === 403) {
@@ -348,7 +350,7 @@
         if (e && e.name === 'AbortError') throw e;
         if (!retry && e && e.name === 'RateLimitError') {
           wrap.cancel();
-          await new Promise(function (r) { window.setTimeout(r, 900); });
+          await W.networkPolicy.wait(W.networkPolicy.retryDelay(e.retryAfter, 0), signal);
           if (signal && signal.aborted) throw e;
           return nwsFetchJson(url, signal, true);
         }
@@ -428,7 +430,7 @@
           packed = await once();
         } catch (e) {
           if (e && (e.name === 'RateLimitError' || (e.message && e.message.indexOf('429') >= 0))) {
-            await new Promise(function (r) { window.setTimeout(r, 650); });
+            await W.networkPolicy.wait(W.networkPolicy.retryDelay(e.retryAfter, 0), signal);
             if (signal && signal.aborted) throw e;
             packed = await once();
           } else {
@@ -753,7 +755,7 @@
             } catch (e) {
               if (e && e.name === 'AbortError') throw e;
               if (e && e.name === 'RateLimitError') {
-                await new Promise(function (r) { window.setTimeout(r, 900); });
+                await W.networkPolicy.wait(W.networkPolicy.retryDelay(e.retryAfter, 0), signal);
                 packs = await loadCityBatchOm(slice, signal, true);
               } else {
                 packs = [];

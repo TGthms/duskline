@@ -20,10 +20,10 @@ test('service worker SHELL paths exist on disk', () => {
   assert.ok(urls.includes('./assets/icons/LUCIDE-LICENSE.txt'));
   assert.ok(urls.includes('./assets/vendor/maplibre-gl/LICENSE.txt'));
   assert.ok(urls.includes('./src/js/data/legal/packs/en.json'));
-  assert.ok(urls.includes('./src/js/data/weather-aqi-i18n.js'));
-  assert.ok(urls.includes('./src/js/data/weather-copy-i18n.js'));
-  assert.ok(urls.includes('./src/js/data/weather-greeting-pools-i18n.js'));
-  assert.ok(urls.includes('./src/js/data/weather-greeting-settings-i18n.js'));
+  assert.ok(!urls.includes('./src/js/data/weather-aqi-i18n.js'), 'legacy weather catalogs are build inputs, not shell assets');
+  assert.ok(!urls.includes('./src/js/data/weather-copy-i18n.js'), 'legacy weather catalogs are build inputs, not shell assets');
+  assert.ok(!urls.includes('./src/js/data/weather-greeting-pools-i18n.js'), 'legacy weather catalogs are build inputs, not shell assets');
+  assert.ok(!urls.includes('./src/js/data/weather-greeting-settings-i18n.js'), 'legacy weather catalogs are build inputs, not shell assets');
   for (const url of urls) {
     const rel = url.replace(/^\.\//, '');
     if (rel === '' || rel === './') {
@@ -98,7 +98,8 @@ test('all HTML entrypoints and manifest icons are covered by the offline shell',
   vm.runInContext(fs.readFileSync(path.join(root, 'src/js/data/duskline-locales.js'), 'utf8'), localeContext);
   for (const code of localeContext.window.DUSKLINE_LANG_CODES) {
     const pack = 'src/js/data/legal/packs/' + code + '.json';
-    assertCached(pack, 'legal locale picker');
+    if (code === 'en') assertCached(pack, 'English legal fallback');
+    else assert.ok(!shell.has(pack), 'other languages are cached on demand');
     assert.ok(fs.existsSync(path.join(root, pack)), 'missing offline legal pack ' + code);
   }
 
@@ -117,4 +118,14 @@ test('all HTML entrypoints and manifest icons are covered by the offline shell',
       styleFiles.push(imported);
     }
   }
+});
+
+test('shell install budget excludes unused locale catalogs', () => {
+  const source = fs.readFileSync(path.join(root,'sw.js'),'utf8');
+  const shell = [...source.match(/const SHELL = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map(match=>match[1]);
+  const packs = shell.filter(url=>/\/packs\/|weather-packs\//.test(url));
+  assert.deepEqual(packs,['./src/js/data/legal/packs/en.json','./src/js/data/weather-packs/en.json']);
+  let bytes = 0;
+  for (const asset of shell) bytes += fs.statSync(path.join(root,asset === './' ? 'index.html' : asset)).size;
+  assert.ok(bytes < 1800000,'shell exceeded 1.8 MB raw install budget: '+bytes);
 });

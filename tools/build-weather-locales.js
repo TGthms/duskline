@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const context = {window: {}};
 vm.createContext(context);
-const sources = ['i18n', 'duskline-locales', 'weather-about-i18n', 'weather-aqi-i18n', 'weather-copy-i18n', 'weather-greeting-pools-i18n', 'weather-greeting-settings-i18n'];
+const sources = ['i18n', 'duskline-locales', 'weather-about-i18n', 'weather-aqi-i18n', 'weather-copy-i18n', 'weather-greeting-pools-i18n', 'weather-greeting-settings-i18n', 'weather-stability-i18n'];
 for (const name of sources) vm.runInContext(fs.readFileSync(path.join(root,'src/js/data/'+name+'.js'),'utf8'),context);
 const target = path.join(root,'src/js/data/weather-packs');
 fs.mkdirSync(target,{recursive:true});

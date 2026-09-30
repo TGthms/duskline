@@ -343,6 +343,8 @@
   let detailEnterTimer = 0;
   let detailCloseListener = null;
   let searchGen = 0;
+  let searchAbort = null;
+  let placeChoiceGen = 0;
   let overlaysHoisted = false;
 
   function lang() {
@@ -713,7 +715,7 @@
     return dailyFieldAt(daily, 'uv_index_max', dayIdx);
   }
 
-  function sheetContextText(kind, pack, timeZone) {
+  function sheetContextText(kind, pack, timeZone, options) {
     const weather = pack && pack.weather || {};
     const current = weather.current || {};
     const hourly = weather.hourly || {};
@@ -752,10 +754,24 @@
         .replace('{hours}', format(hours)).replace('{minutes}', format(minutes));
     }
     if (kind === 'conditions') {
-      const index = dailyTodayIndex(daily, timeZone);
-      const high = dailyFieldAt(daily, 'temperature_2m_max', index);
-      const low = dailyFieldAt(daily, 'temperature_2m_min', index);
+      options = options || {};
+      const today = chartsApi.localDateKey(Date.now(), timeZone);
+      const date = options.dayKey || today;
+      const found = (daily.time || []).findIndex(value => String(value).slice(0,10) === date);
+      const index = found >= 0 ? found : dailyTodayIndex(daily, timeZone);
+      let high = dailyFieldAt(daily, 'temperature_2m_max', index);
+      let low = dailyFieldAt(daily, 'temperature_2m_min', index);
+      if (options.tempMode === 'feels') {
+        const window = chartsApi.hourlyDateWindow(hourly, timeZone, date);
+        const values = (hourly.apparent_temperature || []).slice(window.start,window.end)
+          .filter(value => value != null && Number.isFinite(Number(value))).map(Number);
+        if (!values.length) return '';
+        high = Math.max.apply(null,values); low = Math.min.apply(null,values);
+      }
       if (high == null || low == null || !Number.isFinite(Number(high)) || !Number.isFinite(Number(low))) return '';
+      if (date !== today || options.tempMode === 'feels') {
+        return t('weather.dailyRange', 'Daily range') + ' · ' + fmtTemp(low) + ' – ' + fmtTemp(high);
+      }
       return t('weather.context.conditions.range', 'Today’s forecast ranges from {low} to {high}.')
         .replace('{low}', fmtTemp(low)).replace('{high}', fmtTemp(high));
     }
@@ -1360,7 +1376,7 @@
   function aqiScaleLabel(scale) {
     return scale === 'eu'
       ? t('weather.aqiEuropeanAqi', 'European AQI')
-      : t('weather.countryUS', 'United States') + ' AQI';
+      : 'US AQI';
   }
   function aqiLabel(v, scale) {
     const band = aqiBandKey(v, scale);
@@ -3956,7 +3972,7 @@
       ? t('weather.about.aqi.eu', '')
       : t('weather.about.' + kind, '');
     if (aboutText) {
-      const contextText = sheetContextText(kind, pack, chartTz);
+      const contextText = sheetContextText(kind, pack, chartTz, {dayKey:String(selectedDayKey).slice(0,10),tempMode:dayMode});
       if (contextText) body += `<p class="wx-sheet-context wx-sheet-intelligence">${escapeHtml(contextText)}</p>`;
       const aboutHead = kind === 'conditions'
         ? aboutTitle + ' ' + t('weather.hourly', 'Hourly Forecast')
@@ -4725,7 +4741,14 @@
   window.closeWeatherDetail = closeDetail;
 
   let suggestIndex = -1;
+  function cancelSearch() {
+    searchGen += 1;
+    if (searchAbort) searchAbort.abort();
+    searchAbort = null;
+  }
   function closeSuggest() {
+    clearTimeout(searchTimer);
+    cancelSearch();
     if (!suggestEl || !searchEl) return;
     searchEl.removeAttribute('aria-busy');
     suggestEl.classList.remove('open');
@@ -4760,14 +4783,23 @@
     searchEl.setAttribute('aria-expanded', 'true');
   }
 
+  function searchChoiceError(city, label, primary) {
+    showError(t('weather.error', 'Could not load weather data.'));
+    if (!errorEl) return;
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'weather-inline-action';
+    retry.textContent = t('weather.retry', 'Retry');
+    retry.addEventListener('click', function () {
+      showError(''); selectingGreetingPlace = primary; chooseSearchCity(city, label);
+    });
+    errorEl.append(retry);
+  }
   async function chooseSearchCity(city, label) {
     const c = Object.assign({}, city, { isMyLocation: false });
     const chooseAsMySkyPlace = selectingGreetingPlace;
     selectingGreetingPlace = false;
-    if (chooseAsMySkyPlace) {
-      saveGreetingCity(c);
-      saveGreetingSource('city:' + cityKey(c));
-    }
+    const choiceGen = ++placeChoiceGen;
     closeSuggest();
     if (searchEl) searchEl.value = label || displayCityName(c);
     if (searchClear) {
@@ -4779,17 +4811,23 @@
     else openDetailLoading(c);
     try {
       const pack = await dataApi.loadCity(c, null, { enrich: true });
-      if (!pack || !pack.weather) {
+      if (choiceGen !== placeChoiceGen) return;
+      if (!W.searchPlaces.validForecast(pack)) {
         if (isDetailVisible() && openCity && sameCity(openCity.city, c)) closeDetail();
-        showError(t('weather.error', 'Could not load weather data.'));
+        searchChoiceError(c, label, chooseAsMySkyPlace);
         if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
         return;
       }
-      if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
+      if (chooseAsMySkyPlace) {
+        saveGreetingCity(c);
+        saveGreetingSource('city:' + cityKey(c));
+        setWeatherMode('my-sky', true);
+      }
       if (openCity && sameCity(openCity.city, c)) openDetail(pack);
     } catch (e) {
+      if (choiceGen !== placeChoiceGen) return;
       if (isDetailVisible() && openCity && sameCity(openCity.city, c)) closeDetail();
-      showError(t('weather.error', 'Could not load weather data.'));
+      searchChoiceError(c, label, chooseAsMySkyPlace);
       if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
     }
   }
@@ -4853,16 +4891,18 @@
       else { searchGen += 1; closeSuggest(); }
       return;
     }
-    const gen = ++searchGen;
+    cancelSearch();
+    const gen = searchGen;
+    searchAbort = new AbortController();
     suggestEl.innerHTML = `<li class="s-loading" role="status"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.notice.searching', 'Searching places…'))}</span></li>`;
     searchEl.setAttribute('aria-busy', 'true');
     openSuggest();
     try {
       const langParam = geocodeLangParam();
-      const data = await dataApi.fetchJson(`${GEOCODE}?name=${encodeURIComponent(q)}&count=8&language=${encodeURIComponent(langParam)}&format=json`);
+      const data = await dataApi.fetchJson(`${GEOCODE}?name=${encodeURIComponent(q)}&count=8&language=${encodeURIComponent(langParam)}&format=json`, searchAbort.signal);
       if (gen !== searchGen) return;
       searchEl.removeAttribute('aria-busy');
-      const results = data.results || [];
+      const results = W.searchPlaces.deduplicate(data.results || []);
       suggestEl.innerHTML = '';
       if (!results.length) {
         suggestEl.innerHTML = `<li role="presentation"><div role="option" aria-disabled="true" class="s-empty">${escapeHtml(t('weather.emptySearch', 'No cities found.'))}</div></li>`;
@@ -5413,7 +5453,6 @@
     });
     searchEl.addEventListener('input', () => {
       const q = searchEl.value.trim();
-      searchGen += 1;
       closeSuggest();
       if (searchClear) {
         searchClear.hidden = !q;

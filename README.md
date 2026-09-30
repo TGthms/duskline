@@ -42,7 +42,7 @@ Forecasts are for planning and exploration, not emergency decisions. Read the [P
 
 ## For contributors
 
-The app shell is static HTML, CSS, and classic JavaScript; it has no build step. Cloudflare Pages runs one small function for international CAP alerts. With Node.js 18 or newer:
+The app shell is static HTML, CSS, and classic JavaScript; it has no build step. Cloudflare Pages runs one small function for international CAP alerts. With Node.js 20 or newer:
 
 ```bash
 npm install
@@ -73,3 +73,11 @@ The repository root is the static site. [Cloudflare Pages](https://dusklineweath
 The code is available under the [MIT License](LICENSE). Bundled icon and map-rendering licenses are listed on the [open-source licenses page](https://dusklineweather.pages.dev/licenses.html). Weather data belongs to its providers and remains subject to their terms. duskline is not an emergency or life-safety service.
 
 The offline world map uses public-domain Natural Earth coastlines. See [`assets/WORLD-MAP-LICENSE.txt`](assets/WORLD-MAP-LICENSE.txt). Weather map color fields are interpolated forecast estimates.
+
+### Offline updates and release checks
+
+The worker stores a coherent, versioned shell. Navigation responses are reconstructed to remove host redirect metadata before Safari receives them. An update stays waiting until the user selects **Update**. The update prompt is separate from weather notifications. If an older installation is already stuck on a Safari error page, close all duskline tabs/windows and reopen after the fixed release is published; clearing this site's website data is a last resort because it removes saved preferences.
+
+English is included in the shell; other weather and legal language packs are fetched only when used. The separate locale cache keeps at most eight packs, and the currently selected language is retained after first installation. Offline language changes require a previously downloaded pack. Public alerts remain network-only.
+
+CI uses Node 20, verifies generated locale files and source translation coverage, and runs Chromium, Firefox, desktop WebKit, and phone-sized WebKit. GitHub Pages publishes only the exact successful CI revision, and skips superseded revisions. Cloudflare Git-connected automatic deployments are managed in the Cloudflare dashboard and must be disabled or configured with an equivalent check gate; the GitHub Pages workflow cannot govern them.

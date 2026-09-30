@@ -284,3 +284,27 @@ test('country-code-only shared links resolve official international alerts', asy
   assert.equal(payload.country,'Japan');
   assert.ok(payload.alerts.length > 0);
 });
+
+test('unmatched region spellings share one canonical country alert response', async () => {
+  const {onRequest} = await handlerPromise;
+  const entries = new Map();
+  const capCache = {
+    async match(request) {return entries.get(request.url)?.clone();},
+    async put(request,response) {entries.set(request.url,response.clone());}
+  };
+  const pending = [];
+  async function run(region) {
+    const ctx = createContext('https://duskline.test/api/international-alerts?cc=JP&admin1='+region);
+    ctx.value.env.CAP_CACHE = capCache;
+    ctx.value.waitUntil = promise => pending.push(promise);
+    const response = await onRequest(ctx.value);
+    await Promise.all(pending);
+    return {body:await response.json(), calls:ctx.calls};
+  }
+  const first = await run('UnknownA');
+  const second = await run('UnknownB');
+  assert.equal(first.body.scoped,false);
+  assert.equal(second.body.scoped,false);
+  assert.equal([...entries.keys()].filter(key=>key.includes('alerts-v3')).length,1);
+  assert.equal(second.calls.filter(call=>call.query.includes('alerts(filters')).length,0);
+});

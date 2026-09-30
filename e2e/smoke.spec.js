@@ -489,7 +489,7 @@ test('U.S. cities use U.S. AQI and load the 24-hour outlook on demand', async ({
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
   await page.locator('#weatherList .weather-row').first().click();
-  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('United States AQI');
+  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('US AQI');
   expect(detailUrl).toBe('', 'hourly air data should stay out of the initial city-list request');
 
   await page.locator('#weatherModules [data-sheet="aqi"]').click();
@@ -503,7 +503,7 @@ test('U.S. cities use U.S. AQI and load the 24-hour outlook on demand', async ({
   await expect(sheet.locator('.wx-aqi-readout')).toHaveText('45');
   await expect(sheet.locator('.weather-chart-sub')).toContainText('Good · 0–50');
   await expect(sheet.locator('.wx-air-main')).toContainText('PM₂.₅');
-  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('United States AQI');
+  await expect(page.locator('#weatherModules [data-sheet="aqi"]')).toContainText('US AQI');
 });
 
 test('EU cities use European AQI automatically without showing a scale switcher', async ({ page }) => {

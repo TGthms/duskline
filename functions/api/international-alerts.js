@@ -453,18 +453,6 @@ async function onRequest(context) {
   }
 
   const responseCache = getCache(context);
-  const locationKey = countryCode || ('name-' + normalizeName(countryName).replace(/[^a-z0-9]+/g, '-'));
-  // Matching rules can change between deploys; isolate region results so a
-  // short-lived previous miss cannot hide a newly resolvable admin1.
-  const regionKey = admin1Name ? '/admin1-v2-' + encodeURIComponent(normalizeAdmin1Name(admin1Name).replace(/\s+/g, '-')) : '';
-  const alertKey = cacheKey(context, 'cap/alerts/' + locationKey + regionKey + '/' + encodeURIComponent(language.toLowerCase()));
-  const cachedAlerts = await readCached(responseCache, alertKey);
-  if (cachedAlerts) {
-    const cachedTtl = cachedAlerts.availability === 'available'
-      ? alertCacheSeconds(cachedAlerts.alerts, Date.now())
-      : ALERT_CACHE_SECONDS;
-    return jsonResponse(cachedAlerts, 200, cachedTtl);
-  }
 
   try {
     const [countries, feedCatalog] = await Promise.all([
@@ -481,11 +469,16 @@ async function onRequest(context) {
         truncated: false,
         fetchedAt: Date.now()
       };
-      await writeCached(context, responseCache, alertKey, body, ALERT_CACHE_SECONDS);
+      // Country/feed catalogs already cache unsupported coverage; avoid keys
+      // derived from arbitrary user-supplied country or region strings.
       return jsonResponse(body, 200, ALERT_CACHE_SECONDS);
     }
 
     const matchedAdmin1 = admin1Name ? await findAdmin1(context, country.id, admin1Name) : null;
+    const alertKey = cacheKey(context, 'cap/alerts-v3/' + encodeURIComponent(country.id) +
+      '/' + (matchedAdmin1 ? encodeURIComponent(matchedAdmin1.id) : 'country') + '/' + language);
+    const cachedAlerts = await readCached(responseCache, alertKey);
+    if (cachedAlerts) return jsonResponse(cachedAlerts, 200, alertCacheSeconds(cachedAlerts.alerts, Date.now()));
     const result = await fetchCountryAlerts(context, country.id, country.name, language, matchedAdmin1 && matchedAdmin1.id);
     const alertTtl = alertCacheSeconds(result.alerts, Date.now());
     const body = {

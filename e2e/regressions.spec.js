@@ -317,7 +317,8 @@ test('hourly chart values update on pointer hover and reset when the pointer lea
 test.describe('installed offline shell', () => {
   test.use({serviceWorkers:'allow'});
 
-test('the installed app opens a saved forecast offline', async ({ page }) => {
+test('the installed app opens a saved forecast offline', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'Playwright WebKit setOffline bypasses service workers on reload; redirecting-host outage coverage runs separately.');
   await stubWeather(page, null);
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:');
@@ -334,31 +335,20 @@ test('the installed app opens a saved forecast offline', async ({ page }) => {
   await page.context().setOffline(false);
 });
 
-test('all legal language packs remain available offline after install', async ({ page }) => {
+test('recently used legal languages remain available offline without downloading all packs', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
   await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.waitForFunction(() => !!navigator.serviceWorker.controller, undefined, { timeout: 15000 });
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.goto('/terms.html');
   const title = page.locator('[data-i18n="legal.terms.title"]');
-  const englishTitle = (await title.textContent() || '').trim();
-  const englishBody = (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim();
-
+  await page.locator('#dusklineLanguage').selectOption('fr');
+  await expect(title).toHaveText('Conditions d’utilisation');
+  await expect.poll(() => page.evaluate(async () => (await (await caches.open('duskline-locales-v55')).keys()).length)).toBeGreaterThan(0);
+  await page.locator('#dusklineLanguage').selectOption('en');
   await page.context().setOffline(true);
-
-  const locales = await page.locator('#dusklineLanguage option').evaluateAll(options => options.map(option => option.value));
-  expect(locales).toHaveLength(30);
-  for (const locale of locales) {
-    await page.locator('#dusklineLanguage').selectOption(locale);
-    await expect(page.locator('html')).toHaveAttribute('data-lang', locale);
-    if (locale === 'en') {
-      await expect(title).toHaveText(englishTitle);
-      continue;
-    }
-    await expect(title).not.toHaveText(englishTitle);
-    await expect.poll(async () => (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim())
-      .not.toBe(englishBody);
-  }
+  await page.locator('#dusklineLanguage').selectOption('fr');
+  await expect(title).toHaveText('Conditions d’utilisation');
   await page.context().setOffline(false);
 });
 
@@ -952,7 +942,7 @@ test('daily forecast rows open the selected date with a day range, matching icon
   await monday.press('Enter');
   const sheet = page.locator('#weatherSheet');
   await expect(sheet).toHaveClass(/open/);
-  await expect(page.locator('#weatherSheetTitle')).toContainText(forecastDate.split('-')[2]);
+  await expect(page.locator('#weatherSheetTitle')).toHaveText(new Intl.DateTimeFormat('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'America/New_York'}).format(new Date(forecastDate+'T12:00:00Z')));
   await expect(page.locator('#weatherSheet .wx-sheet-title-host .wx-sheet-icon use')).toHaveAttribute('href', '#lucide-cloud-sun');
   await expect(page.locator('#weatherSheetBody .wx-day-facts')).toContainText('High');
   await expect(page.locator('#weatherSheetBody .wx-day-facts')).toContainText('Low');
@@ -1051,6 +1041,8 @@ test('hourly date switcher preserves temperature mode and changes the chart date
   await dates.nth(1).click();
   await expect(page.locator(`[data-hourly-date="${date}"]`)).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('#weatherSheetBody [data-temp-mode="feels"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#weatherSheetBody .wx-sheet-intelligence')).toContainText('Daily range');
+  await expect(page.locator('#weatherSheetBody .wx-sheet-intelligence')).not.toContainText('Today');
   const points = JSON.parse(await page.locator('#weatherSheetBody .weather-chart-wrap').getAttribute('data-pts'));
   expect(points.length).toBeGreaterThan(1);
   await page.locator('#weatherSheetPanel').evaluate(node => Promise.all(node.getAnimations().map(animation => animation.finished.catch(() => {}))));
@@ -1174,6 +1166,17 @@ test('My Sky keeps a compact primary dashboard and one quiet list with rearrange
   await expect(page.locator('#weatherMyLocationList .weather-row').first()).toContainText('Tokyo');
   await page.setViewportSize({width:1440,height:1000});
   await page.screenshot({path:testInfo.outputPath('my-sky-desktop.png'),fullPage:true});
+  for (const width of [320,390,768]) {
+    await page.setViewportSize({width,height:844});
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await expect(page.locator('#weatherHome [data-home-open]')).toBeVisible();
+    await expect(page.locator('#weatherHome .weather-hourly-item')).toHaveCount(8);
+    if (width < 420) {
+      const hours = page.locator('#weatherHome .weather-hourly');
+      await hours.focus(); await hours.press('ArrowRight');
+      await expect.poll(() => hours.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+    }
+  }
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:testInfo.outputPath('my-sky-phone.png'),fullPage:true});
 });
@@ -1185,6 +1188,8 @@ test('rapid sheet and city dismissal returns to the list without reopening detai
   await page.locator('#weatherList .weather-row').first().click();
   await page.locator('#weatherModules [data-sheet="conditions"]').click();
   await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await page.locator('[data-hourly-date]').nth(1).click();
+  await page.locator('[data-temp-mode="feels"]').click();
   await page.evaluate(() => {
     document.querySelector('#weatherSheetClose').click();
     document.querySelector('#weatherDetailBack').click();
@@ -1227,4 +1232,52 @@ test('a current-provider outage uses NWS hourly temperature instead of its daily
   await page.goto('/');
   const temperature = page.locator('#weatherList .weather-row').filter({hasText:'New York'}).first().locator('.weather-row-temp');
   await expect(temperature).toHaveText(/^(20|68)°$/);
+});
+
+test('search deduplicates equivalent places and cancels superseded requests', async ({page}) => {
+  await stubWeather(page,null);
+  let aborted = false;
+  await page.route(/geocoding-api\.open-meteo\.com/, async route => {
+    const name = new URL(route.request().url()).searchParams.get('name');
+    if (name === 'slow') {
+      page.on('requestfailed', request => {if (request.url().includes('name=slow')) aborted = true;});
+      await new Promise(resolve => setTimeout(resolve,800));
+      return route.fulfill({json:{results:[]}}).catch(() => {});
+    }
+    const place = {name:'Paris',latitude:48.8566,longitude:2.3522,country:'France',country_code:'FR',timezone:'Europe/Paris'};
+    await route.fulfill({json:{results:[place,{...place,admin1:'Île-de-France'}]}});
+  });
+  await page.goto('/');
+  const search = page.locator('#weatherSearch');
+  const slowRequest = page.waitForRequest(/name=slow/);
+  await search.fill('slow');
+  await expect(page.locator('#weatherSuggest .s-loading')).toBeVisible();
+  await slowRequest;
+  await search.fill('Paris');
+  await expect(page.locator('#weatherSuggest [data-place-choice]')).toHaveCount(1);
+  await expect(page.locator('#weatherSuggest')).toContainText('Île-de-France');
+  await expect.poll(() => aborted).toBe(true);
+});
+
+test('failed primary city selection keeps the previous city and offers a retry', async ({page}) => {
+  const previous = {name:'Boston',lat:42.36,lon:-71.06,tz:'America/New_York',country:'United States',country_code:'US'};
+  await page.addInitScript(city => {
+    localStorage.setItem('duskline-weather-mode','my-sky');
+    localStorage.setItem('duskline-weather-greeting-city',JSON.stringify(city));
+    localStorage.setItem('duskline-weather-greeting-source','city:42.360,-71.060');
+  },previous);
+  await stubWeather(page,null);
+  await page.route(/geocoding-api\.open-meteo\.com/, route => route.fulfill({json:{results:[{name:'Paris',latitude:48.8566,longitude:2.3522,country:'France',country_code:'FR',timezone:'Europe/Paris'}]}}));
+  await page.goto('/');
+  await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
+  await page.locator('#weatherGreetingPlace').click();
+  await page.locator('.weather-greeting-source-search').click();
+  await page.route(/^https:\/\/(api\.weather\.gov|api\.open-meteo\.com)\//, route => route.abort());
+  await page.locator('#weatherSearch').fill('Paris');
+  await page.locator('#weatherSuggest [data-place-choice]').click();
+  await expect(page.locator('#weatherError')).toBeVisible();
+  await expect(page.locator('#weatherError button')).toHaveText('Retry');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('duskline-weather-greeting-city')));
+  expect(saved.name).toBe('Boston');
+  expect(await page.evaluate(() => localStorage.getItem('duskline-weather-greeting-source'))).toBe('city:42.360,-71.060');
 });
