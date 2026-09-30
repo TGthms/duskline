@@ -1,0 +1,4 @@
+World coastlines: Natural Earth, 1:110m land. Public domain.
+https://www.naturalearthdata.com/about/terms-of-use/
+Source: https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson
+Projection: equirectangular. Coastlines are generalized for a global overview.

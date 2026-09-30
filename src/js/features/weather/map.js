@@ -9,7 +9,12 @@
     var root = document.getElementById('weatherMap');
     var canvasHost = document.getElementById('weatherMapCanvas');
     var fallbackHost = document.getElementById('weatherMapFallback');
+    var stageHost = root && root.querySelector('.weather-map-stage');
     var statusHost = document.getElementById('weatherMapStatus');
+    var contextMenu = document.getElementById('weatherMapContextMenu');
+    var contextPlaceLabel = document.getElementById('weatherMapContextPlace');
+    var contextViewButton = document.getElementById('weatherMapContextView');
+    var contextAddButton = document.getElementById('weatherMapContextAdd');
     var closeButton = document.getElementById('weatherMapClose');
     var zoomInButton = document.getElementById('weatherMapZoomIn');
     var zoomOutButton = document.getElementById('weatherMapZoomOut');
@@ -40,6 +45,14 @@
     var moveTimer = 0;
     var styleTimer = 0;
     var requestTimer = 0;
+    var feedbackTimer = 0;
+    var renderFrame = 0;
+    var longPressTimer = 0;
+    var longPressPointer = null;
+    var longPressStart = null;
+    var suppressNextMapClick = false;
+    var contextCity = null;
+    var contextIsSaved = false;
     var returnFocus = null;
     var previousStyles = null;
     var previousInert = [];
@@ -69,15 +82,25 @@
     function selectedCity(options) {
       return options && options.initialCity || places[0] && places[0].city || { name: 'New York', lat: 40.713, lon: -74.006 };
     }
-    function setStatus(message, visible) {
+    function setStatus(message, visible, loading) {
       if (!statusHost) return;
       statusHost.textContent = message || '';
       statusHost.hidden = !visible || !message;
+      if (loading && visible && message) statusHost.setAttribute('data-loading', 'true');
+      else statusHost.removeAttribute('data-loading');
     }
     function setBusy(busy) {
       if (!root) return;
       if (busy) root.setAttribute('aria-busy', 'true');
       else root.removeAttribute('aria-busy');
+    }
+    function showMapFeedback(message) {
+      clearTimeout(feedbackTimer);
+      setBusy(false);
+      setStatus(message, true, false);
+      feedbackTimer = window.setTimeout(function () {
+        if (isOpen) setStatus('', false);
+      }, 2400);
     }
     function lockBackground() {
       previousStyles = {
@@ -94,6 +117,7 @@
         previousInert.push({ element: element, value: !!element.inert });
         element.inert = true;
       });
+      if (typeof deps.onOpen === 'function') deps.onOpen();
     }
     function unlockBackground() {
       document.documentElement.classList.remove('weather-map-open');
@@ -104,6 +128,13 @@
       previousStyles = null;
       previousInert.forEach(function (row) { row.element.inert = row.value; });
       previousInert = [];
+      if (typeof deps.onClose === 'function') deps.onClose();
+    }
+    function hideContextMenu(restoreFocus) {
+      if (!contextMenu || contextMenu.hidden) return;
+      contextMenu.hidden = true;
+      contextCity = null;
+      if (restoreFocus && isOpen && closeButton) closeButton.focus({ preventScroll: true });
     }
     function close() {
       if (!isOpen) return;
@@ -111,6 +142,16 @@
       clearTimeout(moveTimer);
       clearTimeout(styleTimer);
       clearTimeout(requestTimer);
+      clearTimeout(feedbackTimer);
+      clearTimeout(longPressTimer);
+      if (renderFrame) {
+        if (global.cancelAnimationFrame) global.cancelAnimationFrame(renderFrame);
+        else global.clearTimeout(renderFrame);
+      }
+      renderFrame = 0;
+      longPressPointer = null;
+      longPressStart = null;
+      hideContextMenu(false);
       if (activeController) activeController.abort();
       activeController = null;
       if (map) {
@@ -141,7 +182,22 @@
     function onDialogKeydown(event) {
       if (event.key === 'Escape') {
         event.preventDefault();
+        if (contextMenu && !contextMenu.hidden) {
+          hideContextMenu(true);
+          return;
+        }
         close();
+        return;
+      }
+      if (contextMenu && !contextMenu.hidden
+          && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        var menuItems = Array.prototype.slice.call(contextMenu.querySelectorAll('[role="menuitem"]:not([disabled])'));
+        if (menuItems.length) {
+          event.preventDefault();
+          var menuIndex = menuItems.indexOf(document.activeElement);
+          var step = event.key === 'ArrowDown' ? 1 : -1;
+          menuItems[(menuIndex + step + menuItems.length) % menuItems.length].focus();
+        }
         return;
       }
       if (event.key !== 'Tab') return;
@@ -157,6 +213,162 @@
         first.focus();
       }
     }
+    function distanceKm(lat1, lon1, lat2, lon2) {
+      var radians = Math.PI / 180;
+      var dLat = (lat2 - lat1) * radians;
+      var dLon = (lon2 - lon1) * radians;
+      var a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+        + Math.cos(lat1 * radians) * Math.cos(lat2 * radians)
+        * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+    }
+    function nearestPlace(lat, lon) {
+      var nearest = null;
+      var nearestDistance = Infinity;
+      places.forEach(function (item) {
+        var city = item && item.city;
+        if (!city) return;
+        var d = distanceKm(lat, lon, Number(city.lat), Number(city.lon));
+        if (d < nearestDistance) { nearest = item; nearestDistance = d; }
+      });
+      return nearest && nearestDistance <= 25 ? nearest : null;
+    }
+    function cityAtClientPoint(clientX, clientY) {
+      var lat;
+      var lon;
+      if (map && !fallbackActive) {
+        var canvas = map.getCanvas();
+        var bounds = canvas.getBoundingClientRect();
+        var projected = map.unproject([clientX - bounds.left, clientY - bounds.top]);
+        lat = projected.lat;
+        lon = projected.lng;
+      } else {
+        var bounds = (fallbackHost || stageHost).getBoundingClientRect();
+        var x = Math.max(0, Math.min(bounds.width, clientX - bounds.left));
+        var y = Math.max(0, Math.min(bounds.height, clientY - bounds.top));
+        lon = (x / Math.max(1, bounds.width)) * 360 - 180;
+        lat = 90 - (y / Math.max(1, bounds.height)) * 180;
+      }
+      lat = Math.max(-85, Math.min(85, Number(lat)));
+      lon = normalizeLongitude(Number(lon));
+      var place = nearestPlace(lat, lon);
+      if (place) {
+      return { city: Object.assign({}, place.city), name: place.name || place.city.name || '', saved: !!place.saved };
+      }
+      var coordinateLabel = lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°';
+      return {
+        city: {
+          name: t('weather.mapPinnedPlace', 'Pinned place'),
+          admin1: coordinateLabel,
+          lat: Number(lat.toFixed(4)), lon: Number(lon.toFixed(4)),
+          country: '', country_code: '', tryNws: false, isMapPin: true
+        },
+        name: coordinateLabel,
+        saved: false
+      };
+    }
+    function showContextMenu(clientX, clientY) {
+      if (!contextMenu || !stageHost || !isOpen) return;
+      var selected = cityAtClientPoint(clientX, clientY);
+      contextCity = selected.city;
+      contextIsSaved = selected.saved || (typeof deps.isFavorite === 'function' && deps.isFavorite(selected.city));
+      if (contextPlaceLabel) contextPlaceLabel.textContent = selected.name;
+      if (contextViewButton) {
+        contextViewButton.textContent = selected.city.isMapPin
+          ? t('weather.mapViewHere', 'View weather here')
+          : t('weather.mapViewPlace', 'View {place}').replace('{place}', selected.name);
+      }
+      if (contextAddButton) {
+        contextAddButton.textContent = contextIsSaved
+          ? t('weather.mapAlreadySaved', 'Already in My Sky')
+          : selected.city.isMapPin
+            ? t('weather.mapAddPin', 'Add pin to My Sky')
+            : t('weather.mapAddPlace', 'Add {place} to My Sky').replace('{place}', selected.name);
+        contextAddButton.disabled = contextIsSaved;
+      }
+      contextMenu.hidden = false;
+      contextMenu.style.visibility = 'hidden';
+      var stageRect = stageHost.getBoundingClientRect();
+      var menuRect = contextMenu.getBoundingClientRect();
+      var left = Math.max(8, Math.min(stageRect.width - menuRect.width - 8, clientX - stageRect.left));
+      var top = Math.max(8, Math.min(stageRect.height - menuRect.height - 8, clientY - stageRect.top));
+      contextMenu.style.left = left + 'px';
+      contextMenu.style.top = top + 'px';
+      contextMenu.style.visibility = '';
+      if (contextViewButton) contextViewButton.focus({ preventScroll: true });
+    }
+    function pointOnMap(event) {
+      var target = event && event.target;
+      return !!(target && ((canvasHost && canvasHost.contains(target)) || (fallbackHost && fallbackHost.contains(target))));
+    }
+    function onMapContextMenu(event) {
+      if (!pointOnMap(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressNextMapClick = true;
+      window.setTimeout(function () { suppressNextMapClick = false; }, 650);
+      showContextMenu(event.clientX, event.clientY);
+    }
+    function clearLongPress() {
+      clearTimeout(longPressTimer);
+      longPressTimer = 0;
+      longPressPointer = null;
+      longPressStart = null;
+    }
+    function onMapPointerDown(event) {
+      if (!pointOnMap(event) || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) return;
+      if (contextMenu && !contextMenu.hidden) hideContextMenu(false);
+      clearLongPress();
+      longPressPointer = event.pointerId;
+      longPressStart = { x: event.clientX, y: event.clientY };
+      var pointerId = event.pointerId;
+      var x = event.clientX;
+      var y = event.clientY;
+      longPressTimer = window.setTimeout(function () {
+        if (longPressPointer !== pointerId) return;
+        suppressNextMapClick = true;
+        window.setTimeout(function () { suppressNextMapClick = false; }, 650);
+        showContextMenu(x, y);
+        longPressTimer = 0;
+      }, 520);
+    }
+    function onMapPointerMove(event) {
+      if (longPressPointer == null || event.pointerId !== longPressPointer || !longPressStart) return;
+      if (Math.abs(event.clientX - longPressStart.x) > 10 || Math.abs(event.clientY - longPressStart.y) > 10) clearLongPress();
+    }
+    function onMapPointerEnd(event) {
+      if (longPressPointer == null || (event.pointerId != null && event.pointerId !== longPressPointer)) return;
+      clearLongPress();
+    }
+    if (contextMenu) {
+      contextMenu.addEventListener('click', function (event) {
+        var button = event.target.closest && event.target.closest('[data-map-action]');
+        if (!button || !contextCity) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var action = button.getAttribute('data-map-action');
+        var city = contextCity;
+        hideContextMenu(false);
+        if (action === 'view' && typeof deps.onSelectCity === 'function') deps.onSelectCity(city);
+        else if (action === 'add' && !contextIsSaved && typeof deps.onAddCity === 'function') {
+          deps.onAddCity(city);
+          showMapFeedback(t('weather.notice.added', 'Added to My Sky'));
+        }
+      });
+    }
+    if (stageHost) {
+      stageHost.addEventListener('contextmenu', onMapContextMenu);
+      stageHost.addEventListener('pointerdown', onMapPointerDown, true);
+      stageHost.addEventListener('pointermove', onMapPointerMove, true);
+      stageHost.addEventListener('pointerup', onMapPointerEnd, true);
+      stageHost.addEventListener('pointercancel', onMapPointerEnd, true);
+      stageHost.addEventListener('click', function (event) {
+        if (contextMenu && !contextMenu.hidden && !contextMenu.contains(event.target)) hideContextMenu(false);
+      });
+    }
+    if (root) root.addEventListener('pointerdown', function (event) {
+      if (contextMenu && !contextMenu.hidden && !contextMenu.contains(event.target)) hideContextMenu(false);
+    }, true);
     function addStyleSheet() {
       return new Promise(function (resolve, reject) {
         var link = document.getElementById('weatherMapLibreCss');
@@ -261,7 +473,7 @@
       activeController = new AbortController();
       var controller = activeController;
       activeRequestKey = geometry.key;
-      setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true);
+      setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
       setBusy(true);
       requestTimer = setTimeout(function () { controller.abort(); }, 20000);
       return fetch(makeGridUrl(geometry), { signal: controller.signal, credentials: 'omit' }).then(function (response) {
@@ -339,6 +551,53 @@
       }
       return [0, 0, 0, 0];
     }
+    function legendConfig(layer) {
+      if (layer === 'precipitation') {
+        return {
+          min: 0, max: 100, ticks: [0, 25, 50, 75, 100], transparentUntil: 8,
+          stops: [
+            { value: 8, color: '#6dcbff' }, { value: 25, color: '#32b0f1' },
+            { value: 50, color: '#3f7ae8' }, { value: 75, color: '#5b53cf' },
+            { value: 100, color: '#994ed6' }
+          ]
+        };
+      }
+      if (layer === 'wind') {
+        return {
+          min: 0, max: 26, ticks: [0, 6, 12, 18, 26], transparentUntil: 2,
+          stops: [
+            { value: 2, color: '#49b0d9' }, { value: 6, color: '#4fcdb7' },
+            { value: 12, color: '#beda61' }, { value: 18, color: '#ffa748' },
+            { value: 26, color: '#e4505f' }
+          ]
+        };
+      }
+      return {
+        min: -20, max: 40, ticks: [-20, -5, 8, 18, 28, 40], transparentUntil: null,
+        stops: [
+          { value: -20, color: '#4062ca' }, { value: -5, color: '#389cdd' },
+          { value: 8, color: '#4ccac9' }, { value: 18, color: '#adde71' },
+          { value: 28, color: '#ffc746' }, { value: 40, color: '#eb5644' }
+        ]
+      };
+    }
+    function gradientCss(config) {
+      var stops = [];
+      if (config.transparentUntil != null) {
+        var transparentAt = ((config.transparentUntil - config.min) / (config.max - config.min)) * 100;
+        stops.push('transparent 0%', 'transparent ' + transparentAt.toFixed(2) + '%');
+      }
+      config.stops.forEach(function (stop) {
+        var position = ((stop.value - config.min) / (config.max - config.min)) * 100;
+        stops.push(stop.color + ' ' + position.toFixed(2) + '%');
+      });
+      return 'linear-gradient(90deg,' + stops.join(',') + ')';
+    }
+    function formatLegendValue(layer, value) {
+      if (layer === 'temperature') return typeof deps.fmtTemp === 'function' ? deps.fmtTemp(value) : value + '°';
+      if (layer === 'precipitation') return value + '%';
+      return typeof deps.fmtWind === 'function' ? deps.fmtWind(value) : value + ' m/s';
+    }
     function interpolatedValue(grid, x, y, layer, hourIndex) {
       var weighted = 0;
       var weightSum = 0;
@@ -358,8 +617,9 @@
     }
     function drawWeatherImage(grid) {
       if (!grid || !grid.geometry) return;
-      var width = 180;
-      var height = 90;
+      var dimensions = renderDimensions(canvasHost && canvasHost.clientWidth);
+      var width = dimensions.width;
+      var height = dimensions.height;
       var canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
@@ -388,6 +648,22 @@
         } catch (error) { /* map may close between the draw and source update */ }
       }
     }
+    function renderDimensions(viewportWidth) {
+      var width = Math.max(96, Math.min(180, Math.round((Number(viewportWidth) || 720) / 4)));
+      return { width: width, height: Math.round(width / 2) };
+    }
+    function scheduleWeatherImage(grid) {
+      if (renderFrame) {
+        if (global.cancelAnimationFrame) global.cancelAnimationFrame(renderFrame);
+        else global.clearTimeout(renderFrame);
+      }
+      var render = function () {
+        renderFrame = 0;
+        if (isOpen && grid === activeGrid) drawWeatherImage(grid);
+      };
+      renderFrame = global.requestAnimationFrame
+        ? global.requestAnimationFrame(render) : global.setTimeout(render, 16);
+    }
     function formatTime(iso) {
       if (!iso) return t('weather.now', 'Now');
       var stamp = new Date(String(iso) + 'Z');
@@ -397,6 +673,24 @@
         return stamp.toLocaleTimeString(typeof deps.localeTag === 'function' ? deps.localeTag() : 'en-US', options);
       } catch (e) { return stamp.toLocaleTimeString([], { hour: 'numeric' }); }
     }
+    function formatLocalTime(iso) {
+      if (!iso) return '';
+      var stamp = new Date(String(iso) + 'Z');
+      if (!Number.isFinite(stamp.getTime())) return '';
+      try {
+        return new Intl.DateTimeFormat(typeof deps.localeTag === 'function' ? deps.localeTag() : undefined, {
+          hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+        }).format(stamp);
+      } catch (e) { return stamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+    }
+    function updateTimeOutput(grid) {
+      if (!timeOutput || !grid || !grid.times || !grid.times.length) return;
+      var stampIndex = Math.min(grid.times.length - 1, grid.baseIndex + selectedOffset);
+      var iso = grid.times[stampIndex];
+      var local = formatLocalTime(iso);
+      var prefix = selectedOffset === 0 ? t('weather.now', 'Now') + ' · ' : '';
+      timeOutput.textContent = prefix + formatTime(iso) + (local ? ' · ' + local : '');
+    }
     function syncTimeControl(grid) {
       if (!timeInput) return;
       var available = Math.max(0, (grid.times || []).length - grid.baseIndex - 1);
@@ -405,9 +699,7 @@
       timeInput.max = String(maxOffset);
       timeInput.value = String(selectedOffset);
       timeInput.disabled = maxOffset < 1;
-      var stampIndex = Math.min(grid.times.length - 1, grid.baseIndex + selectedOffset);
-      var text = selectedOffset === 0 ? t('weather.now', 'Now') : formatTime(grid.times[stampIndex]);
-      if (timeOutput) timeOutput.textContent = text;
+      updateTimeOutput(grid);
       if (timeLabel) timeLabel.textContent = t('weather.mapForecastHour', 'Forecast hour · UTC');
     }
     function legendForLayer(layer) {
@@ -416,22 +708,29 @@
           : t('weather.wind', 'Wind');
       if (legendTitle) legendTitle.textContent = title;
       if (legendGradient) legendGradient.dataset.layer = layer;
+      var config = legendConfig(layer);
+      if (legendGradient) legendGradient.style.background = gradientCss(config);
       if (legendValues) {
-        var values = layer === 'temperature'
-          ? (deps.useF && deps.useF() ? [-4, 14, 32, 50, 68, 86, 104] : [-20, -5, 8, 18, 28, 40])
-          : layer === 'precipitation' ? [0, 25, 50, 75, 100] : [0, 5, 10, 15, 20, 25];
-        legendValues.textContent = values.map(function (value) {
-          if (layer === 'temperature') return typeof deps.fmtTemp === 'function' ? deps.fmtTemp(deps.useF && deps.useF() ? (value - 32) * 5 / 9 : value) : value + '°';
-          if (layer === 'precipitation') return value + '%';
-          return typeof deps.fmtWind === 'function' ? deps.fmtWind(value) : value + ' m/s';
-        }).join('  ');
+        legendValues.replaceChildren();
+        legendValues.style.position = 'relative';
+        legendValues.style.height = '14px';
+        config.ticks.forEach(function (value) {
+          var tick = document.createElement('span');
+          var fraction = (value - config.min) / (config.max - config.min);
+          tick.textContent = formatLegendValue(layer, value);
+          tick.style.position = 'absolute';
+          tick.style.left = (fraction * 100).toFixed(2) + '%';
+          tick.style.transform = fraction >= 0.999 ? 'translateX(-100%)' : (fraction <= 0.001 ? 'none' : 'translateX(-50%)');
+          legendValues.appendChild(tick);
+        });
+        legendValues.style.fontSize = config.ticks.length > 5 ? '9px' : '';
       }
     }
     function applyGrid(grid) {
       if (!grid || !isOpen) return;
       activeGrid = grid;
       baseIndex = grid.baseIndex;
-      if (map && map.getSource(RASTER_ID)) drawWeatherImage(grid);
+      if (map && map.getSource(RASTER_ID)) scheduleWeatherImage(grid);
       syncTimeControl(grid);
       legendForLayer(selectedLayer);
       setStatus('', false);
@@ -532,6 +831,7 @@
         }
       });
       map.on('click', 'duskline-weather-place-clusters', function (event) {
+        if (suppressNextMapClick) { suppressNextMapClick = false; return; }
         var feature = event.features && event.features[0];
         if (!feature) return;
         var sourceRef = map.getSource(CITY_SOURCE);
@@ -541,6 +841,7 @@
         }).catch(function () {});
       });
       map.on('click', 'duskline-weather-city-targets', function (event) {
+        if (suppressNextMapClick) { suppressNextMapClick = false; return; }
         var feature = event.features && event.features[0];
         if (feature) selectPlace(feature.properties.placeIndex);
       });
@@ -574,22 +875,35 @@
         detail.textContent = [temperature, item.city && (item.city.admin1 || item.city.country)].filter(Boolean).join(' · ');
         button.setAttribute('aria-label', [title.textContent, detail.textContent].filter(Boolean).join(', '));
         button.append(title, detail);
-        button.addEventListener('click', function () { selectPlace(index); });
+        button.addEventListener('click', function (event) {
+          if (suppressNextMapClick) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressNextMapClick = false;
+            return;
+          }
+          selectPlace(index);
+        });
         placesHost.appendChild(button);
       });
     }
+    var fallbackZoom = 1;
+    var fallbackPan = { x: 0, y: 0 };
+    function fitFallback() {
+      if (!fallbackHost || !fallbackActive) return;
+      const atlas = fallbackHost.querySelector('.weather-map-atlas');
+      if (!atlas) return;
+      const width = Math.min(fallbackHost.clientWidth, fallbackHost.clientHeight * 2);
+      atlas.style.width = width + 'px';
+      atlas.style.height = width / 2 + 'px';
+      const maxX = width * (fallbackZoom - 1) / 2;
+      const maxY = width / 2 * (fallbackZoom - 1) / 2;
+      fallbackPan.x = Math.max(-maxX, Math.min(maxX, fallbackPan.x));
+      fallbackPan.y = Math.max(-maxY, Math.min(maxY, fallbackPan.y));
+      atlas.style.transform = 'translate(' + fallbackPan.x + 'px,' + fallbackPan.y + 'px) scale(' + fallbackZoom + ')';
+    }
     function fallbackMapSvg() {
-      return '<svg class="weather-map-world" viewBox="0 0 1000 500" aria-hidden="true" focusable="false">'
-        + '<defs><linearGradient id="mapOcean" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#15385a"/><stop offset="1" stop-color="#0c2038"/></linearGradient></defs>'
-        + '<rect width="1000" height="500" rx="20" fill="url(#mapOcean)"/>'
-        + '<g class="weather-map-graticule"><path d="M0 125H1000M0 250H1000M0 375H1000M250 0V500M500 0V500M750 0V500"/></g>'
-        + '<g class="weather-map-land"><path d="M73 102 124 71 189 58 232 72 259 103 246 128 222 138 211 174 185 190 177 226 157 250 145 288 123 280 112 248 93 226 86 192 67 166 57 131Z"/>'
-        + '<path d="M204 291 237 299 258 325 267 356 252 388 242 429 220 460 206 431 210 397 195 370 187 337Z"/>'
-        + '<path d="M436 94 472 74 512 78 533 97 557 100 579 86 617 91 640 108 677 103 709 119 744 122 771 141 813 143 851 163 876 190 858 211 823 210 804 228 768 221 749 241 715 232 700 246 677 241 658 258 640 250 624 273 599 269 585 292 558 287 546 267 521 261 508 244 487 234 465 214 451 189 429 174 417 146Z"/>'
-        + '<path d="M505 271 542 278 568 301 576 335 563 367 549 393 535 430 515 447 501 417 494 384 481 361 475 327 485 298Z"/>'
-        + '<path d="M761 281 799 272 826 285 845 306 837 327 806 331 781 319Z"/>'
-        + '<path d="M889 358 931 352 958 369 953 393 925 402 894 390Z"/>'
-        + '</g></svg>';
+      return '<div class="weather-map-atlas"><img src="assets/world-land.svg" alt="" class="weather-map-world" draggable="false"></div>';
     }
     function renderFallbackPlaces() {
       if (!fallbackHost) return;
@@ -608,10 +922,41 @@
           ? (typeof deps.fmtTemp === 'function' ? deps.fmtTemp(Number(item.temperature)) : Math.round(item.temperature) + '°') : '';
         button.setAttribute('aria-label', [item.name || item.city.name, temp].filter(Boolean).join(', '));
         button.title = button.getAttribute('aria-label');
-        button.addEventListener('click', function () { selectPlace(index); });
+        button.addEventListener('click', function (event) {
+          if (suppressNextMapClick) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressNextMapClick = false;
+            return;
+          }
+          selectPlace(index);
+        });
         markerLayer.appendChild(button);
       });
-      fallbackHost.appendChild(markerLayer);
+      fallbackHost.querySelector(".weather-map-atlas").appendChild(markerLayer);
+      fitFallback();
+    }
+    if (fallbackHost) {
+      let drag = null;
+      fallbackHost.addEventListener('pointerdown', function (event) {
+        if (event.target.closest('button')) return;
+        drag = {x: event.clientX, y: event.clientY, panX: fallbackPan.x, panY: fallbackPan.y};
+        fallbackHost.setPointerCapture(event.pointerId);
+      });
+      fallbackHost.addEventListener('pointermove', function (event) {
+        if (!drag) return;
+        fallbackPan = {x: drag.panX + event.clientX - drag.x, y: drag.panY + event.clientY - drag.y};
+        fitFallback();
+      });
+      fallbackHost.addEventListener('pointerup', function () { drag = null; });
+      fallbackHost.addEventListener('pointercancel', function () { drag = null; });
+      fallbackHost.tabIndex = 0;
+      fallbackHost.setAttribute('aria-label', t('weather.mapOfflineNavigation', 'Offline world map. Use arrow keys to pan and zoom buttons to explore.'));
+      fallbackHost.addEventListener('keydown', function (event) {
+        const moves = {ArrowLeft: [40,0], ArrowRight: [-40,0], ArrowUp: [0,40], ArrowDown: [0,-40]};
+        if (moves[event.key]) { event.preventDefault(); fallbackPan.x += moves[event.key][0]; fallbackPan.y += moves[event.key][1]; fitFallback(); }
+      });
+      if (typeof ResizeObserver === 'function') new ResizeObserver(fitFallback).observe(fallbackHost);
     }
     function useFallback(reason) {
       if (!isOpen || fallbackActive) return;
@@ -626,14 +971,15 @@
         fallbackHost.hidden = false;
         renderFallbackPlaces();
       }
-      if (mapControls) mapControls.hidden = true;
-      if (credit) credit.textContent = t('weather.mapSchematicCredit', 'Schematic map · City positions are approximate');
+      if (mapControls) mapControls.hidden = false;
+      if (credit) credit.textContent = t('weather.mapOfflineCredit', 'Offline world map · Natural Earth · Geographic city coordinates');
       setBusy(false);
-      setStatus(reason || t('weather.mapTilesUnavailable', 'Detailed map tiles are unavailable. Showing the local schematic map.'), true);
+      setStatus(reason || t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'), true);
       legendForLayer(selectedLayer);
-      if (!activeGrid) setStatus(t('weather.mapTilesUnavailable', 'Detailed map tiles are unavailable. Showing the local schematic map.'), true);
+      if (!activeGrid) setStatus(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'), true);
     }
     function loadCityMap(options) {
+      if (global.navigator && global.navigator.onLine === false) { useFallback(); return; }
       var city = selectedCity(options);
       mapTimeZone = 'UTC';
       var center = [Number(city.lon), Number(city.lat)];
@@ -641,7 +987,7 @@
       if (canvasHost) canvasHost.hidden = false;
       if (fallbackHost) fallbackHost.hidden = true;
       if (mapControls) mapControls.hidden = false;
-      setStatus(t('weather.mapLoading', 'Loading map…'), true);
+      setStatus(t('weather.mapLoading', 'Loading map…'), true, true);
       setBusy(true);
       loadMapLibrary().then(function (library) {
         if (!isOpen) return;
@@ -670,12 +1016,12 @@
           map.once('idle', function () { clearTimeout(styleTimer); });
           try {
             installWeatherRaster(library);
-            setStatus('', false);
+            setStatus(t('weather.mapEstimate', 'Interpolated forecast estimate · Updates with the visible area'), true);
             setBusy(false);
             map.resize();
             requestAnimationFrame(function () { if (map) map.resize(); });
           } catch (error) {
-            useFallback(t('weather.mapTilesUnavailable', 'Detailed map tiles are unavailable. Showing the local schematic map.'));
+            useFallback(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'));
           }
         });
         map.on('error', function (event) {
@@ -690,10 +1036,12 @@
           if (isOpen && !styleReady) useFallback();
         }, 12000);
       }).catch(function () {
-        useFallback(t('weather.mapTilesUnavailable', 'Detailed map tiles are unavailable. Showing the local schematic map.'));
+        useFallback(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'));
       });
     }
     function open(options) {
+      const subhead = document.getElementById('weatherMapSubhead');
+      if (subhead) subhead.textContent = t('weather.mapEstimate', 'Interpolated forecast estimates');
       if (!root || isOpen) return;
       if (typeof deps.getPlaces === 'function') places = deps.getPlaces() || [];
       if (options && Array.isArray(options.places)) places = options.places;
@@ -722,10 +1070,12 @@
     }
     if (closeButton) closeButton.addEventListener('click', close);
     if (zoomInButton) zoomInButton.addEventListener('click', function () {
+      if (fallbackActive) { fallbackZoom = Math.min(6, fallbackZoom * 1.4); fitFallback(); return; }
       if (!map) return;
       map.zoomIn({ duration: reducedMotion() ? 0 : 240 });
     });
     if (zoomOutButton) zoomOutButton.addEventListener('click', function () {
+      if (fallbackActive) { fallbackZoom = Math.max(1, fallbackZoom / 1.4); if (fallbackZoom === 1) fallbackPan = {x: 0, y: 0}; fitFallback(); return; }
       if (!map) return;
       map.zoomOut({ duration: reducedMotion() ? 0 : 240 });
     });
@@ -741,18 +1091,17 @@
         item.setAttribute('aria-pressed', item === button ? 'true' : 'false');
       });
       legendForLayer(selectedLayer);
-      if (activeGrid) drawWeatherImage(activeGrid);
+      if (activeGrid) scheduleWeatherImage(activeGrid);
     });
     if (timeInput) timeInput.addEventListener('input', function () {
       selectedOffset = Math.max(0, Math.min(maxOffset, Number(timeInput.value) || 0));
       if (activeGrid) {
-        var stampIndex = Math.min(activeGrid.times.length - 1, activeGrid.baseIndex + selectedOffset);
-        if (timeOutput) timeOutput.textContent = selectedOffset === 0 ? t('weather.now', 'Now') : formatTime(activeGrid.times[stampIndex]);
-        drawWeatherImage(activeGrid);
+        updateTimeOutput(activeGrid);
+        scheduleWeatherImage(activeGrid);
       }
     });
     if (timeInput) timeInput.addEventListener('change', function () {
-      if (activeGrid) drawWeatherImage(activeGrid);
+      if (activeGrid) scheduleWeatherImage(activeGrid);
     });
     if (root) root.addEventListener('transitionend', function (event) {
       if (event.target === root && isOpen && map) map.resize();
@@ -776,7 +1125,12 @@
       helpers: {
         gridGeometry: gridGeometry,
         palette: palette,
-        formatTime: formatTime
+        formatTime: formatTime,
+        formatLocalTime: formatLocalTime,
+        renderDimensions: renderDimensions,
+        distanceKm: distanceKm,
+        legendConfig: legendConfig,
+        gradientCss: gradientCss
       }
     };
   };

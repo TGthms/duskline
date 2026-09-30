@@ -16,6 +16,8 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `alerts.js` | NWS U.S. + international CAP alerts, area matching, accordion, and prefetch (`W.factories.alerts`) |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
+| `navigation.js` | Browser history for city details and forecast sheets |
+| `product.js` | Personal dashboard and Horizon filtering/sorting controls |
 | `app.js` | UI state, list/detail/sheets, boot |
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone. The map module loads MapLibre only after the map opens; its files stay out of the startup request path.
@@ -34,3 +36,7 @@ Keep this order explicit when adding scripts. All four HTML entry points link th
 - List, detail, units sheet, refresh → `app.js`
 
 After edits: `npm run check` and Playwright `e2e/smoke.spec.js`.
+
+Weather-page locale catalogs are generated with `npm run weather:i18n`. The page loads English as a fallback and fetches only the active locale. All locale JSON files are precached for offline language changes.
+
+Product layout rules live in `src/css/weather-product.css`; avoid adding them to the atmospheric brand layer. Saved-place rearrangement is available inside the Units/preferences sheet.

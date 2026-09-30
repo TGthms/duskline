@@ -220,6 +220,32 @@ test('first visit offers My Sky above a compact global preview', async ({ page }
   await expect(page.locator('#weatherMore')).toBeHidden();
 });
 
+test('switching to an uncached My Sky place shows non-blocking progress until it loads', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode', 'horizon');
+    localStorage.setItem('duskline-weather-favorites', JSON.stringify([{
+      name: 'Boston', admin1: 'Massachusetts', lat: 42.36, lon: -71.06,
+      tz: 'America/New_York', country: 'United States', country_code: 'US'
+    }]));
+  });
+  await stubWeather(page, null);
+  await page.route(/api\.open-meteo\.com\/v1\/forecast(?:\?|$)/, async route => {
+    const latitude = new URL(route.request().url()).searchParams.get('latitude') || '';
+    if (latitude.split(',').some(value => Math.abs(Number(value) - 42.36) < 0.01)) {
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
+    await route.fallback();
+  });
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:', { timeout: 20000 });
+  await page.locator('#weatherModeSwitch [data-weather-mode="my-sky"]').click();
+  await expect(page.locator('#weatherModeLoading')).toBeVisible();
+  await expect(page.locator('#weatherModeSwitch')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#weatherHome')).toContainText('Boston', { timeout: 15000 });
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+  await expect(page.locator('#weatherModeSwitch')).not.toHaveAttribute('aria-busy', 'true');
+});
+
 test('a failed search selection explains the failure and closes its loading detail', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
@@ -229,7 +255,7 @@ test('a failed search selection explains the failure and closes its loading deta
   } }));
   await page.route(/^https:\/\/(api\.weather\.gov|api\.open-meteo\.com)\//, route => route.abort());
   await page.locator('#weatherSearch').fill('Boston');
-  await page.locator('#weatherSuggest button[role="option"]').first().click();
+  await page.locator('#weatherSuggest button[data-place-choice]').first().click();
   await expect(page.locator('#weatherError')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/, { timeout: 15000 });
   await expect(page.locator('#weatherError')).toContainText('Could not load');
@@ -288,6 +314,9 @@ test('hourly chart values update on pointer hover and reset when the pointer lea
   await expect(chart).toHaveAttribute('aria-valuenow', initialIndex);
 });
 
+test.describe('installed offline shell', () => {
+  test.use({serviceWorkers:'allow'});
+
 test('the installed app opens a saved forecast offline', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
@@ -331,6 +360,8 @@ test('all legal language packs remain available offline after install', async ({
       .not.toBe(englishBody);
   }
   await page.context().setOffline(false);
+});
+
 });
 
 test('detail and info sheet return focus to the control that opened them', async ({ page }) => {
@@ -396,7 +427,7 @@ test('closing a city does not dismiss a place picker opened during its exit tran
   });
   await stubWeather(page, null);
   await page.goto('/');
-  await page.locator('#weatherMyLocationList .weather-row').first().click();
+  await page.locator('#weatherHome [data-home-open]').click();
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
   await page.evaluate(() => {
     document.querySelector('#weatherDetailBack').click();
@@ -432,7 +463,7 @@ test('search offers recently opened cities without a geocoding request', async (
   await page.locator('#weatherSearch').focus();
   await expect(page.locator('#weatherSuggest')).toBeVisible();
   await expect(page.locator('#weatherSuggest .s-group')).toContainText('Recent places');
-  await expect(page.locator('#weatherSuggest button[role="option"]').first()).toContainText('New York');
+  await expect(page.locator('#weatherSuggest button[data-place-choice]').first()).toContainText('New York');
 });
 
 test('the empty My Sky message uses dark readable text on the light canvas', async ({ page }) => {
@@ -591,12 +622,12 @@ test('search shows progress and saves a result directly with confirmation', asyn
   await expect(page.locator('#weatherSearch')).toHaveAttribute('aria-busy', 'true');
   await expect(page.locator('#weatherSuggest .s-add')).toBeVisible();
   await expect(page.locator('#weatherSuggest .s-add svg.weather-save-icon')).toBeVisible();
-  await page.locator('#weatherSuggest [role="option"]').hover();
-  expect(await page.locator('#weatherSuggest [role="option"]').evaluate(node => getComputedStyle(node).borderRadius)).toBe('10px');
+  await page.locator('#weatherSuggest [data-place-choice]').hover();
+  expect(await page.locator('#weatherSuggest [data-place-choice]').evaluate(node => getComputedStyle(node).borderRadius)).toBe('10px');
   await page.locator('#weatherSuggest .s-add').click();
   await expect(page.locator('.weather-toast')).toContainText('Added to My Sky');
   await page.locator('[data-weather-mode="my-sky"]').click();
-  await expect(page.locator('#weatherFavoritesList')).toContainText('Boston');
+  await expect(page.locator('#weatherHome')).toContainText('Boston');
 });
 
 test('a denied location request gives visible feedback', async ({ page }) => {
@@ -653,7 +684,39 @@ test('a light city pack explains hourly loading until full data arrives', async 
   await page.locator('#weatherList .weather-row').first().click();
   await expect(page.locator('.weather-hourly-loading')).toBeVisible();
   await expect(page.locator('.weather-hourly-loading')).toContainText('Loading forecast');
+  const hourlyTile = page.locator('#weatherModules [data-sheet="conditions"]');
+  const loadingTile = await hourlyTile.boundingBox();
+  const loadingContent = await page.locator('.weather-hourly-loading').boundingBox();
+  expect(loadingTile).toBeTruthy();
+  expect(loadingContent).toBeTruthy();
+  expect(Math.abs((loadingContent.x + loadingContent.width / 2) - (loadingTile.x + loadingTile.width / 2))).toBeLessThan(2);
   await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 15000 });
+  const loadedTile = await hourlyTile.boundingBox();
+  expect(Math.abs(loadedTile.height - loadingTile.height)).toBeLessThanOrEqual(5);
+});
+
+test('Hourly Forecast switches between actual and feels-like in the same sheet', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.goto('/?city=nyc');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherModules [data-sheet="conditions"]').click();
+  const sheet = page.locator('#weatherSheet');
+  const chart = page.locator('#weatherSheetBody .weather-chart-wrap').first();
+  await expect(sheet).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheetTitle')).toContainText(String(new Date().getFullYear()));
+  await expect(page.locator('#weatherSheetBody [data-temp-mode="actual"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chart).toHaveAttribute('data-kind', 'temperature_2m');
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap')).toHaveCount(1);
+
+  await page.locator('#weatherSheetBody [data-temp-mode="feels"]').click();
+  await expect(page.locator('#weatherSheetTitle')).toContainText(String(new Date().getFullYear()));
+  await expect(page.locator('#weatherSheetBody [data-temp-mode="feels"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(chart).toHaveAttribute('data-kind', 'apparent_temperature');
+
+  await page.locator('#weatherSheetClose').click();
+  await page.locator('#weatherModules [data-sheet="feels"]').click();
+  await expect(page.locator('#weatherSheetTitle')).toContainText(String(new Date().getFullYear()));
+  await expect(page.locator('#weatherSheetBody [data-temp-mode="feels"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('calm conditions do not promote a zero percent rain insight', async ({ page }) => {
@@ -741,6 +804,13 @@ test('weather map opens as an accessible dialog with Lucide controls and selecta
 
   const dialog = page.getByRole('dialog', { name: 'Weather map' });
   await expect(dialog).toBeVisible({ timeout: 5000 });
+  expect(await page.locator('html').evaluate(el => el.style.overflow)).toBe('hidden');
+  expect(await page.locator('body').evaluate(el => el.style.overflow)).toBe('hidden');
+  expect(await page.locator('.weather-page-sky').evaluate(el => getComputedStyle(el).visibility)).toBe('hidden');
+  const backgroundPosition = await page.evaluate(() => window.scrollY);
+  await page.mouse.move(8, 100);
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(backgroundPosition);
   await expect(dialog.locator('[data-weather-layer="temperature"]')).toHaveAttribute('aria-pressed', 'true');
   await dialog.locator('[data-weather-layer="wind"]').click();
   await expect(dialog.locator('[data-weather-layer="wind"]')).toHaveAttribute('aria-pressed', 'true');
@@ -749,17 +819,19 @@ test('weather map opens as an accessible dialog with Lucide controls and selecta
 
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
+  expect(await page.locator('html').evaluate(el => el.style.overflow)).toBe('');
+  expect(await page.locator('body').evaluate(el => el.style.overflow)).toBe('');
   await expect(openMap).toBeFocused();
 });
 
-test('weather map falls back to the local schematic when map tiles fail', async ({ page }) => {
+test('weather map falls back to the offline atlas when map tiles fail', async ({ page }) => {
   await stubWeather(page, null);
   await page.route('https://tiles.openfreemap.org/**', route => route.abort());
   await page.goto('/');
   await page.locator('#weatherMapOpen').click();
   await expect(page.locator('#weatherMapFallback')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('#weatherMapStatus')).toContainText('Detailed map tiles are unavailable');
-  await expect(page.locator('#weatherMapCredit')).toContainText('Schematic map');
+  await expect(page.locator('#weatherMapStatus')).toContainText('Detailed tiles unavailable');
+  await expect(page.locator('#weatherMapCredit')).toContainText('Offline world map');
   await expect(page.locator('#weatherMapFallback .weather-map-fallback-marker').first()).toBeVisible();
   await page.locator('#weatherMapPlacesSummary').click();
   await expect(page.locator('#weatherMapPlaces .weather-map-place').first()).toBeVisible();
@@ -769,8 +841,110 @@ test('weather map falls back to the local schematic when map tiles fail', async 
   await expect(page.locator('#weatherMap')).toBeHidden();
 });
 
-test('daily forecast rows open a date-aware, keyboardable forecast sheet', async ({ page }) => {
+test('map right-click can view and save a dropped pin', async ({ page }) => {
   await stubWeather(page, null);
+  await page.route('https://tiles.openfreemap.org/**', route => route.abort());
+  await page.goto('/');
+  await page.locator('#weatherMapOpen').click();
+  const map = page.locator('#weatherMap');
+  await expect(page.locator('#weatherMapFallback')).toBeVisible({ timeout: 15000 });
+  const surface = page.locator('#weatherMapFallback');
+  const box = await surface.boundingBox();
+  expect(box).toBeTruthy();
+  const point = { x: box.width * 0.53, y: box.height * 0.45 };
+
+  await surface.click({ button: 'right', position: point });
+  const menu = page.locator('#weatherMapContextMenu');
+  await expect(menu).toBeVisible();
+  await expect(menu.locator('[data-map-action="view"]')).toHaveText('View weather here');
+  await expect(menu.locator('[data-map-action="add"]')).toHaveText('Add pin to My Sky');
+  await menu.locator('[data-map-action="add"]').click();
+  await expect(page.locator('#weatherMapStatus')).toContainText('Added to My Sky');
+  await page.locator('#weatherMapPlacesSummary').click();
+  await expect(page.locator('#weatherMapPlaces .weather-map-place').filter({ hasText: 'Pinned place' })).toBeVisible();
+  await page.locator('#weatherMapPlacesSummary').click();
+
+  await surface.click({ button: 'right', position: point });
+  await expect(menu.locator('[data-map-action="view"]')).toHaveText('View Pinned place');
+  await menu.locator('[data-map-action="view"]').click();
+  await expect(page.locator('#weatherMap')).toBeHidden();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherDetailTitle')).toHaveText('Pinned place');
+});
+
+test('map supports long-press actions and responsive footer layouts', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stubWeather(page, null);
+  await page.route('https://tiles.openfreemap.org/**', route => route.abort());
+  await page.goto('/');
+  await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMapFallback')).toBeVisible({ timeout: 15000 });
+  const surface = page.locator('#weatherMapFallback');
+  const box = await surface.boundingBox();
+  expect(box).toBeTruthy();
+  await surface.dispatchEvent('pointerdown', {
+    pointerId: 17, pointerType: 'touch',
+    clientX: box.x + box.width * 0.53, clientY: box.y + box.height * 0.45,
+    bubbles: true, cancelable: true
+  });
+  await page.waitForTimeout(560);
+  await expect(page.locator('#weatherMapContextMenu')).toBeVisible();
+  await surface.dispatchEvent('pointerup', { pointerId: 17, pointerType: 'touch', bubbles: true });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#weatherMapContextMenu')).toBeHidden();
+
+  for (const size of [
+    { width: 320, height: 568 },
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+    { width: 1440, height: 900 }
+  ]) {
+    await page.setViewportSize(size);
+    const layout = await page.evaluate(() => {
+      const panel = document.querySelector('.weather-map-panel');
+      const footer = document.querySelector('.weather-map-footer');
+      const legend = document.querySelector('.weather-map-legend');
+      const ticks = document.querySelector('#weatherMapLegendValues');
+      const stage = document.querySelector('.weather-map-stage');
+      return {
+        panelOverflow: panel.scrollWidth - panel.clientWidth,
+        footerOverflow: footer.scrollWidth - footer.clientWidth,
+        legendOverflow: legend.scrollWidth - legend.clientWidth,
+        tickOverflow: ticks.scrollWidth - ticks.clientWidth,
+        stageHeight: stage.getBoundingClientRect().height
+      };
+    });
+    expect(layout.panelOverflow, 'panel overflow at ' + size.width + 'px').toBeLessThanOrEqual(1);
+    expect(layout.footerOverflow, 'footer overflow at ' + size.width + 'px').toBeLessThanOrEqual(1);
+    expect(layout.legendOverflow, 'legend overflow at ' + size.width + 'px').toBeLessThanOrEqual(1);
+    expect(layout.tickOverflow, 'legend tick overflow at ' + size.width + 'px').toBeLessThanOrEqual(1);
+    expect(layout.stageHeight).toBeGreaterThanOrEqual(120);
+  }
+  await page.locator('#weatherMapClose').click();
+  await expect(page.locator('#weatherMap')).toBeHidden();
+  await page.setViewportSize({ width: 1280, height: 720 });
+});
+
+test('daily forecast rows open the selected date with a day range, matching icon, and real hourly conditions', async ({ page }) => {
+  await stubWeather(page, null);
+  const tomorrow = new Date();
+  const forecastDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date(tomorrow.getTime() + 86400000));
+  await page.route(/api\.open-meteo\.com\/v1\/forecast(?:\?|$)/, async route => {
+    const url = new URL(route.request().url());
+    if (!url.searchParams.has('hourly')) return route.fallback();
+    const forecast = body(false, Date.now(), 1);
+    const target = forecast.hourly.time.findIndex(time => {
+      const localDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date(time));
+      return localDate === forecastDate;
+    });
+    if (target >= 0) forecast.hourly.weather_code[target] = 65;
+    return route.fulfill({ json: forecast });
+  });
   await page.goto('/?city=nyc');
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
 
@@ -778,18 +952,25 @@ test('daily forecast rows open a date-aware, keyboardable forecast sheet', async
   await monday.press('Enter');
   const sheet = page.locator('#weatherSheet');
   await expect(sheet).toHaveClass(/open/);
-  await expect(page.locator('#weatherSheetTitle')).toHaveText('Monday, September 28, 2026');
+  await expect(page.locator('#weatherSheetTitle')).toContainText(forecastDate.split('-')[2]);
+  await expect(page.locator('#weatherSheet .wx-sheet-title-host .wx-sheet-icon use')).toHaveAttribute('href', '#lucide-cloud-sun');
   await expect(page.locator('#weatherSheetBody .wx-day-facts')).toContainText('High');
   await expect(page.locator('#weatherSheetBody .wx-day-facts')).toContainText('Low');
-  await expect(page.locator('#weatherSheetBody [data-day-temp-mode="actual"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherSheetBody [data-temp-mode="actual"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherSheetBody [data-hourly-date]')).toHaveCount(10);
   await expect(page.locator('#weatherSheetBody .weather-chart-wrap')).toHaveCount(2);
-
   await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toHaveAttribute('data-kind', 'temperature_2m');
-  await page.locator('#weatherSheetBody [data-day-temp-mode="feels"]').click();
-  await expect(page.locator('#weatherSheetBody [data-day-temp-mode="feels"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first().locator('[data-readout]'))
+    .toHaveAttribute('data-initial-mode', 'range');
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first().locator('[data-sub]')).toHaveText('Daily range');
+  await page.locator('#weatherSheetBody [data-temp-mode="feels"]').click();
+  await expect(page.locator('#weatherSheetBody [data-temp-mode="feels"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toHaveAttribute('data-kind', 'apparent_temperature');
-  await page.locator('#weatherSheetBody [data-day-select]').nth(2).click();
-  await expect(page.locator('#weatherSheetTitle')).toHaveText('Tuesday, September 29, 2026');
+  const feelsRange = await page.locator('#weatherSheetBody .weather-chart-wrap').first().locator('[data-readout]').textContent();
+  expect(feelsRange).toMatch(/°\s*–\s*.*°/);
+  await page.locator('#weatherSheetBody .weather-chart-wrap').first().focus();
+  await page.locator('#weatherSheetBody .weather-chart-wrap').first().press('Home');
+  await expect(page.locator('#wxDayCondition')).toContainText('Heavy rain');
 
   await page.locator('#weatherSheetClose').click();
   await expect(sheet).toBeHidden();
@@ -825,4 +1006,225 @@ test('NWS alert details open and collapse on repeated activation', async ({ page
   await summary.click();
   await expect(summary).toHaveAttribute('aria-expanded', 'false');
   await expect(card).not.toHaveClass(/is-open/);
+});
+
+
+test('lists stay quiet and city-detail save removal can be undone', async ({page}) => {
+  await stubWeather(page,null);
+  await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row-save, .weather-row-manage')).toHaveCount(0);
+  await page.locator('#weatherList .weather-row').first().click();
+  const save = page.locator('#weatherDetailFav');
+  await save.click();
+  await expect(save).toHaveAttribute('aria-pressed','true');
+  await save.click();
+  await expect(page.locator('#weatherToast button')).toHaveText('Undo');
+  await page.locator('#weatherToast button').click();
+  await expect(save).toHaveAttribute('aria-pressed','true');
+});
+
+test('browser Back closes a forecast sheet then city, and reload restores city', async ({page}) => {
+  await stubWeather(page,null);
+  await page.goto('/');
+  await page.locator('#weatherList .weather-row').filter({hasText:'Tokyo'}).first().click();
+  await expect(page).toHaveURL(/lat=/);
+  await page.reload();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherModules [data-sheet="conditions"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await page.goBack();
+  await expect(page.locator('#weatherSheet')).toBeHidden();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.goBack();
+  await expect(page.locator('#weatherDetail')).toBeHidden();
+});
+
+test('hourly date switcher preserves temperature mode and changes the chart date', async ({page}, testInfo) => {
+  await stubWeather(page,null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await page.locator('#weatherModules [data-sheet="conditions"]').click();
+  await page.locator('#weatherSheetBody [data-temp-mode="feels"]').click();
+  const dates = page.locator('[data-hourly-date]');
+  await expect(dates).toHaveCount(10);
+  const date = await dates.nth(1).getAttribute('data-hourly-date');
+  await dates.nth(1).click();
+  await expect(page.locator(`[data-hourly-date="${date}"]`)).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#weatherSheetBody [data-temp-mode="feels"]')).toHaveAttribute('aria-pressed','true');
+  const points = JSON.parse(await page.locator('#weatherSheetBody .weather-chart-wrap').getAttribute('data-pts'));
+  expect(points.length).toBeGreaterThan(1);
+  await page.locator('#weatherSheetPanel').evaluate(node => Promise.all(node.getAnimations().map(animation => animation.finished.catch(() => {}))));
+  await page.screenshot({path:testInfo.outputPath('date-picker.png')});
+});
+
+test('Horizon filters places without adding comparison controls or replacing the selected view', async ({page}) => {
+  await stubWeather(page,null);
+  await page.goto('/');
+  await page.locator('#weatherRegion').selectOption('Europe');
+  await expect(page.locator('#weatherList')).toContainText('London');
+  await expect(page.locator('#weatherList')).not.toContainText('Tokyo');
+  await expect(page.locator('.weather-row-manage, #weatherCompare')).toHaveCount(0);
+  await page.locator('#weatherSort').selectOption('temperature');
+  await expect(page.locator('#weatherRefresh')).not.toHaveAttribute('aria-busy','true');
+  const temperatures = await page.locator('#weatherList .weather-row-temp').allTextContents();
+  const values = temperatures.map(value => parseFloat(value));
+  expect(values.every(Number.isFinite)).toBe(true);
+  expect(values).toEqual(values.slice().sort((a,b) => b-a));
+  await expect(page.locator('#weatherModeSwitch [data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed','true');
+});
+
+test('greeting resolves to normal text after animation and remains readable after resize', async ({page}) => {
+  await stubWeather(page,null);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await expect(page.locator('#weatherGreeting')).not.toHaveAttribute('data-typing','true',{timeout:5000});
+  await page.setViewportSize({width:1440,height:1000});
+  await expect(page.locator('#weatherGreetingText .weather-typewriter-word')).toHaveCount(0);
+  expect(await page.locator('#weatherGreetingText').textContent()).toBe(await page.locator('#weatherGreeting').getAttribute('aria-label'));
+});
+
+test('international shared links check alerts with a visible loader and can retry a failed check', async ({page}) => {
+  await stubWeather(page,null);
+  let calls = 0;
+  let country = '';
+  await page.route(/\/api\/international-alerts/, async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('cc') !== 'FR') return route.fulfill({json:{availability:'available',alerts:[],truncated:false}});
+    country = url.searchParams.get('country');
+    const attempt = ++calls;
+    await new Promise(resolve => setTimeout(resolve,650));
+    if (attempt === 1) return route.fulfill({status:502,json:{error:'upstream_unavailable'}});
+    return route.fulfill({json:{availability:'available',provider:'IFRC Alert Hub',country:'France',alerts:[{
+      id:'fr-test',event:'Flood warning',severity:'Moderate',ends:new Date(Date.now()+3600000).toISOString(),
+      providerName:'IFRC Alert Hub',sourceUrl:'https://vigilance.meteofrance.fr/',
+      areas:[{areaDesc:'Paris',polygons:[{valuePolygon:{type:'Polygon',coordinates:[[[2,48],[3,48],[3,49],[2,49],[2,48]]]}}]}]
+    }],truncated:false}});
+  });
+  await page.goto('/?lat=48.85&lon=2.35&name=Paris&cc=FR');
+  await expect(page.locator('.weather-alert-status .loader')).toBeVisible();
+  await expect(page.locator('[data-alert-retry]')).toBeVisible();
+  expect(country).toBe('France');
+  await page.locator('[data-alert-retry]').click();
+  await expect(page.locator('.weather-alert-status .loader')).toBeVisible();
+  await expect(page.locator('.weather-alert-title')).toContainText('Flood warning');
+  const panel = page.locator('.weather-alert-collapse');
+  await expect(panel).toHaveAttribute('aria-hidden','true');
+  await page.locator('.weather-alert-summary').click();
+  await expect(panel).toHaveAttribute('aria-hidden','false');
+});
+
+test('mode switch selects the new view first and visibly presents progress', async ({page}) => {
+  await stubWeather(page,null);
+  await page.goto('/');
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  await expect(page.locator('[data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#weatherModeLoading .loader')).toBeVisible();
+  await expect(page.locator('#weatherMajorsBlock')).toBeHidden();
+  await expect(page.locator('#weatherMySkyEmpty')).toBeVisible();
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+});
+
+test('expanded Horizon collapses to preview with only its show-all action', async ({page}) => {
+  await stubWeather(page,null);
+  await page.goto('/');
+  await page.locator('#weatherMore').click();
+  await expect(page.locator('#weatherCollapse')).toBeVisible();
+  await page.locator('#weatherCollapse').click();
+  await expect(page.locator('#weatherCollapse')).toBeHidden();
+  await expect(page.locator('#weatherMore')).toBeVisible();
+  await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
+});
+
+test('desktop cards match row heights and light hover keeps a readable surface', async ({page}) => {
+  await stubWeather(page,null);
+  await page.setViewportSize({width:1440,height:1000});
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  const aqi = page.locator('#weatherModules [data-sheet="aqi"]');
+  const feels = page.locator('#weatherModules [data-sheet="feels"]');
+  await expect(aqi).toBeVisible();
+  await expect(feels).toBeVisible();
+  await aqi.scrollIntoViewIfNeeded();
+  const [a,b] = await Promise.all([aqi.boundingBox(),feels.boundingBox()]);
+  expect(Math.abs(a.height-b.height)).toBeLessThanOrEqual(1);
+  await aqi.hover();
+  const background = await aqi.evaluate(node => getComputedStyle(node).backgroundColor);
+  expect(background).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+test('My Sky keeps a compact primary dashboard and one quiet list with rearrangement in preferences', async ({page}, testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode','my-sky');
+    localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'Boston',lat:42.36,lon:-71.06,tz:'America/New_York',country:'United States',country_code:'US'}));
+    localStorage.setItem('duskline-weather-favorites',JSON.stringify([
+      {name:'London',lat:51.5074,lon:-.1278,tz:'Europe/London',country:'United Kingdom',country_code:'GB'},
+      {name:'Tokyo',lat:35.6762,lon:139.6503,tz:'Asia/Tokyo',country:'Japan',country_code:'JP'}
+    ]));
+  });
+  await stubWeather(page,null);
+  await page.goto('/');
+  await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
+  await expect(page.locator('#weatherHome .weather-hourly-item').first()).toBeVisible();
+  await expect(page.locator('#weatherMyLocationList .weather-row')).toHaveCount(2);
+  await expect(page.locator('#weatherMyLocationBlock .weather-section-label, .weather-row-manage, .weather-row-save')).toHaveCount(0);
+  await page.locator('#weatherUnitsBtn').click();
+  await expect(page.locator('.weather-place-order-row')).toHaveCount(2);
+  await page.locator('.weather-place-order-row').first().locator('button').last().click();
+  await page.locator('#weatherSheetClose').click();
+  await expect(page.locator('#weatherMyLocationList .weather-row').first()).toContainText('Tokyo');
+  await page.setViewportSize({width:1440,height:1000});
+  await page.screenshot({path:testInfo.outputPath('my-sky-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:testInfo.outputPath('my-sky-phone.png'),fullPage:true});
+});
+
+
+test('rapid sheet and city dismissal returns to the list without reopening detail', async ({page}) => {
+  await stubWeather(page,null);
+  await page.goto('/');
+  await page.locator('#weatherList .weather-row').first().click();
+  await page.locator('#weatherModules [data-sheet="conditions"]').click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await page.evaluate(() => {
+    document.querySelector('#weatherSheetClose').click();
+    document.querySelector('#weatherDetailBack').click();
+  });
+  await expect(page).not.toHaveURL(/lat=/);
+  await expect(page.locator('#weatherDetail')).toBeHidden();
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible();
+  await expect(page.locator('#weatherList .weather-row').first()).toBeFocused();
+});
+
+
+test('primary forecast failure stops loading and can be retried', async ({page}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode','my-sky');
+    localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'Boston',lat:42.36,lon:-71.06,country:'United States',country_code:'US'}));
+  });
+  await stubWeather(page,null);
+  let failed = true;
+  await page.route(/api\.weather\.gov|api\.open-meteo\.com/, route => failed ? route.fulfill({status:503,json:{error:true}}) : route.fallback());
+  await page.goto('/');
+  await expect(page.locator('#weatherHome [data-home-retry]')).toBeVisible();
+  await expect(page.locator('#weatherHome .loader')).toHaveCount(0);
+  failed = false;
+  await page.locator('[data-home-retry]').click();
+  await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
+  await expect(page.locator('#weatherHome .weather-home-temperature')).not.toHaveText('—');
+});
+
+
+test('a current-provider outage uses NWS hourly temperature instead of its daily high', async ({page}) => {
+  await stubWeather(page,null);
+  await page.route(/api\.open-meteo\.com/, route => route.fulfill({status:503,json:{error:true}}));
+  await page.route(/api\.weather\.gov/, route => {
+    const url = route.request().url();
+    if (url.includes('alerts')) return route.fulfill({json:{features:[]}});
+    if (url.includes('/points/')) return route.fulfill({json:{properties:{timeZone:'America/New_York',forecast:'https://api.weather.gov/gridpoints/TEST/1,1/forecast',forecastHourly:'https://api.weather.gov/gridpoints/TEST/1,1/forecast/hourly'}}});
+    const period = {number:1,startTime:new Date().toISOString(),endTime:new Date(Date.now()+3600000).toISOString(),isDaytime:true,temperatureUnit:'F',temperature:url.endsWith('/hourly') ? 68 : 86,shortForecast:'Partly Sunny',windSpeed:'5 mph',windDirection:'SW'};
+    return route.fulfill({json:{properties:{periods:[period]}}});
+  });
+  await page.goto('/');
+  const temperature = page.locator('#weatherList .weather-row').filter({hasText:'New York'}).first().locator('.weather-row-temp');
+  await expect(temperature).toHaveText(/^(20|68)°$/);
 });

@@ -10,8 +10,10 @@
       option.value = item[0]; option.textContent = item[1]; select.appendChild(option);
     });
     select.value = typeof currentLang === 'string' ? currentLang : 'en';
-    select.addEventListener('change', function () {
+    select.addEventListener('change', async function () {
       var value = select.value;
+      if (typeof window.loadWeatherLocale === 'function') await window.loadWeatherLocale(value);
+      if (select.value !== value) return;
       if (typeof currentLang !== 'undefined') currentLang = value;
       if (typeof safeStorage !== 'undefined') safeStorage.set('duskline-lang', value);
       if (typeof applyLanguage === 'function') applyLanguage(value);

@@ -7,7 +7,7 @@
   W.factories.snapshots = function createSnapshotStore(deps) {
     const KEY = 'duskline-weather-snapshots-v1';
     const MAX_AGE = 7 * 24 * 60 * 60 * 1000;
-    const MAX_COUNT = 10;
+    const MAX_COUNT = 34;
     const cityKey = deps.cityKey;
     const sameCity = deps.sameCity;
     const storage = deps.storage;

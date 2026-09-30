@@ -272,3 +272,15 @@ test('international CAP endpoint validates requests and fails closed on an upstr
   assert.equal(response.status, 502);
   assert.equal(payload.error, 'upstream_unavailable');
 });
+
+
+test('country-code-only shared links resolve official international alerts', async () => {
+  const handler = await handlerPromise;
+  const context = createContext('https://duskline.test/api/international-alerts?cc=JP&lang=en');
+  const response = await handler.onRequest(context.value);
+  assert.equal(response.status,200);
+  const payload = await response.json();
+  assert.equal(payload.availability,'available');
+  assert.equal(payload.country,'Japan');
+  assert.ok(payload.alerts.length > 0);
+});

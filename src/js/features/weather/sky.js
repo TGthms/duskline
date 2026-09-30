@@ -213,8 +213,8 @@
       return { left, top, size, night: false, t };
     }
 
-    function skyFor(code, hour, seed) {
-      const night = hour < 6 || hour >= 20;
+    function skyFor(code, hour, seed, nightOverride) {
+      const night = typeof nightOverride === "boolean" ? nightOverride : hour < 6 || hour >= 20;
       // Small per-city hue shift so identical conditions still differ
       const s = ((seed || 0) % 7) - 3; // -3..3
       const shift = (hex, n) => {
@@ -293,7 +293,7 @@
       }
       const seed = opts.seed != null ? opts.seed : 0;
       const isRow = !!opts.isRow;
-      const s = skyFor(code || 0, hour, seed);
+      const s = skyFor(code || 0, hour, seed, opts.night);
       // Keep labels legible against each city's actual gradient, independent
       // of the page's system appearance.
       function luminance(hex) {
@@ -304,7 +304,7 @@
             .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
         } catch (e) { return 0.12; }
       }
-      const night = hour < 6 || hour >= 20;
+      const night = typeof opts !== "undefined" && typeof opts.night === "boolean" ? opts.night : hour < 6 || hour >= 20;
       const isStorm = (code || 0) >= 95;
       // Detail tiles follow the city's sky — light frost by day, navy glass at
       // night/storm. Hero type on the gradient stays light either way.
@@ -577,8 +577,8 @@
       if (fx && skyHost && skyHost.id === 'weatherDetailSky') return fx;
       return null;
     }
-    function skyModeFromCode(code, hour, staticFx) {
-      const night = hour < 6 || hour >= 20;
+    function skyModeFromCode(code, hour, staticFx, nightOverride) {
+      const night = typeof nightOverride === "boolean" ? nightOverride : hour < 6 || hour >= 20;
       const c = code || 0;
       let mode = night ? 'night' : 'day';
       if (c >= 95) mode = 'storm';
@@ -600,7 +600,7 @@
       if (!host) return;
       opts = opts || {};
       const h = hour != null ? hour : 12;
-      const mode = skyModeFromCode(code, h, !!(opts.staticFx || opts.isRow));
+      const mode = skyModeFromCode(code, h, !!(opts.staticFx || opts.isRow), opts.night);
       stopStormFx(host);
       const fx = precipHostFor(host);
       if (fx) stopStormFx(fx);
@@ -636,7 +636,7 @@
           } catch (e) {}
         }
       }
-      const mode = skyModeFromCode(code, hour, !!(opts.staticFx || (WEATHER_STATIC_LIST_FX && opts.isRow)));
+      const mode = skyModeFromCode(code, hour, !!(opts.staticFx || (WEATHER_STATIC_LIST_FX && opts.isRow)), opts.night);
       const fx = precipHostFor(host);
       if (fx) ensurePrecip(fx, mode);
       clearSkyModeClasses(host);

@@ -358,7 +358,7 @@
       }
     }
 
-    async function loadNwsCity(c, signal) {
+    async function loadNwsCity(c, signal, light) {
       const lat = roundCoordForNwsCache(c.lat);
       const lon = roundCoordForNwsCache(c.lon);
       let points = getCachedNwsPoints(lat, lon);
@@ -373,7 +373,7 @@
         const p = pt.properties || {};
         const pair = await Promise.all([
           nwsFetchJson(p.forecast, signal),
-          p.forecastHourly
+          p.forecastHourly && !light
             ? nwsFetchJson(p.forecastHourly, signal).catch(function () { return null; })
             : Promise.resolve(null)
         ]);
@@ -450,12 +450,13 @@
       try {
         const om = prefetched || await loadOpenMeteoCity(pack.city, signal);
         if (!om || !om.weather || !om.weather.current) {
-          pack.needsEnrich = false;
+          pack.needsEnrich = true;
+          pack.enrichmentError = true;
           return pack;
         }
         const cur = pack.weather.current || {};
         const ocur = om.weather.current || {};
-        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility', 'wind_gusts_10m'].forEach(function (k) {
+        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility', 'wind_gusts_10m', 'is_day'].forEach(function (k) {
           if (cur[k] == null && ocur[k] != null) cur[k] = ocur[k];
         });
         if (ocur.precipitation != null) cur.precipitation = ocur.precipitation;
@@ -559,6 +560,7 @@
         if (!pack.air && om.air) pack.air = om.air;
         pack.source = pack.source === 'nws' || pack.source === 'nws+om' ? 'nws+om' : pack.source;
         pack.needsEnrich = false;
+        pack.enrichmentError = false;
         pack.enrichedAt = Date.now();
       } catch (e) {
         if (e && e.name === 'AbortError') throw e;
@@ -593,6 +595,7 @@
       }
 
       let pack = null;
+      const light = opts.enrich === false;
       if (isLikelyUs(c)) {
         // Forecast only here. Alerts load on detail / a later prefetch so list
         // boot does not fire N× /alerts/active alongside NWS grid fetches.
@@ -601,23 +604,42 @@
         const cachedOm = (!opts.forceFetch && hit && hit.weather && !hit.error && !hit.light
           && (hit.source === 'open-meteo' || hit.source === 'nws+om')) ? hit : null;
         const omPromise = (opts.prefetchedOm && opts.prefetchedOm.weather
-          && !opts.prefetchedOm.error && !opts.prefetchedOm.light)
+          && !opts.prefetchedOm.error && (light || !opts.prefetchedOm.light))
           ? Promise.resolve(opts.prefetchedOm)
-          : (cachedOm ? Promise.resolve(cachedOm) : loadOpenMeteoCity(c, signal));
+          : (cachedOm ? Promise.resolve(cachedOm) : loadOpenMeteoCity(c, signal, light));
         const results = await Promise.all([
-          loadNwsCity(c, signal).catch(function (e) {
+          loadNwsCity(c, signal, light).catch(function (e) {
             if (e && e.name === 'AbortError') throw e;
             return null;
           }),
           omPromise
         ]);
-        const nws = results[0];
+        let nws = results[0];
         const om = results[1];
+        // If the lightweight current provider is down, recover current readings
+        // from NWS hourly data rather than presenting a daily high as "now".
+        if (light && nws && nws.weather && (!om || !om.weather)) {
+          const hourlyFallback = await loadNwsCity(c, signal, false).catch(function (error) {
+            if (error && error.name === 'AbortError') throw error;
+            return null;
+          });
+          if (hourlyFallback && hourlyFallback.weather) nws = hourlyFallback;
+          if (!nws.weather.hourly || !nws.weather.hourly.time || !nws.weather.hourly.time.length) {
+            nws.weather.current.temperature_2m = null;
+            nws.weather.current.time = null;
+          }
+        }
         if (nws && nws.weather && !nws.error) {
           pack = await enrichWithOpenMeteo(nws, signal, om);
+          // A daily NWS period is a high/low forecast, not a current reading.
+          // Lightweight lists use Open-Meteo current conditions and NWS daily outlooks.
+          if (light && om && om.weather && om.weather.current) {
+            pack.weather.current = Object.assign({}, pack.weather.current, om.weather.current);
+          }
         } else {
           pack = om;
         }
+        if (light && pack && pack.weather) { pack.light = !(pack.weather.hourly && pack.weather.hourly.time && pack.weather.hourly.time.length); pack.needsEnrich = pack.light; }
         if (pack && pack.weather && !pack.error && pack.alerts === undefined) {
           pack.alerts = null;
           pack._alertsLoading = false;

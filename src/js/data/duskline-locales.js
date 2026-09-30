@@ -414,16 +414,97 @@
       id: 'Peta cuaca interaktif', ja: 'インタラクティブな天気マップ', ko: '대화형 날씨 지도',
       zh: '交互式天气地图', 'zh-TW': '互動式天氣地圖'
     },
+    'weather.mapPlaceActions': {
+      en: 'Place actions', es: 'Acciones del lugar', fr: 'Actions sur ce lieu', de: 'Ortsaktionen', it: 'Azioni sul luogo',
+      'pt-BR': 'Ações do local', 'pt-PT': 'Ações do local', nl: 'Acties voor deze plek', da: 'Stedhandlinger',
+      sv: 'Platsåtgärder', nb: 'Stedhandlinger', fi: 'Paikan toiminnot', pl: 'Działania dla miejsca',
+      cs: 'Akce pro místo', hu: 'Helyműveletek', ro: 'Acțiuni pentru loc', el: 'Ενέργειες τοποθεσίας',
+      tr: 'Konum işlemleri', ru: 'Действия с местом', uk: 'Дії з місцем', ar: 'إجراءات الموقع',
+      he: 'פעולות למקום', hi: 'स्थान की कार्रवाइयाँ', th: 'การดำเนินการกับสถานที่', vi: 'Thao tác địa điểm',
+      id: 'Tindakan tempat', ja: '場所のアクション', ko: '장소 작업', zh: '地点操作', 'zh-TW': '地點操作'
+    },
+    'weather.mapViewHere': {
+      en: 'View weather here', es: 'Ver el tiempo aquí', fr: 'Voir la météo ici', de: 'Wetter hier ansehen',
+      it: 'Vedi il meteo qui', 'pt-BR': 'Ver o tempo aqui', 'pt-PT': 'Ver meteorologia aqui', nl: 'Bekijk hier het weer',
+      da: 'Se vejret her', sv: 'Visa vädret här', nb: 'Se været her', fi: 'Katso sää tästä', pl: 'Pogoda tutaj',
+      cs: 'Zobrazit počasí zde', hu: 'Időjárás itt', ro: 'Vezi vremea aici', el: 'Δείτε τον καιρό εδώ',
+      tr: 'Buradaki havayı gör', ru: 'Погода здесь', uk: 'Переглянути погоду тут', ar: 'عرض الطقس هنا',
+      he: 'הצגת מזג האוויר כאן', hi: 'यहाँ का मौसम देखें', th: 'ดูสภาพอากาศที่นี่', vi: 'Xem thời tiết tại đây',
+      id: 'Lihat cuaca di sini', ja: 'この場所の天気を見る', ko: '여기 날씨 보기', zh: '查看此处天气', 'zh-TW': '查看此處天氣'
+    },
+    'weather.mapViewPlace': {
+      en: 'View {place}', es: 'Ver {place}', fr: 'Voir {place}', de: '{place} ansehen', it: 'Vedi {place}',
+      'pt-BR': 'Ver {place}', 'pt-PT': 'Ver {place}', nl: 'Bekijk {place}', da: 'Se {place}', sv: 'Visa {place}',
+      nb: 'Se {place}', fi: 'Näytä {place}', pl: 'Pokaż: {place}', cs: 'Zobrazit {place}', hu: '{place} megtekintése',
+      ro: 'Vezi {place}', el: 'Προβολή {place}', tr: '{place} hava durumunu gör', ru: 'Погода: {place}',
+      uk: 'Переглянути: {place}', ar: 'عرض {place}', he: 'הצגת {place}', hi: '{place} का मौसम देखें',
+      th: 'ดูสภาพอากาศที่ {place}', vi: 'Xem {place}', id: 'Lihat {place}', ja: '{place}の天気を見る',
+      ko: '{place} 보기', zh: '查看{place}', 'zh-TW': '查看{place}'
+    },
+    'weather.mapAddPin': {
+      en: 'Add pin to My Sky', es: 'Añadir pin a Mi cielo', fr: 'Ajouter le repère à Mon ciel', de: 'Pin zu My Sky hinzufügen',
+      it: 'Aggiungi il segnaposto a My Sky', 'pt-BR': 'Adicionar ponto ao My Sky', 'pt-PT': 'Adicionar marcador ao My Sky',
+      nl: 'Pin toevoegen aan My Sky', da: 'Føj nål til My Sky', sv: 'Lägg till nål i My Sky', nb: 'Legg til nål i My Sky',
+      fi: 'Lisää merkki My Sky -näkymään', pl: 'Dodaj pinezkę do My Sky', cs: 'Přidat špendlík do My Sky',
+      hu: 'Hely hozzáadása a My Skyhoz', ro: 'Adaugă reperul în My Sky', el: 'Προσθήκη σημείου στο My Sky',
+      tr: 'İşareti My Sky listesine ekle', ru: 'Добавить точку в My Sky', uk: 'Додати точку до My Sky',
+      ar: 'إضافة دبوس إلى My Sky', he: 'הוספת סיכה אל My Sky', hi: 'My Sky में पिन जोड़ें',
+      th: 'เพิ่มหมุดไปยัง My Sky', vi: 'Thêm ghim vào My Sky', id: 'Tambahkan pin ke My Sky',
+      ja: 'My Skyにピンを追加', ko: 'My Sky에 핀 추가', zh: '添加到 My Sky', 'zh-TW': '新增至 My Sky'
+    },
+    'weather.mapAddPlace': {
+      en: 'Add {place} to My Sky', es: 'Añadir {place} a Mi cielo', fr: 'Ajouter {place} à Mon ciel',
+      de: '{place} zu My Sky hinzufügen', it: 'Aggiungi {place} a My Sky', 'pt-BR': 'Adicionar {place} ao My Sky',
+      'pt-PT': 'Adicionar {place} ao My Sky', nl: '{place} toevoegen aan My Sky', da: 'Føj {place} til My Sky',
+      sv: 'Lägg till {place} i My Sky', nb: 'Legg til {place} i My Sky', fi: 'Lisää {place} My Sky -näkymään',
+      pl: 'Dodaj {place} do My Sky', cs: 'Přidat {place} do My Sky', hu: '{place} hozzáadása a My Skyhoz',
+      ro: 'Adaugă {place} în My Sky', el: 'Προσθήκη {place} στο My Sky', tr: '{place} konumunu My Sky listesine ekle',
+      ru: 'Добавить {place} в My Sky', uk: 'Додати {place} до My Sky', ar: 'إضافة {place} إلى My Sky',
+      he: 'הוספת {place} אל My Sky', hi: '{place} को My Sky में जोड़ें', th: 'เพิ่ม {place} ไปยัง My Sky',
+      vi: 'Thêm {place} vào My Sky', id: 'Tambahkan {place} ke My Sky', ja: '{place}をMy Skyに追加',
+      ko: '{place}을(를) My Sky에 추가', zh: '将{place}添加到 My Sky', 'zh-TW': '將{place}新增至 My Sky'
+    },
+    'weather.mapAlreadySaved': {
+      en: 'Already in My Sky', es: 'Ya está en Mi cielo', fr: 'Déjà dans Mon ciel', de: 'Bereits in My Sky',
+      it: 'Già in My Sky', 'pt-BR': 'Já está no My Sky', 'pt-PT': 'Já está no My Sky', nl: 'Staat al in My Sky',
+      da: 'Allerede i My Sky', sv: 'Finns redan i My Sky', nb: 'Allerede i My Sky', fi: 'Jo My Sky -näkymässä',
+      pl: 'Już w My Sky', cs: 'Již v My Sky', hu: 'Már a My Skyban', ro: 'Deja în My Sky',
+      el: 'Ήδη στο My Sky', tr: 'Zaten My Sky listesinde', ru: 'Уже в My Sky', uk: 'Вже в My Sky',
+      ar: 'موجود بالفعل في My Sky', he: 'כבר נמצא ב-My Sky', hi: 'पहले से My Sky में है',
+      th: 'อยู่ใน My Sky แล้ว', vi: 'Đã có trong My Sky', id: 'Sudah ada di My Sky',
+      ja: 'すでにMy Skyにあります', ko: '이미 My Sky에 있습니다', zh: '已在 My Sky 中', 'zh-TW': '已在 My Sky 中'
+    },
+    'weather.mapPinnedPlace': {
+      en: 'Pinned place', es: 'Lugar fijado', fr: 'Lieu épinglé', de: 'Markierter Ort', it: 'Luogo fissato',
+      'pt-BR': 'Local marcado', 'pt-PT': 'Local assinalado', nl: 'Vastgezette plek', da: 'Fastgjort sted',
+      sv: 'Fäst plats', nb: 'Festet sted', fi: 'Kiinnitetty paikka', pl: 'Przypięte miejsce', cs: 'Připnuté místo',
+      hu: 'Rögzített hely', ro: 'Loc fixat', el: 'Καρφιτσωμένο μέρος', tr: 'Sabitlenmiş yer',
+      ru: 'Закреплённое место', uk: 'Закріплене місце', ar: 'مكان مثبّت', he: 'מקום מוצמד',
+      hi: 'पिन किया गया स्थान', th: 'สถานที่ที่ปักหมุด', vi: 'Địa điểm đã ghim', id: 'Tempat yang disematkan',
+      ja: 'ピン留めした場所', ko: '고정된 장소', zh: '已固定的位置', 'zh-TW': '已釘選的位置'
+    },
+    'weather.dailyRange': {
+      en: 'Daily range', es: 'Rango del día', fr: 'Amplitude du jour', de: 'Tagesbereich', it: 'Intervallo del giorno',
+      'pt-BR': 'Faixa do dia', 'pt-PT': 'Intervalo do dia', nl: 'Dagbereik', da: 'Dagens spænd',
+      sv: 'Dagens intervall', nb: 'Dagens spenn', fi: 'Päivän vaihteluväli', pl: 'Zakres temperatury dnia',
+      cs: 'Denní rozpětí', hu: 'Napi tartomány', ro: 'Intervalul zilei', el: 'Ημερήσιο εύρος',
+      tr: 'Günlük aralık', ru: 'Диапазон за день', uk: 'Діапазон за день', ar: 'نطاق اليوم',
+      he: 'טווח יומי', hi: 'दिन की सीमा', th: 'ช่วงอุณหภูมิวันนี้', vi: 'Biên độ trong ngày',
+      id: 'Rentang harian', ja: '1日の範囲', ko: '일일 범위', zh: '当日范围', 'zh-TW': '當日範圍'
+    },
     'weather.mapForecastHour': {
-      en: 'Forecast hour · UTC', es: 'Hora del pronóstico · UTC', fr: 'Heure prévue · UTC', de: 'Vorhersagestunde · UTC',
-      it: 'Ora prevista · UTC', 'pt-BR': 'Hora da previsão · UTC', 'pt-PT': 'Hora da previsão · UTC',
-      nl: 'Prognose-uur · UTC', da: 'Prognosetime · UTC', sv: 'Prognostimme · UTC', nb: 'Varseltime · UTC',
-      fi: 'Ennustetunti · UTC', pl: 'Godzina prognozy · UTC', cs: 'Hodina předpovědi · UTC',
-      hu: 'Előrejelzés órája · UTC', ro: 'Ora prognozei · UTC', el: 'Ώρα πρόγνωσης · UTC',
-      tr: 'Tahmin saati · UTC', ru: 'Час прогноза · UTC', uk: 'Година прогнозу · UTC', ar: 'ساعة التوقع · UTC',
-      he: 'שעת התחזית · UTC', hi: 'पूर्वानुमान का घंटा · UTC', th: 'ชั่วโมงพยากรณ์ · UTC',
-      vi: 'Giờ dự báo · UTC', id: 'Jam prakiraan · UTC', ja: '予報時刻 · UTC', ko: '예보 시각 · UTC',
-      zh: '预报时刻 · UTC', 'zh-TW': '預報時刻 · UTC'
+      en: 'Forecast hour · UTC + local', es: 'Hora del pronóstico · UTC y local', fr: 'Heure prévue · UTC et locale',
+      de: 'Vorhersagestunde · UTC und Ortszeit', it: 'Ora prevista · UTC e locale',
+      'pt-BR': 'Hora da previsão · UTC e local', 'pt-PT': 'Hora da previsão · UTC e local',
+      nl: 'Prognose-uur · UTC en lokaal', da: 'Prognosetime · UTC og lokal', sv: 'Prognostimme · UTC och lokal',
+      nb: 'Varseltime · UTC og lokal', fi: 'Ennustetunti · UTC ja paikallinen', pl: 'Godzina prognozy · UTC i lokalna',
+      cs: 'Hodina předpovědi · UTC a místní', hu: 'Előrejelzési óra · UTC és helyi',
+      ro: 'Ora prognozei · UTC și locală', el: 'Ώρα πρόγνωσης · UTC και τοπική',
+      tr: 'Tahmin saati · UTC ve yerel', ru: 'Час прогноза · UTC и местное время', uk: 'Година прогнозу · UTC і місцевий час',
+      ar: 'ساعة التوقع · UTC والتوقيت المحلي', he: 'שעת התחזית · UTC וזמן מקומי', hi: 'पूर्वानुमान का समय · UTC और स्थानीय',
+      th: 'ชั่วโมงพยากรณ์ · UTC และเวลาท้องถิ่น', vi: 'Giờ dự báo · UTC và giờ địa phương',
+      id: 'Jam prakiraan · UTC dan lokal', ja: '予報時刻 · UTC／現地時間', ko: '예보 시각 · UTC 및 현지 시간',
+      zh: '预报时刻 · UTC 和当地时间', 'zh-TW': '預報時刻 · UTC 與當地時間'
     },
     'weather.mapLoading': {
       en: 'Loading map…', es: 'Cargando el mapa…', fr: 'Chargement de la carte…', de: 'Karte wird geladen…',

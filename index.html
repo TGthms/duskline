@@ -88,6 +88,7 @@
 <link rel="stylesheet" href="src/css/weather-app.css">
 <link rel="stylesheet" href="src/css/weather-map.css">
 <link rel="stylesheet" href="src/css/duskline.css">
+<link rel="stylesheet" href="src/css/weather-product.css">
 </head>
 <body class="page-tools duskline">
 <!-- Lucide icons from lucide-static v1.48.0; see assets/icons/LUCIDE-LICENSE.txt for the complete ISC and Feather MIT notices. -->
@@ -95,6 +96,8 @@
 <symbol id="lucide-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" />
   <path d="M19 12H5" /></symbol>
   <symbol id="lucide-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></symbol>
+  <symbol id="duskline-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 2 18.1A2 2 0 0 0 3.7 21h16.6a2 2 0 0 0 1.7-2.9L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="duskline-cloud-rain-heavy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.2a4.4 4.4 0 0 0-.4-8.8h-1.3A6.3 6.3 0 0 0 6.6 8.8 4.1 4.1 0 0 0 7 17h13"/><path d="m7.5 19-1 2"/><path d="m12 19-1 3"/><path d="m16.5 19-1 2"/></symbol>
   <symbol id="lucide-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></symbol>
   <symbol id="lucide-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></symbol>
   <symbol id="lucide-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></symbol>
@@ -255,9 +258,9 @@
         <span class="weather-search-icon" aria-hidden="true"><svg class="weather-ui-icon" viewBox="0 0 24 24"><use href="#lucide-search" xlink:href="#lucide-search"/></svg></span>
         <span class="visually-hidden" id="weatherSearchLabel" data-i18n="weather.search">Search city</span>
         <input type="search" id="weatherSearch" class="weather-search" autocomplete="off" enterkeyhint="search"
-          placeholder="Search any city worldwide…" data-i18n-placeholder="weather.searchPlaceholder" role="combobox" aria-autocomplete="list" aria-controls="weatherSuggest" aria-expanded="false" aria-labelledby="weatherSearchLabel">
+          placeholder="Search any city worldwide…" data-i18n-placeholder="weather.searchPlaceholder" role="combobox" aria-haspopup="grid" aria-autocomplete="list" aria-controls="weatherSuggest" aria-expanded="false" aria-labelledby="weatherSearchLabel">
         <button type="button" class="weather-search-clear" id="weatherSearchClear" aria-label="Clear search" data-i18n-aria="weather.clearSearch" hidden><svg class="weather-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x" xlink:href="#lucide-x"/></svg></button>
-        <ul class="weather-suggest" id="weatherSuggest" role="listbox" hidden></ul>
+        <ul class="weather-suggest" id="weatherSuggest" role="grid" aria-label="Places" hidden></ul>
       </div>
       <div class="weather-toolbar-actions" role="toolbar" aria-label="Weather actions">
         <div class="weather-mode-switch" id="weatherModeSwitch" role="group" aria-label="Weather view" data-i18n-aria="weather.weatherView">
@@ -272,7 +275,19 @@
         <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherRefresh" data-i18n-aria="weather.refresh" aria-label="Refresh" title="Refresh"><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-refresh-cw" xlink:href="#lucide-refresh-cw"/></svg></button>
       </div>
     </div>
-    <p class="weather-updated" id="weatherUpdated" aria-live="polite"></p>
+    <div class="weather-status-row">
+      <span id="weatherConnection" class="weather-connection" role="status" hidden></span>
+      <p class="weather-updated" id="weatherUpdated" aria-live="polite"></p>
+      <div class="weather-mode-loading" id="weatherModeLoading" role="status" aria-live="polite" hidden>
+        <span class="loader" aria-hidden="true"></span><span data-i18n="weather.loadingForecast">Loading forecast…</span>
+      </div>
+    </div>
+    <div class="weather-product-controls" id="weatherDiscovery">
+      <label><span data-i18n="weather.region">Region</span><select id="weatherRegion"><option value="" data-i18n="weather.allRegions">All regions</option></select></label>
+      <label><span data-i18n="weather.sort">Sort</span><select id="weatherSort"><option value="featured" data-i18n="weather.featuredOrder">Featured</option><option value="temperature" data-i18n="weather.warmestFirst">Warmest first</option><option value="local-time" data-i18n="weather.localTimeOrder">Local time</option></select></label>
+      <button type="button" class="weather-btn" id="weatherCollapse" hidden data-i18n="weather.showPreview">Show fewer places</button>
+    </div>
+    <section class="weather-home" id="weatherHome" aria-label="Primary forecast" hidden></section>
     <p class="weather-error" id="weatherError" role="alert" hidden></p>
     <div class="weather-shell" id="weatherShell">
       <div class="weather-start" id="weatherStart" hidden>
@@ -287,11 +302,9 @@
         </div>
       </div>
       <div id="weatherMyLocationBlock" hidden>
-        <div class="weather-section-label" data-i18n="weather.myLocation">My Location</div>
         <ul class="weather-list" id="weatherMyLocationList"></ul>
       </div>
       <div id="weatherFavoritesBlock" hidden>
-        <div class="weather-section-label" data-i18n="weather.savedPlaces">Saved places</div>
         <ul class="weather-list" id="weatherFavoritesList"></ul>
       </div>
       <div id="weatherMajorsBlock">
@@ -377,6 +390,11 @@
     <div class="weather-map-stage">
       <div class="weather-map-canvas" id="weatherMapCanvas" aria-label="Interactive weather map" data-i18n-aria="weather.mapInteractive"></div>
       <div class="weather-map-fallback" id="weatherMapFallback" hidden></div>
+      <div class="weather-map-context" id="weatherMapContextMenu" role="menu" aria-label="Place actions" data-i18n-aria="weather.mapPlaceActions" hidden>
+        <div class="weather-map-context-place" id="weatherMapContextPlace"></div>
+        <button type="button" role="menuitem" data-map-action="view" id="weatherMapContextView" data-i18n="weather.mapViewHere">View weather here</button>
+        <button type="button" role="menuitem" data-map-action="add" id="weatherMapContextAdd" data-i18n="weather.mapAddPin">Add pin to My Sky</button>
+      </div>
       <div class="weather-map-control-stack" role="group" aria-label="Map controls" data-i18n-aria="weather.mapControls">
         <button type="button" id="weatherMapZoomIn" aria-label="Zoom in" data-i18n-aria="weather.zoomIn"><svg class="weather-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-zoom-in" xlink:href="#lucide-zoom-in"/></svg></button>
         <button type="button" id="weatherMapZoomOut" aria-label="Zoom out" data-i18n-aria="weather.zoomOut"><svg class="weather-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-zoom-out" xlink:href="#lucide-zoom-out"/></svg></button>
@@ -401,6 +419,7 @@
 
 </main>
 <footer class="gallery-app-footer" id="dusklineFooter">
+  <button type="button" class="weather-btn" id="weatherInstall" hidden data-i18n="weather.install">Install duskline</button>
   <div class="gallery-app-footer-row">
     <p class="gallery-app-footer-copy">© <span id="dusklineYear"></span> Tim G (TGthms) · duskline · <span data-i18n="weather.footerTagline">Weather for the curious</span></p>
   </div>
@@ -420,13 +439,8 @@
 <noscript>
   <p style="padding:16px;text-align:center">duskline needs JavaScript to load forecasts.</p>
 </noscript>
-<script src="src/js/data/i18n.js" defer></script>
-<script src="src/js/data/duskline-locales.js" defer></script>
-<script src="src/js/data/weather-about-i18n.js" defer></script>
-<script src="src/js/data/weather-aqi-i18n.js" defer></script>
-<script src="src/js/data/weather-copy-i18n.js" defer></script>
-<script src="src/js/data/weather-greeting-pools-i18n.js" defer></script>
-<script src="src/js/data/weather-greeting-settings-i18n.js" defer></script>
+<script src="src/js/data/weather-locale-registry.js" defer></script>
+<script src="src/js/data/weather-locale-loader.js" defer></script>
 <script src="src/js/data/dest-weather-cities.js" defer></script>
 <script src="src/js/core/env.js" defer></script>
 <script src="src/js/core/wx-math.js" defer></script>
@@ -440,6 +454,8 @@
 <script src="src/js/features/weather/alerts.js" defer></script>
 <script src="src/js/features/weather/data.js" defer></script>
 <script src="src/js/features/weather/snapshots.js" defer></script>
+<script src="src/js/features/weather/navigation.js" defer></script>
+<script src="src/js/features/weather/product.js" defer></script>
 <script src="src/js/features/weather/app.js" defer></script>
 <script src="src/js/app.js" defer></script>
 <script src="src/js/sw-register.js"></script>

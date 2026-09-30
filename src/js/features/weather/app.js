@@ -201,6 +201,8 @@
   const greetingTextEl = $('weatherGreetingText');
   const greetingSizerEl = $('weatherGreetingSizer');
   const greetingPlaceBtn = $('weatherGreetingPlace');
+  const weatherModeSwitchEl = $('weatherModeSwitch');
+  const weatherModeLoadingEl = $('weatherModeLoading');
   const modeButtons = Array.from(document.querySelectorAll('[data-weather-mode]'));
   const unitsBtn = $('weatherUnitsBtn');
   const detailEl = $('weatherDetail');
@@ -301,19 +303,25 @@
   let activeSheetKind = null;
   let toastTimer = 0;
   const toastEl = $('weatherToast');
-  function notify(message, kind) {
+  function notify(message, kind, undo) {
     if (!message || !toastEl) return;
     window.clearTimeout(toastTimer);
     toastEl.textContent = message;
+    if (undo) {
+      const button = document.createElement('button'); button.type = 'button'; button.textContent = t('weather.undo', 'Undo');
+      button.addEventListener('click', function () { undo(); toastEl.classList.remove('is-visible'); });
+      toastEl.append(button);
+    }
     toastEl.dataset.kind = kind === 'error' ? 'error' : 'success';
     toastEl.setAttribute('role', kind === 'error' ? 'alert' : 'status');
     toastEl.classList.add('is-visible');
-    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); }, 2800);
+    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); }, undo ? 7000 : 2800);
   }
   let detailReturnFocus = null;
   let detailReturnKey = null;
   let sheetReturnFocus = null;
   let sheetReturnKind = null;
+  let sheetReturnDate = null;
 
   function restoreFocus(target, fallback) {
     const next = target && target.isConnected && !target.closest('[inert]') ? target : fallback;
@@ -324,6 +332,9 @@
   let lastListFetch = 0;
   let myLocationCity = null;
   let refreshGen = 0;       // supersede stale refresh() completions
+  let viewSwitchGeneration = 0;
+  let viewBusySince = 0;
+  let viewBusyTimer = 0;
   let refreshInflight = null; // Promise of current refresh, if any
   let alertsPrefetchGen = 0; // cancel in-flight alert prefetch (module-owned gen also exists)
   /** Detail open/close motion — generation counters cancel stale rAF/timeouts. */
@@ -454,7 +465,10 @@
   var alertsApi = null;
   var dataApi = null;
   var mapApi = null;
+  var mapMySkyRefreshPending = false;
 
+  let productApi = null;
+  let navigationApi = null;
   function wireRemainingModules() {
     if (!W.factories.charts || !W.factories.alerts || !W.factories.data) {
       console.error('[weather] missing factories', Object.keys(W.factories || {}));
@@ -477,6 +491,7 @@
       t: t,
       onCityLoaded: function (city, pack) {
         pendingCityKeys.delete(cityKey(city));
+        if (productApi) productApi.render();
         if ((!pack || !pack.weather) && savedSnapshotFor(city)) {
           pack = savedSnapshotFor(city);
           cache.set(cityKey(city), pack);
@@ -486,7 +501,7 @@
           else setUpdated(pack.fetchedAt);
         }
         if (mapApi && mapApi.isOpen()) mapApi.updatePlaces(getMapPlaces());
-        if (pack && pack.city && pack.city.isMyLocation) applyAmbientPageSky();
+        if (pack && pack.city && pack.city.isMyLocation && isPageActive()) applyAmbientPageSky();
         // The greeting starts with a lightweight “checking” line while the
         // selected place loads. Refresh it as soon as that place's real pack
         // lands so it can use current conditions and the evening outlook.
@@ -523,7 +538,29 @@
         fmtTemp: fmtTemp,
         fmtWind: fmtWind,
         getPlaces: getMapPlaces,
-        onSelectCity: openMapCity
+        isFavorite: isFavorite,
+        onSelectCity: openMapCity,
+        onAddCity: function (city) {
+          if (!city || isFavorite(city)) return;
+          toggleFavorite(city);
+          refreshListsFromCache({ force: true, skipAmbient: true });
+          if (mapApi && mapApi.isOpen()) mapApi.updatePlaces(getMapPlaces());
+          if (weatherMode === 'my-sky') mapMySkyRefreshPending = true;
+        },
+        onOpen: function () {
+          clearAutoRefresh();
+          if (skyApi.pauseStormFx) skyApi.pauseStormFx(detailFx);
+        },
+        onClose: function () {
+          if (isDetailShowingOrOpening() && skyApi.resumeStormFx) skyApi.resumeStormFx(detailFx);
+          if (mapMySkyRefreshPending && weatherMode === 'my-sky') {
+            mapMySkyRefreshPending = false;
+            refresh(false, { quiet: true, reason: 'view' });
+          } else {
+            mapMySkyRefreshPending = false;
+            if (isPageActive()) scheduleAutoRefresh();
+          }
+        }
       });
     }
   }
@@ -532,7 +569,7 @@
   // Shared Open-Meteo query (also used inside data module)
   // past_days=1 so hourly includes earlier hours of the local calendar day (Apple-style 00–24 charts)
   const FORECAST_Q =
-    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,precipitation'
+    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,surface_pressure,visibility,precipitation,is_day'
     + '&hourly=temperature_2m,apparent_temperature,weather_code,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,uv_index'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max'
     + '&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=10&past_days=1';
@@ -544,7 +581,7 @@
    * to FORECAST_Q. Detail, sheets and enrichment always use the full FORECAST_Q.
    */
   const FORECAST_Q_LIST =
-    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,visibility,precipitation'
+    'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,visibility,precipitation,is_day'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min'
     + '&temperature_unit=celsius&wind_speed_unit=ms&timezone=auto&forecast_days=10';
   const NWS_BASE = 'https://api.weather.gov';
@@ -856,6 +893,8 @@
   }
   function toggleFavorite(c) {
     let list = loadFavorites();
+    const previous = list.slice();
+    const previousPack = cache.get(cityKey(c));
     const removing = list.some((f) => sameCity(f, c));
     if (removing) {
       list = list.filter((f) => !sameCity(f, c));
@@ -867,7 +906,15 @@
     }
     saveFavorites(list);
     notify(t(removing ? 'weather.notice.removed' : 'weather.notice.added',
-      removing ? 'Removed from My Sky' : 'Added to My Sky'));
+      removing ? 'Removed from My Sky' : 'Added to My Sky'), null, removing ? function () {
+      const current = loadFavorites().filter(city => !sameCity(city,c));
+      const index = previous.findIndex(city => sameCity(city,c));
+      current.splice(Math.min(index,current.length),0,c);
+      saveFavorites(current);
+      if (previousPack) cache.set(cityKey(c),previousPack);
+      refreshListsFromCache({force:true});
+      if (openCity && sameCity(openCity.city,c)) syncDetailFav(c);
+    } : null);
     const snapshot = removing ? savedSnapshotFor(c) : null;
     if (removing && !sameCity(c, myLocationCity) && !sameCity(c, selectedGreetingCity)
         && !(snapshot && snapshot.visited)) forgetSnapshotFor(c);
@@ -902,6 +949,9 @@
   function openMapCity(city) {
     if (!city) return;
     const existing = cache.get(cityKey(city)) || savedSnapshotFor(city);
+    // Selecting a place from the map starts its detail fetch; don't also trigger the
+    // deferred My Sky refresh queued by a preceding Add action.
+    mapMySkyRefreshPending = false;
     if (mapApi) mapApi.close();
     if (existing && existing.weather) {
       openDetail(existing);
@@ -1034,6 +1084,8 @@
   }
   function setWeatherMode(mode, remember, skipLoad) {
     if (mode !== 'horizon' && mode !== 'my-sky') return;
+    viewSwitchGeneration++;
+    const changed = weatherMode !== mode;
     if (weatherMode !== mode) greetingVisitSeed = null;
     weatherMode = mode;
     if (mode === 'horizon' && remember) horizonExpanded = true;
@@ -1041,8 +1093,34 @@
       weatherModeExplicit = true;
       try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
     }
+    if (changed && !skipLoad) setViewLoading(true);
     refreshListsFromCache({ force: true });
     if (!skipLoad) refresh(false, { quiet: true, reason: 'view' });
+    else if (changed) setViewLoading(false);
+  }
+
+  function requestWeatherMode(mode) {
+    if (mode !== 'horizon' && mode !== 'my-sky' || mode === weatherMode) return;
+    const gen = ++viewSwitchGeneration;
+    weatherMode = mode;
+    weatherModeExplicit = true;
+    greetingVisitSeed = null;
+    viewBusySince = Date.now();
+    modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.weatherMode === mode)));
+    if (majorsBlock) majorsBlock.hidden = mode === 'my-sky';
+    if (myLocBlock) myLocBlock.hidden = mode !== 'my-sky';
+    const home = document.getElementById('weatherHome');
+    if (home) home.hidden = mode !== 'my-sky' || !getGreetingSourceCity();
+    setViewLoading(true);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (gen !== viewSwitchGeneration) return;
+        setWeatherMode(mode, true);
+        if (shellEl && motionFull() && typeof shellEl.animate === 'function') {
+          shellEl.animate([{opacity:.45,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'ease-out'});
+        }
+      });
+    });
   }
 
   async function reverseGeocode(lat, lon) {
@@ -1117,14 +1195,14 @@
     const aliases = {
       'sun.max': 'sun', 'moon.stars': 'moon-star', 'cloud.sun': 'cloud-sun',
       'cloud.moon': 'cloud-moon', 'cloud.rain': 'cloud-rain', 'cloud.drizzle': 'cloud-drizzle',
-      'cloud.heavyrain': 'cloud-rain', 'cloud.snow': 'cloud-snow', 'cloud.bolt': 'cloud-lightning',
+      'cloud.heavyrain': 'duskline-cloud-rain-heavy', 'cloud.snow': 'cloud-snow', 'cloud.bolt': 'cloud-lightning',
       'cloud.fog': 'cloud-fog', drop: 'droplets', barometer: 'gauge', location: 'map-pin',
       'location.fill': 'map-pin', 'star.fill': 'star', checkmark: 'check', xmark: 'x',
       'arrow.clockwise': 'refresh-cw'
     };
     const glyph = aliases[name] || name || 'cloud';
     const className = cls || 'weather-icon';
-    const href = '#lucide-' + glyph;
+    const href = glyph.indexOf('duskline-') === 0 ? '#' + glyph : '#lucide-' + glyph;
     return `<svg class="${escapeHtml(className)}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="${href}" xlink:href="${href}"/></svg>`;
   }
 
@@ -1133,8 +1211,11 @@
     if (code >= 95) return weatherIcon('cloud.bolt', c);
     if (code >= 71 && code < 80) return weatherIcon('cloud.snow', c);
     if (code >= 85 && code < 90) return weatherIcon('cloud.snow', c);
-    if (code >= 80 && code < 85) return weatherIcon('cloud.heavyrain', c);
-    if (code >= 61 && code < 70) return weatherIcon(code >= 65 ? 'cloud.heavyrain' : 'cloud.rain', c);
+    if (code === 82 || code === 65) return weatherIcon('cloud.heavyrain', c);
+    if (code === 80 || code === 61) return weatherIcon('cloud.drizzle', c);
+    if ((code >= 81 && code <= 82) || code === 63) return weatherIcon('cloud.rain', c);
+    if (code === 66 || code === 67 || code === 56 || code === 57) return weatherIcon('cloud.snow', c);
+    if (code === 55) return weatherIcon('cloud.rain', c);
     if (code >= 51 && code < 60) return weatherIcon('cloud.drizzle', c);
     if (code === 45 || code === 48) return weatherIcon('cloud.fog', c);
     if (code === 3) return weatherIcon('cloud', c);
@@ -1145,7 +1226,7 @@
 
   function modLabelIcon(key) {
     const map = {
-      aqi: 'cloud.fog', feels: 'thermometer', humidity: 'drop', wind: 'wind',
+      aqi: 'wind', feels: 'thermometer', humidity: 'drop', wind: 'wind',
       uv: 'sun.max', vis: 'eye', pressure: 'barometer', precip: 'umbrella',
       sun: 'sunrise', conditions: 'cloud.sun'
     };
@@ -1568,6 +1649,21 @@
   }
 
   /** Local clock hour as a fraction (14.5 = 14:30) so the sun creeps, not hops. */
+  function isNightForPack(pack, time) {
+    const current = pack.weather && pack.weather.current || {};
+    if (!time && current.is_day != null) return !Number(current.is_day);
+    const tz = cityTimeZone(pack, pack.city);
+    const daily = pack.weather && pack.weather.daily || {};
+    const targetDate = time ? chartsApi.localDateKey(stampToMs(time,tz),tz) : chartsApi.localDateKey(Date.now(),tz);
+    const index = (daily.time || []).findIndex(value => String(value).slice(0,10) === targetDate);
+    const rise = stampToMs(dailyFieldAt(daily, 'sunrise', index), tz);
+    const set = stampToMs(dailyFieldAt(daily, 'sunset', index), tz);
+    const now = time ? stampToMs(time, tz) : Date.now();
+    if (Number.isFinite(rise) && Number.isFinite(set)) return now < rise || now >= set;
+    const hour = time ? wallHour(time, tz) : localHourForPack(pack);
+    return hour < 6 || hour >= 20;
+  }
+
   function localHourForPack(pack) {
     try {
       const tz = (pack && pack.weather && pack.weather.timezone)
@@ -1595,6 +1691,37 @@
   }
 
   wireRemainingModules();
+  if (W.factories.product) productApi = W.factories.product({
+    t: t, escapeHtml: escapeHtml, cityKey: cityKey, sameCity: sameCity, cache: cache,
+    cities: MAJOR, fmtTemp: fmtTemp, condLabel: condLabel, cityName: displayCityName,
+    localHour: localHourForPack, mode: function () { return weatherMode; },
+    getPrimary: getGreetingSourceCity,
+    updated: function (pack) { return [rowUpdatedLabel(pack), locationLocatedLabel(pack.city)].filter(Boolean).join(' · '); }, insight: detailWeatherInsight, night: isNightForPack,
+    range: function (pack) { return dayHiLo(pack.weather.daily || {}, dailyTodayIndex(pack.weather.daily || {},cityTimeZone(pack,pack.city)),pack.weather.current.temperature_2m); },
+    stamp: function (time, pack) { return stampToMs(time, cityTimeZone(pack,pack.city)); },
+    clock: function (time, pack) { return formatClock(time, cityTimeZone(pack,pack.city)); },
+    icon: condIcon, repaint: function () { horizonExpanded = true; refreshListsFromCache({force:true}); refresh(false,{quiet:true,reason:'view'}); },
+    expanded: function () { return horizonExpanded; },
+    collapseHorizon: function () { horizonExpanded = false; refreshListsFromCache({force:true}); },
+    enrich: function (city) { return dataApi.loadCity(city,null,{enrich:true}); },
+    open: openMapCity
+  });
+  if (W.factories.navigation) navigationApi = W.factories.navigation({
+    sameCity: sameCity, dismissSheet: closeSheet, dismissDetail: closeDetail,
+    currentCity: function () { return openCity && openCity.city; }, sheetOpen: function () { return sheetIntentOpen; },
+    openCity: function (city) {
+      const pack = cache.get(cityKey(city));
+      if (pack && pack.weather) openDetail(pack);
+      else { openDetailLoading(city); dataApi.loadCity(city,null,{enrich:true}).then(function (fresh) {
+        if (fresh && fresh.weather && openCity && sameCity(openCity.city,city)) openDetail(fresh);
+      }).catch(function () { closeDetail(); }); }
+    },
+    openSheet: function (kind, options) {
+      if (kind === 'units') openUnitsSheet();
+      else if (kind === 'primary') openGreetingLocationSheet();
+      else if (openCity && openCity.weather) openSheet(kind,openCity,options);
+    }
+  });
 
   function clearWeatherSkeleton() {
     if (listEl) {
@@ -1731,14 +1858,14 @@
       });
     } catch (e) { localTime = ''; }
     const hour = localHourForPack(pack);
-    const night = hour < 6 || hour >= 20;
+    const night = isNightForPack(pack);
     const seed = Math.abs(Math.round((c.lat || 0) * 100) + Math.round((c.lon || 0) * 10));
 
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'weather-row';
     applySky(row, code, cur.time, {
-      hour, seed, isRow: true,
+      hour, seed, isRow: true, night: isNightForPack(pack),
       noOrnaments: true,
       timeZone: cityTimeZone(pack, c),
       precipMm: cur.precipitation,
@@ -1761,7 +1888,7 @@
     // Keep the weather condition visible and give warnings their own count badge.
     const statusLine = `<div class="weather-row-status">
         <div class="weather-row-cond">${condIcon(code, night)}<span>${escapeHtml(condLabel(code))}</span></div>
-        ${alert ? `<span class="weather-row-alert ${alertTone}" aria-label="${escapeHtml(alertRowLabel)}">${weatherIcon('alert-circle', 'weather-row-alert-icon')}<span>${escapeHtml(alertRowLabel)}</span></span>` : ''}
+        ${alert ? `<span class="weather-row-alert ${alertTone}" aria-label="${escapeHtml(alertRowLabel)}">${weatherIcon('duskline-alert-triangle', 'weather-row-alert-icon')}<span>${escapeHtml(alertRowLabel)}</span></span>` : ''}
       </div>`;
 
     const main = document.createElement('div');
@@ -1773,45 +1900,14 @@
         <div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c))}</span></div>
         <div class="weather-row-meta">${escapeHtml(localTime)}${displayAdmin1(c) ? ' · ' + escapeHtml(displayAdmin1(c)) : ''}</div>
         ${statusLine}
-        ${rowInsight
-          ? '<div class="weather-row-insight">' + escapeHtml(rowInsight) + '</div>'
-          : (stampLine ? '<div class="weather-row-updated">' + escapeHtml(stampLine) + '</div>' : '')}`;
+        ${rowInsight ? '<div class="weather-row-insight">' + escapeHtml(rowInsight) + '</div>' : ''}
+        ${stampLine ? '<div class="weather-row-updated">' + escapeHtml(stampLine) + '</div>' : ''}`;
 
     const temps = document.createElement('div');
     temps.className = 'weather-row-temps';
     temps.innerHTML = `
         <div class="weather-row-temp">${fmtTemp(cur.temperature_2m)}</div>
         <div class="weather-row-hl">${t('weather.high', 'H')}:${fmtTemp(hi)}  ${t('weather.low', 'L')}:${fmtTemp(lo)}</div>`;
-
-    const star = document.createElement('button');
-    star.type = 'button';
-    star.className = 'weather-row-save';
-    if (c.isMyLocation) {
-      star.classList.add('weather-row-save--location');
-      star.setAttribute('aria-pressed', 'true');
-      star.setAttribute('aria-label', t('weather.clearLocation', 'Remove my location'));
-      star.title = t('weather.clearLocation', 'Remove my location');
-      star.innerHTML = removeLocationIcon();
-      star.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        saveMyLocation(null);
-        notify(t('weather.notice.removed', 'Removed from My Sky'));
-        refreshListsFromCache();
-      });
-    } else {
-      star.setAttribute('aria-pressed', fav ? 'true' : 'false');
-      star.setAttribute('aria-label', savedPlaceLabel(fav));
-      star.title = savedPlaceLabel(fav);
-      star.innerHTML = savedPlaceIcon(fav);
-      star.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleFavorite(c);
-        refreshListsFromCache();
-        if (openCity && openCity.city && sameCity(openCity.city, c)) syncDetailFav(c);
-      });
-    }
 
     const cityLab = displayCityName(c) || c.name || '';
     const tempLab = fmtTemp(cur.temperature_2m);
@@ -1835,7 +1931,7 @@
     row.appendChild(temps);
     li.classList.add('weather-row-cluster');
     li.appendChild(row);
-    li.appendChild(star);
+    // Saving and removing places belongs in search and city details, keeping lists quiet.
     return li;
   }
 
@@ -2040,6 +2136,7 @@
       .replace('{low}', fmtTemp(low));
   }
   function greetingWeatherInsight(pack, timeZone, parts, seed) {
+    if (pack.stored) return rowUpdatedLabel(pack);
     if (!pack || !pack.weather || !pack.weather.current) return '';
     const weather = pack.weather;
     const current = weather.current || {};
@@ -2160,6 +2257,7 @@
     return (options[Math.abs(Number(seed) || 0) % options.length] || candidates[0]).text;
   }
   function detailWeatherInsight(pack) {
+    if (pack.stored) return "";
     if (!pack || !pack.weather) return '';
     const tz = cityTimeZone(pack, pack.city);
     const parts = localDateTimeParts(tz);
@@ -2202,6 +2300,7 @@
 
   /** Compact, actionable context for the saved-city list. Keep routine weather quiet. */
   function rowWeatherInsight(pack) {
+    if (pack.stored) return "";
     if (!pack || !pack.weather || !pack.weather.current) return '';
     const tz = cityTimeZone(pack, pack.city);
     const current = pack.weather.current || {};
@@ -2437,7 +2536,7 @@
           greetingTitleEl.style.setProperty('--wx-greeting-caret-y', glyphRect.rect.top - titleRect.top + 2 + 'px');
         }
         if (shown < chars.length) greetingTypeTimer = window.setTimeout(tick, interval);
-        else greetingTitleEl.removeAttribute('data-typing');
+        else { greetingTextEl.textContent = fullText; greetingTitleEl.removeAttribute('data-typing'); }
       };
       greetingTypeTimer = window.setTimeout(tick, interval);
     };
@@ -2486,7 +2585,7 @@
       revealTypewriterGlyph(glyphs[shown]);
       shown++;
       if (shown < chars.length) detailInsightTimer = window.setTimeout(tick, interval);
-      else element.removeAttribute('data-typing');
+      else { element.textContent = text; element.removeAttribute('data-typing'); }
     };
     detailInsightTimer = window.setTimeout(tick, interval);
   }
@@ -2542,9 +2641,11 @@
       } else if (!pack || !pack.weather || !pack.weather.current) {
         fullText = t('weather.greeting.mySkyChecking', '{greeting} — checking the weather in {place}.')
           .replace('{greeting}', greet).replace('{place}', displayCityName(selectedCity));
+      } else if (pack.stored) {
+        fullText = t('weather.greeting.saved', '{greeting} — saved forecast for {place}, checked {time}.').replace('{greeting}', greet).replace('{place}', displayCityName(selectedCity)).replace('{time}', formatUpdatedStamp(pack.fetchedAt));
       } else if (cur.temperature_2m == null || cur.temperature_2m === '' || !Number.isFinite(Number(cur.temperature_2m))
           || greetingWeatherCode(cur.weather_code) == null) {
-        fullText = t('weather.greeting.mySkyChecking', '{greeting} — checking the weather in {place}.')
+        fullText = t('weather.greeting.currentUnavailable', '{greeting} — current conditions are unavailable in {place}.')
           .replace('{greeting}', greet).replace('{place}', displayCityName(selectedCity));
       } else {
         animateGreeting = true;
@@ -2615,7 +2716,7 @@
     if (!selectedGreetingCity) selectedGreetingCity = loadGreetingCity();
     const favs = loadFavorites();
     const favKeys = new Set(favs.map(cityKey));
-    if (!weatherModeExplicit) {
+    if (!weatherModeExplicit && !weatherMode) {
       const savedMode = readWeatherModePreference();
       if (savedMode) {
         weatherMode = savedMode;
@@ -2627,7 +2728,7 @@
     const showMySky = weatherMode === 'my-sky';
     const showStart = !showMySky && !myLocationCity && !selectedGreetingCity && !favs.length;
     const featured = horizonExpanded ? MAJOR : MAJOR.filter((c) => HORIZON_PREVIEW_SLUGS.has(c.slug));
-    const homeCity = myLocationCity || selectedGreetingCity;
+    const homeCity = getGreetingSourceCity() || myLocationCity || selectedGreetingCity;
     const homeKey = homeCity ? cityKey(homeCity) : null;
 
     const myPacks = homeCity
@@ -2636,7 +2737,7 @@
             ? { city: homeCity, pending: true, fetchedAt: 0 }
             : (cache.get(homeKey) || { city: homeCity, pending: true, fetchedAt: 0 });
           // The location badge and timestamp belong only to an explicit device fix.
-          if (myLocationCity && p.city) {
+          if (myLocationCity && sameCity(homeCity, myLocationCity) && p.city) {
             p.city = Object.assign({}, p.city, {
               isMyLocation: true,
               locatedAt: myLocationCity.locatedAt || p.city.locatedAt || 0
@@ -2653,20 +2754,20 @@
       .map((c) => pendingCityKeys.has(cityKey(c))
         ? { city: c, pending: true, fetchedAt: 0 }
         : (cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 }));
-    const majorPacks = featured
+    const visibleFeatured = productApi ? productApi.filter(featured) : featured;
+    const majorPacks = visibleFeatured
       .filter((c) => !showMySky || (!favKeys.has(cityKey(c)) && (!homeKey || cityKey(c) !== homeKey)))
       .map((c) => pendingCityKeys.has(cityKey(c))
         ? { city: c, pending: true, fetchedAt: 0 }
         : (cache.get(cityKey(c)) || { city: c, pending: true, fetchedAt: 0 }));
 
-    if (myLocBlock) myLocBlock.hidden = !showMySky || !homeCity;
-    if (myLocBlock) {
-      const label = myLocBlock.querySelector('.weather-section-label');
-      if (label) label.textContent = myLocationCity
-        ? t('weather.myLocation', 'My Location')
-        : t('weather.selectedPlace', 'Chosen place');
-    }
-    if (favBlock) favBlock.hidden = !showMySky || favPacks.length === 0;
+    const personalCities = [];
+    [myLocationCity, selectedGreetingCity, ...favs].filter(Boolean).forEach(function (city) {
+      if (!personalCities.some(item => sameCity(item,city)) && cityKey(city) !== homeKey) personalCities.push(city);
+    });
+    const personalPacks = personalCities.map(city => cache.get(cityKey(city)) || {city:city,pending:true});
+    if (myLocBlock) myLocBlock.hidden = !showMySky || personalPacks.length === 0;
+    if (favBlock) favBlock.hidden = true;
     if (majorsBlock) majorsBlock.hidden = showMySky;
     if (majorsBlock) majorsBlock.classList.toggle('is-preview', !horizonExpanded);
     if (startEl) startEl.hidden = !showStart;
@@ -2676,11 +2777,11 @@
       button.setAttribute('aria-pressed', button.getAttribute('data-weather-mode') === weatherMode ? 'true' : 'false');
     });
     if (showMySky) {
-      renderCityList(myLocListEl, myPacks, { favoriteKeys: favKeys });
-      renderCityList(favListEl, favPacks, { favoriteKeys: favKeys });
+      renderCityList(myLocListEl, personalPacks, { regions: false, favoriteKeys: favKeys });
+      if (favListEl) favListEl.replaceChildren();
     } else {
       if (listEl) listEl.hidden = false;
-      renderCityList(listEl, majorPacks, { regions: horizonExpanded, favoriteKeys: favKeys });
+      renderCityList(listEl, majorPacks, { regions: horizonExpanded && (!document.getElementById('weatherSort') || document.getElementById('weatherSort').value === 'featured'), favoriteKeys: favKeys });
     }
     if (focusKey) {
       const next = [myLocListEl, favListEl, listEl]
@@ -2697,7 +2798,8 @@
     else if (latestPack) setUpdated(latestPack.fetchedAt);
     else if (updatedEl) updatedEl.textContent = '';
     updateGreeting();
-    if (!opts.skipAmbient) applyAmbientPageSky();
+    if (productApi) productApi.render();
+    if (!opts.skipAmbient && isPageActive()) applyAmbientPageSky();
     // List is interactive again — clear any stuck full-screen PE lock
     if (!isDetailVisible()) ensureListTappable();
   }
@@ -2705,7 +2807,8 @@
   /** Page is foreground-active (auto-refresh only runs then). */
   function isPageActive() {
     try {
-      return document.visibilityState === 'visible';
+      return document.visibilityState === 'visible'
+        && !document.documentElement.classList.contains('weather-map-open');
     } catch (e) {
       return true;
     }
@@ -2725,6 +2828,24 @@
         btn.classList.remove('is-busy');
       }
     });
+  }
+
+  function setViewLoading(busy) {
+    window.clearTimeout(viewBusyTimer);
+    if (!busy && Date.now() - viewBusySince < 450) {
+      viewBusyTimer = window.setTimeout(function () { setViewLoading(false); }, 450 - (Date.now() - viewBusySince));
+      return;
+    }
+    if (busy && (!weatherModeLoadingEl || weatherModeLoadingEl.hidden)) viewBusySince = Date.now();
+    if (weatherModeLoadingEl) weatherModeLoadingEl.hidden = !busy;
+    if (weatherModeSwitchEl) {
+      if (busy) weatherModeSwitchEl.setAttribute('aria-busy', 'true');
+      else weatherModeSwitchEl.removeAttribute('aria-busy');
+    }
+    if (shellEl) {
+      if (busy) shellEl.setAttribute('aria-busy', 'true');
+      else shellEl.removeAttribute('aria-busy');
+    }
   }
 
   function clearAutoRefresh() {
@@ -2776,6 +2897,8 @@
   async function refresh(force, opts) {
     opts = opts || {};
     const quiet = !!opts.quiet;
+    const viewLoad = opts.reason === 'view';
+    if (viewLoad) setViewLoading(true);
     if (opts.reason === 'manual' || opts.reason === 'manual-detail') {
       greetingVisitSeed = null;
       updateGreeting();
@@ -2821,6 +2944,7 @@
     if (!cities.length) {
       setRefreshBusy(false);
       if (shellEl) shellEl.removeAttribute('aria-busy');
+      if (viewLoad) setViewLoading(false);
       return;
     }
     cities.forEach((c) => {
@@ -2848,9 +2972,11 @@
         });
         if (gen !== refreshGen) return;
         lastListFetch = Date.now();
+        const sort = document.getElementById('weatherSort');
+        if (weatherMode === 'horizon' && sort && sort.value !== 'featured') refreshListsFromCache({force:true,skipAmbient:true});
 
         // Keep active places' alerts fresh without polling hidden history.
-        await alertsApi.prefetchAlertsForCache(null, new Set(cities.map(cityKey)));
+        alertsApi.prefetchAlertsForCache(null, new Set(cities.map(cityKey))).catch(function () {});
         if (gen !== refreshGen) return;
 
         // Cards have already been updated individually; do not rebuild the list.
@@ -2894,6 +3020,7 @@
         if (gen === refreshGen) {
           listPaintLocked = false;
           setRefreshBusy(false);
+          setViewLoading(false);
           if (shellEl) shellEl.removeAttribute('aria-busy');
           // Reset 10-minute auto clock after every completed cycle (while active)
           if (isPageActive()) scheduleAutoRefresh();
@@ -2987,8 +3114,9 @@
   // The detail surface is useful before the background city queue completes.
   // Open it immediately, then replace this loading state with the fetched pack.
   function openDetailLoading(city) {
+    if (navigationApi) navigationApi.detail(city);
     if (!detailEl || !city) return;
-    if (!isDetailVisible()) {
+    if (!isDetailShowingOrOpening()) {
       detailReturnFocus = document.activeElement;
       const item = detailReturnFocus && detailReturnFocus.closest && detailReturnFocus.closest('li[data-city-key]');
       detailReturnKey = item && item.dataset.cityKey;
@@ -3021,11 +3149,13 @@
 
   function openDetail(pack) {
     if (!detailEl || !pack || !pack.weather) return;
-    if (!isDetailVisible()) {
+    if (navigationApi) navigationApi.detail(pack.city);
+    if (!isDetailShowingOrOpening()) {
       detailReturnFocus = document.activeElement;
       const item = detailReturnFocus && detailReturnFocus.closest && detailReturnFocus.closest('li[data-city-key]');
       detailReturnKey = item && item.dataset.cityKey;
     }
+    const enteringDetail = !isDetailShowingOrOpening() || !!(openCity && openCity.pending);
     const prevCity = openCity && openCity.city;
     const cityChanged = !!(prevCity && pack.city && !sameCity(prevCity, pack.city));
     const sameOpenCity = !!(prevCity && pack.city && sameCity(prevCity, pack.city));
@@ -3046,7 +3176,7 @@
       const hour = localHourForPack(pack);
       const seed = Math.abs(Math.round((c.lat || 0) * 100) + Math.round((c.lon || 0) * 10));
       const skyOpts = {
-        hour, seed, isRow: false,
+        hour, seed, isRow: false, night: isNightForPack(pack),
         timeZone: cityTimeZone(pack, c),
         precipMm: cur.precipitation,
         windDeg: cur.wind_direction_10m,
@@ -3079,7 +3209,7 @@
       detailBack.style.display = '';
     }
 
-    const night = localHourForPack(pack) < 6 || localHourForPack(pack) >= 20;
+    const night = isNightForPack(pack);
     const dayIdx = dailyTodayIndex(daily, cityTimeZone(pack, c));
     const heroRange = dayHiLo(daily, dayIdx, cur.temperature_2m);
     const insightText = detailWeatherInsight(pack);
@@ -3116,7 +3246,7 @@
     syncDetailFav(c);
 
     // Public alerts: NWS in the U.S.; official, rebroadcastable CAP alerts elsewhere.
-    alertsApi.ensureAlerts(pack);
+    alertsApi.ensureAlerts(pack, {retryFailed: enteringDetail || cityChanged});
 
     const selectedAqiScale = aqiScale(c);
     const aqi = aqiCurrentValue(pack.air && pack.air.current, selectedAqiScale);
@@ -3137,7 +3267,7 @@
       const delta = feels != null && cur.temperature_2m != null ? feels - cur.temperature_2m : null;
       let feelsSub = '';
       if (delta != null) {
-        const abs = Math.abs(Math.round(delta));
+        const abs = Math.abs(Math.round(useF() ? delta * 9 / 5 : delta));
         if (abs < 1) feelsSub = t('weather.feelsSimilar', 'Similar to actual');
         else if (delta > 0) feelsSub = t('weather.feelsWarmer', 'Warmer by {n}°').replace('{n}', String(abs));
         else feelsSub = t('weather.feelsCooler', 'Cooler by {n}°').replace('{n}', String(abs));
@@ -3254,15 +3384,17 @@
       const h = wallHour(times[i], stripTz);
       const pop = hourly.precipitation_probability && hourly.precipitation_probability[i];
       hourlyHtml += `<div class="weather-hourly-item">
-        <div>${escapeHtml(i === start ? t('weather.now', 'Now') : lab)}</div>
-        <div class="ic">${condIcon(code || 0, h < 6 || h >= 20)}</div>
+        <div>${escapeHtml(i === start && !pack.stored ? t('weather.now', 'Now') : lab)}</div>
+        <div class="ic">${condIcon(code == null ? 0 : code, isNightForPack(pack, times[i]))}</div>
         <div class="t">${fmtTemp(hourly.temperature_2m && hourly.temperature_2m[i])}</div>
         ${pop != null ? `<div class="p">${Math.round(pop)}%</div>` : ''}
       </div>`;
     }
     hourlyHtml += '</div>';
     if (!times.length) {
-      hourlyHtml = `<div class="weather-hourly-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
+      hourlyHtml = pack.enrichmentError || pack.stored
+        ? `<div class="weather-hourly-loading" role="status"><span>${escapeHtml(t('weather.hourlyUnavailable', 'Hourly forecast unavailable'))}</span><span>${escapeHtml(t('weather.refreshToRetry', 'Refresh to try again'))}</span></div>`
+        : `<div class="weather-hourly-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
     }
     const hourlyTitle = t('weather.hourly', 'Hourly Forecast');
     mods.push(`<button type="button" class="weather-mod weather-mod-wide is-tappable" data-sheet="conditions" aria-label="${escapeHtml(hourlyTitle)}"><div class="weather-mod-label">${modLabelIcon('conditions')}<span>${escapeHtml(hourlyTitle)}</span></div>${hourlyHtml}</button>`);
@@ -3278,26 +3410,14 @@
       : dailyN === 7
         ? t('weather.daily7', '7-Day Forecast')
         : t('weather.dailyN', '{n}-Day Forecast').replace('{n}', String(dailyN));
-    mods.push(`<div class="weather-mod weather-mod-wide"><div class="weather-mod-label">${escapeHtml(dailyTitle)}</div>${chartsApi.dailyBarsHtml(daily, dailyOpts)}</div>`);
+    mods.push(`<div class="weather-mod weather-mod-wide weather-mod-daily"><div class="weather-mod-label">${escapeHtml(dailyTitle)}</div>${chartsApi.dailyBarsHtml(daily, dailyOpts)}</div>`);
     // Put the forecast people check first ahead of the exploratory measurements.
     // The alert banner, when present, still leads the detail.
     const forecastModules = mods.splice(-2);
     mods.splice(hasAlertBlock ? 1 : 0, 0, ...forecastModules);
     const metricStart = hasAlertBlock ? 3 : 2;
     const metricModules = mods.splice(metricStart);
-    const codeNow = Number(cur.weather_code);
-    const priority = (codeNow >= 51 && codeNow <= 99)
-      ? ['precip', 'feels', 'wind', 'humidity', 'aqi', 'vis', 'uv', 'pressure', 'sun']
-      : (codeNow === 45 || codeNow === 48)
-        ? ['vis', 'aqi', 'humidity', 'feels', 'wind', 'precip', 'uv', 'pressure', 'sun']
-        : !night && codeNow <= 2
-          ? ['uv', 'feels', 'aqi', 'wind', 'humidity', 'precip', 'vis', 'pressure', 'sun']
-          : ['feels', 'aqi', 'wind', 'humidity', 'precip', 'vis', 'uv', 'pressure', 'sun'];
-    metricModules.sort(function (a, b) {
-      const aKey = ((a.match(/data-sheet="([^"]+)"/) || [])[1]) || 'sun';
-      const bKey = ((b.match(/data-sheet="([^"]+)"/) || [])[1]) || 'sun';
-      return priority.indexOf(aKey) - priority.indexOf(bKey);
-    });
+    // Stable positions make recurring checks predictable; contextual guidance lives in the hero.
     mods.push(...metricModules);
 
     // Apple-style location attribution
@@ -3398,7 +3518,7 @@
         if ((win.end - win.start) < 12) pack.needsEnrich = true;
       } catch (eSparse) { /* ignore */ }
     }
-    if (pack.needsEnrich && pack.city && !pack._enriching) {
+    if (pack.needsEnrich && pack.city && !pack._enriching && !pack.enrichmentError) {
       pack._enriching = true;
       const enrichKey = cityKey(pack.city);
       // Snapshot expanded alerts so enrich re-render can restore them
@@ -3427,7 +3547,8 @@
         }
       }).catch(function () {
         pack._enriching = false;
-        pack.needsEnrich = false;
+        pack.enrichmentError = true;
+        openDetail(pack);
       });
     }
   }
@@ -3550,6 +3671,10 @@
   function openSheet(kind, pack, sheetOptions) {
     if (!sheetEl || !sheetBody || !pack || !pack.weather) return;
     if (kind === 'hourly' || kind === 'daily') return;
+    if (kind === 'feels') {
+      kind = 'conditions';
+      sheetOptions = Object.assign({}, sheetOptions || {}, { tempMode: 'feels' });
+    }
     try {
       openSheetInner(kind, pack, sheetOptions || {});
       if (kind === 'aqi') {
@@ -3582,6 +3707,7 @@
 
   function openSheetInner(kind, pack, sheetOptions) {
     sheetOptions = sheetOptions || {};
+    if (navigationApi) navigationApi.sheet(kind, sheetOptions);
     activeSheetKind = kind;
     const cur = pack.weather.current || {};
     const hourly = pack.weather.hourly || {};
@@ -3630,14 +3756,15 @@
         }).format(selectedDate);
       } catch (e) { selectedDateTitle = String(selectedDayKey).slice(0, 10); }
     }
-    if (kind === 'day') titleMap.day = selectedDateTitle || t('weather.daily', '10-Day Forecast');
+    if (kind === 'day' || kind === 'conditions') titleMap[kind] = selectedDateTitle || t('weather.hourly', 'Hourly Forecast');
+    const selectedDayCode = dailyFieldAt(daily, 'weather_code', selectedDayIndex);
 
     const aboutTitle = t('weather.about', 'About');
     const dayMode = sheetOptions.tempMode === 'feels' ? 'feels' : 'actual';
     // Build after the selected day is known so the sheet title matches the date in the body.
     const sheetTitleHtml = `
       <div class="wx-sheet-head" data-sheet-title>
-        <div class="wx-sheet-icon">${modLabelIcon(kind === 'conditions' || kind === 'day' ? 'conditions' : kind)}</div>
+        <div class="wx-sheet-icon">${(kind === 'day' || kind === 'conditions') && selectedDayCode != null ? condIcon(selectedDayCode, false, 'weather-mod-icon') : modLabelIcon(kind === 'conditions' || kind === 'day' ? 'conditions' : kind)}</div>
         <h3 class="wx-sheet-title">${escapeHtml(titleMap[kind] || t('weather.about', 'About'))}</h3>
       </div>`;
 
@@ -3651,9 +3778,18 @@
       return html;
     }
 
+    function datePickerHtml() {
+      return `<div class="wx-day-choices" role="group" aria-label="${escapeHtml(t('weather.daily','10-Day Forecast'))}">${dayChoices.map(function (date) {
+        const day = new Date(date + 'T12:00:00Z');
+        const weekday = date === currentDateKey ? t('weather.today','Today') : new Intl.DateTimeFormat(localeTag(),{weekday:'short',timeZone:'UTC'}).format(day);
+        const number = new Intl.DateTimeFormat(localeTag(),{day:'numeric',timeZone:'UTC'}).format(day);
+        return `<button type="button" data-hourly-date="${escapeHtml(date)}" aria-pressed="${date === selectedDayKey}"><span>${escapeHtml(weekday)}</span><strong>${escapeHtml(number)}</strong></button>`;
+      }).join('')}</div>`;
+    }
     // A selected forecast day opens a date-aware chart sheet, rather than a static row.
     if (kind === 'day') {
-      const dayCode = dailyFieldAt(daily, 'weather_code', selectedDayIndex);
+      body += datePickerHtml();
+      const dayCode = selectedDayCode;
       const high = dailyFieldAt(daily, 'temperature_2m_max', selectedDayIndex);
       const low = dailyFieldAt(daily, 'temperature_2m_min', selectedDayIndex);
       const totalPrecip = dailyFieldAt(daily, 'precipitation_sum', selectedDayIndex);
@@ -3682,22 +3818,6 @@
       };
       const highTime = timeNear(temperatures, high);
       const lowTime = timeNear(temperatures, low);
-      const dayDateButtons = dayChoices.map(function (key) {
-        const date = new Date(String(key).slice(0, 10) + 'T12:00:00Z');
-        let weekday = '';
-        let number = String(key).slice(8, 10);
-        let accessibleDate = String(key).slice(0, 10);
-        try {
-          weekday = new Intl.DateTimeFormat(localeTag(), { weekday: 'short', timeZone: 'UTC' }).format(date);
-          number = new Intl.DateTimeFormat(localeTag(), { day: 'numeric', timeZone: 'UTC' }).format(date);
-          accessibleDate = new Intl.DateTimeFormat(localeTag(), {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
-          }).format(date);
-        } catch (eDate) { /* retain the ISO date fallback */ }
-        if (String(key).slice(0, 10) === currentDateKey) weekday = t('weather.today', 'Today');
-        const selected = String(key).slice(0, 10) === String(selectedDayKey).slice(0, 10);
-        return `<button type="button" class="wx-day-choice${selected ? ' is-selected' : ''}" data-day-select="${escapeHtml(String(key).slice(0, 10))}" aria-label="${escapeHtml(accessibleDate)}" aria-pressed="${selected ? 'true' : 'false'}"><span>${escapeHtml(weekday)}</span><strong>${escapeHtml(number)}</strong></button>`;
-      }).join('');
       const selectedChartKey = dayMode === 'feels' ? 'apparent_temperature' : 'temperature_2m';
       const selectedSeries = hourly[selectedChartKey] || [];
       const hasTemperatureHours = dayHours >= 2 && selectedSeries.slice(dayWindow.start, dayWindow.end)
@@ -3705,8 +3825,17 @@
       const hasProbabilityHours = dayHours >= 2 && probability.slice(dayWindow.start, dayWindow.end)
         .some(function (value) { return value != null && Number.isFinite(Number(value)); });
 
-      body += `<div class="wx-day-choices" role="group" aria-label="${escapeHtml(t('weather.daily', '10-Day Forecast'))}">${dayDateButtons}</div>`;
-      body += `<div class="wx-day-condition">${condIcon(dayCode, false)}<span>${escapeHtml(condLabel(dayCode))}</span></div>`;
+      const selectedValues = selectedSeries.slice(dayWindow.start, dayWindow.end)
+        .map(function (value) { return value == null ? NaN : Number(value); })
+        .filter(Number.isFinite);
+      const chartRangeLow = dayMode === 'actual' && low != null
+        ? Number(low) : selectedValues.length ? Math.min.apply(null, selectedValues) : null;
+      const chartRangeHigh = dayMode === 'actual' && high != null
+        ? Number(high) : selectedValues.length ? Math.max.apply(null, selectedValues) : null;
+      const rangeReadout = chartRangeLow != null && chartRangeHigh != null
+        ? fmtTemp(chartRangeLow) + ' – ' + fmtTemp(chartRangeHigh) : '';
+      const isSelectedToday = String(selectedDayKey).slice(0, 10) === currentDateKey;
+      body += `<div class="wx-day-condition" id="wxDayCondition">${condIcon(dayCode, false)}<span>${escapeHtml(condLabel(dayCode))}</span></div>`;
       body += `<div class="wx-day-facts">
         <div class="wx-day-fact"><span>${escapeHtml(t('weather.highFull', 'High'))}</span><strong>${escapeHtml(fmtTemp(high))}</strong>${highTime ? `<small>${escapeHtml(highTime)}</small>` : ''}</div>
         <div class="wx-day-fact"><span>${escapeHtml(t('weather.lowFull', 'Low'))}</span><strong>${escapeHtml(fmtTemp(low))}</strong>${lowTime ? `<small>${escapeHtml(lowTime)}</small>` : ''}</div>
@@ -3714,11 +3843,15 @@
         <div class="wx-day-fact"><span>${escapeHtml(t('weather.chanceOfPrecipitation', 'Chance of precipitation'))}</span><strong>${pop != null && Number.isFinite(Number(pop)) ? Math.round(Number(pop)) + '%' : '—'}</strong></div>
       </div>`;
       body += `<div class="wx-day-mode" role="group" aria-label="${escapeHtml(t('settings.temperature', 'Temperature'))}">
-        <button type="button" data-day-temp-mode="actual" aria-pressed="${dayMode === 'actual' ? 'true' : 'false'}" class="${dayMode === 'actual' ? 'active' : ''}">${escapeHtml(t('weather.actual', 'Actual'))}</button>
-        <button type="button" data-day-temp-mode="feels" aria-pressed="${dayMode === 'feels' ? 'true' : 'false'}" class="${dayMode === 'feels' ? 'active' : ''}">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</button>
+        <button type="button" data-temp-mode="actual" aria-pressed="${dayMode === 'actual' ? 'true' : 'false'}" class="${dayMode === 'actual' ? 'active' : ''}">${escapeHtml(t('weather.actual', 'Actual'))}</button>
+        <button type="button" data-temp-mode="feels" aria-pressed="${dayMode === 'feels' ? 'true' : 'false'}" class="${dayMode === 'feels' ? 'active' : ''}">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</button>
       </div>`;
       if (hasTemperatureHours) {
-        body += chartsApi.buildTempChart(hourly, selectedChartKey, (v) => fmtTemp(v), chartTz, String(selectedDayKey).slice(0, 10));
+        body += chartsApi.buildTempChart(hourly, selectedChartKey, (v) => fmtTemp(v), chartTz, String(selectedDayKey).slice(0, 10), {
+          initialMode: isSelectedToday ? 'point' : 'range',
+          initialReadout: rangeReadout || fmtTemp(high) + ' – ' + fmtTemp(low),
+          initialSub: isSelectedToday ? '' : t('weather.dailyRange', 'Daily range')
+        });
       }
       if (hasProbabilityHours) {
         body += `<p class="weather-mod-label wx-day-chart-label">${escapeHtml(t('weather.chanceOfPrecipitation', 'Chance of precipitation'))}</p>`;
@@ -3727,12 +3860,15 @@
       const aboutDay = t('weather.about.conditions', '');
       if (aboutDay) body += `<p class="wx-sheet-context wx-day-about">${escapeHtml(aboutDay)}</p>`;
     // Chart sheets: Apple pattern = title → large live value lives in chart readout → scrub chart → about
-    } else if (kind === 'conditions') {
-      // Chart owns the big readout (scrub updates it). Secondary context line above.
-      body += `<p class="wx-sheet-context">${escapeHtml(condLabel(cur.weather_code))}</p>`;
-      body += chartsApi.buildTempChart(hourly, 'temperature_2m', (v) => fmtTemp(v), chartTz);
-      body += `<p class="weather-mod-label" style="margin-top:16px">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</p>`;
-      body += chartsApi.buildTempChart(hourly, 'apparent_temperature', (v) => fmtTemp(v), chartTz);
+     } else if (kind === 'conditions') {
+      body += datePickerHtml();
+      const selectedChartKey = dayMode === 'feels' ? 'apparent_temperature' : 'temperature_2m';
+      body += `<p class="wx-sheet-context" id="wxConditionsContext">${escapeHtml(condLabel(String(selectedDayKey).slice(0,10) === currentDateKey ? cur.weather_code : selectedDayCode))}</p>`;
+      body += `<div class="wx-day-mode" role="group" aria-label="${escapeHtml(t('settings.temperature', 'Temperature'))}">
+        <button type="button" data-temp-mode="actual" aria-pressed="${dayMode === 'actual' ? 'true' : 'false'}" class="${dayMode === 'actual' ? 'active' : ''}">${escapeHtml(t('weather.actual', 'Actual'))}</button>
+        <button type="button" data-temp-mode="feels" aria-pressed="${dayMode === 'feels' ? 'true' : 'false'}" class="${dayMode === 'feels' ? 'active' : ''}">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</button>
+      </div>`;
+      body += chartsApi.buildTempChart(hourly, selectedChartKey, (v) => fmtTemp(v), chartTz, selectedDayKey);
       body += unitsPickerHtml('wxTempUnitsSheet', [['c', '°C'], ['f', '°F']], useF() ? 'f' : 'c');
     } else if (kind === 'feels') {
       body += `<p class="wx-sheet-context">${escapeHtml(condLabel(cur.weather_code))}</p>`;
@@ -3822,9 +3958,9 @@
     if (aboutText) {
       const contextText = sheetContextText(kind, pack, chartTz);
       if (contextText) body += `<p class="wx-sheet-context wx-sheet-intelligence">${escapeHtml(contextText)}</p>`;
-      const aboutHead = titleMap[kind]
-        ? aboutTitle + ' ' + titleMap[kind]
-        : aboutTitle;
+      const aboutHead = kind === 'conditions'
+        ? aboutTitle + ' ' + t('weather.hourly', 'Hourly Forecast')
+        : titleMap[kind] ? aboutTitle + ' ' + titleMap[kind] : aboutTitle;
       body += `<div class="wx-sheet-about">
         <div class="wx-sheet-about-title">${escapeHtml(aboutHead)}</div>
         <p>${escapeHtml(aboutText)}</p>
@@ -3834,8 +3970,26 @@
     sheetBody.innerHTML = body;
     setSheetTitle(sheetTitleHtml);
     chartsApi.bindCharts(sheetBody);
+    sheetBody.querySelectorAll('[data-hourly-date]').forEach(function (button,index) {
+      button.addEventListener('click', function () {
+        const date = button.dataset.hourlyDate;
+        openSheet(kind, pack, { dayKey: date, tempMode: dayMode });
+        const next = sheetBody.querySelector('[data-hourly-date="' + CSS.escape(date) + '"]');
+        if (next) {
+          next.focus({ preventScroll: true });
+          next.scrollIntoView({block:'nearest',inline:'center',behavior:motionFull() ? 'smooth' : 'auto'});
+        }
+      });
+      button.addEventListener('keydown', function (event) {
+        const direction = document.documentElement.dir === 'rtl' ? -1 : 1;
+        const nextIndex = event.key === 'ArrowRight' ? index+direction : event.key === 'ArrowLeft' ? index-direction : event.key === 'Home' ? 0 : event.key === 'End' ? dayChoices.length-1 : null;
+        if (nextIndex == null || nextIndex < 0 || nextIndex >= dayChoices.length) return;
+        event.preventDefault();
+        sheetBody.querySelectorAll('[data-hourly-date]')[nextIndex].click();
+      });
+    });
 
-    if (kind === 'day') {
+    if (kind === 'day' || kind === 'conditions') {
       const focusDayControl = function (attribute, value) {
         requestAnimationFrame(function () {
           const controls = Array.from(sheetBody.querySelectorAll('[' + attribute + ']'));
@@ -3843,22 +3997,36 @@
           if (target && target.isConnected) target.focus({ preventScroll: true });
         });
       };
-      sheetBody.querySelectorAll('[data-day-select]').forEach(function (button) {
+      sheetBody.querySelectorAll('[data-temp-mode]').forEach(function (button) {
         button.addEventListener('click', function () {
-          const nextDay = button.getAttribute('data-day-select');
-          if (!nextDay || nextDay === String(selectedDayKey).slice(0, 10)) return;
-          openSheet('day', pack, { dayKey: nextDay, tempMode: dayMode });
-          focusDayControl('data-day-select', nextDay);
-        });
-      });
-      sheetBody.querySelectorAll('[data-day-temp-mode]').forEach(function (button) {
-        button.addEventListener('click', function () {
-          const nextMode = button.getAttribute('data-day-temp-mode');
+          const nextMode = button.getAttribute('data-temp-mode');
           if (!nextMode || nextMode === dayMode) return;
-          openSheet('day', pack, { dayKey: String(selectedDayKey).slice(0, 10), tempMode: nextMode });
-          focusDayControl('data-day-temp-mode', nextMode);
+          const options = { tempMode: nextMode };
+          options.dayKey = String(selectedDayKey).slice(0, 10);
+          openSheet(kind, pack, options);
+          focusDayControl('data-temp-mode', nextMode);
         });
       });
+      const conditionHost = kind === 'day'
+        ? sheetBody.querySelector('#wxDayCondition')
+        : sheetBody.querySelector('#wxConditionsContext');
+      if (conditionHost) {
+        const initialCode = kind === 'day' || String(selectedDayKey).slice(0,10) !== currentDateKey ? selectedDayCode : cur.weather_code;
+        const applyConditionCode = function (code, time) {
+          if (code == null || !Number.isFinite(Number(code))) return;
+          const hour = time ? wallHour(time, chartTz) : (kind === 'day' ? 12 : localHourForPack(pack));
+          const night = isNightForPack(pack);
+          conditionHost.innerHTML = condIcon(Number(code), time ? isNightForPack(pack,time) : night) + '<span>'
+            + escapeHtml(condLabel(Number(code))) + '</span>';
+        };
+        sheetBody.querySelectorAll('.weather-chart-wrap').forEach(function (chart) {
+          chart.addEventListener('weatherchartchange', function (event) {
+            const detail = event.detail || {};
+            applyConditionCode(detail.weatherCode, detail.time);
+          });
+          chart.addEventListener('weatherchartreset', function () { applyConditionCode(initialCode); });
+        });
+      }
     }
 
     const bind = (id, setter) => {
@@ -3884,7 +4052,7 @@
               : openCity;
             if (pack && pack.weather) {
               openDetail(pack);
-              openSheet(kind, pack);
+              openSheet(kind, pack, kind === 'conditions' ? { tempMode: dayMode } : undefined);
             }
           }, 380);
         });
@@ -4126,6 +4294,8 @@
       sheetReturnFocus = document.activeElement;
       const tile = sheetReturnFocus && sheetReturnFocus.closest && sheetReturnFocus.closest('[data-sheet]');
       sheetReturnKind = tile && tile.getAttribute('data-sheet');
+      const dayRow = sheetReturnFocus && sheetReturnFocus.closest && sheetReturnFocus.closest('[data-day-date]');
+      sheetReturnDate = dayRow && dayRow.dataset.dayDate;
     }
     closeSuggest();
     hoistOverlays();
@@ -4200,6 +4370,7 @@
   }
 
   function closeSheet() {
+    if (navigationApi) navigationApi.close("sheet");
     if (!sheetEl || !sheetPanel) return;
     if (!isSheetOpen()) {
       inertSheet();
@@ -4208,10 +4379,16 @@
     }
     const returnFocus = sheetReturnFocus;
     const returnKind = sheetReturnKind;
+    const returnDate = sheetReturnDate;
+    sheetReturnDate = null;
     sheetReturnFocus = null;
     sheetReturnKind = null;
     const returnTile = returnKind && detailMods && detailMods.querySelector('[data-sheet="' + CSS.escape(returnKind) + '"]');
-    const fallback = returnTile || (isDetailVisible() ? detailBack : unitsBtn);
+    function restoreSheetReturnFocus() {
+      const day = returnDate && detailMods && detailMods.querySelector('[data-day-date="' + CSS.escape(returnDate) + '"]');
+      const tile = returnKind && detailMods && detailMods.querySelector('[data-sheet="' + CSS.escape(returnKind) + '"]');
+      restoreFocus(returnFocus, day || tile || (isDetailVisible() ? detailBack : unitsBtn));
+    }
     sheetGen += 1;
     const gen = sheetGen;
     sheetOpen = false;
@@ -4226,17 +4403,18 @@
     sheetEl.style.pointerEvents = 'none';
     if (reduce) {
       inertSheet();
-      restoreFocus(returnFocus, fallback);
+      restoreSheetReturnFocus();
       return;
     }
     window.setTimeout(function () {
       if (gen !== sheetGen) return;
       inertSheet();
-      restoreFocus(returnFocus, fallback);
+      restoreSheetReturnFocus();
     }, closeMs);
   }
 
   function finishDragClose() {
+    if (navigationApi) navigationApi.close("sheet");
     forceCloseSheet();
   }
 
@@ -4442,6 +4620,7 @@
    * (enter uses double rAF). Racing list paints used to leave .open + aria-hidden=true + inert.
    */
   function ensureListTappable() {
+    if (document.documentElement.classList.contains('weather-map-open') || (mapApi && mapApi.isOpen())) return;
     // Detail open, opening, or closing — leave it alone
     if (isDetailVisible()) return;
     if (openCity && detailEl && !detailEl.classList.contains('is-closing')) return;
@@ -4492,6 +4671,7 @@
   }
 
   function closeDetail() {
+    if (navigationApi) navigationApi.close("detail");
     if (!detailEl) return;
     const returnFocus = detailReturnFocus;
     const returnKey = detailReturnKey;
@@ -4556,7 +4736,7 @@
     suggestIndex = -1;
   }
   function suggestOptions() {
-    return suggestEl ? Array.prototype.slice.call(suggestEl.querySelectorAll('button[role="option"]')) : [];
+    return suggestEl ? Array.prototype.slice.call(suggestEl.querySelectorAll('button[data-place-choice]')) : [];
   }
   function highlightSuggest(next) {
     const opts = suggestOptions();
@@ -4630,12 +4810,14 @@
   function appendSuggestion(city, name, meta) {
     const li = document.createElement('li');
     li.className = 's-result';
-    li.setAttribute('role', 'presentation');
+    li.setAttribute('role', 'row');
     const option = document.createElement('button');
     option.type = 'button';
-    option.setAttribute('role', 'option');
+    option.setAttribute('role', 'gridcell');
+    option.setAttribute('data-place-choice', '');
+    option.tabIndex = -1;
     option.setAttribute('aria-selected', 'false');
-    option.id = 'wx-suggest-' + suggestEl.querySelectorAll('[role="option"]').length;
+    option.id = 'wx-suggest-' + suggestEl.querySelectorAll('[data-place-choice]').length;
     option.innerHTML = `<div class="s-name">${escapeHtml(name)}</div><div class="s-meta">${escapeHtml(meta)}</div>`;
     option.addEventListener('click', function () { chooseSearchCity(city, name); });
     const save = document.createElement('button');
@@ -4650,13 +4832,17 @@
       save.setAttribute('aria-pressed', saved ? 'true' : 'false');
     };
     syncSave();
+    save.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowLeft' || event.key === 'Escape') { event.preventDefault(); searchEl.focus(); if (event.key === 'Escape') closeSuggest(); }
+    });
     save.addEventListener('click', function () {
       toggleFavorite(city);
       syncSave();
       refreshListsFromCache({ force: true });
       if (weatherMode === 'my-sky') refresh(false, { quiet: true, reason: 'view' });
     });
-    li.append(option, save);
+    const saveCell = document.createElement('div'); saveCell.className = 's-save-cell'; saveCell.setAttribute('role','gridcell'); saveCell.append(save);
+    li.append(option, saveCell);
     suggestEl.appendChild(li);
   }
 
@@ -4711,6 +4897,7 @@
   }
 
   function openUnitsSheet() {
+    if (navigationApi) navigationApi.sheet("units");
     if (!sheetEl || !sheetBody) return;
     closeSuggest();
     hoistOverlays();
@@ -4851,14 +5038,59 @@
         openDetail(fresh);
       }
     });
+    const motionTitle = document.createElement('p'); motionTitle.className = 'weather-mod-label'; motionTitle.textContent = t('weather.motion', 'Motion');
+    const motion = document.createElement('select'); motion.className = 'weather-motion-select'; motion.setAttribute('aria-label', motionTitle.textContent);
+    [['auto', t('settings.auto','Automatic')], ['full',t('weather.motionFull','Full')], ['reduced',t('weather.motionReduced','Reduced')], ['off',t('weather.motionOff','Off')]].forEach(function (pair) {
+      const option = document.createElement('option'); option.value = pair[0]; option.textContent = pair[1]; motion.append(option);
+    });
+    try { motion.value = localStorage.getItem('duskline-motion') || 'auto'; } catch (error) { motion.value = 'auto'; }
+    motion.addEventListener('change', function () { if (typeof setMotionMode === 'function') setMotionMode(motion.value); });
+    sheetBody.append(motionTitle, motion);
+    const order = document.createElement('section'); order.className = 'weather-place-order';
+    function paintOrder() {
+      const places = loadFavorites();
+      order.replaceChildren();
+      if (!places.length && !myLocationCity) return;
+      const title = document.createElement('p'); title.className = 'weather-mod-label'; title.textContent = t('weather.rearrange', 'Rearrange saved places'); order.append(title);
+      places.forEach(function (city,index) {
+        const row = document.createElement('div'); row.className = 'weather-place-order-row';
+        const name = document.createElement('span'); name.textContent = displayCityName(city); row.append(name);
+        [-1,1].forEach(function (direction) {
+          const button = document.createElement('button'); button.type = 'button'; button.disabled = index+direction < 0 || index+direction >= places.length;
+          button.innerHTML = weatherIcon(direction < 0 ? 'lucide-chevron-up' : 'lucide-chevron-down', 'weather-ui-icon');
+          button.setAttribute('aria-label', t(direction < 0 ? 'weather.moveEarlier' : 'weather.moveLater', direction < 0 ? 'Move earlier' : 'Move later') + ': ' + displayCityName(city));
+          button.addEventListener('click', function () {
+            [places[index],places[index+direction]] = [places[index+direction],places[index]];
+            saveFavorites(places); paintOrder(); refreshListsFromCache({force:true});
+            const next = order.querySelectorAll('.weather-place-order-row')[index+direction];
+            if (next) next.querySelector('button:not(:disabled)')?.focus();
+          });
+          row.append(button);
+        });
+        order.append(row);
+      });
+      if (myLocationCity) {
+        const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'weather-place-clear'; clear.textContent = t('weather.clearLocation','Remove my location');
+        clear.addEventListener('click', function () {
+          const old = myLocationCity; const pack = cache.get(cityKey(old));
+          saveMyLocation(null); paintOrder(); refreshListsFromCache({force:true});
+          notify(t('weather.notice.removed','Removed from My Sky'),null,function () {
+            saveMyLocation(old); if (pack) cache.set(cityKey(old),pack); paintOrder(); refreshListsFromCache({force:true});
+          });
+        });
+        order.append(clear);
+      }
+    }
+    paintOrder(); sheetBody.append(order);
     presentSheet();
   }
 
   function openGreetingLocationSheet() {
+    if (navigationApi) navigationApi.sheet("primary");
     if (!sheetEl || !sheetBody || weatherMode !== 'my-sky') return;
     closeSuggest();
     hoistOverlays();
-    const title = t('weather.greetingLocationTitle', 'Greeting location');
+    const title = t('weather.primaryLocationTitle', 'Primary city');
     setSheetTitle(`
       <div class="wx-sheet-head" data-sheet-title>
         <div class="wx-sheet-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></div>
@@ -5070,6 +5302,7 @@
     if (city.admin1) params.set('admin1', city.admin1);
     if (city.tz) params.set('tz', city.tz);
     if (city.country_code) params.set('cc', city.country_code);
+    if (city.country) params.set('country', city.country);
     url.search = params.toString();
     if (typeof navigator.share === 'function') {
       try {
@@ -5087,7 +5320,7 @@
   if (unitsBtn) unitsBtn.addEventListener('click', openUnitsSheet);
   modeButtons.forEach(function (button) {
     button.addEventListener('click', function () {
-      setWeatherMode(button.getAttribute('data-weather-mode'), true);
+      requestWeatherMode(button.getAttribute('data-weather-mode'));
     });
   });
   function focusCitySearch() {
@@ -5180,6 +5413,8 @@
     });
     searchEl.addEventListener('input', () => {
       const q = searchEl.value.trim();
+      searchGen += 1;
+      closeSuggest();
       if (searchClear) {
         searchClear.hidden = !q;
         searchClear.classList.toggle('show', !!q);
@@ -5192,6 +5427,12 @@
         selectingGreetingPlace = false;
         closeSuggest();
         searchEl.blur();
+        return;
+      }
+      if (e.key === 'ArrowRight' && suggestIndex >= 0) {
+        const choice = suggestOptions()[suggestIndex];
+        const save = choice && choice.closest('.s-result').querySelector('.s-add');
+        if (save) { e.preventDefault(); save.focus(); }
         return;
       }
       if (e.key === 'ArrowDown') {
@@ -5280,6 +5521,10 @@
   });
 
   // Pause auto-refresh when tab/page is not active; resume (+ stale refresh) when active
+  window.addEventListener('resize', function () { finishGreetingTyping(); });
+  window.addEventListener('online', function () {
+    if (isPageActive()) refresh(true, { quiet: true, reason: 'reconnect' });
+  });
   document.addEventListener('visibilitychange', onPageActivityChange);
   window.addEventListener('pageshow', function (e) {
     if (e && e.persisted) onPageActivityChange();
@@ -5328,7 +5573,12 @@
       window.refreshWeatherUi({ force: false });
       return;
     }
-    if (type === 'motion') return;
+    if (type === 'motion') {
+      finishGreetingTyping();
+      applyAmbientPageSky();
+      if (openCity && openCity.weather && isDetailVisible()) openDetail(openCity);
+      return;
+    }
     if (type !== 'units') return;
     var temp = e.detail && e.detail.temp;
     var dist = e.detail && e.detail.dist;

@@ -230,7 +230,7 @@
         d.classList.add('is-open');
         var panel = d.querySelector('.weather-alert-collapse');
         var btn = d.querySelector('.weather-alert-summary');
-        if (panel) panel.style.height = 'auto';
+        if (panel) { panel.style.height = 'auto'; panel.inert = false; panel.setAttribute('aria-hidden', 'false'); }
         if (btn) btn.setAttribute('aria-expanded', 'true');
       });
     }
@@ -445,8 +445,9 @@
 
     function requestInternationalAlerts(city, admin1) {
       const code = String(city && city.country_code || '').trim().toUpperCase();
-      const country = String(city && city.country || '').trim();
-      if ((code && !/^[A-Z]{2}$/.test(code)) || !country) return Promise.reject(new Error('Missing international alert location'));
+      let country = String(city && city.country || '').trim();
+      if (!country && code && typeof Intl.DisplayNames === 'function') country = new Intl.DisplayNames(['en'],{type:'region'}).of(code) || '';
+      if ((code && !/^[A-Z]{2}$/.test(code)) || (!country && !code)) return Promise.reject(new Error('Missing international alert location'));
       const language = String(lang() || 'en');
       const region = String(admin1 || '').trim();
       const key = (code || ('name-' + normalizeAreaName(country))) + '|'
@@ -460,7 +461,7 @@
       if (code) params.set('cc', code);
       if (region) params.set('admin1', region);
       const controller = new AbortController();
-      const timer = global.setTimeout(function () { controller.abort(); }, 15000);
+      const timer = global.setTimeout(function () { controller.abort(); }, 45000);
       const promise = global.fetch('/api/international-alerts?' + params.toString(), {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
@@ -512,8 +513,7 @@
       const cityAlerts = currentAlerts((payload.alerts || []).filter(function (alert) {
         return capAlertMatchesCity(alert, pack.city);
       }));
-      // A capped feed is incomplete, but a miss is not useful UI. Keep the
-      // matched alerts, if any, and silently omit unavailable coverage copy.
+      // Keep matched warnings even when a country response is capped; disclose partial coverage.
       applyAlertsToPack(pack, cityAlerts, { provider: 'IFRC Alert Hub', partial: payload.truncated });
     }
 
@@ -523,6 +523,18 @@
      */
     function bindAlertCollapseAnimation(root) {
       if (!root) return;
+      const retry = root.querySelector('[data-alert-retry]');
+      if (retry && !retry._wxBound) {
+        retry._wxBound = true;
+        retry.addEventListener('click', function () {
+          const pack = getOpenCity();
+          if (!pack) return;
+          pack.alertsErrorAt = 0;
+          pack.alertsFetchedAt = 0;
+          ensureAlerts(pack);
+          patchDetailAlerts(pack);
+        });
+      }
       const DURATION = 280;
       const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -542,6 +554,8 @@
           summary.setAttribute('aria-expanded', 'true');
         }
 
+        panel.inert = !card.classList.contains('is-open');
+        panel.setAttribute('aria-hidden', panel.inert ? 'true' : 'false');
         summary.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
@@ -549,6 +563,8 @@
 
           const reduced = motionLevel() === 'off' || motionLevel() === 'reduced';
           const isOpen = card.classList.contains('is-open');
+          panel.inert = isOpen;
+          panel.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
 
           if (isOpen) {
             // ── collapse ──
@@ -612,11 +628,18 @@
       });
     }
 
-    function ensureAlerts(pack) {
+    function ensureAlerts(pack, options) {
       if (!pack || !pack.city || pack.error) return;
+      if (options && options.retryFailed && pack.alertsError && !pack._alertsLoading) pack.alertsErrorAt = 0;
+      if (global.navigator && global.navigator.onLine === false) {
+        applyAlertsToPack(pack,null,{error:true,reason:'offline'});
+        return;
+      }
       if (!isLikelyUs(pack.city)) {
         if (!needsAlertFetch(pack)) return;
         pack._alertsLoading = true;
+        pack.alertsError = false;
+        patchDetailAlerts(pack);
         loadInternationalAlerts(pack.city).then(function (payload) {
           applyInternationalAlerts(pack, payload);
           patchDetailAlerts(pack);
@@ -630,6 +653,8 @@
       }
       if (!needsAlertFetch(pack)) return;
       pack._alertsLoading = true;
+      pack.alertsError = false;
+      patchDetailAlerts(pack);
       const city = pack.city;
       const lat = roundCoord(city.lat);
       const lon = roundCoord(city.lon);
@@ -719,6 +744,7 @@
                 continue;
               }
               if (gen !== alertsPrefetchGen) {
+                pack._alertsLoading = false;
                 resolve(finished);
                 return;
               }
@@ -727,6 +753,7 @@
               await new Promise(function (r) { window.setTimeout(r, 40); });
             } catch (e) {
               if (gen !== alertsPrefetchGen) {
+                pack._alertsLoading = false;
                 resolve(finished);
                 return;
               }
@@ -736,6 +763,7 @@
             }
             oneDone();
           }
+          resolve(finished);
         }
         for (let w = 0; w < workers; w++) worker();
       });
@@ -785,16 +813,28 @@
         failed = !!alertsOrPack.alertsError;
       }
       if (Array.isArray(alerts)) alerts = currentAlerts(alerts);
-      if (failed && !(alerts && alerts.length)) return '';
-      if (!alerts || !alerts.length) return '';
+      if (!alerts || !alerts.length) {
+        const pack = alertsOrPack && !Array.isArray(alertsOrPack) ? alertsOrPack : {};
+        let label = pack._alertsLoading ? t('weather.alertsLoading', 'Checking public alerts…')
+          : failed ? t(pack.alertsUnavailableReason === 'unsupported' ? 'weather.alertsUnsupported' : 'weather.alertsUnavailable', pack.alertsUnavailableReason === 'unsupported' ? 'Alert coverage unavailable for this place' : 'Could not check public alerts')
+          : t('weather.alertsNone', 'No active public alerts reported');
+        if (pack.alertsUnavailableReason === 'offline') label = t('weather.alertsOffline', 'Connect to check public alerts');
+        if (pack.alertsPartial) label = t('weather.alertsPartial', 'Alert coverage is incomplete');
+        const stamp = pack.alertsFetchedAt ? new Date(pack.alertsFetchedAt).toLocaleTimeString(undefined, {hour: 'numeric', minute: '2-digit'}) : '';
+        return '<div class="weather-alerts weather-alert-status" role="status" aria-live="polite">'
+          + (pack._alertsLoading ? '<span class="loader" aria-hidden="true"></span>' : '')
+          + '<span>' + escapeHtml(label) + (stamp ? ' · ' + escapeHtml(stamp) : '') + '</span>'
+          + (failed && pack.alertsUnavailableReason !== 'unsupported' ? '<button type="button" data-alert-retry>' + escapeHtml(t('weather.retry', 'Retry')) + '</button>' : '') + '</div>';
+      }
       const title = t('weather.alerts', 'Public Alerts');
-      const cards = alerts.map(function (a) {
+      const partialNote = alertsOrPack && alertsOrPack.alertsPartial ? '<p class="weather-alert-coverage-note">' + escapeHtml(t('weather.alertsPartial', 'Alert coverage is incomplete')) + '</p>' : '';
+      const cards = alerts.map(function (a, index) {
         const sev = String(a.severity || 'Unknown').toLowerCase();
         const sevClass = sev === 'extreme' || sev === 'severe'
           ? 'weather-alert--severe'
           : (sev === 'moderate' ? 'weather-alert--moderate' : 'weather-alert--minor');
         const until = a.ends
-          ? t('weather.alertUntil', 'Until {time}').replace('{time}', formatClock(a.ends) || String(a.ends).slice(0, 16))
+          ? t('weather.alertUntil', 'Until {time}').replace('{time}', formatClock(a.ends) + (new Date(a.ends).getTime() - Date.now() > 12 * 3600000 ? ' · ' + new Date(a.ends).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: getOpenCity() && getOpenCity().weather && getOpenCity().weather.timezone || undefined }) : ''))
           : '';
         const head = a.event || t('weather.alert', 'Alert');
         const bodyParts = [];
@@ -838,13 +878,13 @@
         return (
           // Class-based accordion (not <details>) — pixel height animate open/close
           '<div class="weather-alert ' + sevClass + '">' +
-            '<button type="button" class="weather-alert-summary" aria-expanded="false">' +
-              '<span class="weather-alert-badge" aria-hidden="true">' + weatherIcon('alert-circle', 'weather-alert-icon') + '</span>' +
+            '<button type="button" class="weather-alert-summary" aria-expanded="false" aria-controls="wx-alert-panel-' + index + '">' +
+              '<span class="weather-alert-badge" aria-hidden="true">' + weatherIcon('duskline-alert-triangle', 'weather-alert-icon') + '</span>' +
               '<span class="weather-alert-title">' + escapeHtml(head) + '</span>' +
               (until ? '<span class="weather-alert-until">' + escapeHtml(until) + '</span>' : '') +
               '<span class="weather-alert-chevron" aria-hidden="true"></span>' +
             '</button>' +
-            '<div class="weather-alert-collapse" style="height:0px">' +
+            '<div class="weather-alert-collapse" id="wx-alert-panel-' + index + '" aria-hidden="true" inert style="height:0px">' +
               '<div class="weather-alert-body">' + bodyParts.join('') + '</div>' +
             '</div>' +
           '</div>'
@@ -853,7 +893,7 @@
       return (
         '<div class="weather-alerts" role="region" aria-label="' + escapeHtml(title) + '">' +
           '<div class="weather-alerts-label">' + escapeHtml(title) + '</div>' +
-          cards +
+          cards + partialNote +
         '</div>'
       );
     }

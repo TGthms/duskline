@@ -40,6 +40,7 @@ const COUNTRY_ALIASES = {
   SY: ['Syrian Arab Republic', 'Syria'],
   TZ: ['United Republic of Tanzania', 'Tanzania'],
   TR: ['Türkiye', 'Turkey'],
+  TW: ['Taiwan', 'Taiwan, Province of China', 'Taiwan (Province of China)'],
   US: ['United States', 'United States of America'],
   UK: ['United Kingdom', 'United Kingdom of Great Britain and Northern Ireland'],
   VE: ['Venezuela', 'Venezuela (Bolivarian Republic of)'],
@@ -447,7 +448,7 @@ async function onRequest(context) {
   const admin1Name = String(url.searchParams.get('admin1') || '').trim().slice(0, 120);
   const requestedLanguage = String(url.searchParams.get('lang') || 'en').trim().slice(0, 24).toLowerCase();
   const language = SUPPORTED_LANGUAGES[requestedLanguage] || 'en';
-  if ((countryCode && !/^[A-Z]{2}$/.test(countryCode)) || !countryName) {
+  if ((countryCode && !/^[A-Z]{2}$/.test(countryCode)) || (!countryName && !countryCode)) {
     return jsonResponse({ error: 'invalid_location' }, 400, 0);
   }
 

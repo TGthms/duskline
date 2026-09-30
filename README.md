@@ -23,7 +23,7 @@ duskline balances a quiet, atmospheric sky with the details that help you decide
 - **Current conditions, hourly detail, and a 10-day outlook** make it easy to move from “right now” to “what should I plan for?”
 - **Useful weather context** includes air quality, feels-like temperature, wind, humidity, UV, pressure, precipitation, and sun times.
 - **Saved places and direct links** make it simple to return to the forecasts that matter to you or share a city.
-- **Weather maps** layer temperature, precipitation chance, and wind over a global map, with a forecast-hour scrubber and a local schematic fallback.
+- **Weather maps** layer temperature, precipitation chance, and wind over a global map, with a forecast-hour scrubber and a bundled geographic offline world map.
 - **Public alerts use authoritative sources:** the National Weather Service for eligible U.S. places and official, rebroadcastable CAP feeds through IFRC Alert Hub for supported international places.
 - **A living sky** brings day, night, cloud, and precipitation conditions into the city detail view.
 - **30 interface languages** include Arabic and Hebrew, with right-to-left layouts.
@@ -50,12 +50,15 @@ npm run serve
 # Open http://127.0.0.1:8000/
 ```
 
+After changing weather UI catalogs, run `npm run weather:i18n` to regenerate the active-language packs.
+
 Useful checks:
 
 ```bash
 npm run check       # syntax-check first-party JavaScript
 npm run test:unit   # unit and content tests
-npm test            # Playwright browser tests
+npm test            # Chromium browser tests
+npm run test:cross  # Firefox, desktop WebKit, and phone-sized WebKit
 npm run test:all    # both test suites
 ```
 
@@ -68,3 +71,5 @@ The repository root is the static site. [Cloudflare Pages](https://dusklineweath
 ## License
 
 The code is available under the [MIT License](LICENSE). Bundled icon and map-rendering licenses are listed on the [open-source licenses page](https://dusklineweather.pages.dev/licenses.html). Weather data belongs to its providers and remains subject to their terms. duskline is not an emergency or life-safety service.
+
+The offline world map uses public-domain Natural Earth coastlines. See [`assets/WORLD-MAP-LICENSE.txt`](assets/WORLD-MAP-LICENSE.txt). Weather map color fields are interpolated forecast estimates.

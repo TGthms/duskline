@@ -89,7 +89,7 @@ test('CAP circles and admin-area descriptions provide narrow fallbacks when poly
   assert.equal(alerts.capAlertMatchesCity(areaOnly, { lat: 34.69, lon: 135.50, admin1: 'Osaka' }), false);
 });
 
-test('partial and unavailable CAP coverage stays quiet while matched alerts remain visible', () => {
+test('partial and unavailable CAP coverage is explicit while matched alerts remain visible', () => {
   const alerts = createAlertsModule();
   const html = alerts.alertsBlockHtml({
     alertsPartial: true,
@@ -101,11 +101,11 @@ test('partial and unavailable CAP coverage stays quiet while matched alerts rema
   assert.match(html, /Public warning/);
   assert.doesNotMatch(html, /This source returned many alerts/);
   const incomplete = alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'partial' });
-  assert.equal(incomplete, '');
-  assert.equal(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'upstream' }), '');
-  assert.equal(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'unsupported' }), '');
+  assert.match(incomplete, /Could not check public alerts/);
+  assert.match(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'upstream' }), /data-alert-retry/);
+  assert.match(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'unsupported' }), /coverage unavailable/);
   const expired = alerts.alertsBlockHtml([{ event: 'Expired alert', severity: 'Extreme', ends: '2020-01-01T00:00:00Z' }]);
-  assert.equal(expired, '');
+  assert.match(expired, /No active public alerts/);
 });
 
 test('CAP feed copies collapse by warning content while distinct hazards remain', () => {

@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v40';
+const CACHE = 'duskline-shell-v51';
 const SHELL = [
   './',
   './index.html',
@@ -38,6 +38,8 @@ const SHELL = [
   './src/js/data/legal/packs/ko.json',
   './src/js/data/legal/packs/zh.json',
   './src/js/data/legal/packs/zh-TW.json',
+  './assets/world-land.svg',
+  './assets/WORLD-MAP-LICENSE.txt',
   './manifest.webmanifest',
   './favicon.ico',
   './favicon.png',
@@ -57,9 +59,42 @@ const SHELL = [
   './src/css/weather-app.css',
   './src/css/weather-map.css',
   './src/css/duskline.css',
+  './src/css/weather-product.css',
   './src/js/app.js',
   './src/js/boot.js',
   './src/js/sw-register.js',
+  './src/js/data/weather-locale-registry.js',
+  './src/js/data/weather-locale-loader.js',
+  './src/js/data/weather-packs/ar.json',
+  './src/js/data/weather-packs/cs.json',
+  './src/js/data/weather-packs/da.json',
+  './src/js/data/weather-packs/de.json',
+  './src/js/data/weather-packs/el.json',
+  './src/js/data/weather-packs/en.json',
+  './src/js/data/weather-packs/es.json',
+  './src/js/data/weather-packs/fi.json',
+  './src/js/data/weather-packs/fr.json',
+  './src/js/data/weather-packs/he.json',
+  './src/js/data/weather-packs/hi.json',
+  './src/js/data/weather-packs/hu.json',
+  './src/js/data/weather-packs/id.json',
+  './src/js/data/weather-packs/it.json',
+  './src/js/data/weather-packs/ja.json',
+  './src/js/data/weather-packs/ko.json',
+  './src/js/data/weather-packs/nb.json',
+  './src/js/data/weather-packs/nl.json',
+  './src/js/data/weather-packs/pl.json',
+  './src/js/data/weather-packs/pt-BR.json',
+  './src/js/data/weather-packs/pt-PT.json',
+  './src/js/data/weather-packs/ro.json',
+  './src/js/data/weather-packs/ru.json',
+  './src/js/data/weather-packs/sv.json',
+  './src/js/data/weather-packs/th.json',
+  './src/js/data/weather-packs/tr.json',
+  './src/js/data/weather-packs/uk.json',
+  './src/js/data/weather-packs/vi.json',
+  './src/js/data/weather-packs/zh-TW.json',
+  './src/js/data/weather-packs/zh.json',
   './src/js/data/i18n.js',
   './src/js/data/duskline-locales.js',
   './src/js/data/weather-about-i18n.js',
@@ -82,61 +117,52 @@ const SHELL = [
   './src/js/features/weather/alerts.js',
   './src/js/features/weather/data.js',
   './src/js/features/weather/snapshots.js',
+  './src/js/features/weather/navigation.js',
+  './src/js/features/weather/product.js',
   './src/js/features/weather/app.js'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) => cache.addAll(SHELL))
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))
+      keys.filter((key) => key.startsWith('duskline-shell-') && key !== CACHE).map((key) => caches.delete(key))
     )).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'ACTIVATE_UPDATE') self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
-  let url;
-  try { url = new URL(request.url); } catch (e) { return; }
-  if (url.origin !== self.location.origin) return;
-  // Public-safety alerts are time-sensitive; never serve a cached alert payload
-  // when an international source is offline or the device has no connection.
-  if (url.pathname.startsWith('/api/')) return;
-
-  const dest = request.destination;
-  const isNav = request.mode === 'navigate' || dest === 'document';
-
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  const navigation = request.mode === 'navigate' || request.destination === 'document';
   event.respondWith((async () => {
-    try {
-      const response = await fetch(request);
-      if (response && response.ok && (response.type === 'basic' || response.type === 'default')) {
-        const copy = response.clone();
-        event.waitUntil(caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(function () {}));
-      }
-      return response;
-    } catch (err) {
-      const cached = await caches.match(request);
+    const cache = await caches.open(CACHE);
+    if (!navigation) {
+      const cached = await cache.match(request, {ignoreSearch: true});
       if (cached) return cached;
-      if (isNav) {
-        const path = url.pathname || '';
-        if (/privacy\.html$/i.test(path)) {
-          const privacy = await caches.match('./privacy.html');
-          if (privacy) return privacy;
-        }
-        if (/terms\.html$/i.test(path)) {
-          const terms = await caches.match('./terms.html');
-          if (terms) return terms;
-        }
-        const shell = await caches.match('./index.html');
-        if (shell) return shell;
-      }
-      throw err;
+      return fetch(request);
     }
+    // Keep the installed shell coherent; deploy changes activate with a user-visible update.
+    const path = url.pathname.endsWith('/') ? './index.html' : url.pathname;
+    const cached = await cache.match(path, {ignoreSearch: true});
+    if (cached) return cached;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    try {
+      return await fetch(request, {signal: controller.signal});
+    } catch (error) {
+      return await cache.match('./index.html') || Response.error();
+    } finally { clearTimeout(timer); }
   })());
 });

@@ -415,16 +415,18 @@
     }
 
     /** Apple-style scrub chart used by Wind, Hourly, Humidity, etc. */
-    function buildTempChart(hourly, key, unitFmt, timeZone, dateKey) {
+    function buildTempChart(hourly, key, unitFmt, timeZone, dateKey, chartOptions) {
+      chartOptions = chartOptions || {};
       const tz = timeZone || hourly.timezone || undefined;
       const { start, end, times } = dateKey
         ? hourlyDateWindow(hourly, tz, dateKey)
         : hourlyLocalDay(hourly, tz);
       const vals = [];
+      const weatherCodes = hourly.weather_code || [];
       for (let i = start; i < end; i++) {
         const v = hourly[key] && hourly[key][i];
         if (v == null || Number.isNaN(v)) continue;
-        vals.push({ i, t: times[i], v: Number(v) });
+        vals.push({ i, t: times[i], v: Number(v), code: weatherCodes[i] == null ? null : Number(weatherCodes[i]) });
       }
       if (vals.length < 2) return '<p class="weather-chart-sub">—</p>';
 
@@ -464,7 +466,7 @@
       const pts = vals.map(function (d, idx) {
         const x = padL + (idx / (vals.length - 1)) * plotW;
         const y = padT + (1 - (d.v - min) / span) * plotH;
-        return { x: x, y: y, i: d.i, t: d.t, v: d.v };
+        return { x: x, y: y, i: d.i, t: d.t, v: d.v, code: d.code };
       });
 
       // “Now” in the *location* timezone (wall-clock hours), not browser parse of bare ISO.
@@ -476,28 +478,36 @@
       let midIdx = 0;
       let midBest = Infinity;
       let foundAtOrBefore = false;
-      for (let mi = 0; mi < pts.length; mi++) {
-        const day = stampDateKey(pts[mi].t, tz);
-        const ph = stampLocalHour(pts[mi].t);
-        // Wrong calendar day (e.g. next-day 00:00 left in a rolling window) — heavy penalty
-        const dayPenalty = (day && activeDayKey && day !== activeDayKey) ? 100 : 0;
-        // Prefer at-or-before now so 23:00 wins over 00:00 when local time is 23:xx
-        let d;
-        if (ph <= nowH + 1 / 120) {
-          d = nowH - ph; // smaller = closer from the past
-          foundAtOrBefore = true;
-        } else {
-          d = (ph - nowH) + 0.25; // slight penalty for future hours
+      if (!chartTracksNow && chartOptions.initialIndex != null) {
+        const requested = pts.findIndex(function (point) { return point.i === Number(chartOptions.initialIndex); });
+        if (requested >= 0) midIdx = requested;
+      } else if (!chartTracksNow) {
+        // A selected future day has no meaningful “now” marker. Start around its local noon.
+        for (let mi = 0; mi < pts.length; mi++) {
+          const distance = Math.abs(stampLocalHour(pts[mi].t) - 12);
+          if (distance < midBest) { midBest = distance; midIdx = mi; }
         }
-        // Late evening: do not snap across midnight to 00:00
-        if (chartTracksNow && nowH >= 18 && ph < 6) d += 50;
-        // Early morning: do not snap back to yesterday evening
-        if (chartTracksNow && nowH < 6 && ph > 18) d += 50;
-        d += dayPenalty;
-        if (d < midBest) { midBest = d; midIdx = mi; }
+      } else {
+        for (let mi = 0; mi < pts.length; mi++) {
+          const day = stampDateKey(pts[mi].t, tz);
+          const ph = stampLocalHour(pts[mi].t);
+          // Wrong calendar day (e.g. next-day 00:00 left in a rolling window) — heavy penalty
+          const dayPenalty = (day && activeDayKey && day !== activeDayKey) ? 100 : 0;
+          // Prefer at-or-before now so 23:00 wins over 00:00 when local time is 23:xx
+          let d;
+          if (ph <= nowH + 1 / 120) {
+            d = nowH - ph;
+            foundAtOrBefore = true;
+          } else {
+            d = (ph - nowH) + 0.25;
+          }
+          if (nowH >= 18 && ph < 6) d += 50;
+          if (nowH < 6 && ph > 18) d += 50;
+          d += dayPenalty;
+          if (d < midBest) { midBest = d; midIdx = mi; }
+        }
+        if (!foundAtOrBefore && pts.length) midIdx = 0;
       }
-      // If every sample is still “future” (clock skew), keep earliest
-      if (!foundAtOrBefore && pts.length) midIdx = 0;
       const mid = pts[midIdx];
 
       // Split past / future at “now” (Apple: muted dashed past, solid future).
@@ -527,7 +537,10 @@
       }
 
       const id = 'wxChart' + Math.random().toString(36).slice(2, 8);
-      const payload = pts.map(function (p) { return { x: p.x, y: p.y, v: p.v, t: p.t }; });
+      const payload = pts.map(function (p) { return { x: p.x, y: p.y, v: p.v, t: p.t, code: p.code }; });
+      const initialRange = chartOptions.initialMode === 'range';
+      const initialReadout = initialRange ? String(chartOptions.initialReadout || unitFmt(mid.v)) : unitFmt(mid.v);
+      const initialSub = initialRange ? String(chartOptions.initialSub || '') : formatClock(mid.t, tz);
 
       let grids = '';
       for (let g = 0; g < 4; g++) {
@@ -597,8 +610,8 @@
         : '<path d="' + area + '" fill="url(#' + id + (pastLine && !futureLine ? 'gpast' : 'g') + ')"/>';
 
       return '<div class="weather-chart-wrap weather-chart-card" role="slider" tabindex="0" data-chart="' + id + '" data-pts=\'' + JSON.stringify(payload).replace(/'/g, '&#39;') + '\' data-kind="' + key + '" data-tz="' + escapeHtml(tz || '') + '" data-now-idx="' + midIdx + '" data-vw="' + W + '" data-vh="' + H + '" data-padt="' + padT + '" data-padb="' + padB + '" data-padl="' + padL + '">' +
-        '<div class="weather-chart-readout" data-readout>' + escapeHtml(unitFmt(mid.v)) + '</div>' +
-        '<div class="weather-chart-sub" data-sub">' + escapeHtml(formatClock(mid.t, tz)) + '</div>' +
+        '<div class="weather-chart-readout" data-readout data-initial-mode="' + (initialRange ? 'range' : 'point') + '" data-initial-readout="' + escapeHtml(initialReadout) + '" data-initial-sub="' + escapeHtml(initialSub) + '">' + escapeHtml(initialReadout) + '</div>' +
+        '<div class="weather-chart-sub" data-sub>' + escapeHtml(initialSub) + '</div>' +
         // preserveAspectRatio=none: CSS size maps 1:1 to viewBox → scrub X/Y stay aligned
         '<svg class="weather-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' +
           '<defs>' +
@@ -616,8 +629,8 @@
           fillPath +
           pastPath +
           futurePath +
-          '<line class="wx-chart-guide" data-guide x1="' + mid.x + '" y1="' + padT + '" x2="' + mid.x + '" y2="' + (H - padB) + '" stroke-width="1.25" stroke-dasharray="4 4"/>' +
-          '<circle class="wx-chart-dot" data-dot cx="' + mid.x + '" cy="' + mid.y + '" r="6.5" stroke-width="2"/>' +
+          '<line class="wx-chart-guide" data-guide' + (initialRange ? ' style="display:none"' : '') + ' x1="' + mid.x + '" y1="' + padT + '" x2="' + mid.x + '" y2="' + (H - padB) + '" stroke-width="1.25" stroke-dasharray="4 4"/>' +
+          '<circle class="wx-chart-dot" data-dot' + (initialRange ? ' style="display:none"' : '') + ' cx="' + mid.x + '" cy="' + mid.y + '" r="6.5" stroke-width="2"/>' +
           labels +
           '<rect data-hit x="0" y="0" width="' + W + '" height="' + H + '" fill="transparent"/>' +
         '</svg>' +
@@ -637,6 +650,9 @@
         const readout = wrap.querySelector('[data-readout]');
         const sub = wrap.querySelector('[data-sub]');
         const hit = wrap.querySelector('[data-hit]');
+        const initialMode = readout && readout.getAttribute('data-initial-mode') || 'point';
+        const initialReadout = readout && readout.getAttribute('data-initial-readout') || '';
+        const initialSub = readout && readout.getAttribute('data-initial-sub') || '';
         if (!svg || !hit) return;
         const vw = Number(wrap.getAttribute('data-vw')) || 400;
         const padT = Number(wrap.getAttribute('data-padt')) || 12;
@@ -660,6 +676,8 @@
         const defaultPt = pts[idxNow];
         let curPt = defaultPt;
         let keyboardIndex = idxNow;
+        let selectionCommitted = false;
+        let lastDispatchedIndex = -1;
         const chartLabels = {
           temperature_2m: t('settings.temperature', 'Temperature'),
           apparent_temperature: t('weather.feelsLike', 'Feels like'),
@@ -684,6 +702,8 @@
           return String(Math.round(v * 10) / 10);
         };
         const paintImmediate = (x, y, pt) => {
+          if (guide) guide.style.display = '';
+          if (dot) dot.style.display = '';
           if (guide) {
             guide.setAttribute('x1', x);
             guide.setAttribute('x2', x);
@@ -701,13 +721,37 @@
             keyboardIndex = valueIndex;
             wrap.setAttribute('aria-valuenow', String(valueIndex));
             wrap.setAttribute('aria-valuetext', formatClock(pt.t, tz) + ', ' + formatVal(pt.v));
+            if (pt.code != null && lastDispatchedIndex !== valueIndex) {
+              lastDispatchedIndex = valueIndex;
+              wrap.dispatchEvent(new global.CustomEvent('weatherchartchange', {
+                detail: { kind: kind, index: valueIndex, time: pt.t, value: pt.v, weatherCode: pt.code }
+              }));
+            }
           }
           curPt = pt;
         };
-        const resetToNow = () => {
+        const resetToInitial = () => {
+          selectionCommitted = false;
+          if (initialMode === 'range') {
+            if (guide) guide.style.display = 'none';
+            if (dot) dot.style.display = 'none';
+            if (readout) readout.textContent = initialReadout;
+            if (sub) sub.textContent = initialSub;
+            wrap.setAttribute('aria-valuenow', String(idxNow));
+            wrap.setAttribute('aria-valuetext', [initialSub, initialReadout].filter(Boolean).join(', '));
+            keyboardIndex = idxNow;
+            curPt = defaultPt;
+            lastDispatchedIndex = -1;
+            if (global.CustomEvent) wrap.dispatchEvent(new global.CustomEvent('weatherchartreset'));
+            return;
+          }
           paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
         };
-        paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
+        const resetOnLeave = () => {
+          if (initialMode === 'range' && selectionCommitted) return;
+          resetToInitial();
+        };
+        resetToInitial();
         wrap.addEventListener('keydown', function (event) {
           let next = keyboardIndex;
           if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next += 1;
@@ -716,9 +760,14 @@
           else if (event.key === 'PageDown') next -= 6;
           else if (event.key === 'Home') next = 0;
           else if (event.key === 'End') next = pts.length - 1;
-          else if (event.key === 'Escape') next = idxNow;
+          else if (event.key === 'Escape') {
+            event.preventDefault();
+            resetToInitial();
+            return;
+          }
           else return;
           event.preventDefault();
+          selectionCommitted = true;
           keyboardIndex = Math.max(0, Math.min(pts.length - 1, next));
           paintImmediate(pts[keyboardIndex].x, pts[keyboardIndex].y, pts[keyboardIndex]);
         });
@@ -816,11 +865,13 @@
           scrubArmed = false;
           activePointer = null;
           setPanY();
-          if (wasArmed) resetToNow();
+          if (wasArmed && initialMode === 'range') selectionCommitted = true;
+          else if (wasArmed) resetToInitial();
         }
         target.addEventListener('pointerdown', (e) => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
             scrubArmed = true;
+            selectionCommitted = true;
             try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (err) {}
             onMove(e);
             return;
@@ -835,6 +886,7 @@
             armTimer = 0;
             if (activePointer == null) return;
             scrubArmed = true;
+            if (initialMode === 'range') selectionCommitted = true;
             setPanNone();
             try { target.setPointerCapture && target.setPointerCapture(activePointer); } catch (err) {}
             scrub(lastX, lastY);
@@ -862,7 +914,7 @@
         });
         target.addEventListener('pointerup', (e) => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
-            resetToNow();
+            if (initialMode !== 'range') resetToInitial();
             scrubArmed = false;
             return;
           }
@@ -870,21 +922,21 @@
         });
         target.addEventListener('pointercancel', (e) => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
-            resetToNow();
+            resetOnLeave();
             scrubArmed = false;
             return;
           }
           endScrub();
         });
         target.addEventListener('pointerleave', (e) => {
-          if (isMousePtr(e)) resetToNow();
+          if (isMousePtr(e)) resetOnLeave();
         });
         target.addEventListener('lostpointercapture', (e) => {
-          if (e.pointerType === 'mouse' || e.pointerType === 'pen') resetToNow();
+          if (e.pointerType === 'mouse' || e.pointerType === 'pen') resetOnLeave();
         });
         // Desktop hover scrub (no press required)
         target.addEventListener('mousemove', onMove);
-        target.addEventListener('mouseleave', resetToNow);
+        target.addEventListener('mouseleave', resetOnLeave);
       });
     }
 
@@ -1049,6 +1101,7 @@
      * CSS container queries pick which block is shown from card width.
      */
     function sunArcSvg(sunriseIso, sunsetIso, compact, timeZone) {
+      if (!sunriseIso || !sunsetIso) return '<span class="weather-sun-unavailable">' + escapeHtml(t('weather.sunUnavailable', 'Sun times unavailable')) + '</span>';
       const W = compact ? 320 : 340;
       const H = compact ? 88 : 110;
       const g = sunPathGeometry(sunriseIso, sunsetIso, W, H, 8, 8, 12, 14, timeZone);
@@ -1143,6 +1196,7 @@
 
     /** Full-day sun path chart + metrics (Apple-inspired). No Y-axis — path is symbolic. */
     function buildSunDaySheet(sunriseIso, sunsetIso, timeZone) {
+      if (!sunriseIso || !sunsetIso) return '<p role="status">' + escapeHtml(t('weather.sunUnavailable', 'Sun times unavailable')) + '</p>';
       const W = 340, H = 190, padL = 8, padR = 8, padT = 10, padB = 26;
       const g = sunPathGeometry(sunriseIso, sunsetIso, W, H, padL, padR, padT, padB, timeZone);
       const TW = 35 * 60 * 1000;

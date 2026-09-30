@@ -456,7 +456,7 @@ function loadMotionModePreference() {
   if (safeStorage.has('duskline-reduce-motion')) {
     return safeStorage.get('duskline-reduce-motion', 'off') === 'on' ? 'reduced' : 'full';
   }
-  return detectMotionModeDefault();
+  return "auto";
 }
 
 /* ── PREFERENCES ──
@@ -566,7 +566,7 @@ if (currentDistUnit !== 'mi' && currentDistUnit !== 'km') {
   const fixed = resolveUnitsFromPrefs();
   currentDistUnit = (fixed.dist === 'mi' || fixed.dist === 'km') ? fixed.dist : 'km';
 }
-if (!['full', 'reduced', 'off'].includes(motionMode)) motionMode = 'full';
+if (!['auto', 'full', 'reduced', 'off'].includes(motionMode)) motionMode = 'full';
 
 function recomputeAutoPrefs({ paint = true } = {}) {
   let themeChanged = false;
@@ -773,7 +773,7 @@ window.Duskline = Object.assign(window.Duskline || {}, {
    saved `duskline-motion` value imply. setMotionMode('full' | 'reduced' | 'off') remains
    available as a global for programmatic control. */
 function setMotionMode(next, { persist = true } = {}) {
-  if (!['full', 'reduced', 'off'].includes(next)) next = 'full';
+  if (!['auto', 'full', 'reduced', 'off'].includes(next)) next = 'full';
   motionMode = next;
   if (persist) safeStorage.set('duskline-motion', motionMode);
   applyMotionModeToDom();

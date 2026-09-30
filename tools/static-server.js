@@ -71,6 +71,21 @@ function headersFor(urlPath) {
   return out;
 }
 
+const localCapEntries = new Map();
+const localCapCache = {
+  async match(request) {
+    const entry = localCapEntries.get(request.url);
+    if (!entry || entry.until <= Date.now()) { localCapEntries.delete(request.url); return undefined; }
+    return entry.response.clone();
+  },
+  async put(request, response) {
+    const ttl = Number((response.headers.get('cache-control') || '').match(/s-maxage=(\d+)/)?.[1] || 0);
+    if (!ttl) return;
+    localCapEntries.set(request.url, {until:Date.now()+ttl*1000,response:response.clone()});
+    while (localCapEntries.size > 100) localCapEntries.delete(localCapEntries.keys().next().value);
+  }
+};
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url || '/', 'http://' + (req.headers.host || '127.0.0.1'));
   const requested = decodeURIComponent(requestUrl.pathname);
@@ -82,7 +97,7 @@ const server = http.createServer(async (req, res) => {
       const request = new Request(requestUrl.href, { method: req.method || 'GET' });
       const response = await handler.onRequest({
         request: request,
-        env: {},
+        env: {CAP_CACHE:localCapCache},
         waitUntil: function (promise) { pending.push(promise); }
       });
       response.headers.forEach(function (value, name) { res.setHeader(name, value); });
