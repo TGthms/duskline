@@ -344,7 +344,7 @@ test('recently used legal languages remain available offline without downloading
   const title = page.locator('[data-i18n="legal.terms.title"]');
   await page.locator('#dusklineLanguage').selectOption('fr');
   await expect(title).toHaveText('Conditions d’utilisation');
-  await expect.poll(() => page.evaluate(async () => (await (await caches.open('duskline-locales-v55')).keys()).length)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(async () => (await (await caches.open('duskline-locales-v58')).keys()).length)).toBeGreaterThan(0);
   await page.locator('#dusklineLanguage').selectOption('en');
   await page.context().setOffline(true);
   await page.locator('#dusklineLanguage').selectOption('fr');
@@ -1110,7 +1110,10 @@ test('mode switch selects the new view first and visibly presents progress', asy
   await page.goto('/');
   await page.locator('[data-weather-mode="my-sky"]').click();
   await expect(page.locator('[data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed','true');
-  await expect(page.locator('#weatherModeLoading .loader')).toBeVisible();
+  await expect(page.locator('#navbar #weatherModeLoading')).toBeVisible();
+  await expect(page.locator('#weatherModeLoading')).toHaveAttribute('role','progressbar');
+  await expect(page.locator('#weatherModeLoading')).toHaveCSS('height','2px');
+  await expect(page.locator('.weather-status-row #weatherModeLoading')).toHaveCount(0);
   await expect(page.locator('#weatherMajorsBlock')).toBeHidden();
   await expect(page.locator('#weatherMySkyEmpty')).toBeVisible();
   await expect(page.locator('#weatherModeLoading')).toBeHidden();
@@ -1157,6 +1160,7 @@ test('My Sky keeps a compact primary dashboard and one quiet list with rearrange
   await page.goto('/');
   await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
   await expect(page.locator('#weatherHome .weather-hourly-item').first()).toBeVisible();
+  await expect(page.locator('#weatherHome .weather-daily-row')).toHaveCount(5);
   await expect(page.locator('#weatherMyLocationList .weather-row')).toHaveCount(2);
   await expect(page.locator('#weatherMyLocationBlock .weather-section-label, .weather-row-manage, .weather-row-save')).toHaveCount(0);
   await page.locator('#weatherUnitsBtn').click();
@@ -1280,4 +1284,51 @@ test('failed primary city selection keeps the previous city and offers a retry',
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('duskline-weather-greeting-city')));
   expect(saved.name).toBe('Boston');
   expect(await page.evaluate(() => localStorage.getItem('duskline-weather-greeting-source'))).toBe('city:42.360,-71.060');
+});
+
+test('primary preview stays within the viewport across sizes and opens its selected forecast date', async ({page},testInfo) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-weather-mode','my-sky');
+    localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'A very long coastal city name',lat:21.3,lon:-157.8,tz:'Pacific/Honolulu',country:'United States',country_code:'US'}));
+  });
+  await stubWeather(page,null);
+  await page.goto('/');
+  await expect(page.locator('#weatherHome .weather-daily-row')).toHaveCount(5);
+  for (const width of [320,390,480,640,719,720,768,860,861,960,1024,1280,1440,1920]) {
+    await page.setViewportSize({width,height:900});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    const geometry = await page.locator('#weatherHome').evaluate(card => {
+      const parts = [...card.querySelectorAll('.weather-home-reading,.weather-home-description,.weather-home-hours,.weather-home-daily')];
+      const bounds = card.getBoundingClientRect();
+      return {width:bounds.width,inside:parts.every(part=>{const r=part.getBoundingClientRect();return r.left>=bounds.left&&r.right<=bounds.right;})};
+    });
+    expect(geometry.width).toBeLessThanOrEqual(1000);
+    expect(await page.locator('#weatherHome .weather-hourly').evaluate(strip=>getComputedStyle(strip).display)).toBe(width >= 1024 ? 'grid' : 'flex');
+    expect(geometry.inside).toBe(true);
+    expect(await page.locator('#weatherHome .weather-hourly').evaluate(strip => {
+      const bounds = strip.getBoundingClientRect();
+      return [...strip.querySelectorAll('.p')].every(label=>label.getBoundingClientRect().bottom <= bounds.bottom);
+    })).toBe(true);
+    if ([390,768,1440].includes(width)) await page.screenshot({path:testInfo.outputPath('primary-'+width+'.png'),fullPage:true});
+  }
+  const day = page.locator('#weatherHome [data-day-date]').nth(2);
+  const date = await day.getAttribute('data-day-date');
+  await day.click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  await expect(page.locator('#weatherSheet [data-hourly-date][aria-pressed="true"]')).toHaveAttribute('data-hourly-date',date);
+});
+
+test('top route indicator handles rapid switches and reduced motion without shifting content', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await stubWeather(page,null);
+  await page.goto('/');
+  const top = await page.locator('.weather-toolbar').evaluate(el=>el.getBoundingClientRect().top);
+  await page.locator('[data-weather-mode="my-sky"]').click();
+  await expect(page.locator('#weatherModeLoading')).toBeVisible();
+  expect(await page.locator('.weather-toolbar').evaluate(el=>el.getBoundingClientRect().top)).toBe(top);
+  expect(await page.locator('#weatherModeLoading').evaluate(el=>getComputedStyle(el,'::after').animationName)).toBe('none');
+  await page.locator('[data-weather-mode="horizon"]').click();
+  await expect(page.locator('[data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+  await expect(page.locator('#weatherModeSwitch')).not.toHaveAttribute('aria-busy','true');
 });

@@ -1132,9 +1132,7 @@
       requestAnimationFrame(function () {
         if (gen !== viewSwitchGeneration) return;
         setWeatherMode(mode, true);
-        if (shellEl && motionFull() && typeof shellEl.animate === 'function') {
-          shellEl.animate([{opacity:.45,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:240,easing:'ease-out'});
-        }
+
       });
     });
   }
@@ -1716,6 +1714,21 @@
     range: function (pack) { return dayHiLo(pack.weather.daily || {}, dailyTodayIndex(pack.weather.daily || {},cityTimeZone(pack,pack.city)),pack.weather.current.temperature_2m); },
     stamp: function (time, pack) { return stampToMs(time, cityTimeZone(pack,pack.city)); },
     clock: function (time, pack) { return formatClock(time, cityTimeZone(pack,pack.city)); },
+    shortClock: function (time,pack) { const zone = cityTimeZone(pack,pack.city); try { return new Intl.DateTimeFormat(localeTag(),{hour:'numeric',timeZone:zone}).format(new Date(stampToMs(time,zone))); } catch (error) { return formatClock(time,zone); } },
+    palette: function (element, pack) { applySky(element, pack.weather.current.weather_code, pack.weather.current.time, {
+      isRow:true, noOrnaments:true, night:isNightForPack(pack), timeZone:cityTimeZone(pack,pack.city)
+    }); },
+    dailyPreview: function (pack) { return chartsApi.dailyBarsHtml(pack.weather.daily || {}, {
+      timeZone:cityTimeZone(pack,pack.city), hourly:pack.weather.hourly, limit:5, skipToday:true
+    }); },
+    openDay: async function (city, date) {
+      const cached = cache.get(cityKey(city));
+      if (!cached || !cached.weather) return;
+      openDetail(cached);
+      const pack = cached.needsEnrich && !cached.stored ? await dataApi.loadCity(city,null,{enrich:true}).catch(function () { return null; }) : cached;
+      if (!pack || !pack.weather || !openCity || !sameCity(openCity.city,city) || sheetIntentOpen) return;
+      openSheet('day',pack,{dayKey:date});
+    },
     icon: condIcon, repaint: function () { horizonExpanded = true; refreshListsFromCache({force:true}); refresh(false,{quiet:true,reason:'view'}); },
     expanded: function () { return horizonExpanded; },
     collapseHorizon: function () { horizonExpanded = false; refreshListsFromCache({force:true}); },
@@ -2853,7 +2866,10 @@
       return;
     }
     if (busy && (!weatherModeLoadingEl || weatherModeLoadingEl.hidden)) viewBusySince = Date.now();
-    if (weatherModeLoadingEl) weatherModeLoadingEl.hidden = !busy;
+    if (weatherModeLoadingEl) {
+      weatherModeLoadingEl.hidden = !busy;
+      weatherModeLoadingEl.dataset.active = String(busy);
+    }
     if (weatherModeSwitchEl) {
       if (busy) weatherModeSwitchEl.setAttribute('aria-busy', 'true');
       else weatherModeSwitchEl.removeAttribute('aria-busy');

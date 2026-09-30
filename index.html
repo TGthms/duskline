@@ -239,6 +239,7 @@
     <label class="duskline-language-label" for="dusklineLanguage" data-i18n="settings.languageLabel">Language</label>
     <select id="dusklineLanguage" aria-label="Language" data-i18n-aria="settings.languageLabel"></select>
   </div>
+  <div class="weather-route-progress" id="weatherModeLoading" role="progressbar" aria-label="Loading forecast…" data-i18n-aria="weather.loadingForecast" dir="ltr" hidden></div>
 </header>
 <main id="main" tabindex="-1">
 <section id="tools" class="tools-page tools-detail-page weather-root tools-miniapp" aria-labelledby="toolsTitle" data-tool="weather">
@@ -278,9 +279,7 @@
     <div class="weather-status-row">
       <span id="weatherConnection" class="weather-connection" role="status" hidden></span>
       <p class="weather-updated" id="weatherUpdated" aria-live="polite"></p>
-      <div class="weather-mode-loading" id="weatherModeLoading" role="status" aria-live="polite" hidden>
-        <span class="loader" aria-hidden="true"></span><span data-i18n="weather.loadingForecast">Loading forecast…</span>
-      </div>
+
     </div>
     <div class="weather-product-controls" id="weatherDiscovery">
       <label><span data-i18n="weather.region">Region</span><select id="weatherRegion"><option value="" data-i18n="weather.allRegions">All regions</option></select></label>

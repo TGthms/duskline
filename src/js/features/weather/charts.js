@@ -90,8 +90,9 @@
       const times = daily.time || [];
       const highs = daily.temperature_2m_max || [];
       const lows = daily.temperature_2m_min || [];
-      const start = dailySliceStart(times, opts.timeZone);
-      return Math.min(10, Math.max(0, times.length - start), Math.max(0, highs.length - start), Math.max(0, lows.length - start));
+      const base = dailySliceStart(times, opts.timeZone);
+      const start = base + Math.max(0, Math.floor(opts.startOffset || 0)) + (opts.skipToday && String(times[base] || '').slice(0,10) === dailyTodayKey(opts.timeZone) ? 1 : 0);
+      return Math.min(Math.max(0, Math.min(10, opts.limit == null ? 10 : Math.floor(opts.limit))), Math.max(0, times.length - start), Math.max(0, highs.length - start), Math.max(0, lows.length - start));
     }
 
     function dailyBarsHtml(daily, opts) {
@@ -114,7 +115,8 @@
         pops = times.map(function (t) { return byDay[String(t || '').slice(0, 10)]; });
       }
       const todayKey = dailyTodayKey(opts.timeZone);
-      const start = dailySliceStart(times, opts.timeZone);
+      const base = dailySliceStart(times, opts.timeZone);
+      const start = base + Math.max(0, Math.floor(opts.startOffset || 0)) + (opts.skipToday && String(times[base] || '').slice(0,10) === dailyTodayKey(opts.timeZone) ? 1 : 0);
       const sliceN = dailySliceCount(daily, opts);
       let weekMin = Infinity;
       let weekMax = -Infinity;

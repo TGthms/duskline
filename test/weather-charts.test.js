@@ -53,3 +53,19 @@ test('future-day temperature chart starts at the day range and local noon, not t
   assert.ok(pointData);
   assert.equal(JSON.parse(pointData[1])[12].code, 61);
 });
+
+test('compact daily preview starts tomorrow, caps at five and preserves partial forecasts', () => {
+  const charts = loadCharts();
+  const now = new Date();
+  const today = new Intl.DateTimeFormat('en-CA',{timeZone:'UTC',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+  const times = Array.from({length:10},(_,i)=>new Date(Date.parse(today+'T12:00:00Z')+i*86400000).toISOString().slice(0,10));
+  const daily = {time:times,temperature_2m_max:times.map(()=>25),temperature_2m_min:times.map(()=>15),weather_code:times.map(()=>2)};
+  const html = charts.dailyBarsHtml(daily,{timeZone:'UTC',skipToday:true,limit:5});
+  const dates = [...html.matchAll(/data-day-date="([^"]+)"/g)].map(match=>match[1]);
+  assert.deepEqual(dates,times.slice(1,6));
+  const partial = {...daily,time:times.slice(0,3)};
+  assert.equal(charts.dailySliceCount(partial,{timeZone:'UTC',skipToday:true,limit:5}),2);
+  assert.equal(charts.dailySliceCount(daily,{timeZone:'UTC'}),10);
+  const future = {...daily,time:times.slice(1)};
+  assert.ok(charts.dailyBarsHtml(future,{timeZone:'UTC',skipToday:true,limit:5}).includes('data-day-date="'+times[1]+'"'));
+});

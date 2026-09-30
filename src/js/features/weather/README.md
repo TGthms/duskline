@@ -42,3 +42,5 @@ After edits: `npm run check` and Playwright `e2e/smoke.spec.js`.
 Weather-page locale catalogs are generated with `npm run weather:i18n`. The page loads English as a fallback and fetches only the active locale. English is precached. Other weather and legal packs are cached on demand in a separate cache capped at eight packs; offline language changes require a previously used pack.
 
 Product layout rules live in `src/css/weather-product.css`; avoid adding them to the atmospheric brand layer. Saved-place rearrangement is available inside the Units/preferences sheet.
+
+My Sky uses the shared daily chart renderer with `limit: 5` and `skipToday: true`; preview days open the matching full day sheet. The fixed header's route progress bar adapts Kit's timing and respects resolved motion preferences. Primary-card layout and progress styling remain in `weather-product.css`.
