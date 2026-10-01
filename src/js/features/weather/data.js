@@ -35,6 +35,7 @@
     /** Merge caller signal with a timeout so hung Open-Meteo requests cannot freeze the list forever. */
     function withTimeoutSignal(outer, ms) {
       if (typeof AbortController !== 'function') return { signal: outer, cancel: function () {} };
+      const finishLoading = window.DusklineLoading ? window.DusklineLoading.begin() : function () {};
       const ctl = new AbortController();
       let timer = 0;
       const abortFromOuter = function () {
@@ -48,6 +49,7 @@
       return {
         signal: ctl.signal,
         cancel: function () {
+          finishLoading();
           if (timer) window.clearTimeout(timer);
           timer = 0;
           if (outer) {
@@ -582,6 +584,7 @@
       opts = opts || {};
       const key = cityKey(c);
       const hit = cache.get(key);
+      if (hit && hit.city) hit.city = Object.assign({},hit.city,c);
       if (!opts.forceFetch && hit && hit.weather && Date.now() - hit.fetchedAt < REFRESH_MS - 5000) {
         const wantsNws = opts.nwsUpgrade && isLikelyUs(c)
           && hit.source !== 'nws' && hit.source !== 'nws+om';
@@ -823,6 +826,14 @@
       return out;
     }
 
+    function loadingTask(task) {
+      return function () {
+        const args = arguments;
+        const run = function () { return task.apply(null,args); };
+        return window.DusklineLoading ? window.DusklineLoading.run(run) : run();
+      };
+    }
+
     return {
       withTimeoutSignal: withTimeoutSignal,
       fetchJson: fetchJson,
@@ -831,13 +842,13 @@
       clearCachedNwsPoints: clearCachedNwsPoints,
       clearAllNwsPointsCache: clearAllNwsPointsCache,
       normalizeNws: normalizeNws,
-      nwsFetchJson: nwsFetchJson,
+      nwsFetchJson: loadingTask(nwsFetchJson),
       loadNwsCity: loadNwsCity,
       loadOpenMeteoCity: loadOpenMeteoCity,
       enrichWithOpenMeteo: enrichWithOpenMeteo,
-      loadCity: loadCity,
+      loadCity: loadingTask(loadCity),
       loadCityBatchOm: loadCityBatchOm,
-      loadMany: loadMany,
+      loadMany: loadingTask(loadMany),
       abortListLoads: abortListLoads,
       isLikelyUs: isLikelyUs
     };

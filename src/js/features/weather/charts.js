@@ -531,7 +531,7 @@
       if (futurePts.length >= 2) {
         futureArea = pathThrough(futurePts)
           + ' L' + last.x.toFixed(1) + ',' + (H - padB).toFixed(1)
-          + ' L' + mid.x.toFixed(1) + ',' + (H - padB).toFixed(1)
+          + ' L' + futurePts[0].x.toFixed(1) + ',' + (H - padB).toFixed(1)
           + ' Z';
       } else if (pastPts.length >= 2) {
         // Evening: almost all day is past — fill under the dashed region lightly

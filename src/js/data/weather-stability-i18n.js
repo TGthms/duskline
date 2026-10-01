@@ -29,7 +29,8 @@
     "weather.updateReady": "A duskline update is ready",
     "weather.update": "Update",
     "weather.offline": "Offline · Showing saved forecasts",
-    "weather.sunUnavailable": "Sun times unavailable"
+    "weather.sunUnavailable": "Sun times unavailable",
+    "weather.settings": "Settings"
   },
   "es": {
     "weather.undo": "Deshacer",
@@ -58,7 +59,8 @@
     "weather.updateReady": "Hay una actualización de duskline disponible",
     "weather.update": "Actualizar",
     "weather.offline": "Sin conexión · Mostrando previsiones guardadas",
-    "weather.sunUnavailable": "Horas solares no disponibles"
+    "weather.sunUnavailable": "Horas solares no disponibles",
+    "weather.settings": "Ajustes"
   },
   "fr": {
     "weather.undo": "Annuler",
@@ -87,7 +89,8 @@
     "weather.updateReady": "Une mise à jour de duskline est disponible",
     "weather.update": "Mettre à jour",
     "weather.offline": "Hors ligne · Affichage des prévisions enregistrées",
-    "weather.sunUnavailable": "Horaires du soleil indisponibles"
+    "weather.sunUnavailable": "Horaires du soleil indisponibles",
+    "weather.settings": "Réglages"
   },
   "de": {
     "weather.undo": "Rückgängig",
@@ -116,7 +119,8 @@
     "weather.updateReady": "Ein duskline-Update ist verfügbar",
     "weather.update": "Aktualisieren",
     "weather.offline": "Offline · Gespeicherte Vorhersagen werden angezeigt",
-    "weather.sunUnavailable": "Sonnenzeiten nicht verfügbar"
+    "weather.sunUnavailable": "Sonnenzeiten nicht verfügbar",
+    "weather.settings": "Einstellungen"
   },
   "it": {
     "weather.undo": "Annulla",
@@ -145,7 +149,8 @@
     "weather.updateReady": "È disponibile un aggiornamento di duskline",
     "weather.update": "Aggiorna",
     "weather.offline": "Offline · Previsioni salvate",
-    "weather.sunUnavailable": "Orari del sole non disponibili"
+    "weather.sunUnavailable": "Orari del sole non disponibili",
+    "weather.settings": "Impostazioni"
   },
   "pt-BR": {
     "weather.undo": "Desfazer",
@@ -174,7 +179,8 @@
     "weather.updateReady": "Uma atualização do duskline está disponível",
     "weather.update": "Atualizar",
     "weather.offline": "Offline · Exibindo previsões salvas",
-    "weather.sunUnavailable": "Horários do sol indisponíveis"
+    "weather.sunUnavailable": "Horários do sol indisponíveis",
+    "weather.settings": "Configurações"
   },
   "pt-PT": {
     "weather.undo": "Anular",
@@ -203,7 +209,8 @@
     "weather.updateReady": "Está disponível uma atualização do duskline",
     "weather.update": "Atualizar",
     "weather.offline": "Offline · A mostrar previsões guardadas",
-    "weather.sunUnavailable": "Horários do sol indisponíveis"
+    "weather.sunUnavailable": "Horários do sol indisponíveis",
+    "weather.settings": "Definições"
   },
   "nl": {
     "weather.undo": "Ongedaan maken",
@@ -232,7 +239,8 @@
     "weather.updateReady": "Een duskline-update is beschikbaar",
     "weather.update": "Bijwerken",
     "weather.offline": "Offline · Opgeslagen voorspellingen worden getoond",
-    "weather.sunUnavailable": "Zonnetijden niet beschikbaar"
+    "weather.sunUnavailable": "Zonnetijden niet beschikbaar",
+    "weather.settings": "Instellingen"
   },
   "da": {
     "weather.undo": "Fortryd",
@@ -261,7 +269,8 @@
     "weather.updateReady": "En duskline-opdatering er klar",
     "weather.update": "Opdater",
     "weather.offline": "Offline · Viser gemte vejrudsigter",
-    "weather.sunUnavailable": "Soltider er ikke tilgængelige"
+    "weather.sunUnavailable": "Soltider er ikke tilgængelige",
+    "weather.settings": "Indstillinger"
   },
   "sv": {
     "weather.undo": "Ångra",
@@ -290,7 +299,8 @@
     "weather.updateReady": "En duskline-uppdatering är klar",
     "weather.update": "Uppdatera",
     "weather.offline": "Offline · Visar sparade prognoser",
-    "weather.sunUnavailable": "Soltider inte tillgängliga"
+    "weather.sunUnavailable": "Soltider inte tillgängliga",
+    "weather.settings": "Inställningar"
   },
   "nb": {
     "weather.undo": "Angre",
@@ -319,7 +329,8 @@
     "weather.updateReady": "En duskline-oppdatering er klar",
     "weather.update": "Oppdater",
     "weather.offline": "Frakoblet · Viser lagrede værmeldinger",
-    "weather.sunUnavailable": "Soltider utilgjengelige"
+    "weather.sunUnavailable": "Soltider utilgjengelige",
+    "weather.settings": "Innstillinger"
   },
   "fi": {
     "weather.undo": "Kumoa",
@@ -348,7 +359,8 @@
     "weather.updateReady": "Duskline-päivitys on valmis",
     "weather.update": "Päivitä",
     "weather.offline": "Offline · Näytetään tallennetut ennusteet",
-    "weather.sunUnavailable": "Auringon ajat eivät ole saatavilla"
+    "weather.sunUnavailable": "Auringon ajat eivät ole saatavilla",
+    "weather.settings": "Asetukset"
   },
   "pl": {
     "weather.undo": "Cofnij",
@@ -377,7 +389,8 @@
     "weather.updateReady": "Aktualizacja duskline jest gotowa",
     "weather.update": "Aktualizuj",
     "weather.offline": "Offline · Wyświetlane są zapisane prognozy",
-    "weather.sunUnavailable": "Godziny słoneczne niedostępne"
+    "weather.sunUnavailable": "Godziny słoneczne niedostępne",
+    "weather.settings": "Ustawienia"
   },
   "cs": {
     "weather.undo": "Zpět",
@@ -406,7 +419,8 @@
     "weather.updateReady": "Aktualizace duskline je připravena",
     "weather.update": "Aktualizovat",
     "weather.offline": "Offline · Zobrazují se uložené předpovědi",
-    "weather.sunUnavailable": "Časy slunce nejsou dostupné"
+    "weather.sunUnavailable": "Časy slunce nejsou dostupné",
+    "weather.settings": "Nastavení"
   },
   "hu": {
     "weather.undo": "Visszavonás",
@@ -435,7 +449,8 @@
     "weather.updateReady": "Elérhető a duskline frissítése",
     "weather.update": "Frissítés",
     "weather.offline": "Offline · Mentett előrejelzések láthatók",
-    "weather.sunUnavailable": "Napadatok nem érhetők el"
+    "weather.sunUnavailable": "Napadatok nem érhetők el",
+    "weather.settings": "Beállítások"
   },
   "ro": {
     "weather.undo": "Anulează",
@@ -464,7 +479,8 @@
     "weather.updateReady": "O actualizare duskline este disponibilă",
     "weather.update": "Actualizează",
     "weather.offline": "Offline · Se afișează prognozele salvate",
-    "weather.sunUnavailable": "Orele soarelui nu sunt disponibile"
+    "weather.sunUnavailable": "Orele soarelui nu sunt disponibile",
+    "weather.settings": "Setări"
   },
   "el": {
     "weather.undo": "Αναίρεση",
@@ -493,7 +509,8 @@
     "weather.updateReady": "Μια ενημέρωση του duskline είναι έτοιμη",
     "weather.update": "Ενημέρωση",
     "weather.offline": "Εκτός σύνδεσης · Εμφάνιση αποθηκευμένων προγνώσεων",
-    "weather.sunUnavailable": "Οι ώρες του ήλιου δεν είναι διαθέσιμες"
+    "weather.sunUnavailable": "Οι ώρες του ήλιου δεν είναι διαθέσιμες",
+    "weather.settings": "Ρυθμίσεις"
   },
   "tr": {
     "weather.undo": "Geri al",
@@ -522,7 +539,8 @@
     "weather.updateReady": "Bir duskline güncellemesi hazır",
     "weather.update": "Güncelle",
     "weather.offline": "Çevrimdışı · Kayıtlı tahminler gösteriliyor",
-    "weather.sunUnavailable": "Güneş saatleri kullanılamıyor"
+    "weather.sunUnavailable": "Güneş saatleri kullanılamıyor",
+    "weather.settings": "Ayarlar"
   },
   "ru": {
     "weather.undo": "Отменить",
@@ -551,7 +569,8 @@
     "weather.updateReady": "Доступно обновление duskline",
     "weather.update": "Обновить",
     "weather.offline": "Офлайн · Показаны сохранённые прогнозы",
-    "weather.sunUnavailable": "Время восхода и заката недоступно"
+    "weather.sunUnavailable": "Время восхода и заката недоступно",
+    "weather.settings": "Настройки"
   },
   "uk": {
     "weather.undo": "Скасувати",
@@ -580,7 +599,8 @@
     "weather.updateReady": "Доступне оновлення duskline",
     "weather.update": "Оновити",
     "weather.offline": "Офлайн · Показано збережені прогнози",
-    "weather.sunUnavailable": "Час сходу та заходу сонця недоступний"
+    "weather.sunUnavailable": "Час сходу та заходу сонця недоступний",
+    "weather.settings": "Налаштування"
   },
   "ar": {
     "weather.undo": "تراجع",
@@ -609,7 +629,8 @@
     "weather.updateReady": "تحديث duskline جاهز",
     "weather.update": "تحديث",
     "weather.offline": "دون اتصال · تُعرض توقعات محفوظة",
-    "weather.sunUnavailable": "أوقات الشمس غير متاحة"
+    "weather.sunUnavailable": "أوقات الشمس غير متاحة",
+    "weather.settings": "الإعدادات"
   },
   "he": {
     "weather.undo": "ביטול",
@@ -638,7 +659,8 @@
     "weather.updateReady": "עדכון duskline מוכן",
     "weather.update": "עדכון",
     "weather.offline": "לא מקוון · מוצגות תחזיות שמורות",
-    "weather.sunUnavailable": "זמני השמש אינם זמינים"
+    "weather.sunUnavailable": "זמני השמש אינם זמינים",
+    "weather.settings": "הגדרות"
   },
   "hi": {
     "weather.undo": "पूर्ववत करें",
@@ -667,7 +689,8 @@
     "weather.updateReady": "duskline का अपडेट तैयार है",
     "weather.update": "अपडेट करें",
     "weather.offline": "ऑफ़लाइन · सहेजे गए पूर्वानुमान दिखाए जा रहे हैं",
-    "weather.sunUnavailable": "सूर्योदय और सूर्यास्त का समय उपलब्ध नहीं है"
+    "weather.sunUnavailable": "सूर्योदय और सूर्यास्त का समय उपलब्ध नहीं है",
+    "weather.settings": "सेटिंग्स"
   },
   "th": {
     "weather.undo": "เลิกทำ",
@@ -696,7 +719,8 @@
     "weather.updateReady": "มีอัปเดต duskline พร้อมแล้ว",
     "weather.update": "อัปเดต",
     "weather.offline": "ออฟไลน์ · กำลังแสดงพยากรณ์ที่บันทึกไว้",
-    "weather.sunUnavailable": "ไม่สามารถดูเวลาพระอาทิตย์ได้"
+    "weather.sunUnavailable": "ไม่สามารถดูเวลาพระอาทิตย์ได้",
+    "weather.settings": "การตั้งค่า"
   },
   "vi": {
     "weather.undo": "Hoàn tác",
@@ -725,7 +749,8 @@
     "weather.updateReady": "Bản cập nhật duskline đã sẵn sàng",
     "weather.update": "Cập nhật",
     "weather.offline": "Ngoại tuyến · Đang hiển thị dự báo đã lưu",
-    "weather.sunUnavailable": "Không có giờ mặt trời"
+    "weather.sunUnavailable": "Không có giờ mặt trời",
+    "weather.settings": "Cài đặt"
   },
   "id": {
     "weather.undo": "Urungkan",
@@ -754,7 +779,8 @@
     "weather.updateReady": "Pembaruan duskline siap",
     "weather.update": "Perbarui",
     "weather.offline": "Offline · Menampilkan prakiraan tersimpan",
-    "weather.sunUnavailable": "Waktu matahari tidak tersedia"
+    "weather.sunUnavailable": "Waktu matahari tidak tersedia",
+    "weather.settings": "Pengaturan"
   },
   "ja": {
     "weather.undo": "元に戻す",
@@ -783,7 +809,8 @@
     "weather.updateReady": "dusklineの更新が利用可能です",
     "weather.update": "更新",
     "weather.offline": "オフライン · 保存済みの予報を表示中",
-    "weather.sunUnavailable": "日の出・日の入り時刻を取得できません"
+    "weather.sunUnavailable": "日の出・日の入り時刻を取得できません",
+    "weather.settings": "設定"
   },
   "ko": {
     "weather.undo": "실행 취소",
@@ -812,7 +839,8 @@
     "weather.updateReady": "duskline 업데이트가 준비되었습니다",
     "weather.update": "업데이트",
     "weather.offline": "오프라인 · 저장된 예보 표시 중",
-    "weather.sunUnavailable": "일출·일몰 시간을 사용할 수 없습니다"
+    "weather.sunUnavailable": "일출·일몰 시간을 사용할 수 없습니다",
+    "weather.settings": "설정"
   },
   "zh": {
     "weather.undo": "撤销",
@@ -841,7 +869,8 @@
     "weather.updateReady": "duskline更新已就绪",
     "weather.update": "更新",
     "weather.offline": "离线 · 正在显示已保存的预报",
-    "weather.sunUnavailable": "无法获取日出日落时间"
+    "weather.sunUnavailable": "无法获取日出日落时间",
+    "weather.settings": "设置"
   },
   "zh-TW": {
     "weather.undo": "復原",
@@ -870,7 +899,8 @@
     "weather.updateReady": "duskline更新已就緒",
     "weather.update": "更新",
     "weather.offline": "離線 · 正在顯示已儲存的預報",
-    "weather.sunUnavailable": "無法取得日出日落時間"
+    "weather.sunUnavailable": "無法取得日出日落時間",
+    "weather.settings": "設定"
   }
 };
   Object.keys(rows).forEach(function (code) {

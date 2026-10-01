@@ -39,3 +39,19 @@ A separate localhost origin was reviewed interactively with live providers in th
 Regression checks cover the primary layout at 320, 390, and 768 pixels, internal keyboard scrolling, recovery, date context, and redirecting-host upgrades across Chromium, desktop WebKit, and phone-sized WebKit. These emulated widths do not replace physical-device testing.
 
 The final visual pass adapts Kit’s 2-pixel header progress indicator for Horizon/My Sky switching. The selected view changes immediately; the old page fade and layout-shifting loading row are removed. Motion preferences keep the bar static when appropriate. An uncached primary forecast uses a reserved skeleton, and the hourly strip keeps its height during enrichment. Browser tests cover fourteen viewport widths, complete precipitation labels, long city names, daily-preview navigation, and rapid/reduced-motion switching.
+
+## September 30 interaction fixes
+
+Primary-city selection now repaints the card synchronously, with distinct condition/day-night palettes. Landscape My Sky uses three saved cities per row and a wider primary layout. Light forecast tiles retain opaque surfaces on hover; the daily group highlights its individual rows.
+
+The thin progress bar now counts overlapping weather, search, locale, geolocation, alerts, and map loads and remains visible above overlays. The no-alerts state has a provider refresh action. Settings uses an accessible gear icon; detail, sheet, and map actions have consistent circular geometry. The persistent update notice sits below the top header.
+
+City detail has one inline loading message. Actual/Feels-like switches preserve chart-sheet scroll and keyboard focus. Future-day chart fills now close against the first plotted hour, eliminating a diagonal wedge. The empty map status pill is hidden, dropped pins resolve place names through the existing provider chain, and full-screen MapLibre permits one-finger panning. A bounded lookup timeout retains a useful coordinate label when no locality is available.
+
+Local international alerts require the included server route: use `npm run serve`; opening `index.html` directly cannot run the Cloudflare/API function.
+
+The September 30 pass also aligns the search field with the one-row actions at every supported width, uses a matching 2-pixel gear stroke, preserves primary-strip scroll/focus across enrichment, and persists language intent before fetching a pack so quick reloads retain the choice. Primary palettes have seven distinct weather families in day/night variants, with a tested 4.5:1 minimum for secondary labels.
+
+Browser checks retain strict assertions while accounting for runner differences: mobile WebKit uses keyboard scrolling when its mouse-wheel API is unavailable; host-outage tests exercise service-worker recovery on every engine, while the browser offline toggle is Chromium-only. Firefox appearance tests supply the preference API deterministically because the Linux runner can retain GTK's light preference despite emulation. These checks verify the app's preference handling, not a physical Firefox OS appearance change. Held provider responses replace timing-dependent assertions of transient loading states.
+
+Map dismissal restores focus to its explicit opening control even on Safari, where pointer clicks do not necessarily focus a button. Deferred settings rebuilds and share focus are guarded against a sheet being closed or replaced.

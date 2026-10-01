@@ -332,8 +332,8 @@
   let lastListFetch = 0;
   let myLocationCity = null;
   let refreshGen = 0;       // supersede stale refresh() completions
-  let viewSwitchGeneration = 0;
   let viewBusySince = 0;
+  let finishViewLoading = null;
   let viewBusyTimer = 0;
   let refreshInflight = null; // Promise of current refresh, if any
   let alertsPrefetchGen = 0; // cancel in-flight alert prefetch (module-owned gen also exists)
@@ -542,6 +542,17 @@
         getPlaces: getMapPlaces,
         isFavorite: isFavorite,
         onSelectCity: openMapCity,
+        resolveCity: reverseGeocode,
+        onResolveCity: function (city) {
+          const favorites = loadFavorites();
+          const index = favorites.findIndex(function (favorite) { return sameCity(favorite,city) && !favorite.country && (favorite.name === 'Pinned place' || /°/.test(favorite.admin1 || '') || /°/.test(favorite.name || '')); });
+          if (index < 0 || city.name === favorites[index].name) return;
+          favorites[index] = Object.assign({},favorites[index],city);
+          saveFavorites(favorites);
+          nameCache.set(lang()+':'+cityKey(city),city.name);
+          refreshListsFromCache({force:true,skipAmbient:true});
+          if (mapApi) mapApi.updatePlaces(getMapPlaces());
+        },
         onAddCity: function (city) {
           if (!city || isFavorite(city)) return;
           toggleFavorite(city);
@@ -921,6 +932,14 @@
       }, ...list.filter((f) => !sameCity(f, c))];
     }
     saveFavorites(list);
+    if (!removing) {
+      const savedPack = cache.get(cityKey(c));
+      if (!savedPack || !savedPack.weather || savedPack.stored || Date.now()-savedPack.fetchedAt >= REFRESH_MS) {
+        dataApi.loadCity(c,null,{enrich:false}).then(function () {
+          if (isFavorite(c)) refreshListsFromCache({force:true});
+        }).catch(function () { if (isFavorite(c)) refreshListsFromCache({force:true}); });
+      }
+    }
     notify(t(removing ? 'weather.notice.removed' : 'weather.notice.added',
       removing ? 'Removed from My Sky' : 'Added to My Sky'), null, removing ? function () {
       const current = loadFavorites().filter(city => !sameCity(city,c));
@@ -970,6 +989,7 @@
     mapMySkyRefreshPending = false;
     if (mapApi) mapApi.close();
     if (existing && existing.weather) {
+      existing.city = Object.assign({},existing.city,city);
       openDetail(existing);
       return;
     }
@@ -1100,10 +1120,10 @@
   }
   function setWeatherMode(mode, remember, skipLoad) {
     if (mode !== 'horizon' && mode !== 'my-sky') return;
-    viewSwitchGeneration++;
     const changed = weatherMode !== mode;
     if (weatherMode !== mode) greetingVisitSeed = null;
     weatherMode = mode;
+    document.body.dataset.weatherView = mode;
     if (mode === 'horizon' && remember) horizonExpanded = true;
     if (remember) {
       weatherModeExplicit = true;
@@ -1117,32 +1137,16 @@
 
   function requestWeatherMode(mode) {
     if (mode !== 'horizon' && mode !== 'my-sky' || mode === weatherMode) return;
-    const gen = ++viewSwitchGeneration;
-    weatherMode = mode;
-    weatherModeExplicit = true;
-    greetingVisitSeed = null;
-    viewBusySince = Date.now();
-    modeButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.weatherMode === mode)));
-    if (majorsBlock) majorsBlock.hidden = mode === 'my-sky';
-    if (myLocBlock) myLocBlock.hidden = mode !== 'my-sky';
-    const home = document.getElementById('weatherHome');
-    if (home) home.hidden = mode !== 'my-sky' || !getGreetingSourceCity();
     setViewLoading(true);
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        if (gen !== viewSwitchGeneration) return;
-        setWeatherMode(mode, true);
-
-      });
-    });
+    setWeatherMode(mode,true);
   }
 
-  async function reverseGeocode(lat, lon) {
+  async function reverseGeocode(lat, lon, signal) {
     const langParam = geocodeLangParam();
     // BigDataCloud client reverse geocode (browser-safe, no API key)
     try {
       const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${langParam}`;
-      const data = await dataApi.fetchJson(url);
+      const data = await dataApi.fetchJson(url,signal);
       const name = data.city || data.locality || data.principalSubdivision || data.countryName;
       if (name) {
         return {
@@ -1157,7 +1161,7 @@
     // Nominatim fallback
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${langParam}`;
-      const data = await dataApi.fetchJson(url);
+      const data = await dataApi.fetchJson(url,signal);
       const a = data.address || {};
       const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county || data.name;
       if (name) {
@@ -1172,7 +1176,7 @@
     } catch (e) { /* fall through */ }
     return {
       name: lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°',
-      admin1: t('weather.myLocation', 'My Location'),
+      admin1: signal ? '' : t('weather.myLocation', 'My Location'),
       lat, lon
     };
   }
@@ -1715,9 +1719,14 @@
     stamp: function (time, pack) { return stampToMs(time, cityTimeZone(pack,pack.city)); },
     clock: function (time, pack) { return formatClock(time, cityTimeZone(pack,pack.city)); },
     shortClock: function (time,pack) { const zone = cityTimeZone(pack,pack.city); try { return new Intl.DateTimeFormat(localeTag(),{hour:'numeric',timeZone:zone}).format(new Date(stampToMs(time,zone))); } catch (error) { return formatClock(time,zone); } },
-    palette: function (element, pack) { applySky(element, pack.weather.current.weather_code, pack.weather.current.time, {
-      isRow:true, noOrnaments:true, night:isNightForPack(pack), timeZone:cityTimeZone(pack,pack.city)
-    }); },
+    palette: function (element, pack) {
+      const night = isNightForPack(pack);
+      const hour = localHourForPack(pack);
+      const palette = skyApi.primaryPalette(pack.weather.current.weather_code,night,hour);
+      element.style.setProperty('--wx-sky-1',palette.top);
+      element.style.setProperty('--wx-sky-2',palette.bottom);
+      element.dataset.weatherPalette = palette.name;
+    },
     dailyPreview: function (pack) { return chartsApi.dailyBarsHtml(pack.weather.daily || {}, {
       timeZone:cityTimeZone(pack,pack.city), hourly:pack.weather.hourly, limit:5, skipToday:true
     }); },
@@ -2754,6 +2763,7 @@
         weatherMode = (myLocationCity || selectedGreetingCity || favs.length) ? 'my-sky' : 'horizon';
       }
     }
+    document.body.dataset.weatherView = weatherMode;
     const showMySky = weatherMode === 'my-sky';
     const showStart = !showMySky && !myLocationCity && !selectedGreetingCity && !favs.length;
     const featured = horizonExpanded ? MAJOR : MAJOR.filter((c) => HORIZON_PREVIEW_SLUGS.has(c.slug));
@@ -2866,9 +2876,9 @@
       return;
     }
     if (busy && (!weatherModeLoadingEl || weatherModeLoadingEl.hidden)) viewBusySince = Date.now();
-    if (weatherModeLoadingEl) {
-      weatherModeLoadingEl.hidden = !busy;
-      weatherModeLoadingEl.dataset.active = String(busy);
+    if (window.DusklineLoading) {
+      if (busy && !finishViewLoading) finishViewLoading = window.DusklineLoading.begin();
+      else if (!busy && finishViewLoading) { finishViewLoading(); finishViewLoading = null; }
     }
     if (weatherModeSwitchEl) {
       if (busy) weatherModeSwitchEl.setAttribute('aria-busy', 'true');
@@ -3155,7 +3165,7 @@
     }
     openCity = { city: city, pending: true };
     if (detailHero) {
-      detailHero.innerHTML = `<h2 id="weatherDetailTitle">${escapeHtml(displayCityName(city))}</h2><div class="weather-detail-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
+      detailHero.innerHTML = `<h2 id="weatherDetailTitle">${escapeHtml(displayCityName(city))}</h2>`;
     }
     if (detailMods) {
       detailMods.innerHTML = `<div class="weather-detail-loading-panel" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
@@ -3757,6 +3767,7 @@
       conditions: t('weather.hourly', 'Hourly Forecast')
     };
 
+    const savedSheetScroll = sheetOptions.keepScroll ? {body:sheetBody.scrollTop,panel:sheetPanel.scrollTop,dates:sheetBody.querySelector('.wx-day-choices')?.scrollLeft || 0} : null;
     let body = '';
 
     // City-local calendar day for charts (Apple Weather style 00–24)
@@ -4033,7 +4044,7 @@
         button.addEventListener('click', function () {
           const nextMode = button.getAttribute('data-temp-mode');
           if (!nextMode || nextMode === dayMode) return;
-          const options = { tempMode: nextMode };
+          const options = { tempMode: nextMode, keepScroll:true };
           options.dayKey = String(selectedDayKey).slice(0, 10);
           openSheet(kind, pack, options);
           focusDayControl('data-temp-mode', nextMode);
@@ -4078,7 +4089,10 @@
           slideUnitsPill(row, b);
           setter(b.getAttribute('data-u'));
           window.clearTimeout(bind._rebuild);
+          const rebuildGeneration = sheetGen;
+          const rebuildCity = openCity && openCity.city;
           bind._rebuild = window.setTimeout(function () {
+            if (!sheetIntentOpen || sheetGen !== rebuildGeneration || activeSheetKind !== kind || !openCity || !sameCity(openCity.city,rebuildCity)) return;
             const pack = openCity && openCity.city
               ? (cache.get(cityKey(openCity.city)) || openCity)
               : openCity;
@@ -4101,7 +4115,13 @@
       if (typeof window.setDistUnitPreference === 'function') window.setDistUnitPreference(u);
     });
 
-    presentSheet();
+    presentSheet(undefined,{keepScroll:!!sheetOptions.keepScroll});
+    if (savedSheetScroll) {
+      sheetBody.scrollTop = savedSheetScroll.body;
+      sheetPanel.scrollTop = savedSheetScroll.panel;
+      const choices = sheetBody.querySelector('.wx-day-choices');
+      if (choices) choices.scrollLeft = savedSheetScroll.dates;
+    }
   }
 
   function slideUnitsPill(row, btn) {
@@ -4314,7 +4334,8 @@
     titleHost.innerHTML = html || '';
   }
 
-  function presentSheet(initialFocus) {
+  function presentSheet(initialFocus, options) {
+    options = options || {};
     if (!sheetEl || !sheetPanel) return;
     const focusSheet = function () {
       const target = initialFocus && initialFocus.isConnected ? initialFocus : sheetClose;
@@ -4351,7 +4372,7 @@
       sheetEl.style.background = '';
     } catch (eBg) { /* ignore */ }
     try {
-      if (sheetBody) sheetBody.scrollTop = 0;
+      if (sheetBody && !options.keepScroll) sheetBody.scrollTop = 0;
     } catch (eScr) { /* ignore */ }
     if (alreadyOpen) {
       sheetEl.classList.add('open', 'is-raised');
@@ -4362,7 +4383,7 @@
           title.setAttribute('id', 'weatherSheetTitle');
           sheetPanel.setAttribute('aria-labelledby', 'weatherSheetTitle');
         }
-        focusSheet();
+        if (!options.keepScroll) focusSheet();
       } catch (eFocus) { /* ignore */ }
       return;
     }
@@ -4960,7 +4981,7 @@
     setSheetTitle(`
       <div class="wx-sheet-head" data-sheet-title>
         <div class="wx-sheet-icon">${modLabelIcon('conditions')}</div>
-        <h3 class="wx-sheet-title">${escapeHtml(t('weather.units', 'Units'))}</h3>
+        <h3 class="wx-sheet-title">${escapeHtml(t('weather.settings', 'Settings'))}</h3>
       </div>`);
     const tempPref = (typeof window.getTempUnitPreference === 'function')
       ? window.getTempUnitPreference()
@@ -5218,7 +5239,8 @@
           const mark = radio.querySelector('.weather-greeting-source-check');
           if (mark) mark.textContent = checked ? '✓' : '';
         });
-        updateGreeting();
+        refreshListsFromCache({force:true});
+        refresh(false,{quiet:true,reason:'view'});
         closeSheet();
       });
       button.addEventListener('keydown', function (event) {
@@ -5254,7 +5276,7 @@
       closeSuggest();
       const preferred = (openCity && openCity.city) || myLocationCity || selectedGreetingCity
         || loadFavorites()[0] || MAJOR[0] || null;
-      mapApi.open({ initialCity: preferred, places: getMapPlaces() });
+      mapApi.open({ initialCity: preferred, places: getMapPlaces(), returnFocus: mapOpenBtn });
     });
   }
   if (refreshBtn) {
@@ -5317,14 +5339,15 @@
     sheetBody.innerHTML = `<p class="wx-sheet-context">${escapeHtml(t('weather.notice.copyManually', 'Select this link to copy it:'))}</p><input id="wxShareLink" class="wx-share-link" type="text" readonly value="${escapeHtml(url)}" aria-label="${escapeHtml(t('weather.shareForecast', 'Share forecast'))}">`;
     const input = $('wxShareLink');
     presentSheet(input);
-    // Visibility is transitioned on this sheet; focusing a child before the
-    // entrance finishes is ignored by some browsers.
-    window.setTimeout(function () {
-      if (input && input.isConnected && isSheetOpen()) {
-        input.focus({ preventScroll: true });
-        input.select();
-      }
-    }, sheetReduceMotion() ? 0 : 360);
+    const focusGeneration = sheetGen;
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      const animations = typeof sheetPanel.getAnimations === 'function' ? sheetPanel.getAnimations().filter(animation=>animation.effect && animation.effect.getTiming().iterations !== Infinity) : [];
+      Promise.all(animations.map(animation=>animation.finished.catch(function () {}))).then(function () {
+        if (input && input.isConnected && sheetIntentOpen && sheetGen === focusGeneration) {
+          input.focus({preventScroll:true}); input.select();
+        }
+      });
+    }); });
   }
   async function copyShareLink(value) {
     try {
@@ -5412,6 +5435,7 @@
       locateBtn.setAttribute('aria-busy', 'true');
       const prevTitle = locateBtn.getAttribute('title') || '';
       locateBtn.setAttribute('title', t('weather.locating', 'Getting location…'));
+      const finishLocating = window.DusklineLoading ? window.DusklineLoading.begin(t('weather.locating','Getting location…')) : function () {};
       navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
           // Round to ~1 km (2 decimal degrees ≈ 1.1 km) — enough for weather grids; better privacy
@@ -5430,6 +5454,7 @@
           };
           // Always refresh locatedAt — user asked for a new fix
           saveMyLocation(city, { refreshLocatedAt: true });
+          saveGreetingSource('my-location');
           // A successful opt-in should visibly land in the personal forecast, even
           // when the user had previously chosen Horizon explicitly.
           setWeatherMode('my-sky', true, true);
@@ -5444,11 +5469,13 @@
         } catch (e) {
           showError(t('weather.error', 'Could not load weather data.'));
         } finally {
+          finishLocating();
           locateBtn.disabled = false;
           locateBtn.removeAttribute('aria-busy');
           locateBtn.setAttribute('title', prevTitle || t('weather.useLocation', 'Use my location'));
         }
       }, (err) => {
+        finishLocating();
         locateBtn.disabled = false;
         locateBtn.removeAttribute('aria-busy');
         locateBtn.setAttribute('title', prevTitle || t('weather.useLocation', 'Use my location'));

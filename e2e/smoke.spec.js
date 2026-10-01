@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const {attemptUserScroll,prepareAppearance,changeAppearance}=require('./browser-actions');
+
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -469,13 +471,14 @@ test('U.S. AQI detail follows all six official bands and boundaries', async ({ p
 
 test('U.S. cities use U.S. AQI and load the 24-hour outlook on demand', async ({ page }) => {
   let detailUrl = '';
+  let releaseAir;
   await page.route(/air-quality-api\.open-meteo\.com/, async route => {
     const url = new URL(route.request().url());
     if (!url.searchParams.has('hourly')) {
       return route.fulfill({ json: { current: { us_aqi: 45, european_aqi: 67, pm2_5: 12, pm10: 20 } } });
     }
     detailUrl = route.request().url();
-    await new Promise(resolve => setTimeout(resolve, 250));
+    await new Promise(resolve => {releaseAir=resolve;});
     const times = Array.from({ length: 24 }, (_, i) => new Date(Date.now() + i * 3600000).toISOString());
     return route.fulfill({ json: {
       current: {
@@ -496,6 +499,7 @@ test('U.S. cities use U.S. AQI and load the 24-hour outlook on demand', async ({
   const sheet = page.locator('#weatherSheetBody');
   await expect(sheet.locator('#wxAqiScale')).toHaveCount(0);
   await expect(sheet.locator('#wxAqiOutlook[aria-busy="true"]')).toBeVisible();
+  releaseAir();
   await expect(sheet.locator('#wxAqiOutlook .wx-aqi-outlook-item')).toHaveCount(8);
   expect(detailUrl).toContain('forecast_hours=24');
   expect(new URL(detailUrl).searchParams.get('hourly')).toBe('us_aqi,european_aqi');
@@ -678,7 +682,7 @@ test('terms page translates body copy for every picker language', async ({ page 
 test('units sheet opens', async ({ page }) => {
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
-  await page.evaluate(() => window.scrollTo(0, 320));
+  await page.evaluate(() => window.scrollTo({top:320,behavior:'instant'}));
   const scrollBeforeOpen = await page.evaluate(() => window.scrollY);
   expect(scrollBeforeOpen).toBeGreaterThan(0);
   const bodyTopBeforeOpen = await page.evaluate(() => document.body.getBoundingClientRect().top);
@@ -688,13 +692,13 @@ test('units sheet opens', async ({ page }) => {
   const bodyTopWhileOpen = await page.evaluate(() => document.body.getBoundingClientRect().top);
   expect(Math.abs(bodyTopWhileOpen - bodyTopBeforeOpen)).toBeLessThan(1);
   await page.mouse.move(40, Math.round((await page.evaluate(() => window.innerHeight)) / 2));
-  await page.mouse.wheel(0, 600);
+  await attemptUserScroll(page,600);
   await expect.poll(() => page.evaluate(() => document.body.getBoundingClientRect().top)).toBe(bodyTopWhileOpen);
   await page.locator('#weatherSheetClose').click();
   await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollBeforeOpen);
   await page.mouse.move(40, Math.round((await page.evaluate(() => window.innerHeight)) / 2));
-  await page.mouse.wheel(0, 600);
+  await attemptUserScroll(page,600);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBeforeOpen);
 });
 

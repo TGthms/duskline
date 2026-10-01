@@ -52,6 +52,10 @@ test('future-day temperature chart starts at the day range and local noon, not t
   const pointData = chart.match(/data-pts='([^']+)'/);
   assert.ok(pointData);
   assert.equal(JSON.parse(pointData[1])[12].code, 61);
+  const area = chart.match(/<path d="([^"]+)" fill="url\(/);
+  assert.ok(area, 'temperature chart area must exist');
+  const closing = area[1].match(/L([\d.]+),([\d.]+) Z$/);
+  assert.equal(Number(closing[1]),JSON.parse(pointData[1])[0].x, 'future-day area closes at the first plotted hour, not noon');
 });
 
 test('compact daily preview starts tomorrow, caps at five and preserves partial forecasts', () => {

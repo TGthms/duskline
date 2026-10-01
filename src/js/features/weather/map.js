@@ -89,7 +89,12 @@
       if (loading && visible && message) statusHost.setAttribute('data-loading', 'true');
       else statusHost.removeAttribute('data-loading');
     }
+    var finishMapLoading = null;
     function setBusy(busy) {
+      if (global.DusklineLoading) {
+        if (busy && !finishMapLoading) finishMapLoading = global.DusklineLoading.begin(t('weather.mapLoadingWeather','Loading nearby forecast…'));
+        else if (!busy && finishMapLoading) { finishMapLoading(); finishMapLoading = null; }
+      }
       if (!root) return;
       if (busy) root.setAttribute('aria-busy', 'true');
       else root.removeAttribute('aria-busy');
@@ -134,11 +139,13 @@
       if (!contextMenu || contextMenu.hidden) return;
       contextMenu.hidden = true;
       contextCity = null;
+      contextGeneration++;
       if (restoreFocus && isOpen && closeButton) closeButton.focus({ preventScroll: true });
     }
     function close() {
       if (!isOpen) return;
       isOpen = false;
+      setBusy(false);
       clearTimeout(moveTimer);
       clearTimeout(styleTimer);
       clearTimeout(requestTimer);
@@ -231,7 +238,7 @@
         var d = distanceKm(lat, lon, Number(city.lat), Number(city.lon));
         if (d < nearestDistance) { nearest = item; nearestDistance = d; }
       });
-      return nearest && nearestDistance <= 25 ? nearest : null;
+      return nearest && nearestDistance <= 1 ? nearest : null;
     }
     function cityAtClientPoint(clientX, clientY) {
       var lat;
@@ -243,7 +250,8 @@
         lat = projected.lat;
         lon = projected.lng;
       } else {
-        var bounds = (fallbackHost || stageHost).getBoundingClientRect();
+        const atlas = fallbackHost && fallbackHost.querySelector('.weather-map-atlas');
+        var bounds = (atlas || fallbackHost || stageHost).getBoundingClientRect();
         var x = Math.max(0, Math.min(bounds.width, clientX - bounds.left));
         var y = Math.max(0, Math.min(bounds.height, clientY - bounds.top));
         lon = (x / Math.max(1, bounds.width)) * 360 - 180;
@@ -253,12 +261,14 @@
       lon = normalizeLongitude(Number(lon));
       var place = nearestPlace(lat, lon);
       if (place) {
-      return { city: Object.assign({}, place.city), name: place.name || place.city.name || '', saved: !!place.saved };
+        const city = Object.assign({},place.city);
+        if (!city.country && (city.name === 'Pinned place' || /°/.test(city.admin1 || '') || /°/.test(city.name || ''))) city.isMapPin = true;
+        return {city:city,name:place.name || city.name || '',saved:!!place.saved};
       }
       var coordinateLabel = lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°';
       return {
         city: {
-          name: t('weather.mapPinnedPlace', 'Pinned place'),
+          name: coordinateLabel,
           admin1: coordinateLabel,
           lat: Number(lat.toFixed(4)), lon: Number(lon.toFixed(4)),
           country: '', country_code: '', tryNws: false, isMapPin: true
@@ -267,33 +277,59 @@
         saved: false
       };
     }
+    const pinNames = new Map();
+    let contextGeneration = 0;
+    function resolvePin(city) {
+      if (!city.isMapPin || typeof deps.resolveCity !== 'function' || global.navigator && global.navigator.onLine === false) return Promise.resolve(city);
+      const key = city.lat.toFixed(4)+','+city.lon.toFixed(4)+':' + (typeof deps.localeTag === 'function' ? deps.localeTag() : 'en');
+      if (pinNames.has(key)) return pinNames.get(key);
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); },4000);
+      const request = Promise.resolve().then(function () { return deps.resolveCity(city.lat,city.lon,controller.signal); }).then(function (place) {
+        const resolved = Object.assign({},city,place || {},{lat:city.lat,lon:city.lon,isMapPin:true});
+        if (resolved.country_code) delete resolved.tryNws;
+        if (resolved.name === city.name) pinNames.delete(key);
+        return resolved;
+      }).catch(function () { pinNames.delete(key); return city; }).finally(function () { clearTimeout(timer); });
+      pinNames.set(key,request);
+      while (pinNames.size>100) pinNames.delete(pinNames.keys().next().value);
+      return request;
+    }
+    function paintContextCity(city, pending) {
+      contextCity = city;
+      contextIsSaved = typeof deps.isFavorite === 'function' && deps.isFavorite(city);
+      if (contextPlaceLabel) contextPlaceLabel.textContent = city.name;
+      if (contextViewButton) {
+        contextViewButton.disabled = pending;
+        contextViewButton.textContent = pending ? t('weather.notice.searching','Searching places…') : t('weather.mapViewPlace','View {place}').replace('{place}',city.name);
+      }
+      if (contextAddButton) {
+        contextAddButton.disabled = pending || contextIsSaved;
+        contextAddButton.textContent = contextIsSaved ? t('weather.mapAlreadySaved','Already in My Sky') : t('weather.mapAddPlace','Add {place} to My Sky').replace('{place}',city.name);
+      }
+      contextMenu.setAttribute('aria-busy',String(pending));
+    }
+    function positionContextMenu(clientX,clientY) {
+      const stage = stageHost.getBoundingClientRect();
+      const menu = contextMenu.getBoundingClientRect();
+      contextMenu.style.left = Math.max(8,Math.min(stage.width-menu.width-8,clientX-stage.left))+'px';
+      contextMenu.style.top = Math.max(8,Math.min(stage.height-menu.height-8,clientY-stage.top))+'px';
+    }
     function showContextMenu(clientX, clientY) {
       if (!contextMenu || !stageHost || !isOpen) return;
       var selected = cityAtClientPoint(clientX, clientY);
-      contextCity = selected.city;
-      contextIsSaved = selected.saved || (typeof deps.isFavorite === 'function' && deps.isFavorite(selected.city));
-      if (contextPlaceLabel) contextPlaceLabel.textContent = selected.name;
-      if (contextViewButton) {
-        contextViewButton.textContent = selected.city.isMapPin
-          ? t('weather.mapViewHere', 'View weather here')
-          : t('weather.mapViewPlace', 'View {place}').replace('{place}', selected.name);
-      }
-      if (contextAddButton) {
-        contextAddButton.textContent = contextIsSaved
-          ? t('weather.mapAlreadySaved', 'Already in My Sky')
-          : selected.city.isMapPin
-            ? t('weather.mapAddPin', 'Add pin to My Sky')
-            : t('weather.mapAddPlace', 'Add {place} to My Sky').replace('{place}', selected.name);
-        contextAddButton.disabled = contextIsSaved;
-      }
+      const generation = ++contextGeneration;
+      paintContextCity(Object.assign({},selected.city,{name:selected.name || selected.city.name}),!!selected.city.isMapPin);
+      if (selected.city.isMapPin) resolvePin(selected.city).then(function (city) {
+        if (generation !== contextGeneration || !isOpen || contextMenu.hidden) return;
+        paintContextCity(city,false);
+        positionContextMenu(clientX,clientY);
+        if (typeof deps.onResolveCity === 'function') deps.onResolveCity(city);
+        if (contextViewButton && !contextMenu.contains(document.activeElement)) contextViewButton.focus({preventScroll:true});
+      });
       contextMenu.hidden = false;
       contextMenu.style.visibility = 'hidden';
-      var stageRect = stageHost.getBoundingClientRect();
-      var menuRect = contextMenu.getBoundingClientRect();
-      var left = Math.max(8, Math.min(stageRect.width - menuRect.width - 8, clientX - stageRect.left));
-      var top = Math.max(8, Math.min(stageRect.height - menuRect.height - 8, clientY - stageRect.top));
-      contextMenu.style.left = left + 'px';
-      contextMenu.style.top = top + 'px';
+      positionContextMenu(clientX,clientY);
       contextMenu.style.visibility = '';
       if (contextViewButton) contextViewButton.focus({ preventScroll: true });
     }
@@ -1002,7 +1038,7 @@
           pitchWithRotate: false,
           dragRotate: false,
           attributionControl: false,
-          cooperativeGestures: true,
+          cooperativeGestures: false,
           canvasContextAttributes: { antialias: true, preserveDrawingBuffer: false }
         });
         map.once('load', function () {
@@ -1051,7 +1087,7 @@
       tileErrors = 0;
       selectedOffset = 0;
       activeGrid = null;
-      returnFocus = document.activeElement;
+      returnFocus = options && options.returnFocus || document.activeElement;
       if (root.parentElement !== document.body) document.body.appendChild(root);
       root.hidden = false;
       root.setAttribute('aria-hidden', 'false');

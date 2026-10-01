@@ -10,6 +10,7 @@
     const region = document.getElementById('weatherRegion');
     const sort = document.getElementById('weatherSort');
     const enriching = new Set();
+    let paintedMarkup = '';
     function selectedCity() { return deps.getPrimary(); }
     function filter(cities) {
       let out = cities.filter(city => !region || !region.value || city.region === region.value);
@@ -34,8 +35,18 @@
       const city = selectedCity();
       home.hidden = !personal || !city;
       if (home.hidden) return;
+      const previousStrip = home.querySelector('.weather-hourly');
+      const samePlace = home.dataset.cityKey === cityKey(city);
+      const previousScroll = samePlace && previousStrip ? previousStrip.scrollLeft : 0;
+      const restoreStripFocus = samePlace && previousStrip === document.activeElement;
+      const previousDayFocus = samePlace && home.contains(document.activeElement) && document.activeElement.dataset.dayDate;
+      home.dataset.cityKey = cityKey(city);
       const pack = cache.get(cityKey(city));
       if (!pack || !pack.weather) {
+        paintedMarkup = '';
+        home.style.removeProperty('--wx-sky-1');
+        home.style.removeProperty('--wx-sky-2');
+        home.dataset.weatherPalette = pack && pack.error ? 'unavailable' : 'pending';
         if (pack && pack.error) {
           home.innerHTML = `<div role="status" class="weather-hourly-loading"><span>${esc(t('weather.error','Could not load weather data.'))}</span><button type="button" data-home-retry>${esc(t('weather.retry','Retry'))}</button></div>`;
           home.querySelector('[data-home-retry]').addEventListener('click', function () {
@@ -57,7 +68,7 @@
       }
       const insight = deps.insight(pack);
       const daily = deps.dailyPreview ? deps.dailyPreview(pack) : '';
-      home.innerHTML = `
+      const markup = `
         <div class="weather-home-current">
           <div class="weather-home-reading"><h3>${esc(deps.cityName(city))}</h3><span class="weather-home-temperature">${esc(fmtTemp(current.temperature_2m))}</span><p class="weather-home-feels">${esc(t('weather.feelsLike','Feels like'))} ${esc(fmtTemp(current.apparent_temperature))}</p></div>
           <div class="weather-home-description">
@@ -73,10 +84,21 @@
         </div>
         ${daily ? `<div class="weather-home-daily">${daily}</div>` : ''}</div>
         <div class="weather-home-meta"><small>${esc(deps.updated(pack))}</small><div class="weather-home-actions"><button type="button" data-home-open>${esc(t('weather.viewForecast','View forecast'))}</button></div></div>`;
+      const paintKey = cityKey(city)+'|'+markup;
+      if (paintedMarkup === paintKey) return;
+      paintedMarkup = paintKey;
+      home.innerHTML = markup;
       home.querySelectorAll('[data-day-date]').forEach(function (button) {
-        button.addEventListener('click',function () { deps.openDay(city,button.dataset.dayDate); });
+        button.addEventListener('click',function () { deps.openDay(selectedCity(),button.dataset.dayDate); });
       });
-      home.querySelector('[data-home-open]').addEventListener('click', () => deps.open(city));
+      const strip = home.querySelector('.weather-hourly');
+      strip.scrollLeft = previousScroll;
+      if (restoreStripFocus) strip.focus({preventScroll:true});
+      else if (previousDayFocus) {
+        const day = Array.from(home.querySelectorAll('[data-day-date]')).find(button=>button.dataset.dayDate === previousDayFocus);
+        if (day) day.focus({preventScroll:true});
+      }
+      home.querySelector('[data-home-open]').addEventListener('click', () => deps.open(selectedCity()));
       home.querySelector('.weather-hourly').addEventListener('keydown', function (event) {
         const strip = event.currentTarget;
         const direction = getComputedStyle(strip).direction === 'rtl' ? -1 : 1;

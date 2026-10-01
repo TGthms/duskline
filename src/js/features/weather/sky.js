@@ -274,6 +274,26 @@
       return base;
     }
 
+    // Primary summary palettes keep clear, cloud, fog, rain and snow distinct.
+    // The final card scrim is applied in CSS; these stops remain readable under it.
+    function primaryPalette(code, night, hour) {
+      let family = code == null || !Number.isFinite(Number(code)) || code < 0 ? 'unknown' : code >= 95 ? 'storm' : (code >= 71 && code <= 77) || (code >= 85 && code <= 86) ? 'snow'
+        : (code >= 51 && code <= 67) || (code >= 80 && code <= 82) ? 'rain'
+        : code === 45 || code === 48 ? 'fog' : code === 3 ? 'overcast' : code === 2 ? 'partly-cloudy' : 'clear';
+      const day = {
+        unknown:['#697780','#465661'], clear:['#3476a5','#20568c'], 'partly-cloudy':['#55718a','#344d68'],
+        overcast:['#697780','#465661'], fog:['#657480','#485760'],
+        rain:['#42596e','#273d53'], snow:['#607489','#3a536e'], storm:['#49465b','#292b42']
+      };
+      const dark = {
+        unknown:['#353d4c','#222a37'], clear:['#292943','#141c34'], 'partly-cloudy':['#30394f','#1b253b'],
+        overcast:['#353d4c','#222a37'], fog:['#3b434d','#28313b'],
+        rain:['#253549','#152435'], snow:['#354456','#223348'], storm:['#30253e','#171a2c']
+      };
+      const stops = night ? dark[family] : family === 'clear' && (hour < 8 || hour >= 17.5) ? ['#896273','#394c78'] : day[family];
+      return {name:family + (night ? '-night' : '-day'),top:stops[0],bottom:stops[1]};
+    }
+
     function applySky(el, code, isoTime, opts) {
       if (!el) return;
       opts = opts || {};
@@ -660,6 +680,7 @@
       celestialPos: celestialPos,
       skyFor: skyFor,
       precipIntensity: precipIntensity,
+      primaryPalette: primaryPalette,
       applySky: applySky,
       applyAmbientPageSky: applyAmbientPageSky,
       applyPageSkyFromPacks: applyPageSkyFromPacks,

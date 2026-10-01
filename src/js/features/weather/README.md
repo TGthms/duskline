@@ -44,3 +44,7 @@ Weather-page locale catalogs are generated with `npm run weather:i18n`. The page
 Product layout rules live in `src/css/weather-product.css`; avoid adding them to the atmospheric brand layer. Saved-place rearrangement is available inside the Units/preferences sheet.
 
 My Sky uses the shared daily chart renderer with `limit: 5` and `skipToday: true`; preview days open the matching full day sheet. The fixed header's route progress bar adapts Kit's timing and respects resolved motion preferences. Primary-card layout and progress styling remain in `weather-product.css`.
+
+Shared async progress lives in `src/js/core/loading.js`. Use `DusklineLoading.begin()` and release its returned token in `finally`; overlapping work must not hide another task’s progress. The map reuses the app’s reverse-geocoder with a four-second lookup budget and coordinate fallback. The primary card uses `sky.primaryPalette` to separate daytime clouds, rain, snow, and clear/night conditions while keeping small text readable.
+
+The shared indicator is mounted outside the chrome so it remains visible above detail/sheet/map overlays. Forecast operations retain their token through retries; `loadCity`/`loadMany` and provider transports are tracked separately. Saved-place selection repaints the primary card before requesting missing data. Primary-strip scroll and focused day controls survive same-city data refreshes.
