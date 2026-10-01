@@ -1244,6 +1244,9 @@ test('primary forecast failure stops loading and can be retried', async ({page})
   await page.goto('/');
   await expect(page.locator('#weatherHome [data-home-retry]')).toBeVisible();
   await expect(page.locator('#weatherHome .loader')).toHaveCount(0);
+  // Finish the initial failing provider cycle before restoring its responses;
+  // otherwise an in-flight fallback can recover before Retry is clicked.
+  await expect(page.locator('#weatherRefresh')).not.toHaveClass(/is-busy/);
   failed = false;
   await page.locator('[data-home-retry]').click();
   await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
