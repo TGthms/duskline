@@ -443,7 +443,7 @@
       }
     }
 
-    function requestInternationalAlerts(city, admin1, force, options) {
+    function requestInternationalAlerts(city, admin1, force) {
       const code = String(city && city.country_code || '').trim().toUpperCase();
       let country = String(city && city.country || '').trim();
       if (!country && code && typeof Intl.DisplayNames === 'function') country = new Intl.DisplayNames(['en'],{type:'region'}).of(code) || '';
@@ -460,7 +460,6 @@
       const params = new URLSearchParams({ country: country, lang: language });
       if (code) params.set('cc', code);
       if (region) params.set('admin1', region);
-      const finishLoading = global.DusklineLoading && !(options && options.quiet) ? global.DusklineLoading.begin(t('weather.alertsLoading','Checking public alerts…')) : function () {};
       const controller = new AbortController();
       const timer = global.setTimeout(function () { controller.abort(); }, 45000);
       const promise = global.fetch('/api/international-alerts?' + params.toString(), {
@@ -477,7 +476,6 @@
         rememberCapPayload(key, payload);
         return payload;
       }).finally(function () {
-        finishLoading();
         global.clearTimeout(timer);
         const current = capCountryRequests.get(key);
         if (current && current.promise === promise) capCountryRequests.delete(key);
@@ -487,13 +485,18 @@
     }
 
     function loadInternationalAlerts(city, force, options) {
-      return requestInternationalAlerts(city, '', force, options).then(function (countryPayload) {
+      const work = function () { return loadInternationalAlertsInner(city,force); };
+      return global.DusklineLoading && !(options && options.quiet)
+        ? global.DusklineLoading.run(work,t('weather.alertsLoading','Checking public alerts…')) : work();
+    }
+    function loadInternationalAlertsInner(city, force) {
+      return requestInternationalAlerts(city, '', force).then(function (countryPayload) {
         const region = String(city && city.admin1 || '').trim();
         if (!countryPayload.truncated || !region) return countryPayload;
         // The country feed is capped to protect startup cost. When it is
         // incomplete, ask IFRC for this first-level region and combine results;
         // city coordinates remain local and still gate the final display.
-        return requestInternationalAlerts(city, region, force, options).then(function (regionPayload) {
+        return requestInternationalAlerts(city, region, force).then(function (regionPayload) {
           if (!regionPayload || !regionPayload.scoped) return countryPayload;
           return Object.assign({}, regionPayload, {
             alerts: currentAlerts((countryPayload.alerts || []).concat(regionPayload.alerts || [])),

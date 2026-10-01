@@ -1453,14 +1453,17 @@ test('fresh Horizon finishes foreground progress while alerts prefetch, and open
 
 test('detail loading has one inline message and round actions, with an accessible settings gear',async ({page})=>{
   await stubWeather(page,null);
+  let releaseForecast;
+  const heldForecast = new Promise(resolve=>{releaseForecast=resolve;});
   await page.route(/api\.open-meteo\.com\/v1\/forecast/,async route=>{
-    await new Promise(resolve=>setTimeout(resolve,800));await route.fallback();
+    await heldForecast;await route.fallback();
   });
   await page.goto('/');
   await page.locator('#weatherList .weather-row').first().click();
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
   await expect(page.locator('#weatherDetail .weather-detail-loading-panel .loader')).toHaveCount(1);
   await expect(page.locator('#weatherDetail .weather-detail-loading .loader')).toHaveCount(0);
+  releaseForecast();
   await expect(page.locator('#weatherModules [data-sheet="conditions"]')).toBeVisible();
   for(const id of ['weatherDetailBack','weatherDetailFav','weatherDetailShare','weatherDetailRefresh']) {
     const size=await page.locator('#'+id).evaluate(el=>{const b=el.getBoundingClientRect();return {w:b.width,h:b.height,r:getComputedStyle(el).borderRadius};});

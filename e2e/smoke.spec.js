@@ -534,7 +534,10 @@ test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
 });
 
-test('all languages render the full weather flow, detail sheets, charts, units, and RTL layout', async ({ page }) => {
+const weatherFlowLocales = ['en','es','fr','de','it','pt-BR','pt-PT','nl','da','sv','nb','fi','pl','cs','hu','ro','el','tr','ru','uk','ar','he','hi','th','vi','id','ja','ko','zh','zh-TW'];
+for (let start=0;start<weatherFlowLocales.length;start+=5) {
+const locales=weatherFlowLocales.slice(start,start+5);
+test('all languages render the full weather flow, detail sheets, charts, units, and RTL layout: '+locales.join(', '), async ({ page }) => {
   test.setTimeout(300000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -550,7 +553,6 @@ test('all languages render the full weather flow, detail sheets, charts, units, 
   await page.reload();
   await expect(page.locator('#weatherHome')).toBeVisible({ timeout: 15000 });
 
-  const locales = ['en','es','fr','de','it','pt-BR','pt-PT','nl','da','sv','nb','fi','pl','cs','hu','ro','el','tr','ru','uk','ar','he','hi','th','vi','id','ja','ko','zh','zh-TW'];
   const sheets = ['aqi','feels','humidity','wind','uv','vis','pressure','precip','sun','conditions'];
   let detailedAqiRequests = 0;
   page.on('request', request => {
@@ -643,6 +645,7 @@ test('all languages render the full weather flow, detail sheets, charts, units, 
   }
   expect(detailedAqiRequests, 'AQI detail fetch should be cached even where optional fields are unavailable').toBe(1);
 });
+}
 
 test('privacy page uses the home language picker and full translations', async ({ page }) => {
   await page.goto('/privacy.html');
@@ -667,7 +670,8 @@ test('terms page translates body copy for every picker language', async ({ page 
     const packWait = page.waitForResponse((res) => res.url().includes('/legal/packs/' + encodeURIComponent(code) + '.json') && res.ok(), { timeout: 8000 }).catch(() => null);
     await page.locator('#dusklineLanguage').selectOption(code);
     if (code !== 'en') await packWait;
-    await expect.poll(async () => (await page.locator('[data-i18n="legal.terms.title"]').textContent() || '').trim()).not.toBe('');
+    await expect(page.locator('html')).toHaveAttribute('data-lang',code);
+    if (prevTitle && code !== 'en') await expect(page.locator('[data-i18n="legal.terms.title"]')).not.toHaveText(prevTitle);
     const title = (await page.locator('[data-i18n="legal.terms.title"]').textContent() || '').trim();
     const body = (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim();
     expect(title.length, `terms title empty for ${code}`).toBeGreaterThan(2);

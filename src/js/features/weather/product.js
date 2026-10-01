@@ -43,7 +43,9 @@
       home.dataset.cityKey = cityKey(city);
       const pack = cache.get(cityKey(city));
       if (!pack || !pack.weather) {
-        paintedMarkup = '';
+        const stateKey = cityKey(city)+'|'+(pack && pack.error ? 'error' : 'pending')+'|'+t('weather.error','Could not load weather data.')+'|'+t('weather.retry','Retry')+'|'+t('weather.loadingForecast','Loading forecast…');
+        if (paintedMarkup === stateKey) return;
+        paintedMarkup = stateKey;
         home.style.removeProperty('--wx-sky-1');
         home.style.removeProperty('--wx-sky-2');
         home.dataset.weatherPalette = pack && pack.error ? 'unavailable' : 'pending';
