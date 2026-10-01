@@ -68,7 +68,7 @@ function body(light, base, seed) {
 }
 
 /** Stub the providers, answering in the shape the request actually asked for. */
-async function stubWeather(page, log) {
+async function stubWeather(page, log, options = {}) {
   const base = Date.now();
   await page.route(/api\.bigdatacloud\.net|nominatim\.openstreetmap\.org/,route=>route.fulfill({json:{city:'Bayview',principalSubdivision:'Test region',countryName:'France',countryCode:'FR'}}));
   await page.route(/\/api\/international-alerts(?:\?|$)/, route => route.fulfill({
@@ -93,8 +93,12 @@ async function stubWeather(page, log) {
         daily: u.searchParams.get('daily') || ''
       });
     }
-    const many = lats.map((_, i) => body(light, base, i + 1));
-    return route.fulfill({ json: many.length > 1 ? many : body(light, base, 1) });
+    const many = lats.map((_, i) => {
+      const pack=body(light,base,i+1);
+      if (options.isDay != null) pack.current.is_day=options.isDay ? 1 : 0;
+      return pack;
+    });
+    return route.fulfill({ json: many.length > 1 ? many : many[0] });
   });
 }
 
@@ -1137,11 +1141,13 @@ test('expanded Horizon collapses to preview with only its show-all action', asyn
   await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
 });
 
-test('desktop cards match row heights and light hover keeps a readable surface', async ({page}) => {
-  await stubWeather(page,null);
+test('desktop cards match row heights and light hover keeps a readable surface', async ({page,browserName}) => {
+  await prepareAppearance(page,'light',browserName);
+  await stubWeather(page,null,{isDay:true});
   await page.setViewportSize({width:1440,height:1000});
   await page.goto('/?city=tokyo');
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherDetail')).toHaveClass(/wx-mods-light/);
   const aqi = page.locator('#weatherModules [data-sheet="aqi"]');
   const feels = page.locator('#weatherModules [data-sheet="feels"]');
   await expect(aqi).toBeVisible();
@@ -1150,8 +1156,7 @@ test('desktop cards match row heights and light hover keeps a readable surface',
   const [a,b] = await Promise.all([aqi.boundingBox(),feels.boundingBox()]);
   expect(Math.abs(a.height-b.height)).toBeLessThanOrEqual(1);
   await aqi.hover();
-  const background = await aqi.evaluate(node => getComputedStyle(node).backgroundColor);
-  expect(background).not.toBe('rgba(0, 0, 0, 0)');
+  await expect(aqi).toHaveCSS('background-color','rgb(232, 241, 249)');
 });
 
 test('My Sky keeps a compact primary dashboard and one quiet list with rearrangement in preferences', async ({page}, testInfo) => {
