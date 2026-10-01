@@ -347,7 +347,11 @@ test('recently used legal languages remain available offline without downloading
   const title = page.locator('[data-i18n="legal.terms.title"]');
   await page.locator('#dusklineLanguage').selectOption('fr');
   await expect(title).toHaveText('Conditions d’utilisation');
-  await expect.poll(() => page.evaluate(async () => (await (await caches.open('duskline-locales-v60')).keys()).length)).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(async () => {
+    const name=(await caches.keys()).find(key=>/^duskline-locales-v\d+$/.test(key));
+    if (!name) return false;
+    return (await (await caches.open(name)).keys()).some(request=>request.url.endsWith('/legal/packs/fr.json'));
+  })).toBe(true);
   await page.locator('#dusklineLanguage').selectOption('en');
   await page.context().setOffline(true);
   await page.locator('#dusklineLanguage').selectOption('fr');
@@ -1142,7 +1146,7 @@ test('desktop cards match row heights and light hover keeps a readable surface',
   const feels = page.locator('#weatherModules [data-sheet="feels"]');
   await expect(aqi).toBeVisible();
   await expect(feels).toBeVisible();
-  await aqi.scrollIntoViewIfNeeded();
+  await aqi.hover();
   const [a,b] = await Promise.all([aqi.boundingBox(),feels.boundingBox()]);
   expect(Math.abs(a.height-b.height)).toBeLessThanOrEqual(1);
   await aqi.hover();
@@ -1206,6 +1210,26 @@ test('rapid sheet and city dismissal returns to the list without reopening detai
   await expect(page.locator('#weatherDetail')).toBeHidden();
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible();
   await expect(page.locator('#weatherList .weather-row').first()).toBeFocused();
+});
+
+test('a forecast response between pointer-down and pointer-up does not drop the city click',async ({page})=>{
+  await stubWeather(page,null);
+  let release;
+  const held = new Promise(resolve=>{release=resolve;});
+  await page.route(/api\.open-meteo\.com\/v1\/forecast/,async route=>{await held;await route.fallback();});
+  await page.goto('/');
+  const row=page.locator('#weatherList .weather-row').filter({hasText:'London'}).first();
+  await expect(row).toBeVisible();
+  await row.hover();
+  await row.evaluate(el=>{window.__pressedCityForTest=el;});
+  const box=await row.boundingBox();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  await page.mouse.down();release();
+  await expect(page.locator('#weatherList .weather-row').filter({hasText:'Tokyo'}).first().locator('.weather-row-temp')).toHaveText(/^-?\d+°$/);
+  expect(await row.evaluate(el=>el === window.__pressedCityForTest)).toBe(true);
+  await page.mouse.up();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherDetailTitle')).toHaveText('London');
 });
 
 

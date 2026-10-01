@@ -1973,8 +1973,37 @@
     return li;
   }
 
+  let pressedCityRow = null;
+  let cityPointerGeneration = 0;
+  const heldCityPaints = new Map();
+  document.addEventListener('pointerdown', function (event) {
+    if (event.isPrimary === false) return;
+    const row = event.target.closest && event.target.closest('.weather-row');
+    if (!row) return;
+    pressedCityRow = row;
+    cityPointerGeneration++;
+  },true);
+  function releaseCityPaints() {
+    const generation = cityPointerGeneration;
+    // Click dispatch follows pointerup; keep its original target connected.
+    requestAnimationFrame(function () {
+      if (generation !== cityPointerGeneration) return;
+      pressedCityRow = null;
+      const paints = Array.from(heldCityPaints.values());
+      heldCityPaints.clear();
+      paints.forEach(function (paint) { paint(); });
+    });
+  }
+  document.addEventListener('pointerup',releaseCityPaints,true);
+  document.addEventListener('pointercancel',releaseCityPaints,true);
+  window.addEventListener('blur',releaseCityPaints);
+
   function renderCityList(ul, packs, opts) {
     if (!ul) return;
+    if (pressedCityRow && ul.contains(pressedCityRow)) {
+      heldCityPaints.set('list:'+ul.id,function () { refreshListsFromCache({force:true,skipAmbient:true}); });
+      return;
+    }
     opts = opts || {};
     ul.innerHTML = '';
     let region = '';
@@ -2002,6 +2031,10 @@
       if (!list || list.closest('[hidden]')) continue;
       const current = list.querySelector('li[data-city-key="' + CSS.escape(key) + '"]');
       if (!current) continue;
+      if (pressedCityRow && current.contains(pressedCityRow)) {
+        heldCityPaints.set(key,function () { replaceCityCard(city,cache.get(key) || pack); });
+        return true;
+      }
       const focused = current.contains(document.activeElement) ? document.activeElement : null;
       const focusSave = focused && focused.classList.contains('weather-row-save');
       const next = buildRowButton(pack, favoriteKeys);
