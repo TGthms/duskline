@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const crypto = require('node:crypto');
 
 const root = path.join(__dirname, '..');
 
@@ -76,6 +77,43 @@ test('map legend tick marks follow the actual palette thresholds', () => {
   assert.match(map.helpers.gradientCss(temperature), /25\.00%/);
   assert.match(map.helpers.gradientCss(precipitation), /transparent 8\.00%,#6dcbff 8\.00%/);
   assert.match(map.helpers.gradientCss(wind), /transparent 7\.69%,#49b0d9 7\.69%/);
+});
+
+test('optimized map raster preserves every baseline pixel at phone and desktop sizes', () => {
+  // Captured from the original inverse-distance/palette renderer at 181a697.
+  const cases=require('./fixtures/map-raster-baseline.json');
+  const api=loadMapFactory().helpers;
+  for (const sample of cases) {
+    const geometry=api.gridGeometry({getWest:()=>170,getEast:()=>-170,getNorth:()=>60,getSouth:()=>-35});
+    geometry.points.forEach((point,i)=>{
+      point.hourly={};
+      for (const [key,scale,offset] of [['temperature_2m',2,-20],['precipitation_probability',3,0],['wind_speed_10m',.8,0]]) {
+        point.hourly[key]=Array.from({length:13},(_,h)=>sample.missing && (i+h)%7===0 ? null : Math.sin(i*1.7+h)*scale+offset+i*scale);
+      }
+    });
+    const {width,height}=api.renderDimensions(sample.viewport);
+    const data=new Uint8ClampedArray(width*height*4);
+    api.renderPixels({geometry},sample.layer,6,width,height,data);
+    const hash=crypto.createHash('sha256').update(data).digest('hex');
+    assert.equal(hash,sample.sha256,JSON.stringify(sample));
+  }
+});
+
+test('map raster reads each forecast sample once per frame and clears stale pixels when data is missing', () => {
+  const api=loadMapFactory().helpers;
+  const geometry=api.gridGeometry({getWest:()=>-20,getEast:()=>30,getNorth:()=>55,getSouth:()=>-35});
+  let reads=0;
+  geometry.points.forEach(point=>{
+    point.hourly={};
+    Object.defineProperty(point.hourly,'temperature_2m',{get(){reads++;return [15,null];}});
+  });
+  const target=new Uint8ClampedArray(98*49*4);
+  api.renderPixels({geometry},'temperature',0,98,49,target);
+  assert.equal(reads,36);
+  assert.ok(target.some(value=>value>0));
+  api.renderPixels({geometry},'temperature',1,98,49,target);
+  assert.equal(reads,72);
+  assert.ok(target.every(value=>value===0));
 });
 
 test('Lucide glyphs and complete third-party license notices are local', () => {

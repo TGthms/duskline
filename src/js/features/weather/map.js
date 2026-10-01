@@ -59,6 +59,18 @@
     var activeRequestKey = '';
     var lastGridRequestAt = 0;
     var cachedGrids = new Map();
+    var rasterWeights = null;
+    var rasterCanvas = null;
+    var rasterContext = null;
+    var rasterImage = null;
+    var lastRaster = null;
+    var placesFrame = 0;
+    var placesSignature = '';
+    var citySourceSignature = '';
+    var fallbackPlacesSignature = '';
+    var mapLoadGeneration = 0;
+    var deferredMapOptions = null;
+    var currentMapOptions = null;
     var RASTER_ID = 'duskline-weather-field';
     var GRID_ID = 'duskline-weather-grid';
     var CITY_SOURCE = 'duskline-weather-places';
@@ -145,6 +157,9 @@
     function close() {
       if (!isOpen) return;
       isOpen = false;
+      mapLoadGeneration++;
+      deferredMapOptions = null;
+      currentMapOptions = null;
       setBusy(false);
       clearTimeout(moveTimer);
       clearTimeout(styleTimer);
@@ -156,6 +171,9 @@
         else global.clearTimeout(renderFrame);
       }
       renderFrame = 0;
+      if (placesFrame) global.cancelAnimationFrame(placesFrame);
+      placesFrame = 0;
+      citySourceSignature = '';
       longPressPointer = null;
       longPressStart = null;
       hideContextMenu(false);
@@ -165,6 +183,7 @@
         try { map.remove(); } catch (e) { /* tolerate partially initialized maps */ }
         map = null;
       }
+      rasterWeights = rasterCanvas = rasterContext = rasterImage = lastRaster = null;
       document.removeEventListener('keydown', onDialogKeydown, true);
       if (root) {
         root.classList.remove('is-open');
@@ -416,9 +435,15 @@
           link.href = MAPLIBRE_CSS;
           document.head.appendChild(link);
         }
-        var done = function () { link.dataset.loaded = 'true'; resolve(); };
+        function cleanup() {
+          clearTimeout(timeout);
+          link.removeEventListener('load',done);link.removeEventListener('error',failed);
+        }
+        function done() { cleanup();link.dataset.loaded = 'true';resolve(); }
+        function failed() { cleanup();link.remove();reject(new Error('Map styles could not load.')); }
+        var timeout = setTimeout(failed,14000);
         link.addEventListener('load', done, { once: true });
-        link.addEventListener('error', function () { reject(new Error('Map styles could not load.')); }, { once: true });
+        link.addEventListener('error', failed, { once: true });
         if (link.sheet) done();
       });
     }
@@ -560,32 +585,39 @@
       var value = series[index];
       return value == null || !Number.isFinite(Number(value)) ? null : Number(value);
     }
+    const PALETTE_STOPS = {
+      temperature: [[-20,[64,98,202,185]],[-5,[56,156,221,190]],[8,[76,202,201,188]],
+        [18,[173,222,113,194]],[28,[255,199,70,202]],[40,[235,86,68,210]]],
+      precipitation: [[8,[109,203,255,72]],[25,[50,176,241,120]],[50,[63,122,232,165]],
+        [75,[91,83,207,190]],[100,[153,78,214,210]]],
+      wind: [[2,[73,176,217,75]],[6,[79,205,183,130]],[12,[190,218,97,175]],
+        [18,[255,167,72,198]],[26,[228,80,95,214]]]
+    };
+    function writePalette(layer, value, target, offset) {
+      const kind = layer === 'temperature' || layer === 'precipitation' ? layer : 'wind';
+      const stops = PALETTE_STOPS[kind];
+      if (!Number.isFinite(value) || (kind !== 'temperature' && value < stops[0][0])) {
+        target[offset] = target[offset+1] = target[offset+2] = target[offset+3] = 0;
+        return;
+      }
+      let left = stops[0], right = left, mix = 0;
+      if (value >= stops[stops.length-1][0]) left = right = stops[stops.length-1];
+      else if (value > stops[0][0]) {
+        for (let i=0;i<stops.length-1;i++) {
+          if (value < stops[i][0] || value > stops[i+1][0]) continue;
+          left = stops[i]; right = stops[i+1];
+          mix = (value-left[0])/(right[0]-left[0]);
+          break;
+        }
+      }
+      for (let channel=0;channel<4;channel++) {
+        target[offset+channel] = Math.round(left[1][channel]+(right[1][channel]-left[1][channel])*mix);
+      }
+    }
     function palette(layer, value) {
-      if (!Number.isFinite(value)) return [0, 0, 0, 0];
-      var stops;
-      if (layer === 'temperature') {
-        stops = [[-20, [64, 98, 202, 185]], [-5, [56, 156, 221, 190]], [8, [76, 202, 201, 188]],
-          [18, [173, 222, 113, 194]], [28, [255, 199, 70, 202]], [40, [235, 86, 68, 210]]];
-      } else if (layer === 'precipitation') {
-        if (value < 8) return [0, 0, 0, 0];
-        stops = [[8, [109, 203, 255, 72]], [25, [50, 176, 241, 120]], [50, [63, 122, 232, 165]],
-          [75, [91, 83, 207, 190]], [100, [153, 78, 214, 210]]];
-      } else {
-        if (value < 2) return [0, 0, 0, 0];
-        stops = [[2, [73, 176, 217, 75]], [6, [79, 205, 183, 130]], [12, [190, 218, 97, 175]],
-          [18, [255, 167, 72, 198]], [26, [228, 80, 95, 214]]];
-      }
-      if (value <= stops[0][0]) return stops[0][1];
-      if (value >= stops[stops.length - 1][0]) return stops[stops.length - 1][1];
-      for (var i = 0; i < stops.length - 1; i++) {
-        var left = stops[i], right = stops[i + 1];
-        if (value < left[0] || value > right[0]) continue;
-        var mix = (value - left[0]) / (right[0] - left[0]);
-        return left[1].map(function (channel, channelIndex) {
-          return Math.round(channel + (right[1][channelIndex] - channel) * mix);
-        });
-      }
-      return [0, 0, 0, 0];
+      const color = [0,0,0,0];
+      writePalette(layer,value,color,0);
+      return color;
     }
     function legendConfig(layer) {
       if (layer === 'precipitation') {
@@ -634,53 +666,87 @@
       if (layer === 'precipitation') return value + '%';
       return typeof deps.fmtWind === 'function' ? deps.fmtWind(value) : value + ' m/s';
     }
-    function interpolatedValue(grid, x, y, layer, hourIndex) {
-      var weighted = 0;
-      var weightSum = 0;
-      for (var i = 0; i < grid.geometry.points.length; i++) {
-        var point = grid.geometry.points[i];
-        var value = selectedDataValue(point, layer, hourIndex);
-        if (value == null) continue;
-        var dx = x - point.x;
-        var dy = y - point.y;
-        var distance = dx * dx + dy * dy;
-        if (distance < 0.00001) return value;
-        var weight = 1 / (distance * distance);
-        weighted += value * weight;
-        weightSum += weight;
+    function spatialWeights(points, width, height) {
+      let same = rasterWeights && rasterWeights.width === width && rasterWeights.height === height
+        && rasterWeights.positions.length === points.length*2;
+      for (let i=0;same && i<points.length;i++) {
+        same = rasterWeights.positions[i*2] === points[i].x && rasterWeights.positions[i*2+1] === points[i].y;
       }
-      return weightSum > 0 ? weighted / weightSum : null;
+      if (same) return rasterWeights;
+      const count = points.length;
+      const state = {width:width,height:height,positions:new Float64Array(count*2),
+        weights:new Float64Array(width*height*count),sums:new Float64Array(width*height),
+        values:new Float64Array(count),indices:new Uint16Array(count)};
+      points.forEach(function (point,i) { state.positions[i*2]=point.x;state.positions[i*2+1]=point.y; });
+      for (let y=0;y<height;y++) for (let x=0;x<width;x++) {
+        const pixel = y*width+x;
+        let sum = 0;
+        for (let i=0;i<count;i++) {
+          const dx = x/(width-1)-points[i].x, dy = y/(height-1)-points[i].y;
+          const distance = dx*dx+dy*dy;
+          const weight = distance < .00001 ? Infinity : 1/(distance*distance);
+          state.weights[pixel*count+i] = weight;
+          sum += weight;
+        }
+        state.sums[pixel] = sum;
+      }
+      rasterWeights = state;
+      return state;
+    }
+    function renderPixels(grid, layer, hourIndex, width, height, target) {
+      const points = grid.geometry.points;
+      const state = spatialWeights(points,width,height);
+      let valid = 0;
+      for (let i=0;i<points.length;i++) {
+        const value = selectedDataValue(points[i],layer,hourIndex);
+        if (value == null) continue;
+        state.values[i] = value;
+        state.indices[valid++] = i;
+      }
+      const allValid = valid === points.length;
+      for (let pixel=0;pixel<width*height;pixel++) {
+        let weighted = 0, sum = allValid ? state.sums[pixel] : 0, near = null;
+        const offset = pixel*points.length;
+        for (let j=0;j<valid;j++) {
+          const i = state.indices[j], weight = state.weights[offset+i];
+          if (weight === Infinity) { near = state.values[i]; break; }
+          weighted += state.values[i]*weight;
+          if (!allValid) sum += weight;
+        }
+        const value = near != null ? near : sum > 0 ? weighted/sum : null;
+        writePalette(layer,value,target,pixel*4);
+      }
+      return target;
     }
     function drawWeatherImage(grid) {
       if (!grid || !grid.geometry) return;
       var dimensions = renderDimensions(canvasHost && canvasHost.clientWidth);
       var width = dimensions.width;
       var height = dimensions.height;
-      var canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      var context = canvas.getContext('2d', { alpha: true });
-      if (!context) return;
-      var image = context.createImageData(width, height);
       var hourIndex = Math.min(grid.times.length - 1, grid.baseIndex + selectedOffset);
       if (hourIndex < 0) hourIndex = 0;
-      for (var y = 0; y < height; y++) {
-        for (var x = 0; x < width; x++) {
-          var value = interpolatedValue(grid, x / (width - 1), y / (height - 1), selectedLayer, hourIndex);
-          var color = palette(selectedLayer, value);
-          var index = (y * width + x) * 4;
-          image.data[index] = color[0];
-          image.data[index + 1] = color[1];
-          image.data[index + 2] = color[2];
-          image.data[index + 3] = color[3];
-        }
+      if (lastRaster && lastRaster.grid === grid && lastRaster.layer === selectedLayer && lastRaster.hour === hourIndex
+        && lastRaster.width === width && lastRaster.height === height) return;
+      if (!rasterCanvas) {
+        rasterCanvas = document.createElement('canvas');
+        rasterCanvas.width = width; rasterCanvas.height = height;
+        rasterContext = rasterCanvas.getContext('2d',{alpha:true});
       }
-      context.putImageData(image, 0, 0);
+      if (!rasterContext) { rasterCanvas = null; return; }
+      if (!rasterImage || rasterCanvas.width !== width || rasterCanvas.height !== height) {
+        if (rasterCanvas.width !== width || rasterCanvas.height !== height) {
+          rasterCanvas.width = width; rasterCanvas.height = height;
+        }
+        rasterImage = rasterContext.createImageData(width,height);
+      }
+      renderPixels(grid,selectedLayer,hourIndex,width,height,rasterImage.data);
+      rasterContext.putImageData(rasterImage,0,0);
       if (map && map.getSource(RASTER_ID)) {
         try {
-          map.getSource(RASTER_ID).updateImage({ image: canvas, coordinates: grid.geometry.coordinates });
+          map.getSource(RASTER_ID).updateImage({ image: rasterCanvas, coordinates: grid.geometry.coordinates });
           var raster = map.getLayer(RASTER_ID);
           if (raster) map.setPaintProperty(RASTER_ID, 'raster-opacity', selectedLayer === 'precipitation' ? 0.76 : 0.68);
+          lastRaster = {grid:grid,layer:selectedLayer,hour:hourIndex,width:width,height:height};
         } catch (error) { /* map may close between the draw and source update */ }
       }
     }
@@ -695,7 +761,7 @@
       }
       var render = function () {
         renderFrame = 0;
-        if (isOpen && grid === activeGrid) drawWeatherImage(grid);
+        if (isOpen && document.visibilityState !== 'hidden' && grid === activeGrid) drawWeatherImage(grid);
       };
       renderFrame = global.requestAnimationFrame
         ? global.requestAnimationFrame(render) : global.setTimeout(render, 16);
@@ -773,24 +839,28 @@
       setBusy(false);
     }
     function requestVisibleWeather() {
-      if (!map || !styleReady || fallbackActive || !isOpen) return;
+      if (!map || !styleReady || fallbackActive || !isOpen || document.visibilityState === 'hidden') return;
       var geometry;
       try { geometry = gridGeometry(map.getBounds()); } catch (e) { return; }
+      if (activeController && activeRequestKey === geometry.key) return;
       var cached = cachedGrids.get(geometry.key);
+      var fresh = cached && Date.now()-cached.fetchedAt < 8*60*1000;
       var wait = 2500 - (Date.now() - lastGridRequestAt);
-      if (!cached && lastGridRequestAt && wait > 0) {
+      if (!fresh && lastGridRequestAt && wait > 0) {
         clearTimeout(moveTimer);
         moveTimer = setTimeout(requestVisibleWeather, wait);
         return;
       }
-      if (!cached) lastGridRequestAt = Date.now();
+      if (!fresh) lastGridRequestAt = Date.now();
       fetchWeatherGrid(geometry);
     }
     function queueVisibleWeather() {
       clearTimeout(moveTimer);
+      if (document.visibilityState === 'hidden') return;
       moveTimer = setTimeout(requestVisibleWeather, 520);
     }
     function installWeatherRaster(library) {
+      lastRaster = null;
       var bounds = map.getBounds();
       var geometry = gridGeometry(bounds);
       var transparent = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -813,12 +883,12 @@
         type: 'FeatureCollection',
         features: places.filter(function (item) {
           return item && item.city && Number.isFinite(Number(item.city.lat)) && Number.isFinite(Number(item.city.lon));
-        }).map(function (item, index) {
+        }).map(function (item) {
           return {
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [Number(item.city.lon), Number(item.city.lat)] },
             properties: {
-              placeIndex: index,
+              placeKey: placeKey(item.city),
               name: String(item.name || item.city.name || ''),
               saved: item.saved ? 1 : 0,
               temperature: item.temperature == null ? '' : Number(item.temperature)
@@ -827,14 +897,21 @@
         })
       };
     }
-    function selectPlace(index) {
-      var item = places[Number(index)];
-      if (!item || !item.city || typeof deps.onSelectCity !== 'function') return;
-      deps.onSelectCity(item.city);
+    function placeKey(city) { return Number(city.lat)+','+Number(city.lon); }
+    function selectPlaceKey(key) {
+      const item = places.find(function (place) { return place && place.city && placeKey(place.city) === key; });
+      if (item && typeof deps.onSelectCity === 'function') deps.onSelectCity(item.city);
+    }
+    function sourceSignature(source) {
+      return JSON.stringify(source.features.slice().sort(function (a,b) {
+        const left=a.properties.placeKey,right=b.properties.placeKey;
+        return left < right ? -1 : left > right ? 1 : 0;
+      }));
     }
     function installCityLayer(library) {
       var source = placeGeoJson();
       map.addSource(CITY_SOURCE, { type: 'geojson', data: source, cluster: true, clusterRadius: 40, clusterMaxZoom: 5 });
+      citySourceSignature = sourceSignature(source);
       map.addLayer({
         id: 'duskline-weather-place-clusters', type: 'circle', source: CITY_SOURCE,
         filter: ['has', 'point_count'],
@@ -870,16 +947,17 @@
         if (suppressNextMapClick) { suppressNextMapClick = false; return; }
         var feature = event.features && event.features[0];
         if (!feature) return;
-        var sourceRef = map.getSource(CITY_SOURCE);
+        const instance = map;
+        var sourceRef = instance.getSource(CITY_SOURCE);
         sourceRef.getClusterExpansionZoom(feature.properties.cluster_id).then(function (zoom) {
-          if (!map) return;
+          if (map !== instance || !isOpen) return;
           map.easeTo({ center: feature.geometry.coordinates, zoom: zoom, duration: reducedMotion() ? 0 : 480 });
         }).catch(function () {});
       });
       map.on('click', 'duskline-weather-city-targets', function (event) {
         if (suppressNextMapClick) { suppressNextMapClick = false; return; }
         var feature = event.features && event.features[0];
-        if (feature) selectPlace(feature.properties.placeIndex);
+        if (feature) selectPlaceKey(feature.properties.placeKey);
       });
       ['duskline-weather-place-clusters', 'duskline-weather-city-targets'].forEach(function (layerId) {
         map.on('mouseenter', layerId, function () { map.getCanvas().style.cursor = 'pointer'; });
@@ -888,40 +966,55 @@
     }
     function updatePlaces(nextPlaces) {
       places = Array.isArray(nextPlaces) ? nextPlaces : (typeof deps.getPlaces === 'function' ? deps.getPlaces() : []);
+      if (isOpen && !placesFrame) placesFrame = global.requestAnimationFrame(flushPlaces);
+    }
+    function flushPlaces() {
+      placesFrame = 0;
+      if (!isOpen) return;
       renderPlacesList();
       if (fallbackActive) renderFallbackPlaces();
       if (map && map.getSource(CITY_SOURCE)) {
-        try { map.getSource(CITY_SOURCE).setData(placeGeoJson()); } catch (e) { /* map is closing */ }
+        const source = placeGeoJson(), signature = sourceSignature(source);
+        if (signature === citySourceSignature) return;
+        try { map.getSource(CITY_SOURCE).setData(source); citySourceSignature = signature; } catch (e) { /* map is closing */ }
       }
+    }
+    function placeTemperature(item) {
+      return item.temperature != null && Number.isFinite(Number(item.temperature))
+        ? (typeof deps.fmtTemp === 'function' ? deps.fmtTemp(Number(item.temperature)) : Math.round(item.temperature)+'°') : '';
     }
     function renderPlacesList() {
       if (!placesHost) return;
-      placesHost.replaceChildren();
-      places.forEach(function (item, index) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'weather-map-place';
-        var title = document.createElement('span');
-        title.className = 'weather-map-place-name';
-        title.textContent = item.name || item.city && item.city.name || '';
-        var detail = document.createElement('span');
-        detail.className = 'weather-map-place-detail';
-        var temperature = item.temperature != null && Number.isFinite(Number(item.temperature))
-          ? (typeof deps.fmtTemp === 'function' ? deps.fmtTemp(Number(item.temperature)) : Math.round(item.temperature) + '°') : '';
-        detail.textContent = [temperature, item.city && (item.city.admin1 || item.city.country)].filter(Boolean).join(' · ');
-        button.setAttribute('aria-label', [title.textContent, detail.textContent].filter(Boolean).join(', '));
-        button.append(title, detail);
-        button.addEventListener('click', function (event) {
-          if (suppressNextMapClick) {
-            event.preventDefault();
-            event.stopPropagation();
-            suppressNextMapClick = false;
-            return;
-          }
-          selectPlace(index);
-        });
-        placesHost.appendChild(button);
+      const rows = places.filter(function (item) { return item && item.city; }).map(function (item) {
+        return {key:placeKey(item.city),name:item.name || item.city.name || '',
+          detail:[placeTemperature(item),item.city.admin1 || item.city.country].filter(Boolean).join(' · ')};
       });
+      const signature = JSON.stringify(rows);
+      if (signature === placesSignature) return;
+      const focused = placesHost.contains(document.activeElement) ? document.activeElement : null;
+      const existing = new Map(Array.from(placesHost.children).map(function (button) { return [button.dataset.placeKey,button]; }));
+      rows.forEach(function (row,index) {
+        let button = existing.get(row.key);
+        if (!button) {
+          button = document.createElement('button');button.type = 'button';button.className = 'weather-map-place';
+          button.dataset.placeKey = row.key;
+          const title = document.createElement('span');title.className = 'weather-map-place-name';
+          const detail = document.createElement('span');detail.className = 'weather-map-place-detail';
+          button.append(title,detail);
+          button.addEventListener('click', function (event) {
+            if (suppressNextMapClick) { event.preventDefault();event.stopPropagation();suppressNextMapClick=false;return; }
+            selectPlaceKey(row.key);
+          });
+        }
+        existing.delete(row.key);
+        button.children[0].textContent = row.name;
+        button.children[1].textContent = row.detail;
+        button.setAttribute('aria-label',[row.name,row.detail].filter(Boolean).join(', '));
+        if (placesHost.children[index] !== button) placesHost.insertBefore(button,placesHost.children[index] || null);
+      });
+      existing.forEach(function (button) { button.remove(); });
+      if (focused && focused.isConnected && document.activeElement !== focused) focused.focus({preventScroll:true});
+      placesSignature = signature;
     }
     var fallbackZoom = 1;
     var fallbackPan = { x: 0, y: 0 };
@@ -943,33 +1036,38 @@
     }
     function renderFallbackPlaces() {
       if (!fallbackHost) return;
-      fallbackHost.replaceChildren();
-      fallbackHost.innerHTML = fallbackMapSvg();
-      var markerLayer = document.createElement('div');
-      markerLayer.className = 'weather-map-fallback-markers';
-      places.forEach(function (item, index) {
-        if (!item.city || (!item.saved && !item.featured)) return;
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'weather-map-fallback-marker' + (item.saved ? ' is-saved' : '');
-        button.style.left = (Math.max(1, Math.min(99, (Number(item.city.lon) + 180) / 360 * 100))) + '%';
-        button.style.top = (Math.max(3, Math.min(97, (90 - Number(item.city.lat)) / 180 * 100))) + '%';
-        var temp = item.temperature != null && Number.isFinite(Number(item.temperature))
-          ? (typeof deps.fmtTemp === 'function' ? deps.fmtTemp(Number(item.temperature)) : Math.round(item.temperature) + '°') : '';
-        button.setAttribute('aria-label', [item.name || item.city.name, temp].filter(Boolean).join(', '));
-        button.title = button.getAttribute('aria-label');
-        button.addEventListener('click', function (event) {
-          if (suppressNextMapClick) {
-            event.preventDefault();
-            event.stopPropagation();
-            suppressNextMapClick = false;
-            return;
-          }
-          selectPlace(index);
-        });
-        markerLayer.appendChild(button);
+      let atlas = fallbackHost.querySelector('.weather-map-atlas');
+      if (!atlas) {
+        fallbackHost.innerHTML = fallbackMapSvg();
+        atlas = fallbackHost.querySelector('.weather-map-atlas');
+        const layer = document.createElement('div');layer.className = 'weather-map-fallback-markers';atlas.appendChild(layer);
+      }
+      const rows = places.filter(function (item) { return item && item.city && (item.saved || item.featured); }).map(function (item) {
+        return {key:placeKey(item.city),saved:!!item.saved,lat:Number(item.city.lat),lon:Number(item.city.lon),
+          label:[item.name || item.city.name,placeTemperature(item)].filter(Boolean).join(', ')};
       });
-      fallbackHost.querySelector(".weather-map-atlas").appendChild(markerLayer);
+      const signature = JSON.stringify(rows);
+      if (signature === fallbackPlacesSignature) { fitFallback(); return; }
+      const layer = atlas.querySelector('.weather-map-fallback-markers');
+      const existing = new Map(Array.from(layer.children).map(function (button) { return [button.dataset.placeKey,button]; }));
+      rows.forEach(function (row,index) {
+        let button = existing.get(row.key);
+        if (!button) {
+          button = document.createElement('button');button.type='button';button.dataset.placeKey=row.key;
+          button.addEventListener('click',function (event) {
+            if (suppressNextMapClick) { event.preventDefault();event.stopPropagation();suppressNextMapClick=false;return; }
+            selectPlaceKey(row.key);
+          });
+        }
+        existing.delete(row.key);
+        button.className = 'weather-map-fallback-marker'+(row.saved?' is-saved':'');
+        button.style.left = Math.max(1,Math.min(99,(row.lon+180)/360*100))+'%';
+        button.style.top = Math.max(3,Math.min(97,(90-row.lat)/180*100))+'%';
+        button.setAttribute('aria-label',row.label);button.title=row.label;
+        if (layer.children[index] !== button) layer.insertBefore(button,layer.children[index] || null);
+      });
+      existing.forEach(function (button) { button.remove(); });
+      fallbackPlacesSignature = signature;
       fitFallback();
     }
     if (fallbackHost) {
@@ -997,7 +1095,18 @@
     function useFallback(reason) {
       if (!isOpen || fallbackActive) return;
       fallbackActive = true;
+      mapLoadGeneration++;
       clearTimeout(styleTimer);
+      clearTimeout(requestTimer);
+      if (activeController) activeController.abort();
+      activeController = null;
+      if (renderFrame) global.cancelAnimationFrame(renderFrame);
+      renderFrame = 0;
+      activeGrid = null;
+      rasterWeights = rasterCanvas = rasterContext = rasterImage = lastRaster = null;
+      selectedOffset = 0;
+      if (timeInput) { timeInput.disabled = true;timeInput.value = '0'; }
+      if (timeOutput) timeOutput.textContent = '';
       if (map) {
         try { map.remove(); } catch (e) {}
         map = null;
@@ -1015,6 +1124,12 @@
       if (!activeGrid) setStatus(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'), true);
     }
     function loadCityMap(options) {
+      currentMapOptions = options || {};
+      tileErrors = 0;
+      const generation = ++mapLoadGeneration;
+      clearTimeout(styleTimer);
+      if (document.visibilityState === 'hidden') { deferredMapOptions = options || {}; return; }
+      deferredMapOptions = null;
       if (global.navigator && global.navigator.onLine === false) { useFallback(); return; }
       var city = selectedCity(options);
       mapTimeZone = 'UTC';
@@ -1025,8 +1140,12 @@
       if (mapControls) mapControls.hidden = false;
       setStatus(t('weather.mapLoading', 'Loading map…'), true, true);
       setBusy(true);
+      styleTimer = setTimeout(function () {
+        if (isOpen && generation === mapLoadGeneration && !styleReady) useFallback();
+      },12000);
       loadMapLibrary().then(function (library) {
-        if (!isOpen) return;
+        if (!isOpen || generation !== mapLoadGeneration || fallbackActive) return;
+        if (document.visibilityState === 'hidden') { deferredMapOptions = options || {}; return; }
         map = new library.Map({
           container: canvasHost,
           style: STYLE_URL,
@@ -1042,39 +1161,47 @@
           canvasContextAttributes: { antialias: true, preserveDrawingBuffer: false }
         });
         map.once('load', function () {
-          if (!isOpen || !map) return;
+          if (!isOpen || !map || generation !== mapLoadGeneration) return;
           styleReady = true;
           clearTimeout(styleTimer);
-          styleTimer = setTimeout(function () {
-            if (!map || !isOpen || fallbackActive) return;
-            try { if (!map.loaded()) useFallback(); } catch (e) { useFallback(); }
-          }, 12000);
-          map.once('idle', function () { clearTimeout(styleTimer); });
           try {
             installWeatherRaster(library);
-            setStatus(t('weather.mapEstimate', 'Interpolated forecast estimate · Updates with the visible area'), true);
-            setBusy(false);
             map.resize();
-            requestAnimationFrame(function () { if (map) map.resize(); });
+            requestAnimationFrame(function () { if (map && generation === mapLoadGeneration) map.resize(); });
           } catch (error) {
             useFallback(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'));
           }
         });
         map.on('error', function (event) {
-          if (!isOpen || fallbackActive) return;
+          if (!isOpen || fallbackActive || generation !== mapLoadGeneration) return;
           tileErrors++;
           var sourceFailure = !!(event && (event.sourceId || event.source));
           if (!styleReady && tileErrors >= 4) useFallback();
           else if (styleReady && (sourceFailure || !global.navigator.onLine) && tileErrors >= 4) useFallback();
         });
         map.on('moveend', queueVisibleWeather);
-        styleTimer = setTimeout(function () {
-          if (isOpen && !styleReady) useFallback();
-        }, 12000);
       }).catch(function () {
+        if (!isOpen || generation !== mapLoadGeneration) return;
         useFallback(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'));
       });
     }
+    if (typeof document.addEventListener === 'function') document.addEventListener('visibilitychange',function () {
+      if (!isOpen) return;
+      if (document.visibilityState === 'hidden') {
+        clearTimeout(moveTimer);clearTimeout(styleTimer);
+        if (renderFrame) global.cancelAnimationFrame(renderFrame);
+        renderFrame = 0;
+        if (!map && !fallbackActive) deferredMapOptions = currentMapOptions || {initialCity:selectedCity()};
+        return;
+      }
+      if (deferredMapOptions) { loadCityMap(deferredMapOptions); return; }
+      if (activeGrid) scheduleWeatherImage(activeGrid);
+      if (map && !styleReady) {
+        const generation = mapLoadGeneration;
+        styleTimer = setTimeout(function () { if (isOpen && generation === mapLoadGeneration && !styleReady) useFallback(); },12000);
+      }
+      queueVisibleWeather();
+    });
     function open(options) {
       const subhead = document.getElementById('weatherMapSubhead');
       if (subhead) subhead.textContent = t('weather.mapEstimate', 'Interpolated forecast estimates');
@@ -1150,7 +1277,7 @@
         if (fallbackHost) fallbackHost.hidden = true;
         if (canvasHost) canvasHost.hidden = false;
         if (mapControls) mapControls.hidden = false;
-        loadCityMap({ initialCity: selectedCity() });
+        loadCityMap(currentMapOptions || {initialCity:selectedCity()});
       }
     });
     return {
@@ -1164,6 +1291,7 @@
         formatTime: formatTime,
         formatLocalTime: formatLocalTime,
         renderDimensions: renderDimensions,
+        renderPixels: renderPixels,
         distanceKm: distanceKm,
         legendConfig: legendConfig,
         gradientCss: gradientCss

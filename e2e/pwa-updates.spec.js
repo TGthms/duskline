@@ -62,7 +62,7 @@ test.describe('redirecting host worker upgrade', () => {
     await Promise.all([page.waitForEvent('load'), update.click()]);
     await expect(page.getByRole('heading')).toHaveText('duskline test shell');
     const cacheState = await page.evaluate(async () => {
-      const cache = await caches.open('duskline-shell-v63');
+      const cache = await caches.open('duskline-shell-v64');
       const document = await cache.match('./index.html');
       return {redirected:document.redirected, keys:await caches.keys()};
     });
@@ -73,7 +73,7 @@ test.describe('redirecting host worker upgrade', () => {
         const response = await fetch('/src/js/data/weather-packs/'+code+'.json');
         if (!response.ok) throw new Error('Locale missing: '+code);
       }
-      const cache = await caches.open('duskline-locales-v63');
+      const cache = await caches.open('duskline-locales-v64');
       return (await cache.keys()).map(request=>request.url);
     });
     expect(localeResult).toHaveLength(8);

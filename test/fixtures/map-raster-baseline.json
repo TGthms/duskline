@@ -1,0 +1,74 @@
+[
+  {
+    "viewport": 390,
+    "layer": "temperature",
+    "missing": false,
+    "sha256": "b7eb346d941c3c10c8ba3a27c7d2f1fcd13119bedba43c77ae06e058d18a956b"
+  },
+  {
+    "viewport": 390,
+    "layer": "temperature",
+    "missing": true,
+    "sha256": "d49634fdab996ed74b3a8c3c01daccf81a9a3d54549bad9565311e617802cf87"
+  },
+  {
+    "viewport": 390,
+    "layer": "precipitation",
+    "missing": false,
+    "sha256": "7a7afbc6b9684f8065e4d7d7c48d2ad67e097c45fed10d9559e29b7a34a469ec"
+  },
+  {
+    "viewport": 390,
+    "layer": "precipitation",
+    "missing": true,
+    "sha256": "dea4116ec6c42a383d74493fa98ca3c50ef1ea0505c0f7cd00965eb3c8f7b1bb"
+  },
+  {
+    "viewport": 390,
+    "layer": "wind",
+    "missing": false,
+    "sha256": "13dde6ec16af7a35bd1d54e81ebc9ce2239f41c95d704a9d7be1ab9fe4b521bb"
+  },
+  {
+    "viewport": 390,
+    "layer": "wind",
+    "missing": true,
+    "sha256": "45a2c661f24ed4628c2d77ff8207ef15e3d08d5c255306f69e1e299542bf42af"
+  },
+  {
+    "viewport": 1440,
+    "layer": "temperature",
+    "missing": false,
+    "sha256": "4d819b5446c6dc166f052655869e77340ea06dfe5b4f74961af0fac418d7bd49"
+  },
+  {
+    "viewport": 1440,
+    "layer": "temperature",
+    "missing": true,
+    "sha256": "1e20e9515a21cedf0e588d1f42f39610f584332f0c923482ece7706a1b63cccc"
+  },
+  {
+    "viewport": 1440,
+    "layer": "precipitation",
+    "missing": false,
+    "sha256": "8aedf5f8df50ee5fcac72015d2663668280bc9806378dfd03c5b787565a94729"
+  },
+  {
+    "viewport": 1440,
+    "layer": "precipitation",
+    "missing": true,
+    "sha256": "f0a0bd30380054e3075a9d302a708a71c7c7d9f0066a7767bd1342f51ba1b461"
+  },
+  {
+    "viewport": 1440,
+    "layer": "wind",
+    "missing": false,
+    "sha256": "3a706f4ef9ae168e5343cb43a32744788d69ba4e83488866bd0da0893f263ab8"
+  },
+  {
+    "viewport": 1440,
+    "layer": "wind",
+    "missing": true,
+    "sha256": "30b8f6aefddb2e335051844d1d05a0e5aeab9f15c8366572d69352e520e57a74"
+  }
+]

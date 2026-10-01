@@ -192,6 +192,12 @@
 .weather-map-open #weatherToast { visibility: hidden !important; }
 .weather-map-open .weather-page-sky *,
 .weather-map-open #weatherDetail * { animation-play-state: paused !important; }
+.weather-map-open .weather-page-sky::before,
+.weather-map-open .weather-page-sky::after,
+.weather-map-open .weather-page-sky *::before,
+.weather-map-open .weather-page-sky *::after,
+.weather-map-open #main *::before,
+.weather-map-open #main *::after { animation-play-state: paused !important; }
 .weather-map-open #weatherDetailFx,
 .weather-map-open #weatherDetailFx * { animation: none !important; }
 .weather-map-open #weatherDetailFx { display: none !important; }

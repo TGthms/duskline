@@ -6,6 +6,7 @@
   "scripts": {
     "serve": "node tools/static-server.js 8000",
     "check": "node tools/check-js.js",
+    "benchmark:map": "node tools/benchmark-map-raster.js",
     "test:unit": "node --test test/*.test.js",
     "test": "playwright test --project=chromium",
     "test:all": "node --test test/*.test.js && playwright test --project=chromium",

@@ -1597,3 +1597,166 @@ test('search and actions align, all controls keep one row, and the gear matches 
   await page.setViewportSize({width:320,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+async function instrumentMap(page) {
+  await stubWeather(page,null);
+  await page.route('**/src/js/features/weather/map.js',route=>{
+    const source=require('node:fs').readFileSync('src/js/features/weather/map.js','utf8')
+      .replace('map = new library.Map(', 'window.__mapCtorCount=(window.__mapCtorCount||0)+1; map = window.__mapForTest = new library.Map(')
+      .replace('return {\n      open: open,','return window.__mapApiForTest = {\n      open: open,')
+      .replace('map.getSource(RASTER_ID).updateImage({ image: rasterCanvas,',
+        '(window.__rasterUploads||(window.__rasterUploads=[])).push([rasterCanvas,rasterImage]); map.getSource(RASTER_ID).updateImage({ image: rasterCanvas,');
+    return route.fulfill({contentType:'text/javascript',body:source});
+  });
+  await page.route('https://tiles.openfreemap.org/styles/liberty',route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ccddee'}}]}}));
+}
+
+test('map batches place changes, keeps focused buttons, and reuses raster buffers without duplicate redraws',async ({page})=>{
+  await instrumentMap(page);
+  await page.goto('/');
+  await expect(page.locator('#weatherRefresh')).not.toHaveClass(/is-busy/);
+  await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  const fallback=await page.locator('#weatherMapFallback').isVisible();
+  if (!fallback) await expect.poll(()=>page.evaluate(()=>window.__rasterUploads?.length || 0)).toBeGreaterThan(0);
+  await page.evaluate(()=>{
+    window.__probePlaces=[
+      {city:{name:'Probe',lat:40.75,lon:-74.05,country:'United States',country_code:'US'},name:'Probe',temperature:10,saved:true,featured:true},
+      {city:{name:'Second',lat:44,lon:-80,country:'Canada',country_code:'CA'},name:'Second',temperature:20,saved:false,featured:true}
+    ];
+    window.__mapApiForTest.updatePlaces(window.__probePlaces);
+  });
+  await page.locator('#weatherMapPlacesSummary').click();
+  const probe=page.locator('#weatherMapPlaces button').filter({hasText:'Probe'});
+  await expect(probe).toBeVisible();await probe.focus();
+  await probe.evaluate(el=>{window.__retainedPlaceButton=el;window.__previousPlaceLabel=el.textContent;});
+  await page.evaluate(()=>{
+    window.__placeSourceChanges=0;
+    const source=window.__mapForTest?.getSource('duskline-weather-places');
+    if(source){const original=source.setData.bind(source);source.setData=function(data){window.__placeSourceChanges++;return original(data);};}
+    for(let i=0;i<20;i++) window.__mapApiForTest.updatePlaces(window.__probePlaces.map((p,index)=>({...p,temperature:index?20:10+i})));
+  });
+  await expect.poll(()=>probe.evaluate(el=>el.textContent === window.__previousPlaceLabel)).toBe(false);
+  expect(await probe.evaluate(el=>el === window.__retainedPlaceButton)).toBe(true);
+  await expect(probe).toBeFocused();
+  if(!fallback) expect(await page.evaluate(()=>window.__placeSourceChanges)).toBe(1);
+  await page.evaluate(async()=>{
+    const before=window.__placeSourceChanges;
+    window.__mapApiForTest.updatePlaces(window.__probePlaces.map((p,index)=>({...p,temperature:index?20:29})).reverse());
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    if(window.__placeSourceChanges!==before) throw new Error('Reordering identical map data should not rebuild its source');
+  });
+  if(!fallback) {
+    const slider=page.locator('#weatherMapTime');
+    await slider.focus();await slider.press('ArrowRight');
+    await expect.poll(()=>page.evaluate(()=>window.__rasterUploads.length)).toBeGreaterThan(1);
+    expect(await page.evaluate(()=>window.__rasterUploads.every(([canvas,image])=>canvas===window.__rasterUploads[0][0] && image===window.__rasterUploads[0][1]))).toBe(true);
+    expect(await page.evaluate(async()=>{
+      const before=window.__rasterUploads.length,input=document.querySelector('#weatherMapTime');
+      input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      return window.__rasterUploads.length===before;
+    })).toBe(true);
+  }
+  await probe.click();
+  await expect(page.locator('#weatherDetailTitle')).toHaveText('Probe');
+});
+
+test('a queued map request waits while hidden and resumes at current bounds',async ({page})=>{
+  await instrumentMap(page);
+  let grids=0;
+  page.on('request',request=>{const url=new URL(request.url());if(url.hostname==='api.open-meteo.com' && (url.searchParams.get('latitude')||'').split(',').length===36)grids++;});
+  await page.goto('/');await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  const beforePseudo=await page.locator('.weather-page-sky').evaluate(el=>getComputedStyle(el,'::before').animationPlayState);
+  expect(beforePseudo).toBe('paused');
+  expect(await page.locator('.weather-page-sky').evaluate(el=>getComputedStyle(el,'::after').animationPlayState)).toBe('paused');
+  if(await page.locator('#weatherMapFallback').isVisible()) {expect(grids).toBe(0);return;}
+  await expect(page.locator('#weatherMapStatus')).toBeHidden();
+  const before=grids;
+  await page.evaluate(()=>{
+    window.__visibilityForTest='visible';
+    Object.defineProperty(document,'visibilityState',{configurable:true,get(){return window.__visibilityForTest;}});
+    window.__mapForTest.setCenter([20,40]);
+    window.__visibilityForTest='hidden';document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(800);
+  expect(grids).toBe(before);
+  await page.evaluate(()=>{window.__visibilityForTest='visible';document.dispatchEvent(new Event('visibilitychange'));});
+  await expect.poll(()=>grids,{timeout:10000}).toBe(before+1);
+  await page.locator('#weatherMapClose').click();
+  await expect(page.locator('#weatherMap')).toBeHidden();
+});
+
+test('closing and reopening during cold map loading creates only one renderer',async ({page})=>{
+  await page.addInitScript(()=>{
+    localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'Tokyo',lat:35.6762,lon:139.6503,country:'Japan',country_code:'JP'}));
+  });
+  await instrumentMap(page);
+  let release;
+  const held=new Promise(resolve=>{release=resolve;});
+  await page.route('**/assets/vendor/maplibre-gl/maplibre-gl.css',async route=>{await held;await route.fulfill({contentType:'text/css',body:require('node:fs').readFileSync('assets/vendor/maplibre-gl/maplibre-gl.css','utf8')});});
+  await page.goto('/');await page.locator('#weatherMapOpen').click();
+  await page.locator('#weatherMapClose').click();
+  await page.locator('#weatherMapOpen').click();
+  await page.evaluate(()=>{
+    window.__visibilityForTest='hidden';
+    Object.defineProperty(document,'visibilityState',{configurable:true,get(){return window.__visibilityForTest;}});
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.__visibilityForTest='visible';document.dispatchEvent(new Event('visibilitychange'));
+  });
+  release();
+  await expect.poll(()=>page.evaluate(()=>window.__mapCtorCount || 0)).toBe(1);
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  if(await page.locator('#weatherMapCanvas canvas').isVisible()) {
+    const center=await page.evaluate(()=>window.__mapForTest.getCenter().toArray());
+    expect(center[0]).toBeCloseTo(139.6503,3);expect(center[1]).toBeCloseTo(35.6762,3);
+  }
+  await page.locator('#weatherMapClose').click();
+});
+
+test('stalled map styles end loading and a later open retries cleanly',async ({page})=>{
+  await instrumentMap(page);
+  let release,stall=true,styles=0;
+  const held=new Promise(resolve=>{release=resolve;});
+  await page.route('**/assets/vendor/maplibre-gl/maplibre-gl.css',async route=>{
+    styles++;if(stall)await held;
+    await route.fulfill({contentType:'text/css',body:require('node:fs').readFileSync('assets/vendor/maplibre-gl/maplibre-gl.css','utf8')}).catch(()=>{});
+  });
+  await page.clock.install();
+  await page.goto('/');await expect(page.locator('#weatherRefresh')).not.toHaveClass(/is-busy/);
+  await page.locator('#weatherMapOpen').click();
+  await expect.poll(()=>styles).toBe(1);
+  await page.clock.fastForward(15000);
+  await expect(page.locator('#weatherMapFallback')).toBeVisible();
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+  await expect(page.locator('#weatherMapLibreCss')).toHaveCount(0);
+  expect(await page.evaluate(()=>window.__mapCtorCount || 0)).toBe(0);
+  await page.locator('#weatherMapClose').click();
+  stall=false;release();await page.locator('#weatherMapOpen').click();
+  await expect.poll(()=>styles).toBe(2);
+  await expect.poll(()=>page.evaluate(()=>window.__mapCtorCount || 0)).toBe(1);
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+});
+
+test('repeated bounds events reuse an in-flight weather grid request',async ({page})=>{
+  await instrumentMap(page);
+  let grids=0,release;
+  const held=new Promise(resolve=>{release=resolve;});
+  await page.route(/api\.open-meteo\.com\/v1\/forecast/,async route=>{
+    const url=new URL(route.request().url());
+    if((url.searchParams.get('latitude') || '').split(',').length===36) {grids++;await held;}
+    await route.fallback();
+  });
+  await page.clock.install();
+  await page.goto('/');await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  if(await page.locator('#weatherMapFallback').isVisible()) {expect(grids).toBe(0);release();return;}
+  await expect.poll(()=>grids).toBe(1);
+  for(let i=0;i<3;i++) {
+    await page.evaluate(()=>window.__mapForTest.fire('moveend'));
+    await page.clock.fastForward(3000);
+    expect(grids).toBe(1);
+  }
+  release();await expect(page.locator('#weatherMapStatus')).toBeHidden();
+});
