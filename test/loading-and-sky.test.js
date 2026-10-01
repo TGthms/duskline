@@ -30,6 +30,23 @@ test('a new operation cancels a pending hide and failed work releases its token'
   await assert.rejects(f.api.run(()=>Promise.reject(new Error('failure'))));
   f.tick(500);assert.equal(f.element.hidden,true);
 });
+test('a stalled locale download times out, releases progress, and can be retried', async () => {
+  let deadline, active=0, calls=0;
+  const window={DUSKLINE_LANG_CODES:['en','fr'],I18N:{en:{}},
+    DusklineLoading:{begin(){active++;return()=>{active--;};}},
+    setTimeout(fn,ms){assert.equal(ms,14000);deadline=fn;return 1;},clearTimeout(){}};
+  const context={window,AbortController,Map,Promise,navigator:{language:'en'},localStorage:{getItem(){return null;}},
+    document:{addEventListener(){}},fetch(url,{signal}){
+      calls++;
+      if(calls>1) return Promise.resolve({ok:true,json:async()=>({weather:{settings:'Réglages'}})});
+      return new Promise((resolve,reject)=>signal.addEventListener('abort',()=>reject(new Error('Timed out')),{once:true}));
+    }};
+  vm.createContext(context);vm.runInContext(fs.readFileSync('src/js/data/weather-locale-loader.js','utf8'),context);
+  const pending=window.loadWeatherLocale('fr');assert.equal(active,1);
+  deadline();await pending;assert.equal(active,0);assert.equal(window.I18N.fr,undefined);
+  await window.loadWeatherLocale('fr');assert.equal(active,0);assert.equal(calls,2);
+  assert.equal(window.I18N.fr.weather.settings,'Réglages');
+});
 test('primary weather palettes distinguish conditions and night while keeping small text readable', () => {
   const window = {DusklineWeather:{active:true,factories:{}}};
   const c = {window};vm.createContext(c);

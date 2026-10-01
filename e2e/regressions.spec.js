@@ -1391,9 +1391,9 @@ test('light forecast hover keeps its opaque surface and only highlights the dail
   await expect(page.locator('#weatherDetail')).toHaveClass(/wx-mods-light/);
   const daily=page.locator('.weather-mod-daily');
   await expect(daily).toBeVisible();
-  const normal=await daily.evaluate(node=>getComputedStyle(node).backgroundColor);
+  await expect(daily).toHaveCSS('background-color','rgba(240, 247, 253, 0.94)');
   await daily.locator('.weather-daily-row').nth(2).hover();
-  expect(await daily.evaluate(node=>getComputedStyle(node).backgroundColor)).toBe(normal);
+  await expect(daily).toHaveCSS('background-color','rgba(240, 247, 253, 0.94)');
   expect(await daily.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
   await page.locator('[data-sheet="aqi"]').hover();
   await expect(page.locator('[data-sheet="aqi"]')).toHaveCSS('background-color','rgb(232, 241, 249)');
@@ -1424,6 +1424,30 @@ test('no-alerts refresh checks the provider again and shares loading feedback wi
   await page.locator('#weatherSearch').fill('Nowhere');
   await expect(page.locator('#weatherSearch')).toHaveAttribute('aria-busy','true');
   await expect(page.locator('#weatherModeLoading')).toBeVisible();
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+});
+
+test('fresh Horizon finishes foreground progress while alerts prefetch, and opening the city promotes its check',async ({page})=>{
+  await stubWeather(page,null);
+  let release;
+  const held = new Promise(resolve=>{release=resolve;});
+  let waiting = false;
+  await page.route('**/api/international-alerts?**',async route=>{
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('cc') === 'GB') { waiting=true;await held; }
+    await route.fulfill({json:{availability:'available',provider:'IFRC Alert Hub',alerts:[],truncated:false,fetchedAt:Date.now()}}).catch(()=>{});
+  });
+  await page.goto('/');
+  const london=page.locator('#weatherList .weather-row').filter({hasText:'London'}).first();
+  await expect(london.locator('.weather-row-hl')).toContainText('H:');
+  await expect.poll(()=>waiting).toBe(true);
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+  await london.click();
+  await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+  await expect(page.locator('#weatherModeLoading')).toBeVisible();
+  await expect(page.locator('#weatherDetail .weather-alert-status')).toContainText('Checking public alerts');
+  release();
+  await expect(page.locator('#weatherDetail .weather-alert-status')).toContainText('No active public alerts');
   await expect(page.locator('#weatherModeLoading')).toBeHidden();
 });
 
@@ -1469,7 +1493,13 @@ test('temperature-mode changes preserve the sheet scroll position',async ({page}
   await page.screenshot({path:testInfo.outputPath('temperature-mode-scroll.png')});
 });
 
-test('the loaded map hides empty status and pans with a single touch',async ({page})=>{
+[false,true].forEach(withoutWebgl=>test('the loaded map hides empty status and pans with a single touch'+(withoutWebgl?' with offline fallback':''),async ({page})=>{
+  if (withoutWebgl) await page.addInitScript(()=>{
+    const native=HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext=function(type,...args){
+      return /^webgl/.test(type) ? null : native.call(this,type,...args);
+    };
+  });
   // Keep the actual SDK and handlers; expose the private instance for center assertions.
   await page.route('**/src/js/features/weather/map.js',route=>{
     const source=require('node:fs').readFileSync('src/js/features/weather/map.js','utf8');
@@ -1478,7 +1508,22 @@ test('the loaded map hides empty status and pans with a single touch',async ({pa
   await stubWeather(page,null);
   await page.route('https://tiles.openfreemap.org/styles/liberty',route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ccddee'}}]}}));
   await page.goto('/');await page.locator('#weatherMapOpen').click();
-  await expect(page.locator('#weatherMapCanvas canvas')).toBeVisible();
+  const canvas = page.locator('#weatherMapCanvas canvas');
+  const fallback = page.locator('#weatherMapFallback');
+  await expect(canvas.or(fallback).filter({visible:true})).toBeVisible({timeout:15000});
+  if (await fallback.isVisible()) {
+    // Headless Firefox on Linux may reject WebGL2. Verify its usable map path
+    // rather than requiring a GPU context that the runner cannot create.
+    await expect(fallback.locator('img')).toHaveAttribute('src','assets/world-land.svg');
+    await expect(page.locator('#weatherMapStatus')).toContainText(/offline world map/i);
+    await page.locator('#weatherMapZoomIn').click();
+    const atlas = fallback.locator('.weather-map-atlas');
+    const before = await atlas.evaluate(el=>getComputedStyle(el).transform);
+    await fallback.focus();await fallback.press('ArrowLeft');
+    await expect.poll(()=>atlas.evaluate(el=>getComputedStyle(el).transform)).not.toBe(before);
+    await expect(fallback).toHaveCSS('touch-action','none');
+    return;
+  }
   await expect(page.locator('#weatherMapStatus')).toBeHidden({timeout:15000});
   const before=await page.evaluate(()=>window.__mapForTest.getCenter().lng);
   await page.locator('#weatherMapCanvas canvas').evaluate(async canvas=>{
@@ -1495,7 +1540,7 @@ test('the loaded map hides empty status and pans with a single touch',async ({pa
   });
   await expect.poll(()=>page.evaluate(()=>window.__mapForTest.getCenter().lng)).not.toBe(before);
   const close=await page.locator('#weatherMapClose').boundingBox();expect(Math.abs(close.width-close.height)).toBeLessThan(.1);
-});
+}));
 
 test('search and actions align, all controls keep one row, and the gear matches icon weight',async ({page})=>{
   await stubWeather(page,null);await page.goto('/');

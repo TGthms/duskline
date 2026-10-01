@@ -119,9 +119,9 @@
     }
 
     /** Active NWS watches/warnings/advisories for a lat/lon (US only). Best-effort. */
-    async function loadNwsAlerts(lat, lon, signal) {
+    async function loadNwsAlerts(lat, lon, signal, options) {
       const url = NWS_BASE + '/alerts/active?point=' + lat + ',' + lon;
-      const doc = await nwsFetchJson(url, signal);
+      const doc = await nwsFetchJson(url, signal, options);
       const features = (doc && doc.features) || [];
       const out = [];
       for (let i = 0; i < features.length; i++) {
@@ -443,7 +443,7 @@
       }
     }
 
-    function requestInternationalAlerts(city, admin1, force) {
+    function requestInternationalAlerts(city, admin1, force, options) {
       const code = String(city && city.country_code || '').trim().toUpperCase();
       let country = String(city && city.country || '').trim();
       if (!country && code && typeof Intl.DisplayNames === 'function') country = new Intl.DisplayNames(['en'],{type:'region'}).of(code) || '';
@@ -460,7 +460,7 @@
       const params = new URLSearchParams({ country: country, lang: language });
       if (code) params.set('cc', code);
       if (region) params.set('admin1', region);
-      const finishLoading = global.DusklineLoading ? global.DusklineLoading.begin(t('weather.alertsLoading','Checking public alerts…')) : function () {};
+      const finishLoading = global.DusklineLoading && !(options && options.quiet) ? global.DusklineLoading.begin(t('weather.alertsLoading','Checking public alerts…')) : function () {};
       const controller = new AbortController();
       const timer = global.setTimeout(function () { controller.abort(); }, 45000);
       const promise = global.fetch('/api/international-alerts?' + params.toString(), {
@@ -486,14 +486,14 @@
       return promise;
     }
 
-    function loadInternationalAlerts(city, force) {
-      return requestInternationalAlerts(city, '', force).then(function (countryPayload) {
+    function loadInternationalAlerts(city, force, options) {
+      return requestInternationalAlerts(city, '', force, options).then(function (countryPayload) {
         const region = String(city && city.admin1 || '').trim();
         if (!countryPayload.truncated || !region) return countryPayload;
         // The country feed is capped to protect startup cost. When it is
         // incomplete, ask IFRC for this first-level region and combine results;
         // city coordinates remain local and still gate the final display.
-        return requestInternationalAlerts(city, region, force).then(function (regionPayload) {
+        return requestInternationalAlerts(city, region, force, options).then(function (regionPayload) {
           if (!regionPayload || !regionPayload.scoped) return countryPayload;
           return Object.assign({}, regionPayload, {
             alerts: currentAlerts((countryPayload.alerts || []).concat(regionPayload.alerts || [])),
@@ -630,8 +630,27 @@
       });
     }
 
+    // Background catalog checks must not keep foreground progress running for
+    // every country in sequence. Opening that city promotes its current check.
+    const backgroundChecks = new WeakMap();
+    function backgroundCheck(pack, work) {
+      const row = { promise: Promise.resolve().then(work), foreground:false };
+      backgroundChecks.set(pack,row);
+      return row.promise.finally(function () {
+        if (backgroundChecks.get(pack) === row) backgroundChecks.delete(pack);
+        pack._alertsLoading = false;
+      });
+    }
     function ensureAlerts(pack, options) {
       if (!pack || !pack.city || pack.error) return;
+      const pending = backgroundChecks.get(pack);
+      if (pending) {
+        if (!pending.foreground && global.DusklineLoading) {
+          pending.foreground = true;
+          global.DusklineLoading.run(function () { return pending.promise; },t('weather.alertsLoading','Checking public alerts…')).catch(function () {});
+        }
+        return;
+      }
       if (options && options.force && !pack._alertsLoading) { pack.alertsFetchedAt = 0; pack.alertsErrorAt = 0; }
       if (options && options.retryFailed && pack.alertsError && !pack._alertsLoading) pack.alertsErrorAt = 0;
       if (global.navigator && global.navigator.onLine === false) {
@@ -732,9 +751,9 @@
               if (isUs) {
                 const lat = roundCoord(pack.city.lat);
                 const lon = roundCoord(pack.city.lon);
-                alerts = await loadNwsAlerts(lat, lon, null);
+                alerts = await backgroundCheck(pack,function () { return loadNwsAlerts(lat,lon,null,{quiet:true}); });
               } else {
-                const payload = await loadInternationalAlerts(pack.city);
+                const payload = await backgroundCheck(pack,function () { return loadInternationalAlerts(pack.city,false,{quiet:true}); });
                 if (gen !== alertsPrefetchGen) {
                   resolve(finished);
                   return;

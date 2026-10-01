@@ -6,12 +6,14 @@
     if (global.I18N[code]) return Promise.resolve();
     if (!pending.has(code)) {
       const finish = global.DusklineLoading ? global.DusklineLoading.begin() : function () {};
-      pending.set(code, fetch('src/js/data/weather-packs/' + code + '.json').then(function (response) {
+      const controller = new AbortController();
+      const timeout = global.setTimeout(function () { controller.abort(); },14000);
+      pending.set(code, fetch('src/js/data/weather-packs/' + code + '.json',{signal:controller.signal}).then(function (response) {
         if (!response.ok) throw new Error('Locale unavailable');
         return response.json();
       }).then(function (pack) { global.I18N[code] = pack; }).catch(function () {
         pending.delete(code);
-      }).finally(finish));
+      }).finally(function () { global.clearTimeout(timeout); finish(); }));
     }
     return pending.get(code);
   };

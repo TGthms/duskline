@@ -33,9 +33,9 @@
     const FETCH_MS = (deps && deps.FETCH_MS) || 14000;
 
     /** Merge caller signal with a timeout so hung Open-Meteo requests cannot freeze the list forever. */
-    function withTimeoutSignal(outer, ms) {
+    function withTimeoutSignal(outer, ms, options) {
       if (typeof AbortController !== 'function') return { signal: outer, cancel: function () {} };
-      const finishLoading = window.DusklineLoading ? window.DusklineLoading.begin() : function () {};
+      const finishLoading = window.DusklineLoading && !(options && options.quiet) ? window.DusklineLoading.begin() : function () {};
       const ctl = new AbortController();
       let timer = 0;
       const abortFromOuter = function () {
@@ -323,8 +323,8 @@
       };
     }
 
-    async function nwsFetchJson(url, signal, retry) {
-      const wrap = withTimeoutSignal(signal, FETCH_MS);
+    async function nwsFetchJson(url, signal, retry, options) {
+      const wrap = withTimeoutSignal(signal, FETCH_MS, options);
       try {
         const res = await fetch(url, {
           signal: wrap.signal,
@@ -354,7 +354,7 @@
           wrap.cancel();
           await W.networkPolicy.wait(W.networkPolicy.retryDelay(e.retryAfter, 0), signal);
           if (signal && signal.aborted) throw e;
-          return nwsFetchJson(url, signal, true);
+          return nwsFetchJson(url, signal, true, options);
         }
         throw e;
       } finally {
@@ -842,7 +842,10 @@
       clearCachedNwsPoints: clearCachedNwsPoints,
       clearAllNwsPointsCache: clearAllNwsPointsCache,
       normalizeNws: normalizeNws,
-      nwsFetchJson: loadingTask(nwsFetchJson),
+      nwsFetchJson: function (url,signal,retry,options) {
+        if (options && options.quiet) return nwsFetchJson(url,signal,retry,options);
+        return loadingTask(nwsFetchJson)(url,signal,retry,options);
+      },
       loadNwsCity: loadNwsCity,
       loadOpenMeteoCity: loadOpenMeteoCity,
       enrichWithOpenMeteo: enrichWithOpenMeteo,

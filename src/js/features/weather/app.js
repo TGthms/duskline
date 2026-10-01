@@ -522,7 +522,7 @@
       weatherIcon: weatherIcon,
       roundCoord: roundCoord, isLikelyUs: function (c) { return dataApi.isLikelyUs(c); }, sameCity: sameCity,
       NWS_BASE: NWS_BASE,
-      nwsFetchJson: function (url, signal) { return dataApi.nwsFetchJson(url, signal); },
+      nwsFetchJson: function (url, signal, options) { return dataApi.nwsFetchJson(url, signal, false, options); },
       cityKey: cityKey, cache: cache,
       getDetailMods: function () { return detailMods; },
       isDetailVisible: isDetailShowingOrOpening,
