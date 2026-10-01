@@ -1727,6 +1727,7 @@ test('stalled map styles end loading and a later open retries cleanly',async ({p
   await page.goto('/');await expect(page.locator('#weatherRefresh')).not.toHaveClass(/is-busy/);
   await page.locator('#weatherMapOpen').click();
   await expect.poll(()=>styles).toBe(1);
+  await page.locator('#weatherMapLibreCss').evaluate(el=>{window.__failedMapStyleForTest=el;});
   await page.clock.fastForward(15000);
   await expect(page.locator('#weatherMapFallback')).toBeVisible();
   await expect(page.locator('#weatherModeLoading')).toBeHidden();
@@ -1734,7 +1735,8 @@ test('stalled map styles end loading and a later open retries cleanly',async ({p
   expect(await page.evaluate(()=>window.__mapCtorCount || 0)).toBe(0);
   await page.locator('#weatherMapClose').click();
   stall=false;release();await page.locator('#weatherMapOpen').click();
-  await expect.poll(()=>styles).toBe(2);
+  await expect(page.locator('#weatherMapLibreCss')).toHaveAttribute('data-loaded','true');
+  expect(await page.locator('#weatherMapLibreCss').evaluate(el=>el!==window.__failedMapStyleForTest && el.sheet.cssRules.length>0)).toBe(true);
   await expect.poll(()=>page.evaluate(()=>window.__mapCtorCount || 0)).toBe(1);
   await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
 });

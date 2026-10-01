@@ -202,7 +202,6 @@
   const greetingSizerEl = $('weatherGreetingSizer');
   const greetingPlaceBtn = $('weatherGreetingPlace');
   const weatherModeSwitchEl = $('weatherModeSwitch');
-  const weatherModeLoadingEl = $('weatherModeLoading');
   const modeButtons = Array.from(document.querySelectorAll('[data-weather-mode]'));
   const unitsBtn = $('weatherUnitsBtn');
   const detailEl = $('weatherDetail');
@@ -1137,6 +1136,7 @@
 
   function requestWeatherMode(mode) {
     if (mode !== 'horizon' && mode !== 'my-sky' || mode === weatherMode) return;
+    if (finishViewLoading) { finishViewLoading();finishViewLoading = null; }
     setViewLoading(true);
     setWeatherMode(mode,true);
   }
@@ -2908,7 +2908,7 @@
       viewBusyTimer = window.setTimeout(function () { setViewLoading(false); }, 450 - (Date.now() - viewBusySince));
       return;
     }
-    if (busy && (!weatherModeLoadingEl || weatherModeLoadingEl.hidden)) viewBusySince = Date.now();
+    if (busy && !finishViewLoading) viewBusySince = Date.now();
     if (window.DusklineLoading) {
       if (busy && !finishViewLoading) finishViewLoading = window.DusklineLoading.begin();
       else if (!busy && finishViewLoading) { finishViewLoading(); finishViewLoading = null; }

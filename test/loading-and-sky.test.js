@@ -30,6 +30,13 @@ test('a new operation cancels a pending hide and failed work releases its token'
   await assert.rejects(f.api.run(()=>Promise.reject(new Error('failure'))));
   f.tick(500);assert.equal(f.element.hidden,true);
 });
+test('a fresh action gets its full feedback interval while an older task is already visible', () => {
+  const f=feedback();const old=f.api.begin('Forecast');f.tick(1000);
+  const action=f.api.begin('Switch view');old();action();
+  f.tick(0);assert.equal(f.element.hidden,false);
+  f.tick(449);assert.equal(f.element.hidden,false);
+  f.tick(1);assert.equal(f.element.hidden,true);
+});
 test('a stalled locale download times out, releases progress, and can be retried', async () => {
   let deadline, active=0, calls=0;
   const window={DUSKLINE_LANG_CODES:['en','fr'],I18N:{en:{}},

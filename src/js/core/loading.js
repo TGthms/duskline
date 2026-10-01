@@ -4,7 +4,7 @@
   const indicator = document.getElementById('weatherModeLoading');
   if (!indicator) return;
   const operations = new Map();
-  let shownAt = 0;
+  let visibleUntil = 0;
   let hideTimer = 0;
   function defaultLabel() {
     return typeof global.tKey === 'function' ? global.tKey('weather.loadingForecast','Loading forecast…') : 'Loading forecast…';
@@ -12,7 +12,7 @@
   function begin(label) {
     global.clearTimeout(hideTimer);
     hideTimer = 0;
-    if (indicator.hidden) shownAt = Date.now();
+    visibleUntil = Date.now()+450;
     const token = {};
     operations.set(token,label || defaultLabel());
     indicator.hidden = false;
@@ -30,7 +30,7 @@
         indicator.hidden = true;
         indicator.dataset.active = 'false';
         hideTimer = 0;
-      },Math.max(0,450-(Date.now()-shownAt)));
+      },Math.max(0,visibleUntil-Date.now()));
     };
   }
   global.DusklineLoading = {
