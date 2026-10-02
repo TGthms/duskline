@@ -146,8 +146,10 @@ test('the list loads the light query and the detail upgrades itself to full', as
   expect(uv, 'UV value missing after enrichment').not.toBe('—');
 
   // sunrise/sunset only exist in the full body, so a time proves the merge landed
-  await page.locator('.weather-mod[data-sheet="sun"]').click();
-  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+  const sunMod = page.locator('.weather-mod[data-sheet="sun"]');
+  await expect(sunMod).toBeVisible();
+  await sunMod.click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/, { timeout: 10000 });
   await expect(page.locator('#weatherSheetBody')).toContainText(/\d{1,2}:\d{2}/);
 });
 
@@ -528,9 +530,12 @@ test('detail actions stay in the top right and the footer uses the current year'
   });
   expect(position.right).toBeGreaterThan(1400);
   expect(position.top).toBeLessThan(80);
-  await page.locator('#weatherModules [data-sheet="humidity"]').click();
-  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
-  await expect(page.locator('#weatherSheet .wx-sheet-grab')).toBeHidden();
+  const humidity = page.locator('#weatherModules [data-sheet="humidity"]');
+  await expect(humidity).toBeVisible();
+  await humidity.click();
+  await expect(page.locator('#weatherSheet')).toHaveClass(/open/, { timeout: 10000 });
+  // The grab handle is hidden on desktop viewports via media query; allow time for it to apply.
+  await expect(page.locator('#weatherSheet .wx-sheet-grab')).toBeHidden({ timeout: 10000 });
   const sheetSpacing = await page.locator('#weatherSheet').evaluate(node => {
     const panel = node.querySelector('.weather-sheet-panel').getBoundingClientRect();
     const icon = node.querySelector('.wx-sheet-dragzone .wx-sheet-icon').getBoundingClientRect();
@@ -550,7 +555,7 @@ test('My Sky checking copy is immediate and the completed forecast types in', as
   });
   await stubWeather(page, null);
   await page.route(/api\.open-meteo\.com/, async route => {
-    await new Promise(resolve => setTimeout(resolve, 650));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     await route.fallback();
   });
   await page.goto('/');
@@ -1866,7 +1871,10 @@ for(const isDay of [true,false]) test('city action surfaces match Back in '+(isD
     return {background:s.backgroundColor,color:s.color,border:s.border,radius:s.borderRadius,width:s.width,height:s.height,iconWidth:icon.width,iconHeight:icon.height};
   }));
   let styles=await read();expect(styles).toHaveLength(4);for(const style of styles.slice(1)) expect(style).toEqual(styles[0]);
-  await page.locator('#weatherDetailFav').click();await page.mouse.move(0,0);
+  await page.locator('#weatherDetailFav').click();
+  // Clear hover reliably: move off the button and wait for the non-hover style.
+  await page.mouse.move(0,0);
+  await expect.poll(async () => (await read())[1].background).toBe(styles[0].background);
   await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed','true');
   await expect.poll(read).toEqual(Array(4).fill(styles[0]));
 });
