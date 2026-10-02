@@ -1968,3 +1968,71 @@ test.describe('native iOS tap feedback',()=>{
     await expect(page.locator('#weatherSheet .weather-chart-wrap')).toBeVisible();
   });
 });
+
+test('haptic setting offers Full/Reduced/Off and persists selection', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem('duskline-haptic');
+  });
+  await stubWeather(page, null);
+  await page.goto('/');
+  // Open settings
+  await page.locator('#weatherSettings').click();
+  const hapticSelect = page.locator('.weather-haptic-select');
+  await expect(hapticSelect).toBeVisible();
+  // Default is full
+  expect(await hapticSelect.inputValue()).toBe('full');
+  // Options are Full, Reduced, Off
+  const options = await hapticSelect.locator('option').allTextContents();
+  expect(options).toEqual(['Full', 'Reduced', 'Off']);
+  // Change to reduced and verify persistence
+  await hapticSelect.selectOption('reduced');
+  expect(await page.evaluate(() => localStorage.getItem('duskline-haptic'))).toBe('reduced');
+  // Reload and verify persisted
+  await page.reload();
+  await page.locator('#weatherSettings').click();
+  expect(await page.locator('.weather-haptic-select').inputValue()).toBe('reduced');
+});
+
+test('reduced haptic mode only buzzes for important actions', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-haptic', 'reduced');
+    localStorage.setItem('duskline-motion', 'full');
+    window.__vibrations = [];
+    Object.defineProperty(navigator, 'vibrate', {
+      configurable: true,
+      value: duration => { window.__vibrations.push(duration); return true; }
+    });
+  });
+  await stubWeather(page, null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  // Non-important button (back) should not buzz in reduced mode
+  const beforeBack = await page.evaluate(() => window.__vibrations.length);
+  await page.locator('#weatherDetailBack').click();
+  expect(await page.evaluate(() => window.__vibrations.length)).toBe(beforeBack);
+  // Important button (save/favorite) should buzz in reduced mode
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  const beforeSave = await page.evaluate(() => window.__vibrations.length);
+  await page.locator('#weatherDetailFav').click();
+  expect(await page.evaluate(() => window.__vibrations.length)).toBeGreaterThan(beforeSave);
+});
+
+test('haptic off disables all vibration feedback', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-haptic', 'off');
+    localStorage.setItem('duskline-motion', 'full');
+    window.__vibrations = [];
+    Object.defineProperty(navigator, 'vibrate', {
+      configurable: true,
+      value: duration => { window.__vibrations.push(duration); return true; }
+    });
+  });
+  await stubWeather(page, null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  const before = await page.evaluate(() => window.__vibrations.length);
+  // Even important actions should not buzz when haptic is off
+  await page.locator('#weatherDetailFav').click();
+  expect(await page.evaluate(() => window.__vibrations.length)).toBe(before);
+});

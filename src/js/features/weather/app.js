@@ -2775,7 +2775,7 @@
 
   function refreshListsFromCache(opts) {
     opts = opts || {};
-    // Block mid-load repaints (this was the multi-refresh flicker)
+    // Block mid-load repaints to avoid flicker during concurrent refreshes
     if (listPaintLocked && !opts.force) return;
     const focusedRow = document.activeElement && document.activeElement.closest
       ? document.activeElement.closest('li[data-city-key]') : null;
@@ -4926,6 +4926,7 @@
     option.type = 'button';
     option.setAttribute('role', 'gridcell');
     option.setAttribute('data-place-choice', '');
+    option.setAttribute('data-haptic-important', '');
     option.tabIndex = -1;
     option.setAttribute('aria-selected', 'false');
     option.id = 'wx-suggest-' + suggestEl.querySelectorAll('[data-place-choice]').length;
@@ -4934,6 +4935,7 @@
     const save = document.createElement('button');
     save.type = 'button';
     save.className = 's-add';
+    save.setAttribute('data-haptic-important', '');
     const syncSave = function () {
       const saved = isFavorite(city);
       save.innerHTML = savedPlaceIcon(saved);
@@ -5078,6 +5080,7 @@
         b.type = 'button';
         b.textContent = lab;
         b.setAttribute('data-unit', u);
+        b.setAttribute('data-haptic-important', '');
         b.setAttribute('role', 'radio');
         b.setAttribute('aria-checked', selected === u ? 'true' : 'false');
         b.tabIndex = selected === u ? 0 : -1;
@@ -5161,6 +5164,16 @@
     try { motion.value = localStorage.getItem('duskline-motion') || 'auto'; } catch (error) { motion.value = 'auto'; }
     motion.addEventListener('change', function () { if (typeof setMotionMode === 'function') setMotionMode(motion.value); });
     sheetBody.append(motionTitle, motion);
+    const hapticTitle = document.createElement('p'); hapticTitle.className = 'weather-mod-label'; hapticTitle.textContent = t('weather.haptic', 'Haptics');
+    const haptic = document.createElement('select'); haptic.className = 'weather-haptic-select'; haptic.setAttribute('aria-label', hapticTitle.textContent);
+    [['full', t('weather.hapticFull','Full')], ['reduced', t('weather.hapticReduced','Reduced')], ['off', t('weather.hapticOff','Off')]].forEach(function (pair) {
+      const option = document.createElement('option'); option.value = pair[0]; option.textContent = pair[1]; haptic.append(option);
+    });
+    try { haptic.value = localStorage.getItem('duskline-haptic') || 'full'; } catch (error) { haptic.value = 'full'; }
+    haptic.addEventListener('change', function () {
+      try { localStorage.setItem('duskline-haptic', haptic.value); } catch (error) {}
+    });
+    sheetBody.append(hapticTitle, haptic);
     const order = document.createElement('section'); order.className = 'weather-place-order';
     function paintOrder() {
       const places = loadFavorites();
@@ -5185,7 +5198,7 @@
         order.append(row);
       });
       if (myLocationCity) {
-        const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'weather-place-clear'; clear.textContent = t('weather.clearLocation','Remove my location');
+        const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'weather-place-clear'; clear.textContent = t('weather.clearLocation','Remove my location'); clear.setAttribute('data-haptic-important', '');
         clear.addEventListener('click', function () {
           const old = myLocationCity; const pack = cache.get(cityKey(old));
           saveMyLocation(null); paintOrder(); refreshListsFromCache({force:true});

@@ -28,7 +28,10 @@ jobs:
         include:
           - {project: chromium, browser: chromium, part: 1, total: 1}
           - {project: firefox, browser: firefox, part: 1, total: 1}
-          - {project: webkit, browser: webkit, part: 1, total: 1}
+          # Desktop WebKit is ~3.5x slower than Chromium on the same suite;
+          # shard it to stay comfortably within the job deadline.
+          - {project: webkit, browser: webkit, part: 1, total: 2}
+          - {project: webkit, browser: webkit, part: 2, total: 2}
           # Preserve all mobile checks while keeping native-control/locale
           # flows within the job deadline. Both shards gate deployment.
           - {project: mobile-webkit, browser: webkit, part: 1, total: 2}

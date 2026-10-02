@@ -7,12 +7,35 @@
   var W = global.DusklineWeather;
   if (!W) return;
 
+  function hapticMode() {
+    try {
+      var mode = global.localStorage.getItem('duskline-haptic');
+      return mode === 'reduced' || mode === 'off' ? mode : 'full';
+    } catch (error) { return 'full'; }
+  }
   function allowed() {
+    if (hapticMode() === 'off') return false;
     try {
       var motion = document.documentElement.getAttribute('data-motion-effective');
       if (motion) return motion !== 'off';
       return global.localStorage.getItem('duskline-motion') !== 'off';
     } catch (error) { return false; }
+  }
+  // Reduced mode only fires for important actions. Buttons opt in with
+  // data-haptic-important; unit selects are important by virtue of
+  // changing the app's measurement system.
+  function isImportantAction(element) {
+    if (!element) return false;
+    if (element.hasAttribute && element.hasAttribute('data-haptic-important')) return true;
+    var tag = element.tagName;
+    if (tag === 'SELECT' && element.classList.contains('weather-unit-select')) return true;
+    var button = element.closest ? element.closest('[data-haptic-important]') : null;
+    return !!button;
+  }
+  function shouldBuzz(element) {
+    if (!allowed()) return false;
+    if (hapticMode() === 'reduced' && !isImportantAction(element)) return false;
+    return true;
   }
   function vibrate(duration) {
     if (!allowed() || typeof global.navigator.vibrate !== 'function') return;
@@ -35,7 +58,16 @@
     var button = event.target && event.target.closest && event.target.closest('button');
     if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true'
         || button.closest('[inert], [aria-hidden="true"]')) return;
-    buzz();
+    if (shouldBuzz(button)) buzz();
+  }, { capture: true, passive: true });
+
+  // Unit changes are important actions in reduced mode. They use select
+  // elements rather than buttons, so they need their own listener.
+  document.addEventListener('change', function (event) {
+    if (!event.isTrusted) return;
+    var select = event.target;
+    if (!select || select.tagName !== 'SELECT') return;
+    if (shouldBuzz(select)) buzz();
   }, { capture: true, passive: true });
 
   function iosSwitchSupported() {
@@ -87,7 +119,7 @@
         if (event.defaultPrevented || cancelled || !event.isTrusted || !usable(button)) {
           pending = false;event.preventDefault();event.stopPropagation();return;
         }
-        if (!allowed()) {
+        if (!shouldBuzz(button)) {
           pending = false;event.preventDefault();
           button.focus({preventScroll:true});
           // The original trusted click can still reach the button, but its
@@ -139,11 +171,19 @@
       });
       owners.forEach(arm);
     }).observe(document.documentElement,{childList:true,subtree:true});
+    // The MutationObserver fires asynchronously. If a button is added and
+    // tapped in the same task, the overlay is not mounted yet and the first
+    // tap produces no haptic. Arm on pointerdown (which precedes click) so
+    // the overlay is in place before the tap completes.
+    document.addEventListener('pointerdown', function (event) {
+      var button = event.target && event.target.closest && event.target.closest('button');
+      if (button) arm(button);
+    }, { capture: true, passive: true });
   }
   if (iosSwitchSupported()) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',installIosTaps,{once:true});
     else installIosTaps();
   }
 
-  W.haptics = { buzz: buzz, detent: detent, allowed: allowed };
+  W.haptics = { buzz: buzz, detent: detent, allowed: allowed, hapticMode: hapticMode, shouldBuzz: shouldBuzz };
 })(window);

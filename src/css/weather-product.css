@@ -62,6 +62,7 @@ body.duskline .weather-greeting-title { font-size: clamp(1.4rem, 2.6vw, 2rem); m
 @media (prefers-reduced-motion: reduce) { .weather-mode-switch button { transition: none; } }
 .weather-suggest .s-save-cell { flex: 0 0 52px; display: flex; align-items: center; }
 .weather-motion-select { width: 100%; min-height: 44px; border: 1px solid rgba(127,153,175,.35); border-radius: 12px; background: transparent; color: inherit; padding: 8px 12px; font: inherit; }
+.weather-haptic-select { width: 100%; min-height: 44px; border: 1px solid rgba(127,153,175,.35); border-radius: 12px; background: transparent; color: inherit; padding: 8px 12px; font: inherit; }
 .weather-connection { font-size: 12px; padding: 8px 12px; border-radius: 10px; background: rgba(127,153,175,.15); }
 #weatherInstall[hidden] { display: none; }
 .weather-alert-title { white-space: normal; line-height: 1.4; }
