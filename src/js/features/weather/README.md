@@ -16,6 +16,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `alerts.js` | NWS U.S. + international CAP alerts, area matching, accordion, and prefetch (`W.factories.alerts`) |
 | `search-places.js` | Geocoder deduplication and minimum forecast validation |
 | `network-policy.js` | Provider retry timing and cancellable backoff |
+| `haptics.js` | Optional vibration on real controls; no overlays, graceful fallback without the API |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
 | `navigation.js` | Browser history for city details and forecast sheets |

@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v65';
+const CACHE = 'duskline-shell-v67';
 const SHELL = [
   './',
   './index.html',
@@ -54,6 +54,7 @@ const SHELL = [
   './src/js/features/weather/alerts.js',
   './src/js/features/weather/search-places.js',
   './src/js/features/weather/network-policy.js',
+  './src/js/features/weather/haptics.js',
   './src/js/features/weather/data.js',
   './src/js/features/weather/snapshots.js',
   './src/js/features/weather/navigation.js',
@@ -70,10 +71,34 @@ function navigationResponse(response) {
     status: response.status, statusText: response.statusText, headers: response.headers
   });
 }
-const LOCALES = 'duskline-locales-v65';
+const LOCALES = 'duskline-locales-v67';
 const LOCALE_LIMIT = 8; // Four recently used languages, weather + legal packs.
 function isLocale(url) {
   return /\/src\/js\/data\/(?:weather-packs|legal\/packs)\/[a-zA-Z-]+\.json$/.test(url.pathname);
+}
+// Refresh only previously used packs, before activation removes old caches.
+// A failed/partial deployment leaves the old worker and its offline packs usable.
+async function refreshUsedLocales() {
+  const urls = new Set();
+  for (const name of await caches.keys()) {
+    if (!name.startsWith('duskline-locales-') || name === LOCALES) continue;
+    for (const request of await (await caches.open(name)).keys()) {
+      const url = new URL(request.url);
+      if (url.origin === self.location.origin && isLocale(url)) urls.add(url.origin + url.pathname);
+    }
+  }
+  const target = await caches.open(LOCALES);
+  await Promise.all(Array.from(urls).slice(-LOCALE_LIMIT).map(async url => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetch(new Request(url, {cache:'reload',signal:controller.signal}));
+      if (!response.ok) throw new Error('Locale upgrade failed: ' + url);
+      await target.put(url, response);
+    } finally { clearTimeout(timer); }
+  }));
+  const keys = await target.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - LOCALE_LIMIT)).map(key => target.delete(key)));
 }
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then(async (cache) => {
@@ -82,6 +107,7 @@ self.addEventListener('install', (event) => {
       if (!response.ok) throw new Error('Shell install failed: ' + path);
       await cache.put(path, navigationResponse(response));
     }));
+    await refreshUsedLocales();
   }));
 });
 

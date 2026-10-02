@@ -469,3 +469,12 @@ html[data-theme="minimal"] body.duskline #dusklineLanguage {
 }
 html[dir="rtl"] body.duskline #dusklineLanguage { padding-inline: 38px 14px; background-position: left 13px center; }
 @media (max-width: 640px) { body.duskline .duskline-header { padding-inline: 16px; } body.duskline .weather-root.tools-page { width: min(100% - 24px, 1180px); } body.duskline .weather-toolbar { padding-inline: 0; } }
+
+/* Budget the narrow header explicitly; the wordmark must never flex-shrink
+   underneath the language picker. Keep both controls and the full brand. */
+body.duskline .duskline-brand { flex-shrink: 0; }
+body.duskline .duskline-header .nav-actions { min-width: 0; }
+@media (max-width: 400px) {
+  body.duskline .duskline-header { gap: 12px; padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+  body.duskline #dusklineLanguage { width: clamp(112px, 38vw, 148px); max-width: 100%; }
+}

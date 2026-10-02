@@ -63,3 +63,35 @@ Primary loading/error markup is retained across unrelated list updates, keeping 
 City-card updates defer replacing a pressed button until its pointer-up/click sequence finishes, preventing live forecast responses from dropping the click. Unrelated rows can still update. A held-response regression places the response between pointer-down and pointer-up and verifies the same button remains connected and opens the intended city. The legal offline check now verifies the French pack in the active locale cache instead of hard-coding a release's cache name.
 
 Each new foreground operation now receives its own minimum progress display interval, including an operation that starts while an older task already keeps the bar visible. View switches renew their feedback token, preventing the older task's elapsed interval from hiding a new switch immediately. Stylesheet recovery checks verify a fresh loaded link and its CSS rules: Firefox can reuse a late response without issuing a second request, so a network-count assertion did not reflect successful recovery.
+
+## Primary selection, controls, and upgrade languages
+
+Primary-city search now hands focus to Search after the picker closes and carries
+selection intent through the initiating click. Failed selections keep the previous
+primary and retain Retry without starting a refresh that clears the error. The Save
+control is synchronized even while a new city is loading.
+
+Optional haptics use one delegated listener on real buttons and the Vibration API.
+There are no hidden native switches, nested inputs, mutation observers, or layout
+reads. Unsupported browsers retain ordinary button behavior. Motion Off suppresses
+feedback immediately, and city/detail focus wrapping excludes hidden or non-tabbable
+controls. Save, Share, Refresh, and Back share one circular glass treatment.
+
+Search only coalesces nearby coordinate jitter when provider IDs and administrative
+regions do not conflict. Narrow headers budget both the complete wordmark and the
+language picker, with intersection checks for long language labels and RTL. The
+muted day-card surface is defined in the final product stylesheet, with opaque hover
+colors and a stable daily panel.
+
+Shell and locale caches are revised together. During installation, up to eight
+previously used language packs are refreshed before activation removes the old
+caches. A failed language upgrade leaves the previous worker available. Upgrade
+checks derive current cache names from the worker and verify fresh translations
+remain available if the host goes offline immediately after activation.
+
+Regression coverage includes existing-primary search with Full and Off motion,
+keyboard boundaries, feedback after icon replacement, disabled/programmatic action
+suppression, header intersections, matching action surfaces in day/night and saved
+states, rounding-boundary duplicates, distinct neighboring identities, and translated
+PWA upgrades. Loading-state checks hold provider responses until feedback is checked;
+chart hit coordinates are measured after the sheet transition settles.

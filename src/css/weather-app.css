@@ -2448,12 +2448,20 @@ html[data-motion-effective="off"] .weather-detail-sky .wx-layer-base {
   transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
 }
 .weather-detail.wx-mods-light .weather-mod {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.26)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  background: rgba(213, 227, 240, 0.94) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
   backdrop-filter: blur(36px) saturate(165%) !important;
   -webkit-backdrop-filter: blur(36px) saturate(165%) !important;
-  box-shadow: 0 10px 28px rgba(18, 42, 72, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 28px rgba(18, 42, 72, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
+/* "No alerts" is low-priority information — keep it visually quiet next to forecast cards. */
+.weather-detail.wx-mods-light .weather-alert-status {
+  background: rgba(220, 233, 244, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.weather-detail.wx-mods-light .weather-detail-updated { opacity: .85; }
 /* Keep the glass finish on phones while limiting the blur cost on small GPUs. */
 html[data-mobile-lite="true"] .weather-detail .weather-mod {
   backdrop-filter: blur(20px) saturate(145%) !important;
@@ -2469,7 +2477,7 @@ html[data-motion-effective="off"] .weather-mod {
   background: rgba(16, 28, 46, 0.88) !important;
 }
 html[data-motion-effective="off"] .weather-detail.wx-mods-light .weather-mod {
-  background: rgba(232, 238, 246, 0.92) !important;
+  background: rgba(213, 227, 240, 0.94) !important;
 }
 @media (hover: hover), (any-hover: hover) {
   .weather-mod:hover {
@@ -2477,8 +2485,8 @@ html[data-motion-effective="off"] .weather-detail.wx-mods-light .weather-mod {
     border-color: rgba(255,255,255,0.28) !important;
   }
   .weather-detail.wx-mods-light .weather-mod:hover {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.34)) !important;
-    border-color: rgba(255, 255, 255, 0.7) !important;
+    background: #e0ebf5 !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
   }
 }
 html.has-fine-pointer .weather-mod:hover {
@@ -2486,8 +2494,8 @@ html.has-fine-pointer .weather-mod:hover {
   border-color: rgba(255,255,255,0.28) !important;
 }
 html.has-fine-pointer .weather-detail.wx-mods-light .weather-mod:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.34)) !important;
-  border-color: rgba(255, 255, 255, 0.7) !important;
+  background: #e0ebf5 !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
 }
 .weather-row {
   backdrop-filter: none;

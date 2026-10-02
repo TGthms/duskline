@@ -4,8 +4,8 @@ body.duskline .weather-row { height: auto; min-height: 142px; }
 body.duskline .weather-row-updated { margin-top: 6px; font-size: 11px; }
 body.duskline .weather-btn { box-shadow: 0 2px 8px rgba(8,17,31,.08); letter-spacing: 0; }
 body.duskline .weather-detail.wx-mods-light .weather-mod {
-  background: rgba(240,247,253,.94) !important;
-  border-color: rgba(255,255,255,.55) !important;
+  background: rgba(213,227,240,.94) !important;
+  border-color: rgba(255,255,255,.28) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -72,7 +72,7 @@ body.duskline .weather-list .weather-row { flex: 1; height: 100%; min-height: 15
 body.duskline .weather-mod { align-self: stretch; }
 body.duskline .weather-mod:not(.weather-mod-wide) { min-height: 144px; }
 body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
-  background: #e8f1f9 !important; border-color: rgba(22,52,79,.25) !important;
+  background: #e0ebf5 !important; border-color: rgba(22,52,79,.25) !important;
   box-shadow: 0 5px 18px rgba(12,39,66,.13);
 }
 body.duskline .weather-daily-row:hover .weather-daily-day { text-decoration: none; }
@@ -212,14 +212,14 @@ body:has(.weather-map.is-open) .weather-route-progress { top: 0; }
 /* Override the older, high-specificity translucent hover rules. */
 html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod:hover,
 html[data-motion-effective="off"] body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
-  background: #e8f1f9 !important; border-color: rgba(22,52,79,.22) !important;
+  background: #e0ebf5 !important; border-color: rgba(22,52,79,.22) !important;
 }
 body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover {
-  background: rgba(240,247,253,.94) !important; border-color: rgba(255,255,255,.55) !important; box-shadow: none;
+  background: rgba(213,227,240,.94) !important; border-color: rgba(255,255,255,.28) !important; box-shadow: none;
 }
 html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover,
 html[data-motion-effective="off"] body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover {
-  background: rgba(240,247,253,.94) !important; border-color: rgba(255,255,255,.55) !important; box-shadow: none;
+  background: rgba(213,227,240,.94) !important; border-color: rgba(255,255,255,.28) !important; box-shadow: none;
 }
 body.duskline .weather-detail.wx-mods-light .weather-daily-row:hover { background: rgba(22,52,79,.055); }
 .weather-alert-status button:disabled { opacity: .55; cursor: default; }
@@ -268,4 +268,23 @@ html[dir="rtl"] body.duskline .weather-toolbar-actions { flex-direction: row; }
   body.duskline .weather-toolbar-actions { gap: 1.5px; }
   body.duskline .weather-mode-switch { width: 98px; flex-basis: 98px; }
   body.duskline .weather-mode-switch button { font-size: 11px; padding-inline: 2px; }
+}
+
+/* One glass treatment for all four city controls, independent of appearance.
+   Pressed saves use the check icon; loading refresh keeps its existing spinner. */
+body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh) {
+  background: rgba(255,255,255,.22) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.4) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.18) !important;
+  flex: 0 0 48px !important;
+  width: 48px !important; height: 48px !important;
+  min-width: 48px !important; min-height: 48px !important;
+  max-width: 48px !important; max-height: 48px !important;
+}
+body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh):hover {
+  background: rgba(255,255,255,.32) !important;
+}
+body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh) svg {
+  width: 20px; height: 20px; color: inherit;
 }

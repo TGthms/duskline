@@ -1257,7 +1257,10 @@
       if (activeGrid) scheduleWeatherImage(activeGrid);
     });
     if (timeInput) timeInput.addEventListener('input', function () {
-      selectedOffset = Math.max(0, Math.min(maxOffset, Number(timeInput.value) || 0));
+      var next = Math.max(0, Math.min(maxOffset, Number(timeInput.value) || 0));
+      var stepped = next !== selectedOffset;
+      selectedOffset = next;
+      if (stepped && W.haptics) W.haptics.detent();
       if (activeGrid) {
         updateTimeOutput(activeGrid);
         scheduleWeatherImage(activeGrid);

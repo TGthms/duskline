@@ -43,3 +43,17 @@ test('literal runtime translation keys exist in every source locale before Engli
   for (const match of fs.readFileSync('src/js/sw-register.js','utf8').matchAll(/\btKey\(\s*['"]([^'"]+)['"]\s*[,)]/g)) keys.add(match[1]);
   for (const [code] of c.window.DUSKLINE_LOCALES) for (const key of keys) assert.ok(c.window.I18N[code][key], code+' is missing '+key);
 });
+
+
+test('search preserves different identities and districts even at nearby coordinates', () => {
+  const a = {id:1,name:'San Pedro',country_code:'MX',admin1:'State',admin2:'District A',latitude:20,longitude:-100};
+  const differentId = {...a,id:2,latitude:20.0001};
+  const differentDistrict = {...a,id:undefined,admin2:'District B',latitude:20.0001};
+  const neighbor = {...a,id:undefined,latitude:20.09};
+  assert.equal(W.searchPlaces.deduplicate([a,differentId,differentDistrict,neighbor]).length,4);
+});
+test('search coalesces rounding-boundary coordinate jitter and keeps richer metadata', () => {
+  const sparse = {name:'Paris',country_code:'FR',latitude:48.85649,longitude:2.35249};
+  const rich = {...sparse,latitude:48.85651,longitude:2.35251,admin1:'Île-de-France',timezone:'Europe/Paris'};
+  assert.deepEqual(Array.from(W.searchPlaces.deduplicate([sparse,rich])),[rich]);
+});

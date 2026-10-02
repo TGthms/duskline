@@ -3197,6 +3197,7 @@
       detailReturnKey = item && item.dataset.cityKey;
     }
     openCity = { city: city, pending: true };
+    syncDetailFav(city);
     if (detailHero) {
       detailHero.innerHTML = `<h2 id="weatherDetailTitle">${escapeHtml(displayCityName(city))}</h2>`;
     }
@@ -4455,12 +4456,13 @@
     });
   }
 
-  function closeSheet() {
+  function closeSheet(options) {
     if (navigationApi) navigationApi.close("sheet");
     if (!sheetEl || !sheetPanel) return;
     if (!isSheetOpen()) {
       inertSheet();
       sheetOpen = false;
+      if (options && typeof options.afterClose === 'function') options.afterClose();
       return;
     }
     const returnFocus = sheetReturnFocus;
@@ -4471,6 +4473,7 @@
     sheetReturnKind = null;
     const returnTile = returnKind && detailMods && detailMods.querySelector('[data-sheet="' + CSS.escape(returnKind) + '"]');
     function restoreSheetReturnFocus() {
+      if (options && typeof options.afterClose === 'function') { options.afterClose(); return; }
       const day = returnDate && detailMods && detailMods.querySelector('[data-day-date="' + CSS.escape(returnDate) + '"]');
       const tile = returnKind && detailMods && detailMods.querySelector('[data-sheet="' + CSS.escape(returnKind) + '"]');
       restoreFocus(returnFocus, day || tile || (isDetailVisible() ? detailBack : unitsBtn));
@@ -4884,8 +4887,8 @@
       if (choiceGen !== placeChoiceGen) return;
       if (!W.searchPlaces.validForecast(pack)) {
         if (isDetailVisible() && openCity && sameCity(openCity.city, c)) closeDetail();
+        if (chooseAsMySkyPlace) setWeatherMode('my-sky', true, true);
         searchChoiceError(c, label, chooseAsMySkyPlace);
-        if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
         return;
       }
       if (chooseAsMySkyPlace) {
@@ -4897,8 +4900,8 @@
     } catch (e) {
       if (choiceGen !== placeChoiceGen) return;
       if (isDetailVisible() && openCity && sameCity(openCity.city, c)) closeDetail();
+      if (chooseAsMySkyPlace) setWeatherMode('my-sky', true, true);
       searchChoiceError(c, label, chooseAsMySkyPlace);
-      if (chooseAsMySkyPlace) setWeatherMode('my-sky', true);
     }
   }
 
@@ -5167,7 +5170,7 @@
         const name = document.createElement('span'); name.textContent = displayCityName(city); row.append(name);
         [-1,1].forEach(function (direction) {
           const button = document.createElement('button'); button.type = 'button'; button.disabled = index+direction < 0 || index+direction >= places.length;
-          button.innerHTML = weatherIcon(direction < 0 ? 'lucide-chevron-up' : 'lucide-chevron-down', 'weather-ui-icon');
+          button.innerHTML = weatherIcon(direction < 0 ? 'chevron-up' : 'chevron-down', 'weather-ui-icon');
           button.setAttribute('aria-label', t(direction < 0 ? 'weather.moveEarlier' : 'weather.moveLater', direction < 0 ? 'Move earlier' : 'Move later') + ': ' + displayCityName(city));
           button.addEventListener('click', function () {
             [places[index],places[index+direction]] = [places[index+direction],places[index]];
@@ -5217,11 +5220,10 @@
       sheetBody.appendChild(empty);
       const choose = document.createElement('button');
       choose.type = 'button';
-      choose.className = 'weather-detail-btn';
+      choose.className = 'weather-detail-btn weather-greeting-source-search';
       choose.textContent = t('weather.chooseMySkyPlace', 'Choose a city for My Sky');
       choose.addEventListener('click', function () {
-        closeSheet();
-        startGreetingPlaceSelection();
+        closeSheet({ afterClose: startGreetingPlaceSelection });
       });
       sheetBody.appendChild(choose);
       presentSheet();
@@ -5296,8 +5298,7 @@
     searchCity.className = 'weather-greeting-source-search';
     searchCity.textContent = t('weather.chooseMySkyPlace', 'Choose a city for My Sky');
     searchCity.addEventListener('click', function () {
-      closeSheet();
-      startGreetingPlaceSelection();
+      closeSheet({ afterClose: startGreetingPlaceSelection });
     });
     sheetBody.appendChild(searchCity);
     presentSheet();
@@ -5587,7 +5588,8 @@
     // suggestion click consumes it, while unrelated clicks still cancel it.
     if ((greetingPlaceBtn && greetingPlaceBtn.contains(e.target))
         || (mySkySearchBtn && mySkySearchBtn.contains(e.target))
-        || (startSearchBtn && startSearchBtn.contains(e.target))) return;
+        || (startSearchBtn && startSearchBtn.contains(e.target))
+        || (e.target.closest && e.target.closest('.weather-greeting-source-search'))) return;
     selectingGreetingPlace = false;
     closeSuggest();
   });
@@ -5596,7 +5598,8 @@
     if (!root) return [];
     return Array.prototype.filter.call(
       root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-      function (el) { return !el.disabled && el.offsetParent !== null && !el.hidden; }
+      function (el) { return !el.disabled && el.tabIndex >= 0 && el.offsetParent !== null
+        && !el.hidden && !el.closest('[inert], [aria-hidden="true"]'); }
     );
   }
   function trapTab(container, e) {

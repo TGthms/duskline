@@ -1117,6 +1117,94 @@
       vi: 'Xem tất cả địa điểm', id: 'Tampilkan semua tempat', ja: 'すべての場所を表示',
       ko: '모든 장소 보기', zh: '显示所有地点', 'zh-TW': '顯示所有地點'
     },
+    'weather.region': {
+      en: 'Region', es: 'Región', fr: 'Région', de: 'Region', it: 'Regione', 'pt-BR': 'Região',
+      'pt-PT': 'Região', nl: 'Regio', da: 'Region', sv: 'Region', nb: 'Region', fi: 'Alue',
+      pl: 'Region', cs: 'Oblast', hu: 'Régió', ro: 'Regiune', el: 'Περιοχή', tr: 'Bölge',
+      ru: 'Регион', uk: 'Регіон', ar: 'المنطقة', he: 'אזור', hi: 'क्षेत्र', th: 'ภูมิภาค',
+      vi: 'Khu vực', id: 'Wilayah', ja: '地域', ko: '지역', zh: '地区', 'zh-TW': '地區'
+    },
+    'weather.sort': {
+      en: 'Sort', es: 'Ordenar', fr: 'Trier', de: 'Sortieren', it: 'Ordina', 'pt-BR': 'Ordenar',
+      'pt-PT': 'Ordenar', nl: 'Sorteren', da: 'Sortér', sv: 'Sortera', nb: 'Sorter',
+      fi: 'Järjestä', pl: 'Sortuj', cs: 'Seřadit', hu: 'Rendezés', ro: 'Sortează',
+      el: 'Ταξινόμηση', tr: 'Sırala', ru: 'Сортировка', uk: 'Сортування', ar: 'ترتيب',
+      he: 'מיון', hi: 'क्रमबद्ध करें', th: 'เรียงลำดับ', vi: 'Sắp xếp', id: 'Urutkan',
+      ja: '並べ替え', ko: '정렬', zh: '排序', 'zh-TW': '排序'
+    },
+    'weather.allRegions': {
+      en: 'All regions', es: 'Todas las regiones', fr: 'Toutes les régions', de: 'Alle Regionen',
+      it: 'Tutte le regioni', 'pt-BR': 'Todas as regiões', 'pt-PT': 'Todas as regiões',
+      nl: 'Alle regio\'s', da: 'Alle regioner', sv: 'Alla regioner', nb: 'Alle regioner',
+      fi: 'Kaikki alueet', pl: 'Wszystkie regiony', cs: 'Všechny oblasti', hu: 'Minden régió',
+      ro: 'Toate regiunile', el: 'Όλες οι περιοχές', tr: 'Tüm bölgeler', ru: 'Все регионы',
+      uk: 'Усі регіони', ar: 'كل المناطق', he: 'כל האזורים', hi: 'सभी क्षेत्र', th: 'ทุกภูมิภาค',
+      vi: 'Tất cả khu vực', id: 'Semua wilayah', ja: 'すべての地域', ko: '모든 지역', zh: '所有地区',
+      'zh-TW': '所有地區'
+    },
+    'weather.featuredOrder': {
+      en: 'Featured', es: 'Destacados', fr: 'En vedette', de: 'Empfohlen', it: 'In evidenza',
+      'pt-BR': 'Destaques', 'pt-PT': 'Destaques', nl: 'Uitgelicht', da: 'Fremhævet',
+      sv: 'Utvalda', nb: 'Utvalgte', fi: 'Suositellut', pl: 'Polecane', cs: 'Doporučené',
+      hu: 'Kiemelt', ro: 'Recomandate', el: 'Επιλεγμένα', tr: 'Öne çıkanlar',
+      ru: 'Рекомендуемые', uk: 'Рекомендовані', ar: 'مميز', he: 'מומלצים', hi: 'चुनिंदा',
+      th: 'แนะนำ', vi: 'Nổi bật', id: 'Unggulan', ja: 'おすすめ', ko: '추천', zh: '精选', 'zh-TW': '精選'
+    },
+    'weather.warmestFirst': {
+      en: 'Warmest first', es: 'Más cálidos primero', fr: 'Les plus chauds en premier',
+      de: 'Wärmste zuerst', it: 'I più caldi per primi', 'pt-BR': 'Mais quentes primeiro',
+      'pt-PT': 'Mais quentes primeiro', nl: 'Warmste eerst', da: 'Varmeste først',
+      sv: 'Varmast först', nb: 'Varmest først', fi: 'Lämpimimmät ensin',
+      pl: 'Najpierw najcieplejsze', cs: 'Nejdřív nejteplejší', hu: 'Legmelegebb elöl',
+      ro: 'Mai întâi cele mai calde', el: 'Πρώτα τα θερμότερα', tr: 'Önce en sıcak',
+      ru: 'Сначала самые тёплые', uk: 'Спочатку найтепліші', ar: 'الأكثر دفئًا أولًا',
+      he: 'החמים ביותר תחילה', hi: 'सबसे गर्म पहले', th: 'อุ่นที่สุดก่อน', vi: 'Ấm nhất trước',
+      id: 'Terhangat dulu', ja: '気温の高い順', ko: '따뜻한 순', zh: '最暖优先', 'zh-TW': '最暖優先'
+    },
+    'weather.localTimeOrder': {
+      en: 'Local time', es: 'Hora local', fr: 'Heure locale', de: 'Ortszeit', it: 'Ora locale',
+      'pt-BR': 'Hora local', 'pt-PT': 'Hora local', nl: 'Lokale tijd', da: 'Lokal tid',
+      sv: 'Lokal tid', nb: 'Lokal tid', fi: 'Paikallinen aika', pl: 'Czas lokalny',
+      cs: 'Místní čas', hu: 'Helyi idő', ro: 'Ora locală', el: 'Τοπική ώρα', tr: 'Yerel saat',
+      ru: 'Местное время', uk: 'Місцевий час', ar: 'التوقيت المحلي', he: 'שעון מקומי',
+      hi: 'स्थानीय समय', th: 'เวลาท้องถิ่น', vi: 'Giờ địa phương', id: 'Waktu setempat',
+      ja: '現地時間', ko: '현지 시간', zh: '当地时间', 'zh-TW': '當地時間'
+    },
+    'weather.showPreview': {
+      en: 'Show fewer places', es: 'Mostrar menos lugares', fr: 'Afficher moins de lieux',
+      de: 'Weniger Orte anzeigen', it: 'Mostra meno luoghi', 'pt-BR': 'Mostrar menos lugares',
+      'pt-PT': 'Mostrar menos locais', nl: 'Minder plaatsen tonen', da: 'Vis færre steder',
+      sv: 'Visa färre platser', nb: 'Vis færre steder', fi: 'Näytä vähemmän paikkoja',
+      pl: 'Pokaż mniej miejsc', cs: 'Zobrazit méně míst', hu: 'Kevesebb hely megjelenítése',
+      ro: 'Afișează mai puține locuri', el: 'Εμφάνιση λιγότερων τοποθεσιών',
+      tr: 'Daha az yer göster', ru: 'Показать меньше мест', uk: 'Показати менше місць',
+      ar: 'عرض أماكن أقل', he: 'הצגת פחות מקומות', hi: 'कम स्थान दिखाएं',
+      th: 'แสดงสถานที่น้อยลง', vi: 'Hiển thị ít địa điểm hơn',
+      id: 'Tampilkan lebih sedikit tempat', ja: '表示を減らす', ko: '적게 보기', zh: '显示更少地点',
+      'zh-TW': '顯示較少地點'
+    },
+    'weather.moveEarlier': {
+      en: 'Move earlier', es: 'Mover antes', fr: 'Déplacer plus tôt',
+      de: 'Nach vorne verschieben', it: 'Sposta prima', 'pt-BR': 'Mover para antes',
+      'pt-PT': 'Mover para antes', nl: 'Eerder plaatsen', da: 'Flyt frem', sv: 'Flytta tidigare',
+      nb: 'Flytt tidligere', fi: 'Siirrä aiemmaksi', pl: 'Przenieś wcześniej',
+      cs: 'Přesunout dříve', hu: 'Mozgatás feljebb', ro: 'Mută mai devreme',
+      el: 'Μετακίνηση νωρίτερα', tr: 'Daha öne taşı', ru: 'Переместить выше',
+      uk: 'Перемістити вище', ar: 'نقل إلى موضع أسبق', he: 'העבר מוקדם יותר', hi: 'पहले ले जाएँ',
+      th: 'ย้ายขึ้นก่อน', vi: 'Di chuyển lên trước', id: 'Pindahkan lebih awal', ja: '前に移動',
+      ko: '앞으로 이동', zh: '上移', 'zh-TW': '上移'
+    },
+    'weather.moveLater': {
+      en: 'Move later', es: 'Mover después', fr: 'Déplacer plus tard',
+      de: 'Nach hinten verschieben', it: 'Sposta dopo', 'pt-BR': 'Mover para depois',
+      'pt-PT': 'Mover para depois', nl: 'Later plaatsen', da: 'Flyt tilbage',
+      sv: 'Flytta senare', nb: 'Flytt senere', fi: 'Siirrä myöhemmäksi', pl: 'Przenieś później',
+      cs: 'Přesunout později', hu: 'Mozgatás lejjebb', ro: 'Mută mai târziu',
+      el: 'Μετακίνηση αργότερα', tr: 'Daha sonra taşı', ru: 'Переместить ниже',
+      uk: 'Перемістити нижче', ar: 'نقل إلى موضع لاحق', he: 'העבר מאוחר יותר',
+      hi: 'बाद में ले जाएँ', th: 'ย้ายไปทีหลัง', vi: 'Di chuyển xuống sau',
+      id: 'Pindahkan lebih lambat', ja: '後に移動', ko: '뒤로 이동', zh: '下移', 'zh-TW': '下移'
+    },
     'weather.recentPlaces': {
       en: 'Recent places', es: 'Lugares recientes', fr: 'Lieux récents', de: 'Letzte Orte',
       it: 'Luoghi recenti', 'pt-BR': 'Lugares recentes', 'pt-PT': 'Locais recentes', nl: 'Recente plaatsen',

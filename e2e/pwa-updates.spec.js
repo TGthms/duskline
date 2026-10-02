@@ -3,6 +3,9 @@ const {test, expect} = require('@playwright/test');
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const workerSource = fs.readFileSync('sw.js', 'utf8');
+const shellCache = workerSource.match(/const CACHE = '([^']+)'/)[1];
+const localeCache = workerSource.match(/const LOCALES = '([^']+)'/)[1];
 
 test.describe('redirecting host worker upgrade', () => {
   test.use({serviceWorkers:'allow'});
@@ -61,21 +64,21 @@ test.describe('redirecting host worker upgrade', () => {
     expect(toastBox.y).toBeLessThan(200);
     await Promise.all([page.waitForEvent('load'), update.click()]);
     await expect(page.getByRole('heading')).toHaveText('duskline test shell');
-    const cacheState = await page.evaluate(async () => {
-      const cache = await caches.open('duskline-shell-v65');
+    const cacheState = await page.evaluate(async cacheName => {
+      const cache = await caches.open(cacheName);
       const document = await cache.match('./index.html');
       return {redirected:document.redirected, keys:await caches.keys()};
-    });
+    }, shellCache);
     expect(cacheState.redirected).toBe(false);
     expect(cacheState.keys).not.toContain('duskline-shell-v51');
-    const localeResult = await page.evaluate(async () => {
+    const localeResult = await page.evaluate(async cacheName => {
       for (const code of ['fr','es','de','it','nl','da','sv','nb','fi','pl']) {
         const response = await fetch('/src/js/data/weather-packs/'+code+'.json');
         if (!response.ok) throw new Error('Locale missing: '+code);
       }
-      const cache = await caches.open('duskline-locales-v65');
+      const cache = await caches.open(cacheName);
       return (await cache.keys()).map(request=>request.url);
-    });
+    }, localeCache);
     expect(localeResult).toHaveLength(8);
     expect(localeResult.some(url=>url.endsWith('/fr.json'))).toBe(false);
     expect(localeResult.some(url=>url.endsWith('/pl.json'))).toBe(true);
@@ -89,4 +92,30 @@ test.describe('redirecting host worker upgrade', () => {
     await expect(page.getByRole('heading')).toBeVisible();
     unavailable = false;
   });
+  test('Update replaces stale cached translations and retains the refreshed pack offline', async ({page}) => {
+    await page.goto(origin);
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+    const previous = 'duskline-locales-v65';
+    await page.evaluate(async name => {
+      const cache = await caches.open(name);
+      await cache.put('/src/js/data/weather-packs/fr.json', new Response(JSON.stringify({'weather.region':'Old region'}), {headers:{'Content-Type':'application/json'}}));
+    }, previous);
+    current = true;
+    await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
+    const update = page.getByRole('button', {name:'Update',exact:true});
+    await expect(update).toBeVisible({timeout:20000});
+    await Promise.all([page.waitForEvent('load'), update.click()]);
+    expect(await page.evaluate(() => caches.keys())).not.toContain(previous);
+    // The refreshed prior language is already installed, even if the host
+    // becomes unavailable immediately after the update reload.
+    unavailable = true;
+    const translated = await page.evaluate(async () => (await fetch('/src/js/data/weather-packs/fr.json')).json());
+    expect(translated['weather.region']).toBe('Région');
+    expect(translated['weather.moveEarlier']).toBe('Déplacer plus tôt');
+    unavailable = true;
+    expect(await page.evaluate(async () => (await fetch('/src/js/data/weather-packs/fr.json')).json())).toEqual(translated);
+    unavailable = false;
+  });
+
 });

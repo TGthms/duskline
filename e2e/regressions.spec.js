@@ -309,6 +309,10 @@ test('hourly chart values update on pointer hover and reset when the pointer lea
   await page.locator('#weatherModules [data-sheet="conditions"]').click();
   const chart = page.locator('#weatherSheet .weather-chart-wrap[role="slider"]').first();
   await expect(chart).toBeVisible();
+  // The sheet animates in; measure the chart only after its target settles.
+  await chart.evaluate(node => Promise.all(node.closest('.weather-sheet').getAnimations({subtree:true})
+    .filter(animation => animation.effect && animation.effect.getComputedTiming().iterations !== Infinity)
+    .map(animation => animation.finished.catch(() => {}))));
   const initialIndex = await chart.getAttribute('aria-valuenow');
   const svg = chart.locator('svg');
   const box = await svg.boundingBox();
@@ -676,8 +680,10 @@ test('share confirms a legacy clipboard copy when native clipboard is unavailabl
 
 test('a light city pack explains hourly loading until full data arrives', async ({ page }) => {
   await stubWeather(page, null);
+  let releaseFull;
+  const fullReady = new Promise(resolve => { releaseFull = resolve; });
   await page.route(/api\.open-meteo\.com/, async route => {
-    if (route.request().url().includes('hourly=')) await new Promise(resolve => setTimeout(resolve, 750));
+    if (route.request().url().includes('hourly=')) await fullReady;
     await route.fallback();
   });
   await page.goto('/');
@@ -691,6 +697,7 @@ test('a light city pack explains hourly loading until full data arrives', async 
   expect(loadingTile).toBeTruthy();
   expect(loadingContent).toBeTruthy();
   expect(Math.abs((loadingContent.x + loadingContent.width / 2) - (loadingTile.x + loadingTile.width / 2))).toBeLessThan(2);
+  releaseFull();
   await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible({ timeout: 15000 });
   const loadedTile = await hourlyTile.boundingBox();
   expect(Math.abs(loadedTile.height - loadingTile.height)).toBeLessThanOrEqual(5);
@@ -1090,12 +1097,15 @@ test('international shared links check alerts with a visible loader and can retr
   await stubWeather(page,null);
   let calls = 0;
   let country = '';
+  let releaseFirst, releaseRetry;
+  const firstReady = new Promise(resolve => { releaseFirst = resolve; });
+  const retryReady = new Promise(resolve => { releaseRetry = resolve; });
   await page.route(/\/api\/international-alerts/, async route => {
     const url = new URL(route.request().url());
     if (url.searchParams.get('cc') !== 'FR') return route.fulfill({json:{availability:'available',alerts:[],truncated:false}});
     country = url.searchParams.get('country');
     const attempt = ++calls;
-    await new Promise(resolve => setTimeout(resolve,650));
+    await (attempt === 1 ? firstReady : retryReady);
     if (attempt === 1) return route.fulfill({status:502,json:{error:'upstream_unavailable'}});
     return route.fulfill({json:{availability:'available',provider:'IFRC Alert Hub',country:'France',alerts:[{
       id:'fr-test',event:'Flood warning',severity:'Moderate',ends:new Date(Date.now()+3600000).toISOString(),
@@ -1105,10 +1115,12 @@ test('international shared links check alerts with a visible loader and can retr
   });
   await page.goto('/?lat=48.85&lon=2.35&name=Paris&cc=FR');
   await expect(page.locator('.weather-alert-status .loader')).toBeVisible();
+  releaseFirst();
   await expect(page.locator('[data-alert-retry]')).toBeVisible();
   expect(country).toBe('France');
   await page.locator('[data-alert-retry]').click();
   await expect(page.locator('.weather-alert-status .loader')).toBeVisible();
+  releaseRetry();
   await expect(page.locator('.weather-alert-title')).toContainText('Flood warning');
   const panel = page.locator('.weather-alert-collapse');
   await expect(panel).toHaveAttribute('aria-hidden','true');
@@ -1156,7 +1168,7 @@ test('desktop cards match row heights and light hover keeps a readable surface',
   const [a,b] = await Promise.all([aqi.boundingBox(),feels.boundingBox()]);
   expect(Math.abs(a.height-b.height)).toBeLessThanOrEqual(1);
   await aqi.hover();
-  await expect(aqi).toHaveCSS('background-color','rgb(232, 241, 249)');
+  await expect(aqi).toHaveCSS('background-color','rgb(224, 235, 245)');
 });
 
 test('My Sky keeps a compact primary dashboard and one quiet list with rearrangement in preferences', async ({page}, testInfo) => {
@@ -1423,12 +1435,12 @@ test('light forecast hover keeps its opaque surface and only highlights the dail
   await expect(page.locator('#weatherDetail')).toHaveClass(/wx-mods-light/);
   const daily=page.locator('.weather-mod-daily');
   await expect(daily).toBeVisible();
-  await expect(daily).toHaveCSS('background-color','rgba(240, 247, 253, 0.94)');
+  await expect(daily).toHaveCSS('background-color','rgba(213, 227, 240, 0.94)');
   await daily.locator('.weather-daily-row').nth(2).hover();
-  await expect(daily).toHaveCSS('background-color','rgba(240, 247, 253, 0.94)');
+  await expect(daily).toHaveCSS('background-color','rgba(213, 227, 240, 0.94)');
   expect(await daily.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
   await page.locator('[data-sheet="aqi"]').hover();
-  await expect(page.locator('[data-sheet="aqi"]')).toHaveCSS('background-color','rgb(232, 241, 249)');
+  await expect(page.locator('[data-sheet="aqi"]')).toHaveCSS('background-color','rgb(224, 235, 245)');
 });
 
 test('no-alerts refresh checks the provider again and shares loading feedback with search',async ({page})=>{
@@ -1495,6 +1507,8 @@ test('detail loading has one inline message and round actions, with an accessibl
   await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
   await expect(page.locator('#weatherDetail .weather-detail-loading-panel .loader')).toHaveCount(1);
   await expect(page.locator('#weatherDetail .weather-detail-loading .loader')).toHaveCount(0);
+  await expect(page.locator('#weatherDetailFav svg')).toHaveCount(1);
+  await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed','false');
   releaseForecast();
   await expect(page.locator('#weatherModules [data-sheet="conditions"]')).toBeVisible();
   for(const id of ['weatherDetailBack','weatherDetailFav','weatherDetailShare','weatherDetailRefresh']) {
@@ -1761,4 +1775,96 @@ test('repeated bounds events reuse an in-flight weather grid request',async ({pa
     expect(grids).toBe(1);
   }
   release();await expect(page.locator('#weatherMapStatus')).toBeHidden();
+});
+
+for (const motion of ['full','off']) test('search launched from the primary picker keeps intent and hands focus to Search after closing with '+motion, async ({page}) => {
+  await page.addInitScript(motion => {
+    localStorage.setItem('duskline-weather-mode','my-sky');
+    localStorage.setItem('duskline-motion',motion);
+    if (!localStorage.getItem('duskline-weather-greeting-city')) localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'Tokyo',lat:35.6762,lon:139.6503,tz:'Asia/Tokyo',country:'Japan',country_code:'JP'}));
+  }, motion);
+  await stubWeather(page,null);
+  await page.route(/geocoding-api\.open-meteo\.com/,route=>route.fulfill({json:{results:[{id:2643743,name:'London',latitude:51.50853,longitude:-0.12574,admin1:'England',timezone:'Europe/London',country:'United Kingdom',country_code:'GB'}]}}));
+  await page.goto('/');
+  await expect(page.locator('#weatherHome h3')).toHaveText('Tokyo');
+  await page.locator('#weatherGreetingPlace').click();
+  await page.getByRole('button',{name:'Choose a city for My Sky',exact:true}).click();
+  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+  await expect(page.locator('#weatherSearch')).toBeFocused();
+  await page.locator('#weatherSearch').fill('London');
+  await page.locator('#wx-suggest-0').click();
+  await expect(page.locator('#weatherDetailTitle')).toHaveText('London');
+  await expect(page.locator('#weatherHome h3')).toHaveText('London');
+  await page.locator('#weatherDetailBack').click();
+  await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/);
+  await expect(page.locator('#weatherHome h3')).toHaveText('London');
+  await page.reload();
+  await expect(page.locator('#weatherHome h3')).toHaveText('London');
+});
+
+test('real city buttons keep keyboard boundaries and haptics survive icon replacements', async ({page}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('duskline-motion','full');
+    window.__vibrations=[];
+    Object.defineProperty(navigator,'vibrate',{configurable:true,value:duration=>{window.__vibrations.push(duration);return true;}});
+  });
+  await stubWeather(page,null);
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  expect(await page.locator('button input').count()).toBe(0);
+  const last=page.locator('#weatherModules [data-sheet="sun"]');
+  await page.locator('#weatherDetailBack').focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(last).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#weatherDetailBack')).toBeFocused();
+  const prior=await page.evaluate(()=>window.__vibrations.length);
+  await page.locator('#weatherDetailFav').click();
+  await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed','true');
+  await page.locator('#weatherDetailFav').click();
+  await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed','false');
+  expect(await page.evaluate(()=>window.__vibrations.length)).toBe(prior+2);
+  expect(await page.locator('button input').count()).toBe(0);
+  await page.locator('#weatherDetailBack').click();
+  await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/);
+  await page.locator('#weatherUnitsBtn').click();
+  await page.getByRole('combobox',{name:'Motion',exact:true}).selectOption('off');
+  await expect(page.locator('html')).toHaveAttribute('data-motion-effective','off');
+  const offCount=await page.evaluate(()=>window.__vibrations.length);
+  await page.locator('#weatherSheetClose').click();
+  expect(await page.evaluate(()=>window.__vibrations.length)).toBe(offCount);
+});
+
+test('the narrow header keeps brand and language controls separate in long labels and RTL',async ({page})=>{
+  await stubWeather(page,null);await page.goto('/');
+  for(const code of ['en','pt-BR','de','zh-TW','ar','he']) {
+    await page.locator('#dusklineLanguage').selectOption(code);
+    await expect(page.locator('html')).toHaveAttribute('lang',code);
+    for(const width of [320,360,390,640,768]) {
+      await page.setViewportSize({width,height:844});
+      const layout=await page.locator('#navbar').evaluate(header=>{
+        const a=header.querySelector('.duskline-brand').getBoundingClientRect();
+        const word=header.querySelector('.duskline-brand span').getBoundingClientRect();
+        const b=header.querySelector('select').getBoundingClientRect();
+        const bounds=header.getBoundingClientRect();
+        return {separate:a.right<=b.left||b.right<=a.left,wordInside:word.left>=a.left&&word.right<=a.right,inside:Math.min(a.left,b.left)>=bounds.left&&Math.max(a.right,b.right)<=bounds.right};
+      });
+      expect(layout.separate).toBe(true);expect(layout.wordInside).toBe(true);expect(layout.inside).toBe(true);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+  }
+});
+
+for(const isDay of [true,false]) test('city action surfaces match Back in '+(isDay?'daylight':'night')+' including saved state',async ({page})=>{
+  await stubWeather(page,null,{isDay});await page.goto('/?city=tokyo');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  await page.mouse.move(0,0);
+  const read=()=>page.locator('.weather-detail-bar').evaluate(bar=>[...bar.querySelectorAll('button')].map(button=>{
+    const s=getComputedStyle(button),icon=getComputedStyle(button.querySelector('svg'));
+    return {background:s.backgroundColor,color:s.color,border:s.border,radius:s.borderRadius,width:s.width,height:s.height,iconWidth:icon.width,iconHeight:icon.height};
+  }));
+  let styles=await read();expect(styles).toHaveLength(4);for(const style of styles.slice(1)) expect(style).toEqual(styles[0]);
+  await page.locator('#weatherDetailFav').click();await page.mouse.move(0,0);
+  await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed','true');
+  await expect.poll(read).toEqual(Array(4).fill(styles[0]));
 });
