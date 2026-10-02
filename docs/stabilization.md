@@ -72,8 +72,9 @@ primary and retain Retry without starting a refresh that clears the error. The S
 control is synchronized even while a new city is loading.
 
 Optional haptics use one delegated listener on real buttons and the Vibration API.
-There are no hidden native switches, nested inputs, mutation observers, or layout
-reads. Unsupported browsers retain ordinary button behavior. Motion Off suppresses
+On browsers with the Vibration API, there are no native helper nodes or observers.
+The iOS-only fallback is described below. Unsupported browsers retain ordinary
+button behavior. Motion Off suppresses
 feedback immediately, and city/detail focus wrapping excludes hidden or non-tabbable
 controls. Save, Share, Refresh, and Back share one circular glass treatment.
 
@@ -95,3 +96,40 @@ suppression, header intersections, matching action surfaces in day/night and sav
 states, rounding-boundary duplicates, distinct neighboring identities, and translated
 PWA upgrades. Loading-state checks hold provider responses until feedback is checked;
 chart hit coordinates are measured after the sheet transition settles.
+
+
+### Native iOS tap feedback (iOS 18+)
+
+When iOS exposes native switches and has no Vibration API, a small Shadow DOM
+component supplies a transparent **label** tap surface. Its associated native switch
+is non-rendered, hidden from accessibility, outside the tab order, and never a touch
+target. A real label tap produces a trusted switch activation. That activation emits
+the native tick before bubbling exactly one trusted click to the real button,
+so Save icon replacement and dialog dismissal cannot remove the tick first. Focus
+remains on the actual button; event trust, coordinates, and user activation remain
+intact for Share and pointer handling. There are no scripted button activations.
+
+Motion Off removes the tap surfaces from hit testing. Disabled controls, cancelled
+pointer gestures, and movement beyond the existing 12 px tap tolerance suppress
+native activation. Hourly forecast surfaces sit inside each item and the header,
+retaining the original horizontal scroll ancestry. The iOS-only observer repairs
+surfaces after dynamic markup replacement; it does no bounding-box reads or per-frame
+work. Existing absolute/fixed control positioning is preserved, and rounded clipping
+follows the surface's inherited border radius.
+
+The implementation does not use scripted label/input clicks to request haptics:
+[WebKit requires trusted activation](https://github.com/WebKit/WebKit/commit/fc1ef8).
+Its [checkbox click path](https://raw.githubusercontent.com/WebKit/WebKit/main/Source/WebCore/html/CheckboxInputType.cpp)
+emits haptics for a trusted switch click inside a user gesture. The label itself does
+not invoke the switch touch handler that can claim scrolling.
+
+Automated iOS 18/27 API-profile fixtures verify native label event provenance,
+one action per tap, icon replacement, focus boundaries, disabled controls, Motion Off,
+drag cancellation, and hourly chart navigation. On non-Apple engines, the Switch IDL
+shim only selects the iOS branch; browser-generated event trust is not mocked. These
+are interaction tests, not measurements of a physical iPhone's Taptic Engine. Physical
+iOS 27 confirmation remains part of device acceptance.
+
+Mobile WebKit CI runs in two file shards to keep the complete native-control and
+30-language coverage within the existing job deadline. No checks, assertions, retries,
+or per-test timeouts are removed or relaxed, and both shards gate deployment.

@@ -288,3 +288,11 @@ body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #we
 body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh) svg {
   width: 20px; height: 20px; color: inherit;
 }
+
+/* iOS taps go to a plain label; the native switch stays hidden in Shadow DOM.
+   Rounded clipping applies to hit testing as well as paint. No layout wrapper. */
+.wx-ios-haptic-relative { position: relative; }
+.wx-ios-haptic-hit { position: absolute; inset: 0; display: block; border-radius: inherit; clip-path: border-box; cursor: inherit; z-index: 5; }
+button:disabled .wx-ios-haptic-hit,
+button[aria-disabled="true"] .wx-ios-haptic-hit,
+html[data-motion-effective="off"] .wx-ios-haptic-hit { display: none !important; }

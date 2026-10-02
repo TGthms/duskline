@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v67';
+const CACHE = 'duskline-shell-v68';
 const SHELL = [
   './',
   './index.html',
@@ -71,7 +71,7 @@ function navigationResponse(response) {
     status: response.status, statusText: response.statusText, headers: response.headers
   });
 }
-const LOCALES = 'duskline-locales-v67';
+const LOCALES = 'duskline-locales-v68';
 const LOCALE_LIMIT = 8; // Four recently used languages, weather + legal packs.
 function isLocale(url) {
   return /\/src\/js\/data\/(?:weather-packs|legal\/packs)\/[a-zA-Z-]+\.json$/.test(url.pathname);

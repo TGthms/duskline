@@ -4949,6 +4949,8 @@
     save.addEventListener('click', function () {
       toggleFavorite(city);
       syncSave();
+      closeSuggest();
+      searchEl.focus({preventScroll:true});
       refreshListsFromCache({ force: true });
       if (weatherMode === 'my-sky') refresh(false, { quiet: true, reason: 'view' });
     });

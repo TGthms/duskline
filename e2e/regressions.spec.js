@@ -631,6 +631,8 @@ test('search shows progress and saves a result directly with confirmation', asyn
   expect(await page.locator('#weatherSuggest [data-place-choice]').evaluate(node => getComputedStyle(node).borderRadius)).toBe('10px');
   await page.locator('#weatherSuggest .s-add').click();
   await expect(page.locator('.weather-toast')).toContainText('Added to My Sky');
+  await expect(page.locator('#weatherSuggest')).toBeHidden();
+  await expect(page.locator('#weatherSearch')).toBeFocused();
   await page.locator('[data-weather-mode="my-sky"]').click();
   await expect(page.locator('#weatherHome')).toContainText('Boston');
 });
@@ -1867,4 +1869,94 @@ for(const isDay of [true,false]) test('city action surfaces match Back in '+(isD
   await page.locator('#weatherDetailFav').click();await page.mouse.move(0,0);
   await expect(page.locator('#weatherDetailFav')).toHaveAttribute('aria-pressed','true');
   await expect.poll(read).toEqual(Array(4).fill(styles[0]));
+});
+
+// Exercise Safari's native-label path using its public API availability. On
+// non-Apple engines, the Switch IDL shim only selects this branch; actual label
+// forwarding and event trust are still provided by the browser, not simulated.
+async function prepareIosNativeTaps(page,version) {
+  await page.addInitScript(version=>{
+    localStorage.setItem('duskline-motion','full');
+    Object.defineProperty(navigator,'userAgent',{configurable:true,value:'Mozilla/5.0 (iPhone; CPU iPhone OS '+version+'_0 like Mac OS X) AppleWebKit/605.1.15 Version/'+version+'.0 Mobile/15E148 Safari/604.1'});
+    let prototype=navigator;
+    while(prototype) { if(Object.prototype.hasOwnProperty.call(prototype,'vibrate')) delete prototype.vibrate;prototype=Object.getPrototypeOf(prototype); }
+    if(!('switch' in HTMLInputElement.prototype)) Object.defineProperty(HTMLInputElement.prototype,'switch',{configurable:true,get(){return this.hasAttribute('switch');}});
+    window.__nativeTicks=[];window.__nativeActions=0;window.__nativeActionTrust=[];
+  },version);
+}
+async function recordNativeTick(control) {
+  await expect(control.locator('.wx-ios-haptic-hit').first()).toBeAttached();
+  await control.evaluate(button=>{
+    if(button.id==='weatherDetailFav' && !button.__nativeActionObserved) {
+      button.__nativeActionObserved=true;
+      button.addEventListener('click',event=>{window.__nativeActions++;window.__nativeActionTrust.push(event.isTrusted);});
+    }
+  });
+  const accessibility=await control.locator('.wx-ios-haptic-hit').first().evaluate(host=>{
+    const tick=host.shadowRoot.querySelector('input');
+    tick.addEventListener('click',event=>window.__nativeTicks.push({trusted:event.isTrusted,hidden:tick.hidden,checked:tick.checked,saved:document.getElementById('weatherDetailFav').getAttribute('aria-pressed')}),{capture:true});
+    const previous=document.activeElement;tick.focus({preventScroll:true});
+    return {tab:tick.tabIndex,rendered:tick.getClientRects().length,focused:host.shadowRoot.activeElement===tick,stable:document.activeElement===previous};
+  });
+  expect(accessibility).toEqual({tab:-1,rendered:0,focused:false,stable:true});
+}
+test.describe('native iOS tap feedback',()=>{
+  test.use({hasTouch:true,viewport:{width:390,height:844}});
+  for(const version of [18,27]) test('iOS '+version+' native labels activate once before icon replacement and preserve visible focus',async ({page})=>{
+    await prepareIosNativeTaps(page,version);await stubWeather(page,null);await page.goto('/?city=tokyo');
+    await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+    const fav=page.locator('#weatherDetailFav');
+    await recordNativeTick(fav);await fav.tap();
+    await expect(fav).toHaveAttribute('aria-pressed','true');await expect(fav).toBeFocused();
+    await recordNativeTick(fav);await fav.tap();
+    await expect(fav).toHaveAttribute('aria-pressed','false');await expect(fav).toBeFocused();
+    const state=await page.evaluate(()=>({ticks:window.__nativeTicks,actions:window.__nativeActions,trust:window.__nativeActionTrust,lightInputs:document.querySelectorAll('button input').length}));
+    expect(state.actions).toBe(2);expect(state.trust).toEqual([true,true]);expect(state.lightInputs).toBe(0);
+    expect(state.ticks).toEqual([{trusted:true,hidden:true,checked:true,saved:'false'},{trusted:true,hidden:true,checked:true,saved:'true'}]);
+    await page.locator('#weatherDetailBack').focus();await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('#weatherModules [data-sheet="sun"]')).toBeFocused();
+    await page.keyboard.press('Tab');await expect(page.locator('#weatherDetailBack')).toBeFocused();
+  });
+  test('iOS gestures, disabled controls, and Motion Off produce no native tick or accidental action',async ({page})=>{
+    await prepareIosNativeTaps(page,27);await stubWeather(page,null);await page.goto('/?city=tokyo');
+    await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+    const fav=page.locator('#weatherDetailFav');await recordNativeTick(fav);
+    const bounds=await fav.boundingBox();
+    await page.mouse.move(bounds.x+24,bounds.y+24);await page.mouse.down();await page.mouse.move(bounds.x+40,bounds.y+24);await page.mouse.up();
+    await expect(fav).toHaveAttribute('aria-pressed','false');
+    expect(await page.evaluate(()=>window.__nativeTicks.length)).toBe(0);expect(await page.evaluate(()=>window.__nativeActions)).toBe(0);
+    await fav.evaluate(button=>{button.disabled=true;});await page.touchscreen.tap(bounds.x+24,bounds.y+24);
+    expect(await page.evaluate(()=>window.__nativeTicks.length)).toBe(0);expect(await page.evaluate(()=>window.__nativeActions)).toBe(0);
+    await fav.evaluate(button=>{button.disabled=false;});
+    await page.locator('#weatherDetailBack').tap();await expect(page.locator('#weatherDetail')).not.toHaveClass(/open/);
+    await page.locator('#weatherUnitsBtn').tap();await page.getByRole('combobox',{name:'Motion',exact:true}).selectOption('off');
+    await expect(page.locator('html')).toHaveAttribute('data-motion-effective','off');
+    const close=page.locator('#weatherSheetClose');await recordNativeTick(close);
+    const before=await page.evaluate(()=>window.__nativeTicks.length);await close.tap();
+    await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/);
+    expect(await page.evaluate(()=>window.__nativeTicks.length)).toBe(before);
+  });
+  test('city-card foreground text receives one native tick and opens its forecast',async ({page})=>{
+    await prepareIosNativeTaps(page,27);await stubWeather(page,null);await page.goto('/');
+    const row=page.locator('#weatherList .weather-row').first();
+    await expect(row.locator('.weather-row-hl')).toContainText('H:');await recordNativeTick(row);
+    const name=await row.locator('.weather-row-city-name').textContent();
+    const bounds=await row.locator('.weather-row-city-name').boundingBox();
+    await page.touchscreen.tap(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
+    await expect(page.locator('#weatherDetailTitle')).toHaveText(name);
+    expect(await page.evaluate(()=>window.__nativeTicks.length)).toBe(1);
+    expect(await page.evaluate(()=>window.__nativeTicks[0].trusted)).toBe(true);
+  });
+  test('hourly tap targets stay inside the horizontal scroller and activate their chart',async ({page})=>{
+    await prepareIosNativeTaps(page,27);await stubWeather(page,null);await page.goto('/?city=tokyo');
+    const hourly=page.locator('#weatherModules .weather-hourly');await expect(hourly.locator('.weather-hourly-item').first()).toBeVisible();
+    const item=hourly.locator('.weather-hourly-item').nth(1);
+    await expect(item.locator('.wx-ios-haptic-hit')).toHaveCount(1);
+    expect(await hourly.evaluate(strip=>!strip.closest('button').querySelector(':scope > .wx-ios-haptic-hit'))).toBe(true);
+    await item.tap();
+    await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+    await expect(page.locator('#weatherSheetBody [data-temp-mode="actual"]')).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('#weatherSheet .weather-chart-wrap')).toHaveAttribute('data-kind','temperature_2m');
+    await expect(page.locator('#weatherSheet .weather-chart-wrap')).toBeVisible();
+  });
 });
