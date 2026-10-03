@@ -1970,11 +1970,12 @@ test.describe('native iOS tap feedback',()=>{
 });
 
 test('haptic setting offers Full/Reduced/Off and persists selection', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.removeItem('duskline-haptic');
-  });
   await stubWeather(page, null);
   await page.goto('/');
+  // Start with a clean slate (evaluate runs once, unlike addInitScript which
+  // would also wipe localStorage on the reload below)
+  await page.evaluate(() => localStorage.removeItem('duskline-haptic'));
+  await page.reload();
   // Open settings (units sheet contains the haptic dropdown)
   await page.locator('#weatherUnitsBtn').click();
   const hapticSelect = page.locator('.weather-haptic-select');
