@@ -243,7 +243,7 @@
 <div class="weather-route-progress" id="weatherModeLoading" role="progressbar" aria-label="Loading forecast…" data-i18n-aria="weather.loadingForecast" dir="ltr" hidden></div>
 <main id="main" tabindex="-1">
 <section id="tools" class="tools-page tools-detail-page weather-root tools-miniapp" aria-labelledby="toolsTitle" data-tool="weather">
-  <h1 id="toolsTitle" class="visually-hidden">duskline weather — worldwide forecasts, air quality, and alerts</h1>
+  <h1 id="toolsTitle" class="visually-hidden" data-i18n="weather.tagline">duskline weather — worldwide forecasts, air quality, and alerts</h1>
 
   <div class="weather-page-sky" id="weatherPageSky" aria-hidden="true"></div>
   <div class="weather-page">
@@ -263,7 +263,7 @@
         <button type="button" class="weather-search-clear" id="weatherSearchClear" aria-label="Clear search" data-i18n-aria="weather.clearSearch" hidden><svg class="weather-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x" xlink:href="#lucide-x"/></svg></button>
         <ul class="weather-suggest" id="weatherSuggest" role="grid" aria-label="Places" hidden></ul>
       </div>
-      <div class="weather-toolbar-actions" role="toolbar" aria-label="Weather actions">
+      <div class="weather-toolbar-actions" role="toolbar" aria-label="Weather actions" data-i18n-aria="weather.toolbarActions">
         <div class="weather-mode-switch" id="weatherModeSwitch" role="group" aria-label="Weather view" data-i18n-aria="weather.weatherView">
           <button type="button" data-weather-mode="horizon" aria-pressed="true" data-i18n="weather.mode.horizon">Horizon</button>
           <button type="button" data-weather-mode="my-sky" aria-pressed="false" data-i18n="weather.mode.mySky">My Sky</button>
@@ -275,10 +275,10 @@
             <path d="M2 12.8799V11.1199C2 10.0799 2.85 9.21994 3.9 9.21994C5.71 9.21994 6.45 7.93994 5.54 6.36994C5.02 5.46994 5.33 4.29994 6.24 3.77994L7.97 2.78994C8.76 2.31994 9.78 2.59994 10.25 3.38994L10.36 3.57994C11.26 5.14994 12.74 5.14994 13.65 3.57994L13.76 3.38994C14.23 2.59994 15.25 2.31994 16.04 2.78994L17.77 3.77994C18.68 4.29994 18.99 5.46994 18.47 6.36994C17.56 7.93994 18.3 9.21994 20.11 9.21994C21.15 9.21994 22.01 10.0699 22.01 11.1199V12.8799C22.01 13.9199 21.16 14.7799 20.11 14.7799C18.3 14.7799 17.56 16.0599 18.47 17.6299C18.99 18.5399 18.68 19.6999 17.77 20.2199L16.04 21.2099C15.25 21.6799 14.23 21.3999 13.76 20.6099L13.65 20.4199C12.75 18.8499 11.27 18.8499 10.36 20.4199L10.25 20.6099C9.78 21.3999 8.76 21.6799 7.97 21.2099L6.24 20.2199C5.33 19.6999 5.02 18.5299 5.54 17.6299C6.45 16.0599 5.71 14.7799 3.9 14.7799C2.85 14.7799 2 13.9199 2 12.8799Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon weather-location-button" id="weatherLocate" aria-label="Use my location" title="Use my location" data-i18n-aria="weather.useLocation">
+        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon weather-location-button" id="weatherLocate" aria-label="Use my location" title="Use my location" data-i18n-aria="weather.useLocation" data-i18n-title="weather.useLocation">
           <svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-map-pin" xlink:href="#lucide-map-pin"/></svg>
         </button>
-        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherRefresh" data-i18n-aria="weather.refresh" aria-label="Refresh" title="Refresh"><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-refresh-cw" xlink:href="#lucide-refresh-cw"/></svg></button>
+        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherRefresh" data-i18n-aria="weather.refresh" data-i18n-title="weather.refresh" aria-label="Refresh" title="Refresh"><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-refresh-cw" xlink:href="#lucide-refresh-cw"/></svg></button>
       </div>
     </div>
     <div class="weather-status-row">
@@ -291,7 +291,7 @@
       <label><span data-i18n="weather.sort">Sort</span><select id="weatherSort"><option value="featured" data-i18n="weather.featuredOrder">Featured</option><option value="temperature" data-i18n="weather.warmestFirst">Warmest first</option><option value="local-time" data-i18n="weather.localTimeOrder">Local time</option></select></label>
       <button type="button" class="weather-btn" id="weatherCollapse" hidden data-i18n="weather.showPreview">Show fewer places</button>
     </div>
-    <section class="weather-home" id="weatherHome" aria-label="Primary forecast" hidden></section>
+    <section class="weather-home" id="weatherHome" aria-label="Primary forecast" data-i18n-aria="weather.primaryForecast" hidden></section>
     <p class="weather-error" id="weatherError" role="alert" hidden></p>
     <div class="weather-shell" id="weatherShell">
       <div class="weather-start" id="weatherStart" hidden>
@@ -346,7 +346,7 @@
       <div class="weather-detail-bar-actions">
         <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailFav" aria-pressed="false" aria-label="Add to My Sky" title="Add to My Sky" data-i18n-aria="weather.addToMySky" data-haptic-important></button>
         <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailShare" aria-label="Share forecast" title="Share forecast" data-i18n-aria="weather.shareForecast" data-haptic-important><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-share" xlink:href="#lucide-share"/></svg></button>
-        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailRefresh" data-i18n-aria="weather.refresh" aria-label="Refresh" title="Refresh" data-haptic-important><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-refresh-cw" xlink:href="#lucide-refresh-cw"/></svg></button>
+        <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherDetailRefresh" data-i18n-aria="weather.refresh" data-i18n-title="weather.refresh" aria-label="Refresh" title="Refresh" data-haptic-important><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-refresh-cw" xlink:href="#lucide-refresh-cw"/></svg></button>
       </div>
     </div>
     <div class="weather-detail-hero" id="weatherDetailHero"></div>
@@ -397,7 +397,7 @@
       <div class="weather-map-context" id="weatherMapContextMenu" role="menu" aria-label="Place actions" data-i18n-aria="weather.mapPlaceActions" hidden>
         <div class="weather-map-context-place" id="weatherMapContextPlace"></div>
         <button type="button" role="menuitem" data-map-action="view" id="weatherMapContextView" data-i18n="weather.mapViewHere">View weather here</button>
-        <button type="button" role="menuitem" data-map-action="add" id="weatherMapContextAdd" data-i18n="weather.mapAddPin">Add pin to My Sky</button>
+        <button type="button" role="menuitem" data-map-action="add" id="weatherMapContextAdd" data-i18n="weather.mapAddPin" data-haptic-important>Add pin to My Sky</button>
       </div>
       <div class="weather-map-control-stack" role="group" aria-label="Map controls" data-i18n-aria="weather.mapControls">
         <button type="button" id="weatherMapZoomIn" aria-label="Zoom in" data-i18n-aria="weather.zoomIn"><svg class="weather-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-zoom-in" xlink:href="#lucide-zoom-in"/></svg></button>
@@ -436,7 +436,7 @@
     <span class="footer-legal-sep" aria-hidden="true">|</span>
     <a href="https://github.com/TGthms/duskline" rel="noreferrer">GitHub</a>
     <span class="footer-legal-sep" aria-hidden="true">|</span>
-    <a href="https://t-g.pages.dev" rel="noreferrer">About Me</a>
+    <a href="https://t-g.pages.dev" rel="noreferrer" data-i18n="legal.aboutMeLink">About Me</a>
   </div>
 </footer>
 <div id="weatherToast" class="weather-toast" role="status" aria-live="polite"></div>

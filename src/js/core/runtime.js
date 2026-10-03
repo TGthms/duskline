@@ -21,7 +21,7 @@ const I18N = window.I18N || {};
    back to English just restores that snapshot rather than looking anything
    up. Switching to zh/ja overwrites content from the I18N dictionary above,
    keyed by the same data-i18n attribute already present in the markup. */
-const i18nEls = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-aria], [data-i18n-placeholder]');
+const i18nEls = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-aria], [data-i18n-placeholder], [data-i18n-title]');
 const i18nOriginals = new Map();
 i18nEls.forEach(el => {
   const isHtml = el.hasAttribute('data-i18n-html');
@@ -99,9 +99,11 @@ function applyLanguage(lang) {
     const isHtml = el.hasAttribute('data-i18n-html');
     const isAria = el.hasAttribute('data-i18n-aria');
     const isPh = el.hasAttribute('data-i18n-placeholder');
+    const isTitle = el.hasAttribute('data-i18n-title');
     const key = isAria ? el.getAttribute('data-i18n-aria')
       : isPh ? el.getAttribute('data-i18n-placeholder')
       : isHtml ? el.getAttribute('data-i18n-html')
+      : isTitle ? el.getAttribute('data-i18n-title')
       : el.getAttribute('data-i18n');
     const translated = dict && dict[key];
     if (lang === 'en' || !translated) {
@@ -109,12 +111,14 @@ function applyLanguage(lang) {
       if (isAria) el.setAttribute('aria-label', orig);
       else if (isPh) el.setAttribute('placeholder', orig);
       else if (isHtml) el.innerHTML = orig;
+      else if (isTitle) el.setAttribute('title', orig);
       else el.textContent = orig;
     } else {
       const t = withCopyrightYear(translated);
       if (isAria) el.setAttribute('aria-label', t);
       else if (isPh) el.setAttribute('placeholder', t);
       else if (isHtml) el.innerHTML = t;
+      else if (isTitle) el.setAttribute('title', t);
       else el.textContent = t;
     }
   });

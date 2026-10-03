@@ -41,10 +41,15 @@
     if (!allowed() || typeof global.navigator.vibrate !== 'function') return;
     try { global.navigator.vibrate(duration); } catch (error) { /* Optional feedback. */ }
   }
-  function buzz() { vibrate(10); }
+  // Optional element: when provided, reduced mode filters through shouldBuzz().
+  // Callers triggering haptics for a specific UI action should pass the element.
+  function buzz(element) {
+    if (element && !shouldBuzz(element)) return;
+    vibrate(10);
+  }
   var lastDetent = -Infinity;
   function detent() {
-    if (!allowed()) return;
+    if (!allowed() || hapticMode() === 'reduced') return;
     var now = Date.now();
     if (now - lastDetent < 60) return;
     lastDetent = now;

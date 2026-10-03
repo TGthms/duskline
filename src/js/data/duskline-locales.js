@@ -33,6 +33,38 @@
 
   /* key → { locale: string }. English is the fallback used by t(). */
   var S = {
+    'weather.tagline': {
+      en: 'duskline weather — worldwide forecasts, air quality, and alerts',
+      es: 'duskline weather — pronósticos mundiales, calidad del aire y alertas',
+      fr: 'duskline weather — prévisions mondiales, qualité de l’air et alertes',
+      de: 'duskline weather — weltweite Vorhersagen, Luftqualität und Warnungen',
+      it: 'duskline weather — previsioni mondiali, qualità dell’aria e allerte',
+      'pt-BR': 'duskline weather — previsões mundiais, qualidade do ar e alertas',
+      'pt-PT': 'duskline weather — previsões mundiais, qualidade do ar e alertas',
+      nl: 'duskline weather — wereldwijde voorspellingen, luchtkwaliteit en waarschuwingen',
+      da: 'duskline weather — verdensomspændende vejrudsigter, luftkvalitet og advarsler',
+      sv: 'duskline weather — världsomfattande prognoser, luftkvalitet och varningar',
+      nb: 'duskline weather — verdensomspennende varsler, luftkvalitet og advarsler',
+      fi: 'duskline weather — maailmanlaajuiset ennusteet, ilmanlaatu ja hälytykset',
+      pl: 'duskline weather — prognozy na całym świecie, jakość powietrza i alerty',
+      cs: 'duskline weather — celosvětové předpovědi, kvalita ovzduší a výstrahy',
+      hu: 'duskline weather — világméretű előrejelzések, levegőminőség és riasztások',
+      ro: 'duskline weather — prognoze mondiale, calitatea aerului și alerte',
+      el: 'duskline weather — παγκόσμιες προγνώσεις, ποιότητα αέρα και ειδοποιήσεις',
+      tr: 'duskline weather — dünya çapında tahminler, hava kalitesi ve uyarılar',
+      ru: 'duskline weather — мировые прогнозы, качество воздуха и оповещения',
+      uk: 'duskline weather — світові прогнози, якість повітря та сповіщення',
+      ar: 'duskline weather — توقعات عالمية وجودة الهواء والتنبيهات',
+      he: 'duskline weather — תחזיות עולמיות, איכות אוויר והתראות',
+      hi: 'duskline weather — विश्वव्यापी पूर्वानुमान, वायु गुणवत्ता और चेतावनियां',
+      th: 'duskline weather — พยากรณ์ทั่วโลก คุณภาพอากาศ และการแจ้งเตือน',
+      vi: 'duskline weather — dự báo toàn cầu, chất lượng không khí và cảnh báo',
+      id: 'duskline weather — prakiraan dunia, kualitas udara, dan peringatan',
+      ja: 'duskline weather — 世界中の予報、大気質、アラート',
+      ko: 'duskline weather — 전 세계 예보, 대기질 및 알림',
+      zh: 'duskline weather — 全球预报、空气质量和警报',
+      'zh-TW': 'duskline weather — 全球預報、空氣品質和警報'
+    },
     'tools.weatherSub': {
       en: 'Weather, wherever you are', es: 'El tiempo, estés donde estés', fr: 'La météo, où que vous soyez',
       de: 'Wetter, wo immer Sie sind', it: 'Meteo, ovunque tu sia', 'pt-BR': 'Clima, onde você estiver',
@@ -142,6 +174,24 @@
       ar: 'تراخيص المصادر المفتوحة', he: 'רישיונות קוד פתוח', hi: 'ओपन-सोर्स लाइसेंस', th: 'ใบอนุญาตโอเพนซอร์ส',
       vi: 'Giấy phép mã nguồn mở', id: 'Lisensi sumber terbuka', ja: 'オープンソースライセンス',
       ko: '오픈 소스 라이선스', zh: '开源许可', 'zh-TW': '開源授權'
+    },
+    'legal.aboutMeLink': {
+      en: 'About Me', es: 'Sobre mí', fr: 'À propos de moi', de: 'Über mich',
+      it: 'Chi sono', 'pt-BR': 'Sobre mim', 'pt-PT': 'Sobre mim', nl: 'Over mij',
+      da: 'Om mig', sv: 'Om mig', nb: 'Om meg', fi: 'Tietoa minusta', pl: 'O mnie',
+      cs: 'O mně', hu: 'Rólam', ro: 'Despre mine', el: 'Σχετικά με εμένα',
+      tr: 'Hakkımda', ru: 'Обо мне', uk: 'Про мене', ar: 'عني', he: 'עלי',
+      hi: 'मेरे बारे में', th: 'เกี่ยวกับฉัน', vi: 'Về tôi', id: 'Tentang saya',
+      ja: '私について', ko: '소개', zh: '关于我', 'zh-TW': '關於我'
+    },
+    'weather.primaryForecast': {
+      en: 'Primary forecast', es: 'Pronóstico principal', fr: 'Prévisions principales', de: 'Hauptvorhersage',
+      it: 'Previsioni principali', 'pt-BR': 'Previsão principal', 'pt-PT': 'Previsão principal', nl: 'Hoofdvoorspelling',
+      da: 'Primær vejrudsigt', sv: 'Huvudprognos', nb: 'Hovedvarsel', fi: 'Pääennuste', pl: 'Główna prognoza',
+      cs: 'Hlavní předpověď', hu: 'Elsődleges előrejelzés', ro: 'Prognoza principală', el: 'Κύρια πρόγνωση',
+      tr: 'Birincil tahmin', ru: 'Основной прогноз', uk: 'Основний прогноз', ar: 'التوقعات الرئيسية',
+      he: 'תחזית ראשית', hi: 'मुख्य पूर्वानुमान', th: 'พยากรณ์หลัก', vi: 'Dự báo chính',
+      id: 'Prakiraan utama', ja: '主要な予報', ko: '주요 예보', zh: '主要预报', 'zh-TW': '主要預報'
     },
     'legal.licenses.title': {
       en: 'Open-source licenses', es: 'Licencias de código abierto', fr: 'Licences open source', de: 'Open-Source-Lizenzen',
@@ -357,6 +407,15 @@
       da: 'Kort', sv: 'Karta', nb: 'Kart', fi: 'Kartta', pl: 'Mapa', cs: 'Mapa', hu: 'Térkép', ro: 'Hartă',
       el: 'Χάρτης', tr: 'Harita', ru: 'Карта', uk: 'Мапа', ar: 'خريطة', he: 'מפה', hi: 'मानचित्र', th: 'แผนที่',
       vi: 'Bản đồ', id: 'Peta', ja: '地図', ko: '지도', zh: '地图', 'zh-TW': '地圖'
+    },
+    'weather.toolbarActions': {
+      en: 'Weather actions', es: 'Acciones del clima', fr: 'Actions météo', de: 'Wetteraktionen',
+      it: 'Azioni meteo', 'pt-BR': 'Ações do clima', 'pt-PT': 'Ações do clima', nl: 'Weeracties',
+      da: 'Vejrhandlinger', sv: 'Väderåtgärder', nb: 'Værhandlinger', fi: 'Säätoiminnot', pl: 'Akcje pogodowe',
+      cs: 'Akce počasí', hu: 'Időjárási műveletek', ro: 'Acțiuni meteo', el: 'Ενέργειες καιρού',
+      tr: 'Hava durumu eylemleri', ru: 'Действия с погодой', uk: 'Дії з погодою', ar: 'إجراءات الطقس',
+      he: 'פעולות מזג אוויר', hi: 'मौसम क्रियाएं', th: 'การดำเนินการสภาพอากาศ', vi: 'Hành động thời tiết',
+      id: 'Tindakan cuaca', ja: '天気アクション', ko: '날씨 작업', zh: '天气操作', 'zh-TW': '天氣操作'
     },
     'weather.mapSubtitle': {
       en: 'Explore conditions around the world', es: 'Explora las condiciones en todo el mundo',
@@ -1069,6 +1128,18 @@
       hi: 'मेरे आसमान से हटाया गया', th: 'นำออกจากท้องฟ้าของฉันแล้ว', vi: 'Đã xóa khỏi Bầu trời của tôi',
       id: 'Dihapus dari Langit Saya', ja: 'マイスカイから削除しました', ko: '내 하늘에서 삭제됨',
       zh: '已从我的天空移除', 'zh-TW': '已從我的天空移除'
+    },
+    'weather.notice.restored': {
+      en: 'Restored to My Sky', es: 'Restaurado en Mi cielo', fr: 'Restauré dans Mon ciel', de: 'In Mein Himmel wiederhergestellt',
+      it: 'Ripristinato in Il mio cielo', 'pt-BR': 'Restaurado no Meu Céu', 'pt-PT': 'Restaurado no Meu Céu',
+      nl: 'Hersteld in Mijn lucht', da: 'Gendannet i Min himmel', sv: 'Återställd i Min himmel',
+      nb: 'Gjenopprettet i Min himmel', fi: 'Palautettu Oma taivas -näkymään', pl: 'Przywrócono do Mojego nieba',
+      cs: 'Obnoveno v Mé obloze', hu: 'Visszaállítva a Saját égboltra', ro: 'Restaurat în Cerul meu',
+      el: 'Αποκαταστάθηκε στον Ουρανό μου', tr: 'Gökyüzüme geri yüklendi', ru: 'Восстановлено в «Моём небе»',
+      uk: 'Відновлено в «Моєму небі»', ar: 'تمت الاستعادة إلى سمائي', he: 'שוחזר לשמיים שלי',
+      hi: 'मेरे आसमान में पुनर्स्थापित', th: 'กู้คืนไปยังท้องฟ้าของฉันแล้ว', vi: 'Đã khôi phục vào Bầu trời của tôi',
+      id: 'Dipulihkan ke Langit Saya', ja: 'マイスカイに復元しました', ko: '내 하늘에 복원됨',
+      zh: '已恢复到我的天空', 'zh-TW': '已還原到我的天空'
     },
     'weather.notice.searching': {
       en: 'Searching places…', es: 'Buscando lugares…', fr: 'Recherche de lieux…', de: 'Orte werden gesucht…',

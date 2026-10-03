@@ -308,7 +308,11 @@
     toastEl.textContent = message;
     if (undo) {
       const button = document.createElement('button'); button.type = 'button'; button.textContent = t('weather.undo', 'Undo');
-      button.addEventListener('click', function () { undo(); toastEl.classList.remove('is-visible'); });
+      button.addEventListener('click', function () {
+        undo();
+        // Acknowledge the undo so the toast reflects the restored state.
+        notify(t('weather.notice.restored', 'Restored to My Sky'));
+      });
       toastEl.append(button);
     }
     toastEl.dataset.kind = kind === 'error' ? 'error' : 'success';
@@ -318,6 +322,9 @@
   }
   let detailReturnFocus = null;
   let detailReturnKey = null;
+  // City that opened the current detail from the map. When set, closing the
+  // detail returns to the map centered on this city instead of the main screen.
+  let detailReturnToMap = null;
   let sheetReturnFocus = null;
   let sheetReturnKind = null;
   let sheetReturnDate = null;
@@ -986,6 +993,8 @@
     // Selecting a place from the map starts its detail fetch; don't also trigger the
     // deferred My Sky refresh queued by a preceding Add action.
     mapMySkyRefreshPending = false;
+    // A detail opened from the map returns to the map on close, not the main screen.
+    if (mapApi && mapApi.isOpen()) detailReturnToMap = city;
     if (mapApi) mapApi.close();
     if (existing && existing.weather) {
       existing.city = Object.assign({},existing.city,city);
@@ -4757,6 +4766,12 @@
     // closeDetail already dismissed its sheet. A list-level sheet may have opened
     // during this exit transition; do not close that newer interaction here.
     ensureListTappable();
+    // Return to the map when the closed detail was opened from it.
+    if (detailReturnToMap && mapApi) {
+      const returnCity = detailReturnToMap;
+      detailReturnToMap = null;
+      mapApi.open({ initialCity: returnCity, places: getMapPlaces(), returnFocus: mapOpenBtn });
+    }
   }
 
   function closeDetail() {
@@ -4908,7 +4923,15 @@
   function renderRecentSuggestions() {
     if (!suggestEl) return;
     searchGen += 1;
-    const recent = savedSnapshots.filter(function (pack) { return pack.visited; }).slice(0, 5);
+    // Dedupe by city — the same place can have multiple snapshots.
+    const seen = new Set();
+    const recent = savedSnapshots.filter(function (pack) {
+      if (!pack.visited) return false;
+      const key = cityKey(pack.city);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 5);
     if (!recent.length) { closeSuggest(); return; }
     suggestEl.innerHTML = `<li role="presentation" class="s-group">${escapeHtml(t('weather.recentPlaces', 'Recent places'))}</li>`;
     recent.forEach(function (pack) {
@@ -5015,6 +5038,7 @@
 
   function openUnitsSheet() {
     if (navigationApi) navigationApi.sheet("units");
+    activeSheetKind = 'units';
     if (!sheetEl || !sheetBody) return;
     closeSuggest();
     hoistOverlays();
@@ -5446,6 +5470,13 @@
   if (sheetClose) sheetClose.addEventListener('click', closeSheet);
   if (sheetEl) sheetEl.addEventListener('click', (e) => { if (e.target === sheetEl) closeSheet(); });
   if (unitsBtn) unitsBtn.addEventListener('click', openUnitsSheet);
+  // Rebuild the units sheet if open when language changes — its content is
+  // built dynamically via t() and won't update through data-i18n attributes.
+  document.addEventListener('duskline:prefs', function (e) {
+    if (e.detail && e.detail.type === 'lang' && activeSheetKind === 'units' && sheetOpen) {
+      openUnitsSheet();
+    }
+  });
   modeButtons.forEach(function (button) {
     button.addEventListener('click', function () {
       requestWeatherMode(button.getAttribute('data-weather-mode'));
