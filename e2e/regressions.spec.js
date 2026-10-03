@@ -1975,8 +1975,8 @@ test('haptic setting offers Full/Reduced/Off and persists selection', async ({ p
   });
   await stubWeather(page, null);
   await page.goto('/');
-  // Open settings
-  await page.locator('#weatherSettings').click();
+  // Open settings (units sheet contains the haptic dropdown)
+  await page.locator('#weatherUnitsBtn').click();
   const hapticSelect = page.locator('.weather-haptic-select');
   await expect(hapticSelect).toBeVisible();
   // Default is full
@@ -1989,7 +1989,7 @@ test('haptic setting offers Full/Reduced/Off and persists selection', async ({ p
   expect(await page.evaluate(() => localStorage.getItem('duskline-haptic'))).toBe('reduced');
   // Reload and verify persisted
   await page.reload();
-  await page.locator('#weatherSettings').click();
+  await page.locator('#weatherUnitsBtn').click();
   expect(await page.locator('.weather-haptic-select').inputValue()).toBe('reduced');
 });
 
