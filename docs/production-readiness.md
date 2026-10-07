@@ -1,0 +1,50 @@
+# October 2026 product release checks
+
+This release implements the repository product audit in ordered commits on `main`. My Sky and Horizon have equal product priority. It does not change the hosting configuration or claim that local commits have been deployed.
+
+## Implemented audit scope
+
+- City-scoped full refresh, including searched places and pins; optional AQI no longer blocks weather.
+- Request/view generation guards, missing AQI handling, explicit daily provider precedence and bounded concurrent batch recovery.
+- Shared date-aware temperature/precipitation sheets, fixed probability axes, selected-hour actions, preserved scroll/focus and expired offline outlook handling.
+- Original-tap activation with optional iOS haptics, retained switch hosts, mobile text-selection suppression, direct horizontal scrubbing and flexible mode controls.
+- Empty/unsupported alert cards removed; actual alerts and compact failure recovery retained.
+- Atlas-first map startup, context-loss recovery, stable geographic samples, local interpolation, bounded sample reuse, global US AQI layer, map search/value inspection, keyboard access, history and short-screen layouts.
+- Distinct AQI/freezing-rain icons, compact My Sky greeting, contextual rain-window/accumulation planning, primary-place day/night atmosphere, geographic Horizon labels and preserved discovery scope/scroll.
+- Focused place management with deletion/Undo and primary selection; explicit capacity feedback.
+- Offline Public Sans subsets, raster maskable icons, mobile installation guidance, update checks on resume, stalled activation recovery and deferred snapshot writes with lifecycle flushes.
+- Separate city-refresh, forecast-sheet, AQI and planning boundaries; consolidated toolbar/interaction CSS; documented data contracts and deterministic visual baselines.
+
+## Automated and visual checks
+
+Syntax, units, provider/data fixtures, Chromium, desktop/mobile WebKit, Firefox where the runtime supports it, offline worker upgrades, locale regeneration and screenshot comparisons must pass on the final revision. The visual suite covers 320px/430px phones, tablet, desktop, landscape, clear/rain, light/dark, forecast/precipitation sheets, RTL and the map. Baselines are reviewed artifacts, not evidence of physical-device haptics.
+
+Final local results (October 6, 2026):
+
+| Check | Result |
+| --- | --- |
+| First-party JavaScript syntax | 78 files checked |
+| Unit and content tests | 100 passed; none skipped |
+| Complete Chromium suite | 164 passed, including 22 visual cases comparing 24 reviewed PNGs |
+| Complete desktop/mobile WebKit suites | 282 passed; 46 intentional skips (44 Chromium visual cases and two offline-toggle cases) |
+| Locale regeneration | No generated-file drift |
+| Git whitespace checks | Passed |
+
+Provider responses in browser tests are fixtures. Screenshots were compared without updating baselines or loosening tolerances. Real worker-upgrade tests cover a host outage as well as online activation; the separate browser offline-toggle navigation test runs only in Chromium.
+
+The raster benchmark measures CPU interpolation only. The new field is validated against analytical local-cell fixtures rather than frozen pixels from the old interpolation. Forecast accuracy still depends on provider model resolution and coverage.
+
+Local Firefox could not launch in this macOS execution environment: its sandbox extension was denied and its software framebuffer could not initialize. No Firefox assertion ran, so this is not a Firefox pass. The existing Linux Firefox CI job remains a release gate.
+
+## Physical-device acceptance still required
+
+The user-reported target is **iOS 27.0.1, installed Home Screen PWA**. Desktop WebKit and user-agent shims do not certify that exact device/OS or actual vibration hardware. After deploying the final successful revision and accepting its Update prompt, verify on that device:
+
+1. Cold launch → first My Sky tap activates once, with no second tap required.
+2. Cold and warm Map opens show the atlas immediately and detailed geography without an extra tap; background/resume and orientation changes remain usable.
+3. Horizontal chart scrubbing and hourly scrolling produce no selection/copy menu; vertical scrolling still works; alert descriptions/share fields remain copyable.
+4. Full/Reduced/Off haptic preferences, save/remove, refresh, sheet dismissal and VoiceOver produce one action each.
+5. Refresh a searched city and a saved city; weather, forecast sheets, AQI and alerts settle without losing valid data or reopening a dismissed city.
+6. Update from a prior installed worker; relaunch offline with saved forecasts and local fonts. Confirm long-lived resume checks and safe recovery when an update stalls.
+
+Production CI status, Cloudflare deployment gating and the actual deployment are external checks. Cloudflare Git-connected deployments must be gated equivalently to repository CI; GitHub Pages' successful-CI publishing cannot configure Cloudflare settings.

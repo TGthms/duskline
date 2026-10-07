@@ -23,7 +23,7 @@ duskline balances a quiet, atmospheric sky with the details that help you decide
 - **Current conditions, hourly detail, and a 10-day outlook** make it easy to move from “right now” to “what should I plan for?”
 - **Useful weather context** includes air quality, feels-like temperature, wind, humidity, UV, pressure, precipitation, and sun times.
 - **Saved places and direct links** make it simple to return to the forecasts that matter to you or share a city.
-- **Weather maps** layer temperature, precipitation chance, and wind over a global map, with a forecast-hour scrubber and a bundled geographic offline world map.
+- **Weather maps** layer temperature, precipitation chance, wind, and US AQI over a searchable global map, with a forecast-hour scrubber and a bundled geographic offline world map.
 - **Public alerts use authoritative sources:** the National Weather Service for eligible U.S. places and official, rebroadcastable CAP feeds through IFRC Alert Hub for supported international places.
 - **A living sky** brings day, night, cloud, and precipitation conditions into the city detail view.
 - **30 interface languages** include Arabic and Hebrew, with right-to-left layouts.
@@ -59,7 +59,8 @@ npm run check       # syntax-check first-party JavaScript
 npm run test:unit   # unit and content tests
 npm test            # Chromium browser tests
 npm run test:cross  # Firefox, desktop WebKit, and phone-sized WebKit
-npm run test:all    # both test suites
+npm run test:all    # unit and Chromium suites
+npm run test:visual # pinned macOS Chromium visual baselines
 ```
 
 Playwright tests mock the weather providers, so they do not use live API quotas. Localized README files live in [`docs/i18n/`](docs/i18n/README.md); regenerate them with `npm run readme:i18n` after changing their catalog in [`tools/render-readme-i18n.js`](tools/render-readme-i18n.js).
@@ -81,3 +82,5 @@ The worker stores a coherent, versioned shell. Navigation responses are reconstr
 English is included in the shell; other weather and legal language packs are fetched only when used. The separate locale cache keeps at most eight packs, and the currently selected language is retained after first installation. Offline language changes require a previously downloaded pack. Public alerts remain network-only.
 
 CI uses Node 20, verifies generated locale files and source translation coverage, and runs Chromium, Firefox, desktop WebKit, and phone-sized WebKit. GitHub Pages publishes only the exact successful CI revision, and skips superseded revisions. Cloudflare Git-connected automatic deployments are managed in the Cloudflare dashboard and must be disabled or configured with an equivalent check gate; the GitHub Pages workflow cannot govern them.
+
+Runtime contracts and release acceptance checks: [weather contracts](docs/weather-contracts.md) · [production readiness](docs/production-readiness.md).

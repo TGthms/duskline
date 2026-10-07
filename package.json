@@ -12,6 +12,7 @@
     "test:all": "node --test test/*.test.js && playwright test --project=chromium",
     "readme:i18n": "node tools/render-readme-i18n.js",
     "weather:i18n": "node tools/build-weather-locales.js",
+    "test:visual": "playwright test e2e/visual.spec.js --project=chromium",
     "test:cross": "playwright test --project=firefox --project=webkit --project=mobile-webkit"
   },
   "devDependencies": {
