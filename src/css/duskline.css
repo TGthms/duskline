@@ -452,7 +452,6 @@ html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .gallery-app-ba
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .duskline-brand { color: #15263b; }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) #dusklineLanguage { background: rgba(255,255,255,.86); color: #15263b; border-color: rgba(31,74,109,.2); }
 html[data-theme="minimal"] body.duskline:not(.weather-sky-light) .weather-search { background: rgba(255,255,255,.72); border-color: rgba(31,74,109,.22); color: #15263b; }
-html[dir="rtl"] body.duskline .weather-toolbar-actions { flex-direction: row-reverse; }
 html[dir="rtl"] body.duskline .weather-detail-back svg { transform: scaleX(-1); }
 /* Keep the compact language control consistent even when the shared theme
    layer applies a background shorthand later in the cascade. */
@@ -468,7 +467,7 @@ html[data-theme="minimal"] body.duskline #dusklineLanguage {
   color-scheme: light;
 }
 html[dir="rtl"] body.duskline #dusklineLanguage { padding-inline: 38px 14px; background-position: left 13px center; }
-@media (max-width: 640px) { body.duskline .duskline-header { padding-inline: 16px; } body.duskline .weather-root.tools-page { width: min(100% - 24px, 1180px); } body.duskline .weather-toolbar { padding-inline: 0; } }
+@media (max-width: 640px) { body.duskline .duskline-header { padding-inline: 16px; } body.duskline .weather-root.tools-page { width: min(100% - 24px, 1180px); } }
 
 /* Budget the narrow header explicitly; the wordmark must never flex-shrink
    underneath the language picker. Keep both controls and the full brand. */

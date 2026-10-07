@@ -391,7 +391,7 @@
         <button type="button" data-weather-layer="aqi" aria-pressed="false" data-i18n="weather.aqi">Air Quality</button>
       </div>
       <details class="weather-map-place-picker">
-        <summary id="weatherMapPlacesSummary" data-i18n="weather.majorCities">Featured places</summary>
+        <summary id="weatherMapPlacesSummary" aria-label="Featured places" data-i18n-aria="weather.majorCities"><svg class="weather-map-places-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#lucide-map-pin"/></svg><span data-i18n="weather.majorCities">Featured places</span></summary>
         <div class="weather-map-places" id="weatherMapPlaces"></div>
       </details>
     </div>
@@ -461,6 +461,7 @@
 <script src="src/js/duskline-controls.js" defer></script>
 <script src="src/js/features/weather/ns.js" defer></script>
 <script src="src/js/features/weather/aqi-math.js" defer></script>
+<script src="src/js/features/weather/aqi.js" defer></script>
 <script src="src/js/features/weather/planning.js" defer></script>
 <script src="src/js/features/weather/sky.js" defer></script>
 <script src="src/js/features/weather/charts.js" defer></script>

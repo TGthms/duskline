@@ -31,9 +31,6 @@ body.duskline .weather-greeting-title { font-size: clamp(1.4rem, 2.6vw, 2rem); m
 .weather-alert-status button { margin-inline-start: auto; border: 1px solid currentColor; border-radius: 9px; background: transparent; color: inherit; min-height: 40px; padding: 6px 12px; cursor: pointer; }
 .wx-mods-light .weather-alert-status { background: #edf4fa; color: #16344f; }
 .weather-alert-collapse[aria-hidden="true"] { visibility: hidden; }
-.weather-mode-switch { position: relative; }
-.weather-mode-switch button { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease; }
-.weather-mode-switch button[aria-pressed="true"] { box-shadow: 0 2px 8px rgba(8,17,31,.18); }
 
 .wx-day-choices { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 12px; scrollbar-width: thin; }
 .wx-day-choices button { flex: 0 0 auto; min-height: 44px; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(127,153,175,.3); color: inherit; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
@@ -54,12 +51,10 @@ body.duskline .weather-greeting-title { font-size: clamp(1.4rem, 2.6vw, 2rem); m
 }
 @media (max-width: 640px) {
   .weather-product-controls { gap: 8px; }
-  body.duskline .weather-toolbar-actions { gap: 8px; }
   body.duskline .weather-start { padding: 20px; margin-bottom: 18px; }
   body.duskline .weather-start-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
   body.duskline .weather-start-actions button { padding-inline: 8px; }
 }
-@media (prefers-reduced-motion: reduce) { .weather-mode-switch button { transition: none; } }
 .weather-suggest .s-save-cell { flex: 0 0 52px; display: flex; align-items: center; }
 .weather-motion-select { width: 100%; min-height: 44px; border: 1px solid rgba(127,153,175,.35); border-radius: 12px; background: transparent; color: inherit; padding: 8px 12px; font: inherit; }
 .weather-haptic-select { width: 100%; min-height: 44px; border: 1px solid rgba(127,153,175,.35); border-radius: 12px; background: transparent; color: inherit; padding: 8px 12px; font: inherit; }
@@ -105,9 +100,7 @@ body.duskline .weather-daily-row:hover { background: rgba(80,126,166,.1); }
 
 /* Keep touch recovery and navigation controls usable at every compact breakpoint. */
 @media (any-pointer: coarse) {
-  .weather-mode-switch button, .weather-place-order button,
-  .weather-inline-action, #weatherToast button, #weatherUpdateToast button, .weather-alert-status button,
-  .weather-greeting-source, .weather-greeting-source-search {
+.weather-place-order button, .weather-inline-action, #weatherToast button, #weatherUpdateToast button, .weather-alert-status button, .weather-greeting-source, .weather-greeting-source-search {
     min-height: 44px; min-width: 44px;
   }
 }

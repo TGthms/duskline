@@ -316,10 +316,14 @@ test('hourly chart values update on pointer hover and reset when the pointer lea
     .filter(animation => animation.effect && animation.effect.getComputedTiming().iterations !== Infinity)
     .map(animation => animation.finished.catch(() => {}))));
   const initialIndex = await chart.getAttribute('aria-valuenow');
+  const maxIndex = Number(await chart.getAttribute('aria-valuemax'));
   const svg = chart.locator('svg');
+  await svg.scrollIntoViewIfNeeded();
   const box = await svg.boundingBox();
   expect(box).toBeTruthy();
-  await page.mouse.move(box.x + box.width * 0.22, box.y + box.height * 0.55);
+  // Pick the opposite side of the plot; the current hour varies with the clock.
+  const hoverFraction = Number(initialIndex) <= maxIndex / 2 ? 0.85 : 0.15;
+  await page.mouse.move(box.x + box.width * hoverFraction, box.y + box.height * 0.55);
   await expect.poll(() => chart.getAttribute('aria-valuenow')).not.toBe(initialIndex);
   const hoveredReadout = await chart.locator('[data-readout]').textContent();
   expect(hoveredReadout).toBeTruthy();
@@ -1498,7 +1502,7 @@ test('fresh Horizon finishes foreground progress while alerts prefetch, and open
   await expect(page.locator('#weatherModeLoading')).toBeVisible();
   await expect(page.locator('#weatherDetail .weather-alert-status')).toContainText('Checking public alerts');
   release();
-  await expect(page.locator('#weatherDetail .weather-alert-status')).toContainText('No active public alerts');
+  await expect(page.locator('#weatherDetail .weather-alert-status')).toHaveCount(0);
   await expect(page.locator('#weatherModeLoading')).toBeHidden();
 });
 
@@ -2062,7 +2066,7 @@ test('a slow air-quality response does not hold up current weather',async ({page
   await stubWeather(page,null);
   let release;
   const pending=new Promise(r=>{release=r;});
-  await page.route('https://air-quality-api.open-meteo.com/**',async route=>{await pending;await route.fulfill({json:{current:{us_aqi:90}}});});
+  await page.route('https://air-quality-api.open-meteo.com/**',async route=>{await pending;const count=(new URL(route.request().url()).searchParams.get('latitude') || '').split(',').length;const values=Array.from({length:count},()=>({current:{us_aqi:90}}));await route.fulfill({json:count>1?values:values[0]});});
   await page.goto('/?city=tokyo');
   await expect(page.locator('.weather-detail-temp')).not.toHaveText('—');
   await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
@@ -2187,4 +2191,49 @@ test('a late list response cannot downgrade a newer complete city forecast',asyn
  await expect(page.locator('#weatherModeLoading')).toBeHidden();
  await expect(page.locator('.weather-detail-temp')).toHaveText('86°');
  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+});
+
+test('place-manager Undo stays visible and keyboard-operable inside its dialog',async ({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('duskline-weather-mode','my-sky');
+  localStorage.setItem('duskline-weather-favorites',JSON.stringify([{name:'Tokyo',lat:35.6762,lon:139.6503,country:'Japan',country_code:'JP'},{name:'London',lat:51.5074,lon:-.1278,country:'United Kingdom',country_code:'GB'}]));
+ });
+ await stubWeather(page,null);await page.goto('/');await page.locator('#weatherManagePlaces').click();
+ await page.getByRole('button',{name:'Remove from My Sky: London',exact:true}).click();
+ const undo=page.locator('#weatherSheetBody .weather-inline-notice button');
+ await expect(undo).toHaveText('Undo');await expect(undo).toBeFocused();
+ await undo.press('Enter');
+ await expect(page.getByRole('button',{name:'Remove from My Sky: London',exact:true})).toBeVisible();
+});
+
+test('an early mode tap is preserved while the deferred weather controller is loading',async ({page})=>{
+ await stubWeather(page,null);let release;
+ const gate=new Promise(r=>{release=r;});
+ await page.route('**/src/js/features/weather/app.js',async route=>{await gate;await route.continue();});
+ await page.goto('/',{waitUntil:'commit'});
+ const mode=page.locator('[data-weather-mode="my-sky"]');
+ await mode.click();await expect(mode).toHaveAttribute('aria-pressed','true');
+ release();await expect(page.locator('#weatherMySkyEmpty')).toBeVisible();
+ await expect(mode).not.toHaveAttribute('aria-busy','true');
+});
+
+test('hourly keyboard selection and return focus survive a forecast repaint',async ({page})=>{
+ await stubWeather(page,null);await page.goto('/?city=tokyo');
+ const hours=page.locator('#weatherModules .weather-hourly-item');await hours.nth(1).focus();await hours.nth(1).press('ArrowRight');
+ await expect(hours.nth(2)).toBeFocused();const instant=await hours.nth(2).getAttribute('data-hour-at');
+ await hours.nth(2).press('Enter');await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
+ await page.evaluate(()=>window.refreshWeatherUi({force:true}));
+ await page.locator('#weatherSheetClose').click();
+ await expect(page.locator('#weatherModules [data-hour-at="'+instant+'"]')).toBeFocused();
+});
+
+test('landscape My Sky keeps the current reading in view and all toolbar actions available',async ({page})=>{
+ await page.setViewportSize({width:844,height:390});await page.addInitScript(()=>{
+  localStorage.setItem('duskline-weather-mode','my-sky');
+  localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'Paris',lat:48.85,lon:2.35,country:'France',country_code:'FR'}));
+ });
+ await stubWeather(page,null);await page.goto('/');const temperature=page.locator('.weather-home-temperature');await expect(temperature).toBeVisible();
+ expect(await temperature.evaluate(el=>el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(390);
+ for(const id of ['weatherMapOpen','weatherUnitsBtn','weatherLocate','weatherRefresh']) await expect(page.locator('#'+id)).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(844);
 });

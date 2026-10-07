@@ -1,3 +1,135 @@
+/* Toolbar and mode-control contracts, consolidated from the layered cascade. */
+.weather-mode-switch[aria-busy="true"] {
+  cursor: progress;
+}
+.weather-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px 12px !important;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 30;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.weather-toolbar-actions {
+  display: flex !important;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.weather-toolbar .weather-search-wrap {
+  flex: 1 1 220px;
+  min-width: min(100%, 200px);
+}
+@media (max-width: 640px) {
+.weather-toolbar {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+}
+}
+@media (max-width: 640px) {
+.weather-toolbar .weather-search-wrap {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  align-self: stretch;
+}
+}
+@media (max-width: 640px) {
+.weather-toolbar-actions {
+  width: 100%;
+  justify-content: flex-start !important;
+  flex-wrap: wrap;
+  flex: 0 0 auto !important;
+}
+}
+.weather-mode-switch button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+body.weather-sky-light .weather-mode-switch {
+  border-color: rgba(22, 52, 79, 0.2);
+  background: rgba(255, 255, 255, 0.44);
+}
+body.weather-sky-light .weather-mode-switch button {
+  color: rgba(22, 52, 79, 0.76);
+}
+body.weather-sky-light .weather-mode-switch button[aria-pressed="true"] {
+  color: #16344f;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+body.weather-sky-light .weather-mode-switch button:focus-visible {
+  outline-color: #16344f;
+}
+.weather-toolbar-actions [hidden] {
+  display: none !important;
+}
+.weather-toolbar-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex: none;
+}
+html[dir="rtl"] body.duskline .weather-toolbar-actions {
+  flex-direction: row-reverse;
+}
+@media (max-width: 640px) {
+body.duskline .weather-toolbar {
+  padding-inline: 0;
+}
+}
+.weather-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(8, 16, 32, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  position: relative;
+}
+.weather-mode-switch button {
+  min-height: 32px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font: 600 12px/1 var(--ff-body);
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.weather-mode-switch button[aria-pressed="true"] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(8,17,31,.18);
+}
+@media (max-width: 640px) {
+body.duskline .weather-toolbar-actions {
+  gap: 8px;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.weather-mode-switch button {
+  transition: none;
+}
+}
+@media (any-pointer: coarse) {
+.weather-mode-switch button {
+  min-height: 44px;
+  min-width: 44px;
+}
+}
+
 /* Fixed-size round controls must not inherit pill padding or asymmetric min sizes. */
 body.duskline #weatherDetailBack, body.duskline #weatherDetailFav,
 body.duskline #weatherDetailShare, body.duskline #weatherDetailRefresh,
@@ -97,3 +229,23 @@ html[data-motion-effective="off"] .wx-insight-reveal,html[data-motion-effective=
 
 .weather-install-action {min-height:44px;font-size:12px;padding:6px 12px;}
 .weather-install-action[hidden] {display:none;}
+
+.weather-inline-notice {margin-top:16px;padding:12px;border:1px solid rgba(127,153,175,.3);border-radius:12px;font-size:14px;line-height:1.5;}
+.weather-inline-notice button {margin-inline-start:12px;min-height:44px;border:0;border-radius:8px;padding:8px 12px;font:inherit;color:inherit;background:rgba(127,153,175,.16);cursor:pointer;}
+
+.weather-sheet.wx-sheet-light :is(.weather-chart-sub,.wx-sheet-about-title,.wx-sheet-about p,.wx-sun-metric span) {opacity:1;}
+
+/* Keep the current forecast visible on short, wide screens without removing actions. */
+.weather-status-row {display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;}
+@media (min-width:760px) and (max-height:620px) {
+ .weather-greeting-wrap {display:flex;flex-direction:row;align-items:baseline;gap:16px;margin-bottom:10px;}
+ body.duskline .weather-greeting-title {flex:1;min-width:0;width:auto;font-size:22px;margin-bottom:0;}
+ .weather-greeting-place {flex:0 0 auto;margin:0;}
+ body.duskline .weather-toolbar {flex-direction:row !important;align-items:center !important;gap:12px !important;}
+ body.duskline .weather-toolbar .weather-search-wrap {flex:1 1 240px !important;width:auto !important;min-width:180px !important;}
+ body.duskline .weather-toolbar-actions {flex:0 0 auto;width:auto;gap:6px;}
+ .weather-status-row {margin-bottom:8px;}
+ body.duskline .weather-start {padding:12px;gap:12px;margin-bottom:14px;}
+ body.duskline .weather-start-copy h3 {font-size:17px;}
+ body.duskline .weather-start-copy p {font-size:12px;}
+}

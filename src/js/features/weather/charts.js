@@ -422,12 +422,12 @@
       const tz = timeZone || hourly.timezone || undefined;
       const { start, end, times } = dateKey
         ? hourlyDateWindow(hourly, tz, dateKey)
-        : hourlyLocalDay(hourly, tz);
+        : hourlyDateWindow(hourly, tz, localDateKey(Date.now(),tz));
       const vals = [];
       const weatherCodes = hourly.weather_code || [];
       for (let i = start; i < end; i++) {
         const v = hourly[key] && hourly[key][i];
-        if (v == null || Number.isNaN(v)) continue;
+        if (v == null || v === '' || !Number.isFinite(Number(v))) continue;
         vals.push({ i, t: times[i], v: Number(v), code: weatherCodes[i] == null ? null : Number(weatherCodes[i]) });
       }
       if (vals.length < 2) return '<p class="weather-chart-sub">—</p>';
@@ -836,7 +836,6 @@
         target.style.touchAction = 'pan-y pinch-zoom';
         target.style.cursor = 'ew-resize';
         let scrubArmed = false;
-        let armTimer = 0;
         let activePointer = null;
         let startX = 0;
         let startY = 0;
@@ -846,18 +845,11 @@
         function isMousePtr(e) {
           return e.pointerType === 'mouse' || e.type === 'mousemove' || e.type === 'mouseleave';
         }
-        function clearArmTimer() {
-          if (armTimer) {
-            window.clearTimeout(armTimer);
-            armTimer = 0;
-          }
-        }
         function setPanY() {
           target.style.touchAction = 'pan-y pinch-zoom';
           hit.style.touchAction = 'pan-y pinch-zoom';
         }
         function endScrub() {
-          clearArmTimer();
           const wasArmed = scrubArmed;
           scrubArmed = false;
           activePointer = null;
@@ -872,13 +864,11 @@
             onMove(e);
             return;
           }
-          // Touch: wait ~0.2s before taking the gesture so vertical scroll still wins
+          // Touch: claim a horizontal drag after its direction is clear.
           scrubArmed = false;
           activePointer = e.pointerId;
           startX = lastX = e.clientX;
           startY = lastY = e.clientY;
-          clearArmTimer();
-
         });
         target.addEventListener('pointermove', (e) => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
@@ -892,7 +882,6 @@
             const dy = Math.abs(e.clientY - startY);
             const dx = Math.abs(e.clientX - startX);
             if (dy > TOUCH_CANCEL_PX && dy > dx) {
-              clearArmTimer();
               activePointer = null;
             }
             if (dx >= 6 && dx > dy && activePointer != null) {
@@ -1300,6 +1289,24 @@
         <div class="weather-chart-sub weather-compass-caption">${escapeHtml(degToCompass(deg))} · ${deg != null ? Math.round(deg) + '°' : '—'}</div>`;
     }
 
+    function bindHourlyList(strip) {
+      if(!strip) return;
+      strip.addEventListener('keydown',function (event) {
+        if(event.altKey || event.ctrlKey || event.metaKey) return;
+        const direction=getComputedStyle(strip).direction === 'rtl' ? -1 : 1;
+        const buttons=Array.from(strip.querySelectorAll('button.weather-hourly-item'));
+        const index=buttons.indexOf(document.activeElement);
+        const step=event.key==='ArrowRight'?direction:event.key==='ArrowLeft'?-direction:0;
+        if(!step && event.key!=='Home' && event.key!=='End') return;
+        event.preventDefault();
+        if(index>=0) {
+          const target=event.key==='Home'?0:event.key==='End'?buttons.length-1:Math.max(0,Math.min(buttons.length-1,index+step));
+          buttons[target].focus({preventScroll:true});buttons[target].scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});
+        } else if(step) strip.scrollBy({left:event.key==='ArrowRight'?70:-70,behavior:'auto'});
+        else strip.scrollTo({left:event.key==='Home'?0:direction*(strip.scrollWidth-strip.clientWidth),behavior:'auto'});
+      });
+    }
+
     return {
       tempToBarColor: tempToBarColor,
       dailyBarsHtml: dailyBarsHtml,
@@ -1312,6 +1319,7 @@
       smoothLinePath: smoothLinePath,
       buildTempChart: buildTempChart,
       bindCharts: bindCharts,
+      bindHourlyList:bindHourlyList,
       uvGauge: uvGauge,
       sunPathGeometry: sunPathGeometry,
       sunArcSvg: sunArcSvg,

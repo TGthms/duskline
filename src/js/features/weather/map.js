@@ -28,6 +28,7 @@
     var legendGradient = document.getElementById('weatherMapGradient');
     var legendValues = document.getElementById('weatherMapLegendValues');
     var credit = document.getElementById('weatherMapCredit');
+    const mapCredits = credit ? credit.innerHTML : '';
     var map = null;
     var mapLibraryPromise = null;
     var isOpen = false;
@@ -123,7 +124,7 @@
       setStatus(message, true, false);
       feedbackTimer = window.setTimeout(function () {
         if (isOpen) setStatus('', false);
-      }, 2400);
+      }, message.length>60 ? 6000 : 2400);
     }
     function lockBackground() {
       previousStyles = {
@@ -272,7 +273,7 @@
     function cityAtClientPoint(clientX, clientY) {
       var lat;
       var lon;
-      if (map && !fallbackActive) {
+      if (map && !fallbackActive && root.classList.contains('is-map-ready')) {
         var canvas = map.getCanvas();
         var bounds = canvas.getBoundingClientRect();
         var projected = map.unproject([clientX - bounds.left, clientY - bounds.top]);
@@ -437,6 +438,7 @@
         if (action === 'view' && typeof deps.onSelectCity === 'function') deps.onSelectCity(city);
         else if (action === 'add' && !contextIsSaved && typeof deps.onAddCity === 'function') {
           if (deps.onAddCity(city) !== false) showMapFeedback(t('weather.notice.added', 'Added to My Sky'));
+          else showMapFeedback(t('weather.savedPlacesLimit','My Sky holds 24 saved places. Remove a place before adding another.'));
         }
       });
     }
@@ -835,6 +837,7 @@
       if(layer === 'temperature') title += ' · '+(typeof deps.useF === 'function' && deps.useF()?'°F':'°C');
       const subhead=document.getElementById('weatherMapSubhead');
       if(subhead) subhead.textContent=t('weather.mapEstimate','Interpolated forecast estimates')+(layer === 'aqi'?' · CAMS · ~45 km':'');
+      if(credit && !fallbackActive && credit.dataset.layerCredits!==layer) {credit.innerHTML=mapCredits+' · <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>'+(layer === 'aqi'?' · CAMS (~45 km)':'');credit.dataset.layerCredits=layer;}
       if (legendTitle) legendTitle.textContent = title;
       if (legendGradient) legendGradient.dataset.layer = layer;
       var config = legendConfig(layer);
@@ -1147,6 +1150,7 @@
         renderFallbackPlaces();
       }
       if (mapControls) mapControls.hidden = false;
+      if(credit) delete credit.dataset.layerCredits;
       if (credit) credit.textContent = t('weather.mapOfflineCredit', 'Offline world map · Natural Earth · Geographic city coordinates');
       setBusy(false);
       setStatus(reason || t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'), true);

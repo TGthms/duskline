@@ -405,8 +405,10 @@
 
     // Optional air-quality enrichment never blocks the weather response.
     const airEpochs = new Map();
+    const appliedAirEpochs = new Map();
     const forecastEpochs = new Map();
     function startAir(cities, signal) {
+      const requestedAt=Date.now();
       const epochs = cities.map(function (city) {
         const key = cityKey(city), epoch = (airEpochs.get(key) || 0) + 1;
         airEpochs.set(key, epoch); return epoch;
@@ -419,12 +421,13 @@
           const readings = Array.isArray(raw) ? raw : [raw];
           packs.forEach(function (pack, index) {
             const key = cityKey(cities[index]);
-            if (!pack || !pack.weather || airEpochs.get(key) !== epochs[index] || !readings[index]) return;
-            pack.air = readings[index];
+            if (!pack || !pack.weather || (appliedAirEpochs.get(key) || 0)>epochs[index] || !readings[index]) return;
             const latest = cache.get(key);
+            if(latest && latest.air && latest.air._detailFetchedAt>requestedAt) return;
+            appliedAirEpochs.set(key,epochs[index]);
+            pack.air = Object.assign({},pack.air,readings[index],{current:Object.assign({},pack.air && pack.air.current,readings[index].current)});
             if (latest && latest.weather) {
-              if (latest.air && latest.air._detailFetchedAt) return;
-              latest.air = readings[index]; cache.set(key, latest);
+              latest.air = Object.assign({},latest.air,readings[index],{current:Object.assign({},latest.air && latest.air.current,readings[index].current)}); cache.set(key, latest);
               if (typeof deps.onCityLoaded === 'function') deps.onCityLoaded(cities[index], latest);
             }
           });
@@ -480,7 +483,7 @@
         }
         const cur = pack.weather.current || {};
         const ocur = om.weather.current || {};
-        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility', 'wind_gusts_10m', 'is_day'].forEach(function (k) {
+        ['temperature_2m', 'weather_code', 'relative_humidity_2m', 'apparent_temperature', 'surface_pressure', 'visibility', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'is_day'].forEach(function (k) {
           if (cur[k] == null && ocur[k] != null) cur[k] = ocur[k];
         });
         if (ocur.precipitation != null) cur.precipitation = ocur.precipitation;

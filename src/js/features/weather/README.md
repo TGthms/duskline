@@ -10,6 +10,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 |------|------|
 | `ns.js` | Page gate + `window.DusklineWeather` factory registry |
 | `aqi-math.js` | Pure US and European AQI band and scale helpers |
+| `aqi.js` | AQI data ownership, pollutant detail, scale and outlook rendering (`W.factories.aqi`) |
 | `planning.js` | Pure hourly rain-window planning (`W.planning`) |
 | `sky.js` | Sky / ambient FX (`W.factories.sky`) |
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
@@ -45,7 +46,7 @@ After edits: `npm run check` and Playwright `e2e/smoke.spec.js`.
 
 Weather-page locale catalogs are generated with `npm run weather:i18n`. The page loads English as a fallback and fetches only the active locale. English is precached. Other weather and legal packs are cached on demand in a separate cache capped at eight packs; offline language changes require a previously used pack.
 
-Product layout rules live in `src/css/weather-product.css`; avoid adding them to the atmospheric brand layer. Saved-place rearrangement is available inside the Units/preferences sheet.
+Product layout rules live in `src/css/weather-product.css`; avoid adding them to the atmospheric brand layer. Saved-place management is available directly in My Sky; Settings retains rearrangement controls.
 
 My Sky uses the shared daily chart renderer with `limit: 5` and `skipToday: true`; preview days open the matching full day sheet. The fixed header's route progress bar adapts Kit's timing and respects resolved motion preferences. Primary-card layout and progress styling remain in `weather-product.css`.
 
@@ -53,4 +54,4 @@ Shared async progress lives in `src/js/core/loading.js`. Use `DusklineLoading.be
 
 The shared indicator is mounted outside the chrome so it remains visible above detail/sheet/map overlays. Forecast operations retain their token through retries; `loadCity`/`loadMany` and provider transports are tracked separately. Saved-place selection repaints the primary card before requesting missing data. Primary-strip scroll and focused day controls survive same-city data refreshes.
 
-Map raster rendering caches Float64 spatial weights, reads each forecast sample once per frame, and writes into reused canvas/ImageData buffers. Preserve arithmetic order and compare the baseline pixel hashes before changing interpolation or palettes. `npm run benchmark:map` measures the CPU kernel; see `docs/map-performance.md` for scope and results. Place updates coalesce and use coordinate keys; the map's cold-load generations, visibility guards, and request deadlines must remain paired with close/fallback cleanup.
+Map raster rendering caches four local corner weights per pixel, reads each forecast sample once per frame, and writes into reused canvas/ImageData buffers. Verify analytical interpolation, missing-cell behavior and geographic sampling contracts when changing the field. `npm run benchmark:map` measures the CPU kernel; see `docs/map-performance.md` for scope and results. Place updates coalesce and use coordinate keys; the map's cold-load generations, visibility guards, and request deadlines must remain paired with close/fallback cleanup.

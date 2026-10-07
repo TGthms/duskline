@@ -1,6 +1,6 @@
 'use strict';
 /* Duskline — src/js/boot.js
-   Runs before first paint on every page (index, privacy, terms). Two jobs, both of which
+   Runs before first paint on every page (index, privacy, terms). Initial setup, which
    must happen before the browser paints or the user sees a flash:
 
      1. resolve the OS appearance into `data-theme`, and flag the effective animation level
@@ -64,7 +64,7 @@
 })();
 
 /* ── 2. Web fonts ──
-   Public Sans always; one Noto script family only when the active language needs it.
+   Public Sans is bundled locally; one Noto script family loads only when the active language needs it.
    Navigation is detected from the saved preference first (so the right font is in flight
    for the first paint) and the browser language second. */
 (function () {
@@ -140,3 +140,14 @@
     if (type === 'lang' || type === 'style') apply();
   });
 })();
+
+/* Preserve an early navigation tap while deferred weather controllers load. */
+document.addEventListener('click',function (event) {
+  if(window.__dusklineWeatherReady || !event.isTrusted) return;
+  const button=event.target && event.target.closest && event.target.closest('[data-weather-mode],#weatherMapOpen,#weatherUnitsBtn,#weatherRefresh');
+  if(!button) return;
+  event.preventDefault();event.stopImmediatePropagation();
+  window.__dusklinePendingWeatherAction=button.dataset.weatherMode ? {mode:button.dataset.weatherMode} : {id:button.id};
+  button.setAttribute('aria-busy','true');
+  if(button.dataset.weatherMode) document.querySelectorAll('[data-weather-mode]').forEach(function (item) {item.setAttribute('aria-pressed',String(item===button));});
+},true);

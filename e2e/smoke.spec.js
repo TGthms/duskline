@@ -181,9 +181,9 @@ test('My Sky does not surface a daytime UV warning at night', async ({ page }) =
   const locationRow = page.locator('#weatherHome');
   await expect(locationRow.locator('.weather-home-temperature')).toBeVisible({timeout:20000});
   await expect(locationRow.locator('.weather-home-temperature')).not.toHaveText('—');
-  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Good night.*°.*Boston/, { timeout: 20000 });
-  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Tomorrow:/);
-  await expect(page.locator('#weatherGreeting')).not.toHaveAttribute('aria-label', /\bUV\b|sun protection/i);
+  await expect(page.locator('#weatherGreeting')).toHaveAttribute('aria-label', /Good night.*Boston/, { timeout: 20000 });
+  await expect(page.locator('#weatherHome .weather-home-insight')).toContainText('Tomorrow:');
+  await expect(page.locator('#weatherHome')).not.toContainText(/\bUV\b|sun protection/i);
 });
 
 test('Change My Sky city follows My Location by default, can use a saved city, and persists', async ({ page }) => {

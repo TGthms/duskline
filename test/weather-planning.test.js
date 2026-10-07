@@ -15,3 +15,9 @@ test('rain planning reports the first upcoming window and preserves missing accu
  assert.equal(window.DusklineWeather.planning.rainWindow(hourly,Date.parse,now).amount,1.1);
  assert.equal(window.DusklineWeather.planning.rainWindow({time,precipitation_probability:Array(6).fill(null)},Date.parse,now),null);
 });
+
+test('rain planning never includes elapsed hours or extends past the next 24 hours',()=>{
+ const now=Date.parse('2026-10-06T08:00:00Z'),time=Array.from({length:30},(_,i)=>new Date(now+(i-2)*3600000).toISOString());
+ const result=window.DusklineWeather.planning.rainWindow({time,precipitation_probability:time.map(()=>70)},Date.parse,now);
+ assert.equal(result.start,now);assert.equal(result.end,now+24*3600000);
+});

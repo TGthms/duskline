@@ -39,6 +39,7 @@
       const samePlace = home.dataset.cityKey === cityKey(city);
       const previousScroll = samePlace && previousStrip ? previousStrip.scrollLeft : 0;
       const restoreStripFocus = samePlace && previousStrip === document.activeElement;
+      const previousHourFocus = samePlace && home.contains(document.activeElement) && document.activeElement.dataset.hourAt;
       const previousDayFocus = samePlace && home.contains(document.activeElement) && document.activeElement.dataset.dayDate;
       home.dataset.cityKey = cityKey(city);
       const pack = cache.get(cityKey(city));
@@ -69,12 +70,13 @@
       for (let i = start; i < Math.min(start+8,times.length); i++) {
         const probability = (hourly.precipitation_probability || [])[i];
         const label = [deps.clock(times[i],pack),condLabel((hourly.weather_code || [])[i]),fmtTemp((hourly.temperature_2m || [])[i]),probability == null ? '' : Math.round(probability)+'%'].filter(Boolean).join(', ');
-        hours += `<button type="button" class="weather-hourly-item" data-home-hour="${i}" aria-label="${esc(label)}"><div>${esc(deps.shortClock ? deps.shortClock(times[i],pack) : deps.clock(times[i],pack))}</div><div class="ic">${deps.icon((hourly.weather_code || [])[i],deps.night(pack,times[i]))}</div><div class="t">${esc(fmtTemp((hourly.temperature_2m || [])[i]))}</div><div class="p">${(hourly.precipitation_probability || [])[i] != null ? Math.round(hourly.precipitation_probability[i])+'%' : '—'}</div></button>`;
+        hours += `<button type="button" class="weather-hourly-item" data-home-hour="${i}" data-hour-at="${deps.stamp(times[i],pack)}" aria-label="${esc(label)}"><div>${esc(deps.shortClock ? deps.shortClock(times[i],pack) : deps.clock(times[i],pack))}</div><div class="ic">${deps.icon((hourly.weather_code || [])[i],deps.night(pack,times[i]))}</div><div class="t">${esc(fmtTemp((hourly.temperature_2m || [])[i]))}</div><div class="p">${(hourly.precipitation_probability || [])[i] != null ? Math.round(hourly.precipitation_probability[i])+'%' : '—'}</div></button>`;
       }
       const plan=deps.plan ? deps.plan(pack) : '';
       const insight = plan ? '' : deps.insight(pack);
       const daily = deps.dailyPreview ? deps.dailyPreview(pack) : '';
       const previewCount=(daily.match(/data-day-date=/g) || []).length;
+      const waitingHours=pack.needsEnrich && !pack.stored && !pack.enrichmentError;
       const markup = `
         <div class="weather-home-current">
           <div class="weather-home-reading"><h3>${esc(deps.cityName(city))}</h3><span class="weather-home-temperature">${esc(fmtTemp(current.temperature_2m))}</span><p class="weather-home-feels">${esc(t('weather.feelsLike','Feels like'))} ${esc(fmtTemp(current.apparent_temperature))}</p></div>
@@ -87,9 +89,9 @@
         ${plan ? `<div class="weather-home-insight weather-home-plan">${plan}</div>` : insight ? `<p class="weather-home-insight">${esc(insight)}</p>` : ''}
         <div class="weather-home-outlook"><div class="weather-home-hours">
           <span class="weather-home-caption">${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}</span>
-          <div class="weather-hourly" tabindex="0" role="group" aria-label="${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}">${hours || `<div class="weather-hourly-loading">${!pack.stored && !pack.enrichmentError ? '<span class="loader" aria-hidden="true"></span>' : ''}<span>${esc(pack.stored || pack.enrichmentError ? t('weather.hourlyUnavailable','Hourly forecast unavailable') : t('weather.loadingForecast','Loading forecast…'))}</span></div>`}</div>
+          <div class="weather-hourly" tabindex="0" role="group" aria-label="${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}">${hours || `<div class="weather-hourly-loading">${waitingHours ? '<span class="loader" aria-hidden="true"></span>' : ''}<span>${esc(!waitingHours ? t('weather.hourlyUnavailable','Hourly forecast unavailable') : t('weather.loadingForecast','Loading forecast…'))}</span></div>`}</div>
         </div>
-        ${daily ? `<div class="weather-home-daily"><span class="weather-home-caption">${esc(t('weather.dailyN','{n}-Day Forecast').replace('{n}',String(previewCount)))}</span>${daily}</div>` : ''}</div>
+        ${daily ? `<div class="weather-home-daily"><span class="weather-home-caption">${esc(previewCount ? t('weather.dailyN','{n}-Day Forecast').replace('{n}',String(previewCount)) : t('weather.daily','10-Day Forecast'))}</span>${previewCount ? daily : '<p>'+esc(t('weather.unavailable','Unavailable'))+'</p>'}</div>` : ''}</div>
         <div class="weather-home-meta"><small>${esc(deps.updated(pack))}</small><div class="weather-home-actions"><button type="button" data-home-open>${esc(t('weather.viewForecast','View forecast'))}</button></div></div>`;
       const paintKey = cityKey(city)+'|'+markup;
       if (paintedMarkup === paintKey) return;
@@ -104,22 +106,13 @@
       const strip = home.querySelector('.weather-hourly');
       strip.scrollLeft = previousScroll;
       if (restoreStripFocus) strip.focus({preventScroll:true});
+      else if(previousHourFocus) home.querySelector('[data-hour-at="'+previousHourFocus+'"]')?.focus({preventScroll:true});
       else if (previousDayFocus) {
         const day = Array.from(home.querySelectorAll('[data-day-date]')).find(button=>button.dataset.dayDate === previousDayFocus);
         if (day) day.focus({preventScroll:true});
       }
       home.querySelector('[data-home-open]').addEventListener('click', () => deps.open(selectedCity()));
-      home.querySelector('.weather-hourly').addEventListener('keydown', function (event) {
-        const strip = event.currentTarget;
-        const direction = getComputedStyle(strip).direction === 'rtl' ? -1 : 1;
-        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-          event.preventDefault();
-          strip.scrollBy({left:event.key === 'ArrowRight' ? 70 : -70,behavior:'auto'});
-        } else if (event.key === 'Home' || event.key === 'End') {
-          event.preventDefault();
-          strip.scrollTo({left:event.key === 'Home' ? 0 : direction * (strip.scrollWidth-strip.clientWidth),behavior:'auto'});
-        }
-      });
+      if(deps.bindHourly) deps.bindHourly(strip);
 
       if (pack.needsEnrich && !pack.stored && !pack.enrichmentError && !enriching.has(cityKey(city))) {
         enriching.add(cityKey(city));
