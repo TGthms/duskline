@@ -12,6 +12,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `aqi-math.js` | Pure US and European AQI band and scale helpers |
 | `sky.js` | Sky / ambient FX (`W.factories.sky`) |
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
+| `forecast-sheet.js` | Shared date-aware temperature/precipitation renderer (`W.factories.forecastSheet`) |
 | `map.js` | Lazy OpenFreeMap renderer, Open-Meteo weather grid, and local schematic fallback (`W.factories.map`) |
 | `alerts.js` | NWS U.S. + international CAP alerts, area matching, accordion, and prefetch (`W.factories.alerts`) |
 | `search-places.js` | Geocoder deduplication and minimum forecast validation |

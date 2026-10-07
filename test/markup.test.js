@@ -38,7 +38,7 @@ test('no page ships an inline script', () => {
       .map((match) => match[1]).filter((href) => !/^(?:https?:)?\/\//i.test(href));
     assert.ok(boot > -1 && styles.length > 0 && boot < html.indexOf(styles[0]), `${page}: boot.js must precede stylesheets`);
     const expected = page === 'index.html'
-      ? STYLESHEETS.slice(0, -1).concat('src/css/weather-map.css', STYLESHEETS[STYLESHEETS.length - 1], 'src/css/weather-product.css')
+      ? STYLESHEETS.slice(0, -1).concat('src/css/weather-map.css', STYLESHEETS[STYLESHEETS.length - 1], 'src/css/weather-product.css', 'src/css/weather-interactions.css')
       : STYLESHEETS;
     assert.deepEqual(styles, expected, `${page}: preserve direct stylesheet order`);
   }

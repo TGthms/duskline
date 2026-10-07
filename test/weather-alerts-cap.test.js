@@ -103,9 +103,9 @@ test('partial and unavailable CAP coverage is explicit while matched alerts rema
   const incomplete = alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'partial' });
   assert.match(incomplete, /Could not check public alerts/);
   assert.match(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'upstream' }), /data-alert-retry/);
-  assert.match(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'unsupported' }), /coverage unavailable/);
+  assert.equal(alerts.alertsBlockHtml({ alertsError: true, alertsUnavailableReason: 'unsupported' }), '');
   const expired = alerts.alertsBlockHtml([{ event: 'Expired alert', severity: 'Extreme', ends: '2020-01-01T00:00:00Z' }]);
-  assert.match(expired, /No active public alerts/);
+  assert.equal(expired, '');
 });
 
 test('CAP feed copies collapse by warning content while distinct hazards remain', () => {

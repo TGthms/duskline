@@ -300,6 +300,7 @@
   let greetingVisitSeed = null;
   const aqiDetailInflight = new Map();
   let cityRefreshApi = null;
+  let forecastSheetApi = null;
   let activeSheetKind = null;
   let toastTimer = 0;
   const toastEl = $('weatherToast');
@@ -490,6 +491,7 @@
       motionLevel: motionLevel, formatClock: formatClock, formatChartAxisHour: formatChartAxisHour,
       useF: useF, condIcon: condIcon
     });
+    forecastSheetApi = W.factories.forecastSheet({charts:chartsApi,t,escapeHtml,condIcon,condLabel,fmtTemp,fmtPrecip,formatClock,dailyFieldAt,useF});
     // data first — alert hooks resolve lazily at call time
     dataApi = W.factories.data({
       cache: cache, cityKey: cityKey, sameCity: sameCity, MAJOR: MAJOR,
@@ -1764,13 +1766,14 @@
     dailyPreview: function (pack) { return chartsApi.dailyBarsHtml(pack.weather.daily || {}, {
       timeZone:cityTimeZone(pack,pack.city), hourly:pack.weather.hourly, limit:5, skipToday:true
     }); },
-    openDay: async function (city, date) {
+    dateKey: function (time,pack) { const zone=cityTimeZone(pack,pack.city); return chartsApi.localDateKey(stampToMs(time,zone),zone); },
+    openDay: async function (city, date, hourIndex) {
       const cached = cache.get(cityKey(city));
       if (!cached || !cached.weather) return;
       openDetail(cached);
       const pack = cached.needsEnrich && !cached.stored ? await dataApi.loadCity(city,null,{enrich:true}).catch(function () { return null; }) : cached;
       if (!pack || !pack.weather || !openCity || !sameCity(openCity.city,city) || sheetIntentOpen) return;
-      openSheet('day',pack,{dayKey:date});
+      openSheet('day',pack,{dayKey:date,hourIndex:hourIndex});
     },
     icon: condIcon, repaint: function () { horizonExpanded = true; refreshListsFromCache({force:true}); refresh(false,{quiet:true,reason:'view'}); },
     expanded: function () { return horizonExpanded; },
@@ -3166,7 +3169,11 @@
     if (!detailFavBtn || !c) return;
     const fav = isFavorite(c);
     detailFavBtn.setAttribute('aria-pressed', fav ? 'true' : 'false');
-    detailFavBtn.innerHTML = savedPlaceIcon(fav);
+    const icon = document.createElement('template');
+    icon.innerHTML = savedPlaceIcon(fav);
+    const previous = detailFavBtn.querySelector('svg');
+    if (previous) previous.replaceWith(icon.content.firstElementChild);
+    else detailFavBtn.prepend(icon.content.firstElementChild);
     detailFavBtn.setAttribute('aria-label', savedPlaceLabel(fav));
     detailFavBtn.title = savedPlaceLabel(fav);
   }
@@ -3480,7 +3487,7 @@
     const times = hourly.time || [];
     const stripTz = cityTimeZone(pack, c);
     const nowMs = Date.now();
-    let start = 0;
+    let start = times.length;
     for (let i = 0; i < times.length; i++) {
       const ms = stampToMs(times[i], stripTz);
       if (Number.isFinite(ms) && ms >= nowMs - 3600000) { start = i; break; }
@@ -3503,21 +3510,22 @@
       const code = hourly.weather_code && hourly.weather_code[i];
       const h = wallHour(times[i], stripTz);
       const pop = hourly.precipitation_probability && hourly.precipitation_probability[i];
-      hourlyHtml += `<div class="weather-hourly-item">
+      const hourLabel = [formatClock(times[i], stripTz),condLabel(code),fmtTemp(hourly.temperature_2m && hourly.temperature_2m[i]),pop == null ? '' : Math.round(pop)+'%'].filter(Boolean).join(', ');
+      hourlyHtml += `<button type="button" class="weather-hourly-item" data-hour-index="${i}" aria-label="${escapeHtml(hourLabel)}">
         <div>${escapeHtml(i === start && !pack.stored ? t('weather.now', 'Now') : lab)}</div>
         <div class="ic">${condIcon(code == null ? 0 : code, isNightForPack(pack, times[i]))}</div>
         <div class="t">${fmtTemp(hourly.temperature_2m && hourly.temperature_2m[i])}</div>
         ${pop != null ? `<div class="p">${Math.round(pop)}%</div>` : ''}
-      </div>`;
+      </button>`;
     }
     hourlyHtml += '</div>';
-    if (!times.length) {
-      hourlyHtml = pack.enrichmentError || pack.stored
+    if (start >= times.length) {
+      hourlyHtml = times.length || pack.enrichmentError || pack.stored
         ? `<div class="weather-hourly-loading" role="status"><span>${escapeHtml(t('weather.hourlyUnavailable', 'Hourly forecast unavailable'))}</span><span>${escapeHtml(t('weather.refreshToRetry', 'Refresh to try again'))}</span></div>`
         : `<div class="weather-hourly-loading" role="status" aria-live="polite"><span class="loader" aria-hidden="true"></span><span>${escapeHtml(t('weather.loadingForecast', 'Loading forecast…'))}</span></div>`;
     }
     const hourlyTitle = t('weather.hourly', 'Hourly Forecast');
-    mods.push(`<button type="button" class="weather-mod weather-mod-wide is-tappable" data-sheet="conditions" aria-label="${escapeHtml(hourlyTitle)}"><div class="weather-mod-label">${modLabelIcon('conditions')}<span>${escapeHtml(hourlyTitle)}</span></div>${hourlyHtml}</button>`);
+    mods.push(`<div class="weather-mod weather-mod-wide weather-mod-hourly" data-sheet="conditions"><button type="button" class="weather-mod-label weather-hourly-open" aria-label="${escapeHtml(hourlyTitle)}">${modLabelIcon('conditions')}<span>${escapeHtml(hourlyTitle)}</span></button>${hourlyHtml}</div>`);
 
     const dailyOpts = {
       currentTemp: cur && cur.temperature_2m != null ? cur.temperature_2m : null,
@@ -3550,7 +3558,13 @@
     const forLine = t('weather.forLocation', 'Weather for {place}').replace('{place}', placeStr);
     mods.push(`<p class="weather-detail-attrib">${escapeHtml(forLine)}</p>`);
 
+    const previousStrip = detailMods.querySelector('.weather-hourly');
+    const stripScroll = sameOpenCity && previousStrip ? previousStrip.scrollLeft : 0;
+    const focusedHour = sameOpenCity && detailMods.contains(document.activeElement) ? document.activeElement.dataset.hourIndex : null;
     detailMods.innerHTML = mods.join('');
+    const newStrip = detailMods.querySelector('.weather-hourly');
+    if (newStrip) newStrip.scrollLeft = stripScroll;
+    if (focusedHour != null) detailMods.querySelector('[data-hour-index="'+CSS.escape(focusedHour)+'"]')?.focus({preventScroll:true});
     // Restore any expanded alerts the user had open before this re-render
     if (keepAlertOpen && keepAlertOpen.length) alertsApi.restoreOpenAlertTitles(keepAlertOpen);
     alertsApi.bindAlertCollapseAnimation(detailMods);
@@ -3790,9 +3804,9 @@
 
   function openSheet(kind, pack, sheetOptions) {
     if (!sheetEl || !sheetBody || !pack || !pack.weather) return;
-    if (kind === 'hourly' || kind === 'daily') return;
+    if (['hourly','daily','conditions'].includes(kind)) kind = 'day';
     if (kind === 'feels') {
-      kind = 'conditions';
+      kind = 'day';
       sheetOptions = Object.assign({}, sheetOptions || {}, { tempMode: 'feels' });
     }
     try {
@@ -3910,91 +3924,8 @@
     // A selected forecast day opens a date-aware chart sheet, rather than a static row.
     if (kind === 'day') {
       body += datePickerHtml();
-      const dayCode = selectedDayCode;
-      const high = dailyFieldAt(daily, 'temperature_2m_max', selectedDayIndex);
-      const low = dailyFieldAt(daily, 'temperature_2m_min', selectedDayIndex);
-      const totalPrecip = dailyFieldAt(daily, 'precipitation_sum', selectedDayIndex);
-      let pop = dailyFieldAt(daily, 'precipitation_probability_max', selectedDayIndex);
-      const dayWindow = chartsApi.hourlyDateWindow(hourly, chartTz, String(selectedDayKey).slice(0, 10));
-      const dayHours = dayWindow.end - dayWindow.start;
-      const probability = hourly.precipitation_probability || [];
-      const temperatures = hourly.temperature_2m || [];
-      if (pop == null && dayHours > 0) {
-        const values = probability.slice(dayWindow.start, dayWindow.end)
-          .map(Number).filter(Number.isFinite);
-        if (values.length) pop = Math.max.apply(null, values);
-      }
-      const timeNear = function (series, target) {
-        const value = Number(target);
-        if (target == null || !Number.isFinite(value) || dayHours <= 0) return '';
-        let nearest = null;
-        let difference = Infinity;
-        for (let i = dayWindow.start; i < dayWindow.end; i++) {
-          const sample = Number(series[i]);
-          if (!Number.isFinite(sample)) continue;
-          const delta = Math.abs(sample - value);
-          if (delta < difference) { nearest = i; difference = delta; }
-        }
-        return nearest != null && difference <= 1.1 ? formatClock(hourly.time[nearest], chartTz) : '';
-      };
-      const highTime = timeNear(temperatures, high);
-      const lowTime = timeNear(temperatures, low);
-      const selectedChartKey = dayMode === 'feels' ? 'apparent_temperature' : 'temperature_2m';
-      const selectedSeries = hourly[selectedChartKey] || [];
-      const hasTemperatureHours = dayHours >= 2 && selectedSeries.slice(dayWindow.start, dayWindow.end)
-        .some(function (value) { return value != null && Number.isFinite(Number(value)); });
-      const hasProbabilityHours = dayHours >= 2 && probability.slice(dayWindow.start, dayWindow.end)
-        .some(function (value) { return value != null && Number.isFinite(Number(value)); });
-
-      const selectedValues = selectedSeries.slice(dayWindow.start, dayWindow.end)
-        .map(function (value) { return value == null ? NaN : Number(value); })
-        .filter(Number.isFinite);
-      const chartRangeLow = dayMode === 'actual' && low != null
-        ? Number(low) : selectedValues.length ? Math.min.apply(null, selectedValues) : null;
-      const chartRangeHigh = dayMode === 'actual' && high != null
-        ? Number(high) : selectedValues.length ? Math.max.apply(null, selectedValues) : null;
-      const rangeReadout = chartRangeLow != null && chartRangeHigh != null
-        ? fmtTemp(chartRangeLow) + ' – ' + fmtTemp(chartRangeHigh) : '';
-      const isSelectedToday = String(selectedDayKey).slice(0, 10) === currentDateKey;
-      body += `<div class="wx-day-condition" id="wxDayCondition">${condIcon(dayCode, false)}<span>${escapeHtml(condLabel(dayCode))}</span></div>`;
-      body += `<div class="wx-day-facts">
-        <div class="wx-day-fact"><span>${escapeHtml(t('weather.highFull', 'High'))}</span><strong>${escapeHtml(fmtTemp(high))}</strong>${highTime ? `<small>${escapeHtml(highTime)}</small>` : ''}</div>
-        <div class="wx-day-fact"><span>${escapeHtml(t('weather.lowFull', 'Low'))}</span><strong>${escapeHtml(fmtTemp(low))}</strong>${lowTime ? `<small>${escapeHtml(lowTime)}</small>` : ''}</div>
-        <div class="wx-day-fact"><span>${escapeHtml(t('weather.precip', 'Precipitation'))}</span><strong>${escapeHtml(fmtPrecip(totalPrecip))}</strong></div>
-        <div class="wx-day-fact"><span>${escapeHtml(t('weather.chanceOfPrecipitation', 'Chance of precipitation'))}</span><strong>${pop != null && Number.isFinite(Number(pop)) ? Math.round(Number(pop)) + '%' : '—'}</strong></div>
-      </div>`;
-      body += `<div class="wx-day-mode" role="group" aria-label="${escapeHtml(t('settings.temperature', 'Temperature'))}">
-        <button type="button" data-temp-mode="actual" aria-pressed="${dayMode === 'actual' ? 'true' : 'false'}" class="${dayMode === 'actual' ? 'active' : ''}">${escapeHtml(t('weather.actual', 'Actual'))}</button>
-        <button type="button" data-temp-mode="feels" aria-pressed="${dayMode === 'feels' ? 'true' : 'false'}" class="${dayMode === 'feels' ? 'active' : ''}">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</button>
-      </div>`;
-      if (hasTemperatureHours) {
-        body += chartsApi.buildTempChart(hourly, selectedChartKey, (v) => fmtTemp(v), chartTz, String(selectedDayKey).slice(0, 10), {
-          initialMode: isSelectedToday ? 'point' : 'range',
-          initialReadout: rangeReadout || fmtTemp(high) + ' – ' + fmtTemp(low),
-          initialSub: isSelectedToday ? '' : t('weather.dailyRange', 'Daily range')
-        });
-      }
-      if (hasProbabilityHours) {
-        body += `<p class="weather-mod-label wx-day-chart-label">${escapeHtml(t('weather.chanceOfPrecipitation', 'Chance of precipitation'))}</p>`;
-        body += chartsApi.buildTempChart(hourly, 'precipitation_probability', (v) => Math.round(v) + '%', chartTz, String(selectedDayKey).slice(0, 10));
-      }
-      const aboutDay = t('weather.about.conditions', '');
-      if (aboutDay) body += `<p class="wx-sheet-context wx-day-about">${escapeHtml(aboutDay)}</p>`;
+      body += forecastSheetApi.render({daily,hourly,chartTz,selectedDayKey,selectedDayIndex,selectedDayCode,dayMode,sheetOptions,currentDateKey,unitsPickerHtml});
     // Chart sheets: Apple pattern = title → large live value lives in chart readout → scrub chart → about
-     } else if (kind === 'conditions') {
-      body += datePickerHtml();
-      const selectedChartKey = dayMode === 'feels' ? 'apparent_temperature' : 'temperature_2m';
-      body += `<p class="wx-sheet-context" id="wxConditionsContext">${escapeHtml(condLabel(String(selectedDayKey).slice(0,10) === currentDateKey ? cur.weather_code : selectedDayCode))}</p>`;
-      body += `<div class="wx-day-mode" role="group" aria-label="${escapeHtml(t('settings.temperature', 'Temperature'))}">
-        <button type="button" data-temp-mode="actual" aria-pressed="${dayMode === 'actual' ? 'true' : 'false'}" class="${dayMode === 'actual' ? 'active' : ''}">${escapeHtml(t('weather.actual', 'Actual'))}</button>
-        <button type="button" data-temp-mode="feels" aria-pressed="${dayMode === 'feels' ? 'true' : 'false'}" class="${dayMode === 'feels' ? 'active' : ''}">${escapeHtml(t('weather.feelsLike', 'Feels Like'))}</button>
-      </div>`;
-      body += chartsApi.buildTempChart(hourly, selectedChartKey, (v) => fmtTemp(v), chartTz, selectedDayKey);
-      body += unitsPickerHtml('wxTempUnitsSheet', [['c', '°C'], ['f', '°F']], useF() ? 'f' : 'c');
-    } else if (kind === 'feels') {
-      body += `<p class="wx-sheet-context">${escapeHtml(condLabel(cur.weather_code))}</p>`;
-      body += chartsApi.buildTempChart(hourly, 'apparent_temperature', (v) => fmtTemp(v), chartTz);
-      body += unitsPickerHtml('wxTempUnitsSheet', [['c', '°C'], ['f', '°F']], useF() ? 'f' : 'c');
     } else if (kind === 'humidity') {
       body += chartsApi.buildTempChart(hourly, 'relative_humidity_2m', (v) => Math.round(v) + '%', chartTz);
     } else if (kind === 'wind') {
@@ -4073,11 +4004,11 @@
       body += unitsPickerHtml('wxVisUnits', [['km', 'km'], ['mi', 'mi']], useMi() ? 'mi' : 'km');
     }
 
-    const aboutText = kind === 'aqi' && aqiScale(pack.city) === 'eu'
+    const aboutText = kind === 'day' ? t('weather.about.conditions','') : kind === 'aqi' && aqiScale(pack.city) === 'eu'
       ? t('weather.about.aqi.eu', '')
       : t('weather.about.' + kind, '');
     if (aboutText) {
-      const contextText = sheetContextText(kind, pack, chartTz, {dayKey:String(selectedDayKey).slice(0,10),tempMode:dayMode});
+      const contextText = sheetContextText(kind === 'day' ? 'conditions' : kind, pack, chartTz, {dayKey:String(selectedDayKey).slice(0,10),tempMode:dayMode});
       if (contextText) body += `<p class="wx-sheet-context wx-sheet-intelligence">${escapeHtml(contextText)}</p>`;
       const aboutHead = kind === 'conditions'
         ? aboutTitle + ' ' + t('weather.hourly', 'Hourly Forecast')
@@ -4176,7 +4107,7 @@
               : openCity;
             if (pack && pack.weather) {
               openDetail(pack);
-              openSheet(kind, pack, kind === 'conditions' ? { tempMode: dayMode } : undefined);
+              openSheet(kind, pack, kind === 'day' ? {dayKey:selectedDayKey,tempMode:dayMode,keepScroll:true} : undefined);
             }
           }, 380);
         });
@@ -5428,7 +5359,10 @@
       }
       e.preventDefault();
       restoreFocus(btn);
-      openSheet(kind, openCity);
+      const hourButton = e.target.closest('[data-hour-index]');
+      const hourIndex = hourButton ? Number(hourButton.dataset.hourIndex) : null;
+      const hour = hourIndex != null && openCity.weather.hourly && openCity.weather.hourly.time[hourIndex];
+      openSheet(kind, openCity, hour ? {dayKey:chartsApi.localDateKey(stampToMs(hour,cityTimeZone(openCity,openCity.city)),cityTimeZone(openCity,openCity.city)),hourIndex:hourIndex} : {});
     });
   }
 

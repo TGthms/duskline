@@ -844,6 +844,7 @@
           : t('weather.alertsNone', 'No active public alerts reported');
         if (pack.alertsUnavailableReason === 'offline') label = t('weather.alertsOffline', 'Connect to check public alerts');
         if (pack.alertsPartial) label = t('weather.alertsPartial', 'Alert coverage is incomplete');
+        if (!pack._alertsLoading && (!failed || pack.alertsUnavailableReason === 'unsupported')) return '';
         const stamp = pack.alertsFetchedAt ? new Date(pack.alertsFetchedAt).toLocaleTimeString(undefined, {hour: 'numeric', minute: '2-digit'}) : '';
         return '<div class="weather-alerts weather-alert-status" role="status" aria-live="polite">'
           + (pack._alertsLoading ? '<span class="loader" aria-hidden="true"></span>' : '')

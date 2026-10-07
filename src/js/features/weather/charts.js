@@ -77,7 +77,7 @@
 
     function dailySliceStart(times, timeZone) {
       const todayKey = dailyTodayKey(timeZone);
-      let start = 0;
+      let start = times.length;
       for (let i = 0; i < times.length; i++) {
         if (String(times[i] || '').slice(0, 10) >= todayKey) { start = i; break; }
       }
@@ -377,7 +377,7 @@
     /** Compact Y-axis label (no long units that clip). */
     function axisTickLabel(v, key, unitFmt) {
       if (v == null || !Number.isFinite(v)) return '';
-      if (key === 'relative_humidity_2m') return Math.round(v) + '%';
+      if (key === 'relative_humidity_2m' || key === 'precipitation_probability') return Math.round(v) + '%';
       if (key === 'precipitation_probability') return Math.round(v) + '%';
       if (key === 'uv_index') return String(Math.round(v * 10) / 10);
       if (key === 'precipitation') {
@@ -445,7 +445,7 @@
       const padAmt = (max - min) * 0.14 || (nonNeg ? Math.max(max * 0.15, key === 'uv_index' ? 1 : 0.5) : 1);
       if (nonNeg) {
         // Humidity: 0–100 scale (readable). Precip/UV/wind: floor 0, headroom above max only.
-        if (key === 'relative_humidity_2m') {
+        if (key === 'relative_humidity_2m' || key === 'precipitation_probability') {
           min = 0;
           max = 100;
         } else if (key === 'uv_index') {
@@ -480,7 +480,7 @@
       let midIdx = 0;
       let midBest = Infinity;
       let foundAtOrBefore = false;
-      if (!chartTracksNow && chartOptions.initialIndex != null) {
+      if (chartOptions.initialIndex != null) {
         const requested = pts.findIndex(function (point) { return point.i === Number(chartOptions.initialIndex); });
         if (requested >= 0) midIdx = requested;
       } else if (!chartTracksNow) {
@@ -829,11 +829,11 @@
           if (e.cancelable && e.pointerType === 'touch') e.preventDefault();
           scrub(cx, cy);
         };
-        hit.style.touchAction = 'pan-y';
+        hit.style.touchAction = 'pan-y pinch-zoom';
         hit.style.cursor = 'ew-resize';
         // Bind to SVG (not only hit rect) so axis padding still scrubs
         const target = svg;
-        target.style.touchAction = 'pan-y';
+        target.style.touchAction = 'pan-y pinch-zoom';
         target.style.cursor = 'ew-resize';
         let scrubArmed = false;
         let armTimer = 0;
@@ -842,7 +842,6 @@
         let startY = 0;
         let lastX = 0;
         let lastY = 0;
-        const TOUCH_ARM_MS = 200;
         const TOUCH_CANCEL_PX = 12;
         function isMousePtr(e) {
           return e.pointerType === 'mouse' || e.type === 'mousemove' || e.type === 'mouseleave';
@@ -854,12 +853,8 @@
           }
         }
         function setPanY() {
-          target.style.touchAction = 'pan-y';
-          hit.style.touchAction = 'pan-y';
-        }
-        function setPanNone() {
-          target.style.touchAction = 'none';
-          hit.style.touchAction = 'none';
+          target.style.touchAction = 'pan-y pinch-zoom';
+          hit.style.touchAction = 'pan-y pinch-zoom';
         }
         function endScrub() {
           clearArmTimer();
@@ -867,8 +862,7 @@
           scrubArmed = false;
           activePointer = null;
           setPanY();
-          if (wasArmed && initialMode === 'range') selectionCommitted = true;
-          else if (wasArmed) resetToInitial();
+          if (wasArmed) selectionCommitted = true;
         }
         target.addEventListener('pointerdown', (e) => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
@@ -884,15 +878,7 @@
           startX = lastX = e.clientX;
           startY = lastY = e.clientY;
           clearArmTimer();
-          armTimer = window.setTimeout(function () {
-            armTimer = 0;
-            if (activePointer == null) return;
-            scrubArmed = true;
-            if (initialMode === 'range') selectionCommitted = true;
-            setPanNone();
-            try { target.setPointerCapture && target.setPointerCapture(activePointer); } catch (err) {}
-            scrub(lastX, lastY);
-          }, TOUCH_ARM_MS);
+
         });
         target.addEventListener('pointermove', (e) => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
@@ -909,6 +895,11 @@
               clearArmTimer();
               activePointer = null;
             }
+            if (dx >= 6 && dx > dy && activePointer != null) {
+              scrubArmed = true; selectionCommitted = true;
+              try { target.setPointerCapture(e.pointerId); } catch (error) {}
+              scrub(e.clientX,e.clientY);
+            }
             return;
           }
           if (e.cancelable) e.preventDefault();
@@ -920,6 +911,7 @@
             scrubArmed = false;
             return;
           }
+          if (activePointer != null && !scrubArmed) { scrub(lastX,lastY); selectionCommitted = true; }
           endScrub();
         });
         target.addEventListener('pointercancel', (e) => {

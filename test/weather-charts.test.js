@@ -73,3 +73,19 @@ test('compact daily preview starts tomorrow, caps at five and preserves partial 
   const future = {...daily,time:times.slice(1)};
   assert.ok(charts.dailyBarsHtml(future,{timeZone:'UTC',skipToday:true,limit:5}).includes('data-day-date="'+times[1]+'"'));
 });
+
+test('probability uses a fixed percentage axis even on dry days and honors an explicit hour',()=>{
+ const charts=loadCharts(), date='2099-10-06';
+ const times=Array.from({length:24},(_,i)=>date+'T'+String(i).padStart(2,'0')+':00');
+ const chart=charts.buildTempChart({time:times,precipitation_probability:times.map((_,i)=>i===3?2:0)},'precipitation_probability',v=>v+'%','UTC',date,{initialIndex:3});
+ const points=JSON.parse(chart.match(/data-pts='([^']+)'/)[1]);
+ assert.equal(points[0].y,174);
+ assert.ok(points[3].y>170,'2% must stay near the baseline, not fill the plot');
+ assert.match(chart,/data-now-idx="3"/);
+ assert.match(chart,/>100%<\/text>/);
+});
+
+test('an exhausted saved daily forecast has no upcoming rows',()=>{
+ const charts=loadCharts();
+ assert.equal(charts.dailySliceCount({time:['2020-01-01'],temperature_2m_max:[20],temperature_2m_min:[10]},{timeZone:'UTC'}),0);
+});

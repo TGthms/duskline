@@ -109,7 +109,7 @@
       var tick = document.createElement('input');
       tick.id = 'tick';tick.type = 'checkbox';tick.setAttribute('switch','');
       tick.hidden = true;tick.tabIndex = -1;tick.setAttribute('aria-hidden','true');
-      var pending = false;
+
       var gesture = null;
       label.addEventListener('pointerdown', function (event) {
         gesture = {id:event.pointerId,x:event.clientX,y:event.clientY,cancelled:event.isPrimary === false};
@@ -122,28 +122,22 @@
         var cancelled = gesture && gesture.cancelled;
         gesture = null;
         if (event.defaultPrevented || cancelled || !event.isTrusted || !usable(button)) {
-          pending = false;event.preventDefault();event.stopPropagation();return;
+          event.preventDefault();event.stopPropagation();return;
         }
         if (!shouldBuzz(button)) {
-          pending = false;event.preventDefault();
+          event.preventDefault();
           button.focus({preventScroll:true});
           // The original trusted click can still reach the button, but its
           // label default must not activate the native switch when feedback is off.
           return;
         }
-        event.stopPropagation();
-        pending = true;
-        // Default label activation supplies a trusted native switch click. Stop
-        // the first click so the button receives only that second, native event.
+        button.focus({preventScroll:true});
+
+        // The original trusted click owns the action. Native feedback is optional.
       });
       tick.addEventListener('click', function (event) {
-        var accepted = pending && event.isTrusted && usable(button);
-        pending = false;
-        if (!accepted) { event.stopPropagation();return; }
-        button.focus({preventScroll:true});
-        // Bubble the native click through the shadow host to the real button.
-        // The tick happens first; trust, coordinates and user activation survive
-        // icon replacement or dialog dismissal, with no scripted button clicks.
+
+        event.stopPropagation();
       });
       root.append(style,label,tick);
       surface.appendChild(host);
@@ -176,14 +170,8 @@
       });
       owners.forEach(arm);
     }).observe(document.documentElement,{childList:true,subtree:true});
-    // The MutationObserver fires asynchronously. If a button is added and
-    // tapped in the same task, the overlay is not mounted yet and the first
-    // tap produces no haptic. Arm on pointerdown (which precedes click) so
-    // the overlay is in place before the tap completes.
-    document.addEventListener('pointerdown', function (event) {
-      var button = event.target && event.target.closest && event.target.closest('button');
-      if (button) arm(button);
-    }, { capture: true, passive: true });
+    // Unmounted controls receive the original tap without optional native feedback.
+
   }
   if (iosSwitchSupported()) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',installIosTaps,{once:true});

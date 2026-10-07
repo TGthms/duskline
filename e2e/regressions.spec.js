@@ -721,7 +721,7 @@ test('Hourly Forecast switches between actual and feels-like in the same sheet',
   await expect(page.locator('#weatherSheetTitle')).toContainText(String(new Date().getFullYear()));
   await expect(page.locator('#weatherSheetBody [data-temp-mode="actual"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(chart).toHaveAttribute('data-kind', 'temperature_2m');
-  await expect(page.locator('#weatherSheetBody .weather-chart-wrap')).toHaveCount(1);
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap')).toHaveCount(2);
 
   await page.locator('#weatherSheetBody [data-temp-mode="feels"]').click();
   await expect(page.locator('#weatherSheetTitle')).toContainText(String(new Date().getFullYear()));
@@ -1068,7 +1068,7 @@ test('hourly date switcher preserves temperature mode and changes the chart date
   await expect(page.locator('#weatherSheetBody [data-temp-mode="feels"]')).toHaveAttribute('aria-pressed','true');
   await expect(page.locator('#weatherSheetBody .wx-sheet-intelligence')).toContainText('Daily range');
   await expect(page.locator('#weatherSheetBody .wx-sheet-intelligence')).not.toContainText('Today');
-  const points = JSON.parse(await page.locator('#weatherSheetBody .weather-chart-wrap').getAttribute('data-pts'));
+  const points = JSON.parse(await page.locator('#weatherSheetBody .weather-chart-wrap').first().getAttribute('data-pts'));
   expect(points.length).toBeGreaterThan(1);
   await page.locator('#weatherSheetPanel').evaluate(node => Promise.all(node.getAnimations().map(animation => animation.finished.catch(() => {}))));
   await page.screenshot({path:testInfo.outputPath('date-picker.png')});
@@ -1459,14 +1459,14 @@ test('no-alerts refresh checks the provider again and shares loading feedback wi
     await route.fulfill({json:{availability:'available',alerts:[],truncated:false}});
   });
   await page.goto('/?lat=48.85&lon=2.35&name=Paris&country=France&cc=FR&tz=Europe%2FParis');
-  await expect(page.locator('.weather-alert-status')).toContainText('No active public alerts reported');
+  await expect(page.locator('.weather-alert-status')).toHaveCount(0);
   const before=requests;
-  await page.locator('[data-alert-refresh]').click();
+  await page.locator('#weatherDetailRefresh').click();
   await expect(page.locator('.weather-alert-status')).toContainText('Checking public alerts');
-  await expect(page.locator('[data-alert-refresh]')).toBeDisabled();
+  await expect(page.locator('#weatherDetailRefresh')).toHaveAttribute('aria-busy','true');
   await expect(page.locator('#weatherModeLoading')).toBeVisible();
   await expect(page.locator('#weatherModeLoading')).toHaveCSS('top','0px');
-  await expect(page.locator('.weather-alert-status')).toContainText('No active public alerts reported');
+  await expect(page.locator('.weather-alert-status')).toHaveCount(0);
   expect(requests).toBeGreaterThan(before);
   await page.locator('#weatherDetailBack').click();
   await page.route(/geocoding-api\.open-meteo\.com/,async route=>{
@@ -1902,7 +1902,10 @@ async function recordNativeTick(control) {
   });
   const accessibility=await control.locator('.wx-ios-haptic-hit').first().evaluate(host=>{
     const tick=host.shadowRoot.querySelector('input');
-    tick.addEventListener('click',event=>window.__nativeTicks.push({trusted:event.isTrusted,hidden:tick.hidden,checked:tick.checked,saved:document.getElementById('weatherDetailFav').getAttribute('aria-pressed')}),{capture:true});
+    if (!tick.__observed) {
+      tick.__observed=true;
+      tick.addEventListener('click',event=>window.__nativeTicks.push({trusted:event.isTrusted,hidden:tick.hidden,checked:tick.checked,saved:document.getElementById('weatherDetailFav').getAttribute('aria-pressed')}),{capture:true});
+    }
     const previous=document.activeElement;tick.focus({preventScroll:true});
     return {tab:tick.tabIndex,rendered:tick.getClientRects().length,focused:host.shadowRoot.activeElement===tick,stable:document.activeElement===previous};
   });
@@ -1920,7 +1923,8 @@ test.describe('native iOS tap feedback',()=>{
     await expect(fav).toHaveAttribute('aria-pressed','false');await expect(fav).toBeFocused();
     const state=await page.evaluate(()=>({ticks:window.__nativeTicks,actions:window.__nativeActions,trust:window.__nativeActionTrust,lightInputs:document.querySelectorAll('button input').length}));
     expect(state.actions).toBe(2);expect(state.trust).toEqual([true,true]);expect(state.lightInputs).toBe(0);
-    expect(state.ticks).toEqual([{trusted:true,hidden:true,checked:true,saved:'false'},{trusted:true,hidden:true,checked:true,saved:'true'}]);
+    // Feedback is optional; the original trusted actions must succeed even when WebKit suppresses label activation.
+    expect(state.ticks).toEqual([{trusted:true,hidden:true,checked:true,saved:'true'},{trusted:true,hidden:true,checked:false,saved:'false'}]);
     await page.locator('#weatherDetailBack').focus();await page.keyboard.press('Shift+Tab');
     await expect(page.locator('#weatherModules [data-sheet="sun"]')).toBeFocused();
     await page.keyboard.press('Tab');await expect(page.locator('#weatherDetailBack')).toBeFocused();
@@ -1960,12 +1964,12 @@ test.describe('native iOS tap feedback',()=>{
     const hourly=page.locator('#weatherModules .weather-hourly');await expect(hourly.locator('.weather-hourly-item').first()).toBeVisible();
     const item=hourly.locator('.weather-hourly-item').nth(1);
     await expect(item.locator('.wx-ios-haptic-hit')).toHaveCount(1);
-    expect(await hourly.evaluate(strip=>!strip.closest('button').querySelector(':scope > .wx-ios-haptic-hit'))).toBe(true);
+    expect(await hourly.evaluate(strip=>!strip.closest('.weather-mod').querySelector(':scope > .wx-ios-haptic-hit'))).toBe(true);
     await item.tap();
     await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
     await expect(page.locator('#weatherSheetBody [data-temp-mode="actual"]')).toHaveAttribute('aria-pressed','true');
-    await expect(page.locator('#weatherSheet .weather-chart-wrap')).toHaveAttribute('data-kind','temperature_2m');
-    await expect(page.locator('#weatherSheet .weather-chart-wrap')).toBeVisible();
+    await expect(page.locator('#weatherSheet .weather-chart-wrap').first()).toHaveAttribute('data-kind','temperature_2m');
+    await expect(page.locator('#weatherSheet .weather-chart-wrap').first()).toBeVisible();
   });
 });
 
@@ -2062,4 +2066,31 @@ test('a slow air-quality response does not hold up current weather',async ({page
   await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
   release();
   await expect(page.locator('[data-sheet="aqi"] .weather-mod-value')).toHaveText('90');
+});
+
+test('future-day probability starts at a dry-day range on a fixed 0–100 axis',async ({page})=>{
+  await stubWeather(page,null);
+  await page.route('https://api.open-meteo.com/v1/forecast?**',route=>{
+    const pack=body(false,Date.now(),1);pack.hourly.precipitation_probability.fill(0);
+    return route.fulfill({json:pack});
+  });
+  await page.goto('/?city=tokyo');
+  await page.locator('[data-day-date]').nth(1).click();
+  const probability=page.locator('.weather-chart-wrap[data-kind="precipitation_probability"]');
+  await expect(probability.locator('[data-readout]')).toHaveText('0%');
+  await expect(probability.locator('[data-readout]')).toHaveAttribute('data-initial-mode','range');
+  await expect(probability.locator('.wx-chart-axis-y').first()).toHaveText('100%');
+});
+
+test.describe('cold iOS mode activation',()=>{
+ test.use({hasTouch:true,viewport:{width:430,height:932}});
+ test('the first mode tap activates once even when native feedback cannot activate',async ({page})=>{
+  await prepareIosNativeTaps(page,18);await stubWeather(page,null);await page.goto('/');
+  const mode=page.locator('[data-weather-mode="my-sky"]');
+  await expect(mode.locator('.wx-ios-haptic-hit')).toBeAttached();
+  await mode.evaluate(button=>button.querySelector('.wx-ios-haptic-hit').shadowRoot.querySelector('input').addEventListener('click',e=>e.preventDefault()));
+  await mode.tap();await expect(mode).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#weatherMySkyEmpty')).toBeVisible();
+  expect(await mode.evaluate(b=>b.getBoundingClientRect().width)).toBeGreaterThan(70);
+ });
 });
