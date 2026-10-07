@@ -2159,3 +2159,32 @@ test('returning to Horizon preserves its preview scope instead of expanding the 
  await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
  await page.reload();await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
 });
+
+test('mobile install guidance is available without a native prompt and hidden when installed',async ({page})=>{
+ await stubWeather(page,null);
+ await page.addInitScript(()=>Object.defineProperty(navigator,'userAgent',{configurable:true,value:'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 Version/27.0 Mobile/15E148 Safari/604.1'}));
+ await page.goto('/');await page.locator('#weatherInstall').click();
+ await expect(page.locator('#weatherSheetTitle')).toHaveText('Install duskline');
+ await expect(page.locator('#weatherSheetBody')).toContainText('Add to Home Screen');
+ await page.goBack();await expect(page.locator('#weatherSheet')).toBeHidden();
+ await page.addInitScript(()=>Object.defineProperty(navigator,'standalone',{configurable:true,value:true}));
+ await page.reload();await expect(page.locator('#weatherInstall')).toBeHidden();
+});
+
+test('a late list response cannot downgrade a newer complete city forecast',async ({page})=>{
+ await stubWeather(page,null);
+ let release;const gate=new Promise(r=>{release=r;});
+ await page.route('https://api.open-meteo.com/v1/forecast?**',async route=>{
+  const url=new URL(route.request().url()),light=!url.searchParams.has('hourly');
+  const count=(url.searchParams.get('latitude') || '').split(',').length;
+  if(light) await gate;
+  const packs=Array.from({length:count},()=>body(light,Date.now(),light?1:10));
+  await route.fulfill({json:count>1?packs:packs[0]});
+ });
+ await page.goto('/');await page.getByRole('button',{name:'Tokyo. Loading forecast…',exact:true}).click();
+ await expect(page.locator('.weather-detail-temp')).toHaveText('86°');
+ release();
+ await expect(page.locator('#weatherModeLoading')).toBeHidden();
+ await expect(page.locator('.weather-detail-temp')).toHaveText('86°');
+ await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+});

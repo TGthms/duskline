@@ -59,3 +59,12 @@ test('full storage drops older forecasts and keeps the newest one', () => {
   assert.equal(store.find(two.city).weather.current.temperature_2m, 11);
   assert.equal(store.find(one.city), null);
 });
+
+test('snapshot writes coalesce away from UI work and flush explicitly before leaving',()=>{
+ let writes=0,scheduled;const values=new Map(),city={name:'Paris',lat:48.85,lon:2.35},now=Date.now();
+ const store=factory()({cityKey:c=>c.name,sameCity:(a,b)=>a.name===b.name,storage:{getItem:k=>values.get(k),setItem:(k,v)=>{writes++;values.set(k,v);}},schedule:write=>{scheduled=write;}});
+ const pack={city,weather:{current:{temperature_2m:20}},fetchedAt:now};
+ store.save(pack);store.save({...pack,weather:{current:{temperature_2m:21}}});
+ assert.equal(writes,0);assert.equal(store.find(city).weather.current.temperature_2m,21);
+ store.flush();assert.equal(writes,1);scheduled();assert.equal(writes,1);
+});

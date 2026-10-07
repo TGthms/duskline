@@ -68,7 +68,6 @@
    Navigation is detected from the saved preference first (so the right font is in flight
    for the first paint) and the browser language second. */
 (function () {
-  var SANS = 'family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400';
   /* lang → [google family, link id] */
   var NOTO = {
     'zh': ['Noto+Sans+SC', 'duskline-font-zh'],
@@ -121,7 +120,7 @@
   }
 
   function apply() {
-    add('duskline-font-sans', SANS);
+    // Public Sans is bundled in tokens.css and retained by the offline shell.
     var set = NOTO[detectLang()];
     if (set) add(set[1], 'family=' + set[0] + ':wght@300;400;500;600;700');
   }

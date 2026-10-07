@@ -35,7 +35,10 @@
     "weather.offline": "Offline · Showing saved forecasts",
     "weather.sunUnavailable": "Sun times unavailable",
     "weather.settings": "Settings",
-    "weather.savedPlacesLimit": "My Sky holds 24 saved places. Remove a place before adding another."
+    "weather.savedPlacesLimit": "My Sky holds 24 saved places. Remove a place before adding another.",
+    "weather.installHelp": "Open your browser’s Share or menu, then choose Add to Home Screen or Install.",
+    "weather.updateFailed": "The update did not finish. Try again.",
+    "weather.install": "Install duskline"
   },
   "es": {
     "weather.undo": "Deshacer",
@@ -70,7 +73,10 @@
     "weather.offline": "Sin conexión · Mostrando previsiones guardadas",
     "weather.sunUnavailable": "Horas solares no disponibles",
     "weather.settings": "Ajustes",
-    "weather.savedPlacesLimit": "My Sky admite 24 lugares. Elimina uno antes de añadir otro."
+    "weather.savedPlacesLimit": "My Sky admite 24 lugares. Elimina uno antes de añadir otro.",
+    "weather.installHelp": "Abre Compartir o el menú del navegador y elige Añadir a la pantalla de inicio o Instalar.",
+    "weather.updateFailed": "La actualización no terminó. Inténtalo de nuevo.",
+    "weather.install": "Instalar duskline"
   },
   "fr": {
     "weather.undo": "Annuler",
@@ -105,7 +111,10 @@
     "weather.offline": "Hors ligne · Affichage des prévisions enregistrées",
     "weather.sunUnavailable": "Horaires du soleil indisponibles",
     "weather.settings": "Réglages",
-    "weather.savedPlacesLimit": "My Sky peut enregistrer 24 lieux. Supprimez-en un avant d’en ajouter un autre."
+    "weather.savedPlacesLimit": "My Sky peut enregistrer 24 lieux. Supprimez-en un avant d’en ajouter un autre.",
+    "weather.installHelp": "Ouvrez Partager ou le menu du navigateur, puis choisissez Ajouter à l’écran d’accueil ou Installer.",
+    "weather.updateFailed": "La mise à jour n’a pas abouti. Réessayez.",
+    "weather.install": "Installer duskline"
   },
   "de": {
     "weather.undo": "Rückgängig",
@@ -140,7 +149,10 @@
     "weather.offline": "Offline · Gespeicherte Vorhersagen werden angezeigt",
     "weather.sunUnavailable": "Sonnenzeiten nicht verfügbar",
     "weather.settings": "Einstellungen",
-    "weather.savedPlacesLimit": "My Sky speichert 24 Orte. Entferne einen, bevor du einen weiteren hinzufügst."
+    "weather.savedPlacesLimit": "My Sky speichert 24 Orte. Entferne einen, bevor du einen weiteren hinzufügst.",
+    "weather.installHelp": "Öffne Teilen oder das Browsermenü und wähle Zum Home-Bildschirm hinzufügen oder Installieren.",
+    "weather.updateFailed": "Das Update wurde nicht abgeschlossen. Versuche es erneut.",
+    "weather.install": "duskline installieren"
   },
   "it": {
     "weather.undo": "Annulla",
@@ -175,7 +187,10 @@
     "weather.offline": "Offline · Previsioni salvate",
     "weather.sunUnavailable": "Orari del sole non disponibili",
     "weather.settings": "Impostazioni",
-    "weather.savedPlacesLimit": "My Sky contiene 24 luoghi. Rimuovine uno prima di aggiungerne un altro."
+    "weather.savedPlacesLimit": "My Sky contiene 24 luoghi. Rimuovine uno prima di aggiungerne un altro.",
+    "weather.installHelp": "Apri Condividi o il menu del browser, quindi scegli Aggiungi alla schermata Home o Installa.",
+    "weather.updateFailed": "L’aggiornamento non è terminato. Riprova.",
+    "weather.install": "Installa duskline"
   },
   "pt-BR": {
     "weather.undo": "Desfazer",
@@ -210,7 +225,10 @@
     "weather.offline": "Offline · Exibindo previsões salvas",
     "weather.sunUnavailable": "Horários do sol indisponíveis",
     "weather.settings": "Configurações",
-    "weather.savedPlacesLimit": "My Sky comporta 24 lugares. Remova um antes de adicionar outro."
+    "weather.savedPlacesLimit": "My Sky comporta 24 lugares. Remova um antes de adicionar outro.",
+    "weather.installHelp": "Abra Compartilhar ou o menu do navegador e escolha Adicionar à tela inicial ou Instalar.",
+    "weather.updateFailed": "A atualização não foi concluída. Tente novamente.",
+    "weather.install": "Instalar duskline"
   },
   "pt-PT": {
     "weather.undo": "Anular",
@@ -245,7 +263,10 @@
     "weather.offline": "Offline · A mostrar previsões guardadas",
     "weather.sunUnavailable": "Horários do sol indisponíveis",
     "weather.settings": "Definições",
-    "weather.savedPlacesLimit": "My Sky guarda 24 locais. Remova um antes de adicionar outro."
+    "weather.savedPlacesLimit": "My Sky guarda 24 locais. Remova um antes de adicionar outro.",
+    "weather.installHelp": "Abra Partilhar ou o menu do navegador e escolha Adicionar ao ecrã principal ou Instalar.",
+    "weather.updateFailed": "A atualização não foi concluída. Tente novamente.",
+    "weather.install": "Instalar duskline"
   },
   "nl": {
     "weather.undo": "Ongedaan maken",
@@ -280,7 +301,10 @@
     "weather.offline": "Offline · Opgeslagen voorspellingen worden getoond",
     "weather.sunUnavailable": "Zonnetijden niet beschikbaar",
     "weather.settings": "Instellingen",
-    "weather.savedPlacesLimit": "My Sky bewaart 24 plaatsen. Verwijder een plaats voordat je een nieuwe toevoegt."
+    "weather.savedPlacesLimit": "My Sky bewaart 24 plaatsen. Verwijder een plaats voordat je een nieuwe toevoegt.",
+    "weather.installHelp": "Open Delen of het browsermenu en kies Zet op beginscherm of Installeren.",
+    "weather.updateFailed": "De update is niet voltooid. Probeer opnieuw.",
+    "weather.install": "duskline installeren"
   },
   "da": {
     "weather.undo": "Fortryd",
@@ -315,7 +339,10 @@
     "weather.offline": "Offline · Viser gemte vejrudsigter",
     "weather.sunUnavailable": "Soltider er ikke tilgængelige",
     "weather.settings": "Indstillinger",
-    "weather.savedPlacesLimit": "My Sky kan gemme 24 steder. Fjern et sted, før du tilføjer et nyt."
+    "weather.savedPlacesLimit": "My Sky kan gemme 24 steder. Fjern et sted, før du tilføjer et nyt.",
+    "weather.installHelp": "Åbn Del eller browsermenuen, og vælg Føj til hjemmeskærm eller Installer.",
+    "weather.updateFailed": "Opdateringen blev ikke fuldført. Prøv igen.",
+    "weather.install": "Installer duskline"
   },
   "sv": {
     "weather.undo": "Ångra",
@@ -350,7 +377,10 @@
     "weather.offline": "Offline · Visar sparade prognoser",
     "weather.sunUnavailable": "Soltider inte tillgängliga",
     "weather.settings": "Inställningar",
-    "weather.savedPlacesLimit": "My Sky rymmer 24 platser. Ta bort en innan du lägger till en ny."
+    "weather.savedPlacesLimit": "My Sky rymmer 24 platser. Ta bort en innan du lägger till en ny.",
+    "weather.installHelp": "Öppna Dela eller webbläsarmenyn och välj Lägg till på hemskärmen eller Installera.",
+    "weather.updateFailed": "Uppdateringen slutfördes inte. Försök igen.",
+    "weather.install": "Installera duskline"
   },
   "nb": {
     "weather.undo": "Angre",
@@ -385,7 +415,10 @@
     "weather.offline": "Frakoblet · Viser lagrede værmeldinger",
     "weather.sunUnavailable": "Soltider utilgjengelige",
     "weather.settings": "Innstillinger",
-    "weather.savedPlacesLimit": "My Sky har plass til 24 steder. Fjern ett før du legger til et nytt."
+    "weather.savedPlacesLimit": "My Sky har plass til 24 steder. Fjern ett før du legger til et nytt.",
+    "weather.installHelp": "Åpne Del eller nettlesermenyen og velg Legg til på Hjem-skjermen eller Installer.",
+    "weather.updateFailed": "Oppdateringen ble ikke fullført. Prøv igjen.",
+    "weather.install": "Installer duskline"
   },
   "fi": {
     "weather.undo": "Kumoa",
@@ -420,7 +453,10 @@
     "weather.offline": "Offline · Näytetään tallennetut ennusteet",
     "weather.sunUnavailable": "Auringon ajat eivät ole saatavilla",
     "weather.settings": "Asetukset",
-    "weather.savedPlacesLimit": "My Sky tallentaa 24 paikkaa. Poista yksi ennen uuden lisäämistä."
+    "weather.savedPlacesLimit": "My Sky tallentaa 24 paikkaa. Poista yksi ennen uuden lisäämistä.",
+    "weather.installHelp": "Avaa Jaa tai selaimen valikko ja valitse Lisää Koti-valikkoon tai Asenna.",
+    "weather.updateFailed": "Päivitys ei valmistunut. Yritä uudelleen.",
+    "weather.install": "Asenna duskline"
   },
   "pl": {
     "weather.undo": "Cofnij",
@@ -455,7 +491,10 @@
     "weather.offline": "Offline · Wyświetlane są zapisane prognozy",
     "weather.sunUnavailable": "Godziny słoneczne niedostępne",
     "weather.settings": "Ustawienia",
-    "weather.savedPlacesLimit": "My Sky mieści 24 miejsca. Usuń jedno, zanim dodasz kolejne."
+    "weather.savedPlacesLimit": "My Sky mieści 24 miejsca. Usuń jedno, zanim dodasz kolejne.",
+    "weather.installHelp": "Otwórz Udostępnij lub menu przeglądarki i wybierz Dodaj do ekranu początkowego lub Zainstaluj.",
+    "weather.updateFailed": "Aktualizacja nie została ukończona. Spróbuj ponownie.",
+    "weather.install": "Zainstaluj duskline"
   },
   "cs": {
     "weather.undo": "Zpět",
@@ -490,7 +529,10 @@
     "weather.offline": "Offline · Zobrazují se uložené předpovědi",
     "weather.sunUnavailable": "Časy slunce nejsou dostupné",
     "weather.settings": "Nastavení",
-    "weather.savedPlacesLimit": "My Sky pojme 24 míst. Před přidáním dalšího jedno odeberte."
+    "weather.savedPlacesLimit": "My Sky pojme 24 míst. Před přidáním dalšího jedno odeberte.",
+    "weather.installHelp": "Otevřete Sdílet nebo nabídku prohlížeče a vyberte Přidat na plochu nebo Nainstalovat.",
+    "weather.updateFailed": "Aktualizace nebyla dokončena. Zkuste to znovu.",
+    "weather.install": "Nainstalovat duskline"
   },
   "hu": {
     "weather.undo": "Visszavonás",
@@ -525,7 +567,10 @@
     "weather.offline": "Offline · Mentett előrejelzések láthatók",
     "weather.sunUnavailable": "Napadatok nem érhetők el",
     "weather.settings": "Beállítások",
-    "weather.savedPlacesLimit": "A My Sky 24 helyet tárol. Új hely hozzáadása előtt távolíts el egyet."
+    "weather.savedPlacesLimit": "A My Sky 24 helyet tárol. Új hely hozzáadása előtt távolíts el egyet.",
+    "weather.installHelp": "Nyisd meg a Megosztás vagy a böngésző menüjét, és válaszd a Hozzáadás a főképernyőhöz vagy a Telepítés lehetőséget.",
+    "weather.updateFailed": "A frissítés nem fejeződött be. Próbáld újra.",
+    "weather.install": "duskline telepítése"
   },
   "ro": {
     "weather.undo": "Anulează",
@@ -560,7 +605,10 @@
     "weather.offline": "Offline · Se afișează prognozele salvate",
     "weather.sunUnavailable": "Orele soarelui nu sunt disponibile",
     "weather.settings": "Setări",
-    "weather.savedPlacesLimit": "My Sky poate salva 24 de locuri. Șterge unul înainte să adaugi altul."
+    "weather.savedPlacesLimit": "My Sky poate salva 24 de locuri. Șterge unul înainte să adaugi altul.",
+    "weather.installHelp": "Deschide Partajare sau meniul browserului și alege Adaugă pe ecranul principal sau Instalează.",
+    "weather.updateFailed": "Actualizarea nu s-a încheiat. Încearcă din nou.",
+    "weather.install": "Instalează duskline"
   },
   "el": {
     "weather.undo": "Αναίρεση",
@@ -595,7 +643,10 @@
     "weather.offline": "Εκτός σύνδεσης · Εμφάνιση αποθηκευμένων προγνώσεων",
     "weather.sunUnavailable": "Οι ώρες του ήλιου δεν είναι διαθέσιμες",
     "weather.settings": "Ρυθμίσεις",
-    "weather.savedPlacesLimit": "Το My Sky αποθηκεύει 24 μέρη. Αφαιρέστε ένα πριν προσθέσετε άλλο."
+    "weather.savedPlacesLimit": "Το My Sky αποθηκεύει 24 μέρη. Αφαιρέστε ένα πριν προσθέσετε άλλο.",
+    "weather.installHelp": "Ανοίξτε Κοινή χρήση ή το μενού του προγράμματος περιήγησης και επιλέξτε Προσθήκη στην αρχική οθόνη ή Εγκατάσταση.",
+    "weather.updateFailed": "Η ενημέρωση δεν ολοκληρώθηκε. Δοκιμάστε ξανά.",
+    "weather.install": "Εγκατάσταση duskline"
   },
   "tr": {
     "weather.undo": "Geri al",
@@ -630,7 +681,10 @@
     "weather.offline": "Çevrimdışı · Kayıtlı tahminler gösteriliyor",
     "weather.sunUnavailable": "Güneş saatleri kullanılamıyor",
     "weather.settings": "Ayarlar",
-    "weather.savedPlacesLimit": "My Sky 24 yer kaydeder. Yeni bir yer eklemeden önce birini kaldırın."
+    "weather.savedPlacesLimit": "My Sky 24 yer kaydeder. Yeni bir yer eklemeden önce birini kaldırın.",
+    "weather.installHelp": "Paylaş veya tarayıcı menüsünü açıp Ana Ekrana Ekle ya da Yükle seçeneğini seçin.",
+    "weather.updateFailed": "Güncelleme tamamlanmadı. Tekrar deneyin.",
+    "weather.install": "duskline yükle"
   },
   "ru": {
     "weather.undo": "Отменить",
@@ -665,7 +719,10 @@
     "weather.offline": "Офлайн · Показаны сохранённые прогнозы",
     "weather.sunUnavailable": "Время восхода и заката недоступно",
     "weather.settings": "Настройки",
-    "weather.savedPlacesLimit": "My Sky сохраняет 24 места. Удалите одно, прежде чем добавить новое."
+    "weather.savedPlacesLimit": "My Sky сохраняет 24 места. Удалите одно, прежде чем добавить новое.",
+    "weather.installHelp": "Откройте «Поделиться» или меню браузера и выберите «На экран Домой» или «Установить».",
+    "weather.updateFailed": "Обновление не завершилось. Повторите попытку.",
+    "weather.install": "Установить duskline"
   },
   "uk": {
     "weather.undo": "Скасувати",
@@ -700,7 +757,10 @@
     "weather.offline": "Офлайн · Показано збережені прогнози",
     "weather.sunUnavailable": "Час сходу та заходу сонця недоступний",
     "weather.settings": "Налаштування",
-    "weather.savedPlacesLimit": "My Sky зберігає 24 місця. Видаліть одне, перш ніж додати нове."
+    "weather.savedPlacesLimit": "My Sky зберігає 24 місця. Видаліть одне, перш ніж додати нове.",
+    "weather.installHelp": "Відкрийте «Поширити» або меню браузера та виберіть «На Початковий екран» чи «Встановити».",
+    "weather.updateFailed": "Оновлення не завершилося. Спробуйте ще раз.",
+    "weather.install": "Встановити duskline"
   },
   "ar": {
     "weather.undo": "تراجع",
@@ -735,7 +795,10 @@
     "weather.offline": "دون اتصال · تُعرض توقعات محفوظة",
     "weather.sunUnavailable": "أوقات الشمس غير متاحة",
     "weather.settings": "الإعدادات",
-    "weather.savedPlacesLimit": "يحفظ My Sky 24 مكانًا. أزل مكانًا قبل إضافة آخر."
+    "weather.savedPlacesLimit": "يحفظ My Sky 24 مكانًا. أزل مكانًا قبل إضافة آخر.",
+    "weather.installHelp": "افتح المشاركة أو قائمة المتصفح، ثم اختر إضافة إلى الشاشة الرئيسية أو تثبيت.",
+    "weather.updateFailed": "لم يكتمل التحديث. حاول مرة أخرى.",
+    "weather.install": "تثبيت duskline"
   },
   "he": {
     "weather.undo": "ביטול",
@@ -770,7 +833,10 @@
     "weather.offline": "לא מקוון · מוצגות תחזיות שמורות",
     "weather.sunUnavailable": "זמני השמש אינם זמינים",
     "weather.settings": "הגדרות",
-    "weather.savedPlacesLimit": "My Sky שומר 24 מקומות. יש להסיר מקום לפני הוספת מקום נוסף."
+    "weather.savedPlacesLimit": "My Sky שומר 24 מקומות. יש להסיר מקום לפני הוספת מקום נוסף.",
+    "weather.installHelp": "פתחו את שיתוף או את תפריט הדפדפן ובחרו הוספה למסך הבית או התקנה.",
+    "weather.updateFailed": "העדכון לא הושלם. נסו שוב.",
+    "weather.install": "התקנת duskline"
   },
   "hi": {
     "weather.undo": "पूर्ववत करें",
@@ -805,7 +871,10 @@
     "weather.offline": "ऑफ़लाइन · सहेजे गए पूर्वानुमान दिखाए जा रहे हैं",
     "weather.sunUnavailable": "सूर्योदय और सूर्यास्त का समय उपलब्ध नहीं है",
     "weather.settings": "सेटिंग्स",
-    "weather.savedPlacesLimit": "My Sky में 24 जगहें सहेजी जा सकती हैं। नई जगह जोड़ने से पहले एक हटाएँ।"
+    "weather.savedPlacesLimit": "My Sky में 24 जगहें सहेजी जा सकती हैं। नई जगह जोड़ने से पहले एक हटाएँ।",
+    "weather.installHelp": "ब्राउज़र में शेयर या मेन्यू खोलें और होम स्क्रीन पर जोड़ें या इंस्टॉल चुनें।",
+    "weather.updateFailed": "अपडेट पूरा नहीं हुआ। फिर कोशिश करें।",
+    "weather.install": "duskline इंस्टॉल करें"
   },
   "th": {
     "weather.undo": "เลิกทำ",
@@ -840,7 +909,10 @@
     "weather.offline": "ออฟไลน์ · กำลังแสดงพยากรณ์ที่บันทึกไว้",
     "weather.sunUnavailable": "ไม่สามารถดูเวลาพระอาทิตย์ได้",
     "weather.settings": "การตั้งค่า",
-    "weather.savedPlacesLimit": "My Sky บันทึกได้ 24 สถานที่ ลบหนึ่งแห่งก่อนเพิ่มสถานที่ใหม่"
+    "weather.savedPlacesLimit": "My Sky บันทึกได้ 24 สถานที่ ลบหนึ่งแห่งก่อนเพิ่มสถานที่ใหม่",
+    "weather.installHelp": "เปิดแชร์หรือเมนูของเบราว์เซอร์ แล้วเลือกเพิ่มไปยังหน้าจอโฮมหรือติดตั้ง",
+    "weather.updateFailed": "อัปเดตไม่สำเร็จ ลองอีกครั้ง",
+    "weather.install": "ติดตั้ง duskline"
   },
   "vi": {
     "weather.undo": "Hoàn tác",
@@ -875,7 +947,10 @@
     "weather.offline": "Ngoại tuyến · Đang hiển thị dự báo đã lưu",
     "weather.sunUnavailable": "Không có giờ mặt trời",
     "weather.settings": "Cài đặt",
-    "weather.savedPlacesLimit": "My Sky lưu được 24 địa điểm. Hãy xóa một địa điểm trước khi thêm địa điểm khác."
+    "weather.savedPlacesLimit": "My Sky lưu được 24 địa điểm. Hãy xóa một địa điểm trước khi thêm địa điểm khác.",
+    "weather.installHelp": "Mở Chia sẻ hoặc menu trình duyệt, rồi chọn Thêm vào màn hình chính hoặc Cài đặt.",
+    "weather.updateFailed": "Cập nhật chưa hoàn tất. Hãy thử lại.",
+    "weather.install": "Cài đặt duskline"
   },
   "id": {
     "weather.undo": "Urungkan",
@@ -910,7 +985,10 @@
     "weather.offline": "Offline · Menampilkan prakiraan tersimpan",
     "weather.sunUnavailable": "Waktu matahari tidak tersedia",
     "weather.settings": "Pengaturan",
-    "weather.savedPlacesLimit": "My Sky menyimpan 24 tempat. Hapus satu sebelum menambahkan tempat lain."
+    "weather.savedPlacesLimit": "My Sky menyimpan 24 tempat. Hapus satu sebelum menambahkan tempat lain.",
+    "weather.installHelp": "Buka Bagikan atau menu browser, lalu pilih Tambahkan ke Layar Utama atau Instal.",
+    "weather.updateFailed": "Pembaruan belum selesai. Coba lagi.",
+    "weather.install": "Instal duskline"
   },
   "ja": {
     "weather.undo": "元に戻す",
@@ -945,7 +1023,10 @@
     "weather.offline": "オフライン · 保存済みの予報を表示中",
     "weather.sunUnavailable": "日の出・日の入り時刻を取得できません",
     "weather.settings": "設定",
-    "weather.savedPlacesLimit": "My Skyには24か所保存できます。別の場所を追加する前に1か所削除してください。"
+    "weather.savedPlacesLimit": "My Skyには24か所保存できます。別の場所を追加する前に1か所削除してください。",
+    "weather.installHelp": "ブラウザの共有またはメニューを開き、「ホーム画面に追加」または「インストール」を選択します。",
+    "weather.updateFailed": "更新が完了しませんでした。もう一度お試しください。",
+    "weather.install": "dusklineをインストール"
   },
   "ko": {
     "weather.undo": "실행 취소",
@@ -980,7 +1061,10 @@
     "weather.offline": "오프라인 · 저장된 예보 표시 중",
     "weather.sunUnavailable": "일출·일몰 시간을 사용할 수 없습니다",
     "weather.settings": "설정",
-    "weather.savedPlacesLimit": "My Sky에는 24개 장소를 저장할 수 있습니다. 새 장소를 추가하기 전에 하나를 삭제하세요."
+    "weather.savedPlacesLimit": "My Sky에는 24개 장소를 저장할 수 있습니다. 새 장소를 추가하기 전에 하나를 삭제하세요.",
+    "weather.installHelp": "브라우저의 공유 또는 메뉴를 열고 홈 화면에 추가 또는 설치를 선택하세요.",
+    "weather.updateFailed": "업데이트가 완료되지 않았습니다. 다시 시도하세요.",
+    "weather.install": "duskline 설치"
   },
   "zh": {
     "weather.undo": "撤销",
@@ -1015,7 +1099,10 @@
     "weather.offline": "离线 · 正在显示已保存的预报",
     "weather.sunUnavailable": "无法获取日出日落时间",
     "weather.settings": "设置",
-    "weather.savedPlacesLimit": "My Sky 可保存24个地点。添加新地点前请移除一个。"
+    "weather.savedPlacesLimit": "My Sky 可保存24个地点。添加新地点前请移除一个。",
+    "weather.installHelp": "打开浏览器的分享或菜单，然后选择“添加到主屏幕”或“安装”。",
+    "weather.updateFailed": "更新未完成。请重试。",
+    "weather.install": "安装 duskline"
   },
   "zh-TW": {
     "weather.undo": "復原",
@@ -1050,7 +1137,10 @@
     "weather.offline": "離線 · 正在顯示已儲存的預報",
     "weather.sunUnavailable": "無法取得日出日落時間",
     "weather.settings": "設定",
-    "weather.savedPlacesLimit": "My Sky 可儲存24個地點。新增地點前請移除一個。"
+    "weather.savedPlacesLimit": "My Sky 可儲存24個地點。新增地點前請移除一個。",
+    "weather.installHelp": "開啟瀏覽器的分享或選單，然後選擇「加入主畫面」或「安裝」。",
+    "weather.updateFailed": "更新未完成。請重試。",
+    "weather.install": "安裝 duskline"
   }
 };
   Object.keys(rows).forEach(function (code) {

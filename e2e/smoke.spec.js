@@ -308,12 +308,7 @@ test('the first greeting waits for its web font before measuring typewriter glyp
   let releaseFont;
   const fontGate = new Promise(resolve => { releaseFont = resolve; });
   let fontRequested = false;
-  await page.route(/fonts\.googleapis\.com/, route => route.fulfill({
-    status: 200,
-    contentType: 'text/css',
-    body: '@font-face{font-family:"Public Sans";font-style:normal;font-weight:300 900;font-display:swap;src:url("https://fonts.gstatic.com/duskline-test.woff2") format("woff2")}'
-  }));
-  await page.route(/fonts\.gstatic\.com\/duskline-test\.woff2/, async route => {
+  await page.route('**/assets/fonts/public-sans-latin.woff2', async route => {
     fontRequested = true;
     await fontGate;
     // An invalid face makes the browser settle on its normal fallback after exercising

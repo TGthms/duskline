@@ -3,6 +3,17 @@
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).then(function (registration) {
+      let lastUpdateCheck=Date.now(),updateRequested=false,reloading=false,activationTimer;
+      navigator.serviceWorker.addEventListener('controllerchange',function () {
+        if(!updateRequested || reloading) return;
+        reloading=true;clearTimeout(activationTimer);location.reload();
+      });
+      function checkOnResume() {
+        if(document.visibilityState !== 'visible' || Date.now()-lastUpdateCheck<30*60*1000) return;
+        lastUpdateCheck=Date.now();registration.update().catch(function () { /* Offline sessions retain the installed version. */ });
+      }
+      document.addEventListener('visibilitychange',checkOnResume);
+      window.addEventListener('pageshow',checkOnResume);
       function retainActiveLocale() {
         const code = document.documentElement.dataset.lang || 'en';
         const worker = registration.active;
@@ -34,8 +45,13 @@
           const waiting = registration.waiting;
           if (!waiting) return;
           action.disabled = true;
-          navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); }, {once: true});
-          waiting.postMessage({type: 'ACTIVATE_UPDATE'});
+          updateRequested=true;clearTimeout(activationTimer);
+          const failed=function () {
+            action.disabled=false;
+            label.textContent=typeof tKey === 'function' ? tKey('weather.updateFailed','The update did not finish. Try again.') : 'The update did not finish. Try again.';
+          };
+          activationTimer=setTimeout(failed,10000);
+          try {waiting.postMessage({type: 'ACTIVATE_UPDATE'});} catch(error) {clearTimeout(activationTimer);failed();}
         });
         toast.append(label, action);
         toast.classList.add('is-visible');
@@ -53,13 +69,21 @@
 (function () {
   let installPrompt = null;
   const button = document.getElementById('weatherInstall');
+  const standalone=()=>!!navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  const mobile=/iP(hone|ad|od)|Android/.test(navigator.userAgent) || navigator.platform==='MacIntel' && navigator.maxTouchPoints>1;
+  if(button) button.hidden=standalone() || !mobile;
   window.addEventListener('beforeinstallprompt', function (event) {
     event.preventDefault(); installPrompt = event;
-    if (button) button.hidden = false;
+    if (button) button.hidden = standalone();
   });
   if (button) button.addEventListener('click', async function () {
-    if (!installPrompt) return;
-    await installPrompt.prompt(); installPrompt = null; button.hidden = true;
+    if (!installPrompt) {window.dispatchEvent(new Event('duskline:installhelp'));return;}
+    try {
+      await installPrompt.prompt();
+      const choice=await installPrompt.userChoice;
+      if(choice.outcome === 'accepted') button.hidden=true;
+    } catch(error) {window.dispatchEvent(new Event('duskline:installhelp'));}
+    finally {installPrompt=null;}
   });
   window.addEventListener('appinstalled', function () { if (button) button.hidden = true; });
   const connection = document.getElementById('weatherConnection');

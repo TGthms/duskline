@@ -69,9 +69,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<noscript>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
-</noscript>
+
 <!-- OS light/dark -> data-theme, animation level, and font registration.
      Shared by all three pages — see src/js/boot.js. Must stay ahead of the stylesheet. -->
 <script src="src/js/boot.js"></script>
@@ -287,6 +285,7 @@
     <div class="weather-status-row">
       <span id="weatherConnection" class="weather-connection" role="status" hidden></span>
       <p class="weather-updated" id="weatherUpdated" aria-live="polite"></p>
+      <button type="button" class="weather-btn weather-install-action" id="weatherInstall" hidden data-i18n="weather.install">Install duskline</button>
       <button type="button" class="weather-manage-places" id="weatherManagePlaces" hidden data-i18n="weather.rearrange">Rearrange saved places</button>
 
     </div>
@@ -433,7 +432,6 @@
 
 </main>
 <footer class="gallery-app-footer" id="dusklineFooter">
-  <button type="button" class="weather-btn" id="weatherInstall" hidden data-i18n="weather.install">Install duskline</button>
   <div class="gallery-app-footer-row">
     <p class="gallery-app-footer-copy">© <span id="dusklineYear"></span> Tim G (TGthms) · duskline · <span data-i18n="weather.footerTagline">Weather for the curious</span></p>
   </div>

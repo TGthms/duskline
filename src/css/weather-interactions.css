@@ -94,3 +94,6 @@ html[data-motion-effective="off"] .wx-insight-reveal,html[data-motion-effective=
 .weather-home-plan span {font-size:12px;flex-basis:100%;}
 .weather-home-plan strong {font-weight:600;}
 .weather-home-plan small {font-size:13px;}
+
+.weather-install-action {min-height:44px;font-size:12px;padding:6px 12px;}
+.weather-install-action[hidden] {display:none;}

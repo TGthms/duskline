@@ -222,12 +222,15 @@
   const cacheStore = new Map();
   const snapshotApi = W.factories.snapshots({
     cityKey: cityKey, sameCity: sameCity,
+    schedule: function (write) {if(window.requestIdleCallback) window.requestIdleCallback(write,{timeout:750});else window.setTimeout(write,150);},
     storage: {
       getItem: function (key) { return localStorage.getItem(key); },
       setItem: function (key, value) { localStorage.setItem(key, value); }
     }
   });
   const savedSnapshots = snapshotApi.all;
+  window.addEventListener('pagehide',snapshotApi.flush);
+  document.addEventListener('visibilitychange',function () {if(document.visibilityState === 'hidden') snapshotApi.flush();});
   function persistSnapshot(pack) {
     if (!pack || !pack.weather || !pack.city || pack.error) return;
     const c = pack.city;
@@ -556,7 +559,7 @@
         if (openCity && sameCity(openCity.city, pack.city) && isDetailShowingOrOpening()) {
           const options = history.state && history.state.duskline && history.state.duskline.sheet;
           openDetail(pack);
-          if (sheetIntentOpen && options && !['units','primary','places'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
+          if (sheetIntentOpen && options && !['units','primary','places','install'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
         }
       },
       failed: function () { notify(t('weather.refreshToRetry','Refresh to try again'), 'error'); }
@@ -1585,6 +1588,7 @@
     if (pack.air && Date.now() - (pack.air._detailFetchedAt || 0) < REFRESH_MS) return Promise.resolve(pack);
     const key = cityKey(pack.city);
     if (aqiDetailInflight.has(key)) return aqiDetailInflight.get(key);
+    const requestedAt=Date.now();
     const fields = AQI_DETAIL_FIELDS.join(',');
     const url = AIR + '?latitude=' + encodeURIComponent(pack.city.lat)
       + '&longitude=' + encodeURIComponent(pack.city.lon)
@@ -1593,6 +1597,7 @@
     const request = dataApi.fetchJson(url).then(function (detail) {
       if (!detail || !detail.current) return null;
       const latest = cache.get(key) || pack;
+      if(latest !== pack && latest.fetchedAt>requestedAt && latest.air) return latest;
       if (latest.air && latest.air._detailFetchedAt > (pack.air && pack.air._detailFetchedAt || 0)) return latest;
       const oldAir = latest.air || {};
       const current = Object.assign({}, oldAir.current || {}, detail.current);
@@ -1824,7 +1829,8 @@
       }).catch(function () { closeDetail(); }); }
     },
     openSheet: function (kind, options) {
-      if (kind === 'places') openPlacesSheet();
+      if (kind === 'install') openInstallHelp();
+      else if (kind === 'places') openPlacesSheet();
       else if (kind === 'units') openUnitsSheet();
       else if (kind === 'primary') openGreetingLocationSheet();
       else if (openCity && openCity.weather) openSheet(kind,openCity,options);
@@ -5239,6 +5245,14 @@
     const choose=document.createElement('button');choose.type='button';choose.className='weather-place-clear';choose.textContent=t('weather.search','Search city');
     choose.addEventListener('click',function () {closeSheet({afterClose:startGreetingPlaceSelection});});sheetBody.append(choose);
   }
+  function openInstallHelp() {
+    if(navigationApi) navigationApi.sheet('install');
+    activeSheetKind='install';
+    setSheetTitle('<div class="wx-sheet-head" data-sheet-title><div class="wx-sheet-icon">'+weatherIcon('plus','weather-mod-icon')+'</div><h3 class="wx-sheet-title">'+escapeHtml(t('weather.install','Install duskline'))+'</h3></div>');
+    sheetBody.innerHTML='<p class="wx-sheet-context">'+escapeHtml(t('weather.installHelp','Open your browser’s Share or menu, then choose Add to Home Screen or Install.'))+'</p>';
+    presentSheet();
+  }
+  window.addEventListener('duskline:installhelp',openInstallHelp);
   const managePlaces=document.getElementById('weatherManagePlaces');
   if(managePlaces) managePlaces.addEventListener('click',openPlacesSheet);
 

@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v73';
+const CACHE = 'duskline-shell-v74';
 const SHELL = [
   './',
   './index.html',
@@ -12,6 +12,12 @@ const SHELL = [
   './assets/world-land.svg',
   './assets/WORLD-MAP-LICENSE.txt',
   './manifest.webmanifest',
+  './assets/fonts/public-sans-latin.woff2',
+  './assets/fonts/public-sans-latin-ext.woff2',
+  './assets/fonts/public-sans-vietnamese.woff2',
+  './assets/fonts/OFL.txt',
+  './assets/duskline-icon-maskable-192.png',
+  './assets/duskline-icon-maskable-512.png',
   './favicon.ico',
   './favicon.png',
   './assets/duskline-logo-96.jpg',
@@ -75,7 +81,7 @@ function navigationResponse(response) {
     status: response.status, statusText: response.statusText, headers: response.headers
   });
 }
-const LOCALES = 'duskline-locales-v73';
+const LOCALES = 'duskline-locales-v74';
 const LOCALE_LIMIT = 8; // Four recently used languages, weather + legal packs.
 function isLocale(url) {
   return /\/src\/js\/data\/(?:weather-packs|legal\/packs)\/[a-zA-Z-]+\.json$/.test(url.pathname);

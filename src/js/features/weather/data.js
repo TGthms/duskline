@@ -405,6 +405,7 @@
 
     // Optional air-quality enrichment never blocks the weather response.
     const airEpochs = new Map();
+    const forecastEpochs = new Map();
     function startAir(cities, signal) {
       const epochs = cities.map(function (city) {
         const key = cityKey(city), epoch = (airEpochs.get(key) || 0) + 1;
@@ -615,6 +616,7 @@
         }
       }
 
+      const epoch=(forecastEpochs.get(key) || 0)+1;forecastEpochs.set(key,epoch);
       let pack = null;
       const light = opts.enrich === false;
       if (isLikelyUs(c)) {
@@ -673,6 +675,7 @@
         pack = await enrichWithOpenMeteo(pack, signal);
       }
 
+      if(forecastEpochs.get(key)!==epoch) return cache.get(key) || pack;
       if (pack && pack.weather) cache.set(key, pack);
       else if (hit && hit.weather) return Object.assign({}, hit, { stored: true });
       else if (pack) cache.set(key, pack);
@@ -689,6 +692,7 @@
 
     async function loadCityBatchOm(cities, signal, light) {
       if (!cities.length) return [];
+      const epochs=cities.map(city=>{const key=cityKey(city),epoch=(forecastEpochs.get(key) || 0)+1;forecastEpochs.set(key,epoch);return epoch;});
       const lats = cities.map(function (c) { return c.lat; }).join(',');
       const lons = cities.map(function (c) { return c.lon; }).join(',');
       const wUrl = FORECAST + '?latitude=' + lats + '&longitude=' + lons + '&'
@@ -704,6 +708,7 @@
         }
         return {
           weather: weather,
+          _forecastEpoch:epochs[i],
           air: null,
           fetchedAt: now,
           city: c,
@@ -736,6 +741,7 @@
         while (queue.length) {
           if (signal && signal.aborted) return;
           const idx = queue.shift();
+          if(out[idx] && out[idx].weather && !out[idx].light) continue;
           try {
             out[idx] = await loadCity(cities[idx], signal, {
               enrich: false,
@@ -793,6 +799,7 @@
               const idx = sliceIdx[j];
               if (out[idx] && out[idx].weather && !out[idx].error) continue;
               const previous = cache.get(cityKey(cities[idx]));
+              if(packs[j] && packs[j]._forecastEpoch && forecastEpochs.get(cityKey(cities[idx]))!==packs[j]._forecastEpoch) {out[idx]=previous || packs[j];continue;}
               out[idx] = packs[j] && packs[j].weather ? packs[j]
                 : previous && previous.weather ? Object.assign({}, previous, { stored: true }) : packs[j];
               cache.set(cityKey(cities[idx]), out[idx]);

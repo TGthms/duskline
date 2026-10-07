@@ -26,39 +26,43 @@
 
     const all = read();
     const signatures = new Map();
-    function save(pack, opts) {
-      if (!pack || !pack.city || !pack.weather || !pack.fetchedAt || pack.error) return;
-      opts = opts || {};
-      const key = cityKey(pack.city);
-      const previousIndex = all.findIndex(function (p) { return cityKey(p.city) === key; });
-      const previous = previousIndex >= 0 ? all[previousIndex] : null;
-      const snapshot = {
-        city: pack.city, weather: pack.weather, air: pack.air || null,
-        fetchedAt: pack.fetchedAt, source: pack.source || 'open-meteo',
-        needsEnrich: !!pack.needsEnrich, light: !!pack.light,
-        visited: !!opts.visited || !!(previous && previous.visited)
-      };
-      const signature = JSON.stringify(snapshot);
-      if (signatures.get(key) === signature) return;
-      const next = all.filter(function (p) { return cityKey(p.city) !== key; });
-      if (opts.visited) next.unshift(snapshot);
-      else if (previousIndex >= 0) next.splice(previousIndex, 0, snapshot);
-      else next.push(snapshot);
-      next.length = Math.min(next.length, MAX_COUNT);
-      // A full storage bucket should still retain the newest useful forecast.
-      while (next.length) {
-        try {
-          storage.setItem(KEY, JSON.stringify({ version: 1, packs: next }));
-          all.splice(0, all.length, ...next);
-          signatures.set(key, signature);
-          return;
-        } catch (e) {
-          const drop = next.map(function (p) { return cityKey(p.city); }).lastIndexOf(key) === next.length - 1
-            ? next.length - 2 : next.length - 1;
-          if (drop < 0) break;
-          next.splice(drop, 1);
+    let writePending=false,lastKey='';
+    function flush() {
+      if(!writePending) return;
+      writePending=false;
+      const next=all.filter(pack=>now()-pack.fetchedAt<MAX_AGE);
+      while(next.length) {
+        try {storage.setItem(KEY,JSON.stringify({version:1,packs:next}));all.splice(0,all.length,...next);return;}
+        catch(error) {
+          const drop=next.findIndex(pack=>cityKey(pack.city)!==lastKey);
+          if(drop<0) return;
+          signatures.delete(cityKey(next[drop].city));next.splice(drop,1);
         }
       }
+      try {storage.setItem(KEY,JSON.stringify({version:1,packs:[]}));}catch(error){}
+    }
+    function requestWrite() {
+      if(writePending) return;
+      writePending=true;
+      if(typeof deps.schedule === 'function') deps.schedule(flush);
+      else flush();
+    }
+    function save(pack,opts) {
+      if(!pack || !pack.city || !pack.weather || !pack.fetchedAt || pack.error) return;
+      opts=opts || {};
+      const key=cityKey(pack.city),index=all.findIndex(p=>cityKey(p.city)===key),previous=all[index];
+      const snapshot={city:pack.city,weather:pack.weather,air:pack.air || null,fetchedAt:pack.fetchedAt,
+        source:pack.source || 'open-meteo',needsEnrich:!!pack.needsEnrich,light:!!pack.light,
+        visited:!!opts.visited || !!(previous && previous.visited)};
+      const signature=JSON.stringify(snapshot);
+      if(signatures.get(key)===signature) return;
+      signatures.set(key,signature);lastKey=key;
+      const next=all.filter(p=>cityKey(p.city)!==key);
+      if(opts.visited) next.unshift(snapshot);
+      else if(index>=0) next.splice(index,0,snapshot);
+      else next.push(snapshot);
+      next.length=Math.min(next.length,MAX_COUNT);all.splice(0,all.length,...next);
+      requestWrite();
     }
     function find(city) {
       const hit = all.find(function (pack) { return sameCity(pack.city, city) && now() - pack.fetchedAt < MAX_AGE; });
@@ -69,8 +73,8 @@
       signatures.delete(cityKey(city));
       const next = all.filter(function (pack) { return !sameCity(pack.city, city); });
       all.splice(0, all.length, ...next);
-      try { storage.setItem(KEY, JSON.stringify({ version: 1, packs: next })); } catch (e) {}
+      requestWrite();
     }
-    return { all: all, save: save, find: find, forget: forget };
+    return { all: all, save: save, find: find, forget: forget, flush:flush };
   };
 })(window);
