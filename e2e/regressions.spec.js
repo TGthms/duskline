@@ -845,7 +845,7 @@ test('weather map falls back to the offline atlas when map tiles fail', async ({
   await page.goto('/');
   await page.locator('#weatherMapOpen').click();
   await expect(page.locator('#weatherMapFallback')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('#weatherMapStatus')).toContainText('Detailed tiles unavailable');
+  await expect(page.locator('#weatherMapStatus')).toContainText('Detailed tiles unavailable',{timeout:15000});
   await expect(page.locator('#weatherMapCredit')).toContainText('Offline world map');
   await expect(page.locator('#weatherMapFallback .weather-map-fallback-marker').first()).toBeVisible();
   await page.locator('#weatherMapPlacesSummary').click();
@@ -1565,6 +1565,7 @@ test('temperature-mode changes preserve the sheet scroll position',async ({page}
   await page.route('https://tiles.openfreemap.org/styles/liberty',route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ccddee'}}]}}));
   await page.goto('/');await page.locator('#weatherMapOpen').click();
   const canvas = page.locator('#weatherMapCanvas canvas');
+  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state',/ready|fallback/,{timeout:15000});
   const fallback = page.locator('#weatherMapFallback');
   await expect(canvas.or(fallback).filter({visible:true})).toBeVisible({timeout:15000});
   if (await fallback.isVisible()) {
@@ -1637,7 +1638,7 @@ test('map batches place changes, keeps focused buttons, and reuses raster buffer
   await page.goto('/');
   await expect(page.locator('#weatherRefresh')).not.toHaveClass(/is-busy/);
   await page.locator('#weatherMapOpen').click();
-  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true}).first()).toBeVisible({timeout:15000});
   const fallback=await page.locator('#weatherMapFallback').isVisible();
   if (!fallback) await expect.poll(()=>page.evaluate(()=>window.__rasterUploads?.length || 0)).toBeGreaterThan(0);
   await page.evaluate(()=>{
@@ -1686,12 +1687,13 @@ test('map batches place changes, keeps focused buttons, and reuses raster buffer
 test('a queued map request waits while hidden and resumes at current bounds',async ({page})=>{
   await instrumentMap(page);
   let grids=0;
-  page.on('request',request=>{const url=new URL(request.url());if(url.hostname==='api.open-meteo.com' && (url.searchParams.get('latitude')||'').split(',').length===36)grids++;});
+  page.on('request',request=>{const url=new URL(request.url());if(url.hostname==='api.open-meteo.com' && url.searchParams.get('cell_selection')==='nearest')grids++;});
   await page.goto('/');await page.locator('#weatherMapOpen').click();
-  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true}).first()).toBeVisible({timeout:15000});
   const beforePseudo=await page.locator('.weather-page-sky').evaluate(el=>getComputedStyle(el,'::before').animationPlayState);
   expect(beforePseudo).toBe('paused');
   expect(await page.locator('.weather-page-sky').evaluate(el=>getComputedStyle(el,'::after').animationPlayState)).toBe('paused');
+  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state',/ready|fallback/,{timeout:15000});
   if(await page.locator('#weatherMapFallback').isVisible()) {expect(grids).toBe(0);return;}
   await expect(page.locator('#weatherMapStatus')).toBeHidden();
   const before=grids;
@@ -1728,7 +1730,7 @@ test('closing and reopening during cold map loading creates only one renderer',a
   });
   release();
   await expect.poll(()=>page.evaluate(()=>window.__mapCtorCount || 0)).toBe(1);
-  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true}).first()).toBeVisible({timeout:15000});
   if(await page.locator('#weatherMapCanvas canvas').isVisible()) {
     const center=await page.evaluate(()=>window.__mapForTest.getCenter().toArray());
     expect(center[0]).toBeCloseTo(139.6503,3);expect(center[1]).toBeCloseTo(35.6762,3);
@@ -1759,7 +1761,7 @@ test('stalled map styles end loading and a later open retries cleanly',async ({p
   await expect(page.locator('#weatherMapLibreCss')).toHaveAttribute('data-loaded','true');
   expect(await page.locator('#weatherMapLibreCss').evaluate(el=>el!==window.__failedMapStyleForTest && el.sheet.cssRules.length>0)).toBe(true);
   await expect.poll(()=>page.evaluate(()=>window.__mapCtorCount || 0)).toBe(1);
-  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true}).first()).toBeVisible({timeout:15000});
 });
 
 test('repeated bounds events reuse an in-flight weather grid request',async ({page})=>{
@@ -1773,7 +1775,7 @@ test('repeated bounds events reuse an in-flight weather grid request',async ({pa
   });
   await page.clock.install();
   await page.goto('/');await page.locator('#weatherMapOpen').click();
-  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true})).toBeVisible({timeout:15000});
+  await expect(page.locator('#weatherMapCanvas canvas').or(page.locator('#weatherMapFallback')).filter({visible:true}).first()).toBeVisible({timeout:15000});
   if(await page.locator('#weatherMapFallback').isVisible()) {expect(grids).toBe(0);release();return;}
   await expect.poll(()=>grids).toBe(1);
   for(let i=0;i<3;i++) {
@@ -2093,4 +2095,44 @@ test.describe('cold iOS mode activation',()=>{
   await expect(page.locator('#weatherMySkyEmpty')).toBeVisible();
   expect(await mode.evaluate(b=>b.getBoundingClientRect().width)).toBeGreaterThan(70);
  });
+});
+
+test('map history, attribution keyboard access, landscape space and AQI source are coherent',async ({page})=>{
+ await instrumentMap(page);
+ let airQueries=[];
+ await page.route('https://air-quality-api.open-meteo.com/**',route=>{
+  const url=new URL(route.request().url());
+  if(url.searchParams.get('hourly')==='us_aqi') {
+   airQueries.push(url);
+   const times=Array.from({length:48},(_,i)=>new Date(new Date().setUTCHours(0,0,0,0)+i*3600000).toISOString().slice(0,16));
+   const readings=(url.searchParams.get('latitude') || '').split(',').map(()=>({hourly:{time:times,us_aqi:times.map(()=>75)}}));
+   return route.fulfill({json:readings.length>1?readings:readings[0]});
+  }
+  return route.fulfill({json:{current:{us_aqi:42}}});
+ });
+ await page.setViewportSize({width:844,height:390});await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state',/ready|fallback/,{timeout:15000});
+ expect(await page.locator('.weather-map-stage').evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(140);
+ await page.locator('[data-weather-layer="aqi"]').click();
+ await expect(page.locator('#weatherMapLegendTitle')).toContainText('US AQI');
+ if(await page.locator('#weatherMap').getAttribute('data-map-state')==='ready') {
+  await expect.poll(()=>airQueries.length).toBeGreaterThan(0);
+  expect(airQueries[0].searchParams.get('domains')).toBe('cams_global');
+  await expect(page.locator('#weatherMapTime')).toBeEnabled();
+ }
+ await page.locator('#weatherMapCredit a').first().focus();await expect(page.locator('#weatherMapCredit a').first()).toBeFocused();
+ await page.goBack();await expect(page.locator('#weatherMap')).toBeHidden();
+ await page.goForward();await expect(page.locator('#weatherMap')).toBeVisible();
+});
+
+test('map search is keyboard-operable and opens the matching place actions',async ({page})=>{
+ await instrumentMap(page);
+ await page.route('https://geocoding-api.open-meteo.com/**',route=>route.fulfill({json:{results:[{id:1,name:'Paris',latitude:48.85,longitude:2.35,country:'France',country_code:'FR',admin1:'Île-de-France',timezone:'Europe/Paris'}]}}));
+ await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state',/ready|fallback/,{timeout:15000});
+ await page.locator('#weatherMapSearch').fill('Paris');
+ await expect(page.locator('#weatherMapSearchResults button')).toHaveCount(1);
+ await page.locator('#weatherMapSearch').press('ArrowDown');await page.keyboard.press('Enter');
+ await expect(page.locator('#weatherMapContextView')).toContainText('Paris');
+ await expect(page.locator('#weatherMapContextMenu')).toBeVisible();
 });

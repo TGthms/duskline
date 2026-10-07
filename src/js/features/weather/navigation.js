@@ -37,9 +37,14 @@
       if (applying) return;
       push({city: current.city, sheet: {kind: kind, options: options || {}}}, !!(current.sheet && current.sheet.kind === kind));
     }
+    function map() {
+      if (state().map || applying) return;
+      if (!history.state) history.replaceState({duskline:state()},'',location.href);
+      push(Object.assign({},state(),{map:true}));
+    }
     function close(view) {
       const current = state();
-      if (applying || view === 'sheet' && !current.sheet || view === 'detail' && !current.city) return false;
+      if (applying || view === 'map' && !current.map || view === 'sheet' && !current.sheet || view === 'detail' && !current.city) return false;
       if (pendingClose) {
         if (view === 'detail') pendingClose.view = 'detail';
         return true;
@@ -67,6 +72,8 @@
         push({city: next.city, sheet: queued});
         return;
       }
+      if (deps.mapOpen && deps.mapOpen() && !next.map) deps.dismissMap();
+      if (next.map && deps.openMap && !deps.mapOpen()) deps.openMap();
       if (deps.sheetOpen()) deps.dismissSheet();
       const currentCity = deps.currentCity();
       if (!next.city) { if (currentCity) deps.dismissDetail(); }
@@ -74,6 +81,6 @@
       if (next.sheet) deps.openSheet(next.sheet.kind, next.sheet.options);
       applying = false;
     });
-    return {detail: detail, sheet: sheet, close: close};
+    return {detail: detail, sheet: sheet, map:map, close: close};
   };
 })(window);

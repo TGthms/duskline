@@ -20,18 +20,13 @@ function loadMapFactory() {
   return window.DusklineWeather.factories.map({});
 }
 
-test('weather map samples a regular Mercator grid within visible bounds', () => {
-  const map = loadMapFactory();
-  const bounds = { getWest: () => -20, getEast: () => 30, getNorth: () => 55, getSouth: () => -35 };
-  const grid = map.helpers.gridGeometry(bounds);
-  assert.equal(grid.points.length, 36);
-  assert.equal(JSON.stringify(grid.coordinates), JSON.stringify([[-20, 55], [30, 55], [30, -35], [-20, -35]]));
-  assert.equal(grid.points[0].x, 0);
-  assert.equal(grid.points[0].y, 0);
-  assert.equal(grid.points[35].x, 1);
-  assert.equal(grid.points[35].y, 1);
-  assert.ok(grid.points.every((point) => Math.abs(point.latitude) <= 85));
-  assert.ok(grid.points.every((point) => point.longitude >= -180 && point.longitude <= 180));
+test('weather map samples an aligned geographic grid with a bounded request budget', () => {
+ const grid=loadMapFactory().helpers.gridGeometry({getWest:()=>-20,getEast:()=>30,getNorth:()=>55,getSouth:()=>-35});
+ assert.ok(grid.points.length<=64);
+ assert.ok(grid.west<=-20 && grid.east>=30 && grid.north>=55 && grid.south<=-35);
+ assert.equal(grid.points[0].x,0);assert.equal(grid.points[0].y,0);
+ assert.equal(grid.points.at(-1).x,1);assert.equal(grid.points.at(-1).y,1);
+ assert.ok(grid.points.every(p=>Math.abs(p.latitude)<=85 && p.longitude>=-180 && p.longitude<=180));
 });
 
 test('weather map normalizes grid sample longitudes across the date line', () => {
@@ -39,7 +34,7 @@ test('weather map normalizes grid sample longitudes across the date line', () =>
   const grid = map.helpers.gridGeometry({ getWest: () => 170, getEast: () => -170, getNorth: () => 20, getSouth: () => -20 });
   assert.equal(grid.east, 190);
   assert.equal(grid.points[0].longitude, 170);
-  assert.equal(grid.points[5].longitude, -170);
+  assert.equal(grid.points[grid.cols-1].longitude, -170);
   assert.ok(grid.points.every((point) => Math.abs(point.longitude) >= 170));
 });
 
@@ -79,24 +74,32 @@ test('map legend tick marks follow the actual palette thresholds', () => {
   assert.match(map.helpers.gradientCss(wind), /transparent 7\.69%,#49b0d9 7\.69%/);
 });
 
-test('optimized map raster preserves every baseline pixel at phone and desktop sizes', () => {
-  // Captured from the original inverse-distance/palette renderer at 181a697.
-  const cases=require('./fixtures/map-raster-baseline.json');
-  const api=loadMapFactory().helpers;
-  for (const sample of cases) {
-    const geometry=api.gridGeometry({getWest:()=>170,getEast:()=>-170,getNorth:()=>60,getSouth:()=>-35});
-    geometry.points.forEach((point,i)=>{
-      point.hourly={};
-      for (const [key,scale,offset] of [['temperature_2m',2,-20],['precipitation_probability',3,0],['wind_speed_10m',.8,0]]) {
-        point.hourly[key]=Array.from({length:13},(_,h)=>sample.missing && (i+h)%7===0 ? null : Math.sin(i*1.7+h)*scale+offset+i*scale);
-      }
-    });
-    const {width,height}=api.renderDimensions(sample.viewport);
-    const data=new Uint8ClampedArray(width*height*4);
-    api.renderPixels({geometry},sample.layer,6,width,height,data);
-    const hash=crypto.createHash('sha256').update(data).digest('hex');
-    assert.equal(hash,sample.sha256,JSON.stringify(sample));
-  }
+test('local-cell interpolation reconstructs a linear field and preserves missing cells',()=>{
+ const api=loadMapFactory().helpers;
+ const geometry=api.gridGeometry({getWest:()=>170,getEast:()=>-170,getNorth:()=>60,getSouth:()=>-35});
+ geometry.points.forEach(p=>{p.hourly={temperature_2m:[10+p.x*12+p.y*8]};});
+ const width=25,height=17,data=new Uint8ClampedArray(width*height*4);
+ api.renderPixels({geometry},'temperature',0,width,height,data);
+ for(let y=0;y<height;y++) for(let x=0;x<width;x++) {
+   const expected=api.palette('temperature',10+x/(width-1)*12+y/(height-1)*8);
+   for(let c=0;c<4;c++) assert.ok(Math.abs(data[(y*width+x)*4+c]-expected[c])<=1);
+ }
+ geometry.points[0].hourly.temperature_2m[0]=null;
+ api.renderPixels({geometry},'temperature',0,width,height,data);
+ assert.equal(data[3],0);assert.ok(data.at(-1)>0,'missing local data must not erase unrelated cells');
+});
+
+test('nearby pans reuse geographic sample positions and AQI uses its dedicated source',()=>{
+ const api=loadMapFactory().helpers;
+ const first=api.gridGeometry({getWest:()=>10.1,getEast:()=>12.1,getNorth:()=>40.1,getSouth:()=>38.1});
+ const second=api.gridGeometry({getWest:()=>10.2,getEast:()=>12.2,getNorth:()=>40.2,getSouth:()=>38.2});
+ assert.equal(first.key,second.key);
+ const request=new URL(api.makeGridUrl({...first,kind:'aqi'}));
+ assert.equal(request.hostname,'air-quality-api.open-meteo.com');
+ assert.equal(request.searchParams.get('hourly'),'us_aqi');
+ assert.equal(request.searchParams.get('domains'),'cams_global');
+ assert.deepEqual(Array.from(api.palette('aqi',50)),[70,190,122,170]);
+ assert.deepEqual(Array.from(api.palette('aqi',51)),[241,211,68,185]);
 });
 
 test('map raster reads each forecast sample once per frame and clears stale pixels when data is missing', () => {
@@ -109,10 +112,10 @@ test('map raster reads each forecast sample once per frame and clears stale pixe
   });
   const target=new Uint8ClampedArray(98*49*4);
   api.renderPixels({geometry},'temperature',0,98,49,target);
-  assert.equal(reads,36);
+  assert.equal(reads,geometry.points.length);
   assert.ok(target.some(value=>value>0));
   api.renderPixels({geometry},'temperature',1,98,49,target);
-  assert.equal(reads,72);
+  assert.equal(reads,geometry.points.length*2);
   assert.ok(target.every(value=>value===0));
 });
 

@@ -479,6 +479,7 @@
 
   let productApi = null;
   let navigationApi = null;
+  let mapNavigationSuspended = false;
   function wireRemainingModules() {
     if (!W.factories.charts || !W.factories.alerts || !W.factories.data) {
       console.error('[weather] missing factories', Object.keys(W.factories || {}));
@@ -566,6 +567,10 @@
         fmtTemp: fmtTemp,
         fmtWind: fmtWind,
         getPlaces: getMapPlaces,
+        searchCities: async function (query, signal) {
+          const payload=await dataApi.fetchJson(GEOCODE+'?name='+encodeURIComponent(query)+'&count=7&language='+geocodeLangParam()+'&format=json',signal);
+          return W.searchPlaces.deduplicate(payload.results || []).map(function (city) { return {name:city.name,admin1:city.admin1 || '',lat:city.latitude,lon:city.longitude,country:city.country || '',country_code:city.country_code || '',tz:city.timezone}; });
+        },
         isFavorite: isFavorite,
         onSelectCity: openMapCity,
         resolveCity: reverseGeocode,
@@ -587,10 +592,12 @@
           if (weatherMode === 'my-sky') mapMySkyRefreshPending = true;
         },
         onOpen: function () {
+          if (navigationApi) navigationApi.map();
           clearAutoRefresh();
           if (skyApi.pauseStormFx) skyApi.pauseStormFx(detailFx);
         },
         onClose: function () {
+          if (navigationApi && !mapNavigationSuspended) navigationApi.close('map');
           if (isDetailShowingOrOpening() && skyApi.resumeStormFx) skyApi.resumeStormFx(detailFx);
           if (mapMySkyRefreshPending && weatherMode === 'my-sky') {
             mapMySkyRefreshPending = false;
@@ -1019,7 +1026,9 @@
     mapMySkyRefreshPending = false;
     // A detail opened from the map returns to the map on close, not the main screen.
     if (mapApi && mapApi.isOpen()) detailReturnToMap = city;
+    mapNavigationSuspended = true;
     if (mapApi) mapApi.close();
+    mapNavigationSuspended = false;
     if (existing && existing.weather) {
       existing.city = Object.assign({},existing.city,city);
       openDetail(existing);
@@ -1782,6 +1791,13 @@
     open: openMapCity
   });
   if (W.factories.navigation) navigationApi = W.factories.navigation({
+    mapOpen: function () { return mapApi && mapApi.isOpen(); },
+    dismissMap: function () { if(mapApi) mapApi.close(); },
+    openMap: function () {
+      if (openCity) {detailReturnToMap=openCity.city;return;}
+      if (detailReturnToMap && detailEl.classList.contains('is-closing')) return;
+      if(mapApi) mapApi.open({places:getMapPlaces(),returnFocus:mapOpenBtn});
+    },
     sameCity: sameCity, dismissSheet: closeSheet, dismissDetail: closeDetail,
     currentCity: function () { return openCity && openCity.city; }, sheetOpen: function () { return sheetIntentOpen; },
     openCity: function (city) {

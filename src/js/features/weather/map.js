@@ -71,12 +71,18 @@
     var mapLoadGeneration = 0;
     var deferredMapOptions = null;
     var currentMapOptions = null;
+    let searchController = null, searchTimer = 0, searchGeneration = 0;
+    const search = document.getElementById('weatherMapSearch');
+    const results = document.getElementById('weatherMapSearchResults');
+    const inspect = document.getElementById('weatherMapInspect');
     var RASTER_ID = 'duskline-weather-field';
     var GRID_ID = 'duskline-weather-grid';
     var CITY_SOURCE = 'duskline-weather-places';
     var STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
     var MAPLIBRE_CSS = 'assets/vendor/maplibre-gl/maplibre-gl.css';
-    var GRID_STEPS = 6;
+    var sampleCache = new Map();
+    var lastCamera = null;
+    const samplingSteps = [.025,.05,.1,.25,.5,1,2,5,10,20,45,90];
 
     function t(key, fallback) {
       return typeof deps.t === 'function' ? deps.t(key, fallback) : (fallback || key);
@@ -157,6 +163,8 @@
     function close() {
       if (!isOpen) return;
       isOpen = false;
+      searchGeneration++; clearTimeout(searchTimer); if (searchController) searchController.abort();
+      if (results) results.hidden=true;
       mapLoadGeneration++;
       deferredMapOptions = null;
       currentMapOptions = null;
@@ -180,6 +188,7 @@
       if (activeController) activeController.abort();
       activeController = null;
       if (map) {
+        try { lastCamera={center:map.getCenter().toArray(),zoom:map.getZoom()}; } catch (e) {}
         try { map.remove(); } catch (e) { /* tolerate partially initialized maps */ }
         map = null;
       }
@@ -200,13 +209,14 @@
     }
     function focusableItems() {
       return root ? Array.prototype.slice.call(root.querySelectorAll(
-        'button:not([disabled]), input:not([disabled]), summary, [tabindex="0"]'
+        'button:not([disabled]), input:not([disabled]), a[href], summary, [tabindex="0"]'
       )).filter(function (el) {
         return !el.hidden && el.getAttribute('aria-hidden') !== 'true' && el.getClientRects().length > 0;
       }) : [];
     }
     function onDialogKeydown(event) {
       if (event.key === 'Escape') {
+        if (results && !results.hidden) { results.hidden=true;search.setAttribute('aria-expanded','false');search.focus();event.preventDefault();event.stopPropagation();return; }
         event.preventDefault();
         if (contextMenu && !contextMenu.hidden) {
           hideContextMenu(true);
@@ -314,10 +324,30 @@
       while (pinNames.size>100) pinNames.delete(pinNames.keys().next().value);
       return request;
     }
+    function estimatedValue(city) {
+      if (!activeGrid || !city) return null;
+      const g=activeGrid.geometry,points=g.points;
+      let lon=Number(city.lon);while(lon<g.west) lon+=360;while(lon>g.east) lon-=360;
+      const x=(lon-g.west)/(g.east-g.west),y=(mercatorY(g.north)-mercatorY(city.lat))/(mercatorY(g.north)-mercatorY(g.south));
+      if(x<0 || x>1 || y<0 || y>1) return null;
+      let col=0,row=0;
+      while(col<g.cols-2 && x>points[col+1].x) col++;
+      while(row<g.rows-2 && y>points[(row+1)*g.cols].y) row++;
+      const top=row*g.cols+col,fx=(x-points[top].x)/(points[top+1].x-points[top].x),fy=(y-points[top].y)/(points[top+g.cols].y-points[top].y);
+      const indices=[top,top+1,top+g.cols,top+g.cols+1],weights=[(1-fx)*(1-fy),fx*(1-fy),(1-fx)*fy,fx*fy];
+      const stamp=activeGrid.times[activeGrid.baseIndex+selectedOffset];let value=0;
+      for(let i=0;i<4;i++) {
+        if(weights[i]<=.000001) continue;
+        const point=points[indices[i]],index=point.hourly && point.hourly.time.indexOf(stamp),sample=selectedDataValue(point,selectedLayer,index);
+        if(sample == null) return null;value+=sample*weights[i];
+      }
+      return value;
+    }
     function paintContextCity(city, pending) {
       contextCity = city;
       contextIsSaved = typeof deps.isFavorite === 'function' && deps.isFavorite(city);
-      if (contextPlaceLabel) contextPlaceLabel.textContent = city.name;
+      const estimate=estimatedValue(city);
+      if (contextPlaceLabel) contextPlaceLabel.textContent = city.name+(estimate == null ? '' : ' · '+formatLegendValue(selectedLayer,selectedLayer === 'aqi' ? Math.round(estimate) : Math.round(estimate*10)/10)+' · '+formatTime(activeGrid.times[activeGrid.baseIndex+selectedOffset]));
       if (contextViewButton) {
         contextViewButton.disabled = pending;
         contextViewButton.textContent = pending ? t('weather.notice.searching','Searching places…') : t('weather.mapViewPlace','View {place}').replace('{place}',city.name);
@@ -470,48 +500,39 @@
       return ((longitude + 180) % 360 + 360) % 360 - 180;
     }
     function gridGeometry(bounds) {
-      var west = bounds.getWest();
-      var east = bounds.getEast();
+      let west = bounds.getWest(), east = bounds.getEast();
       if (east <= west) east += 360;
-      if (east - west > 360) east = west + 360;
-      var north = Math.min(85.0511, bounds.getNorth());
-      var south = Math.max(-85.0511, bounds.getSouth());
-      if (north <= south) { north = Math.min(85.0511, south + 0.2); }
-      var topY = mercatorY(north);
-      var bottomY = mercatorY(south);
-      var points = [];
-      for (var y = 0; y < GRID_STEPS; y++) {
-        for (var x = 0; x < GRID_STEPS; x++) {
-          var fx = x / (GRID_STEPS - 1);
-          var fy = y / (GRID_STEPS - 1);
-          var rawLon = west + (east - west) * fx;
-          points.push({
-            x: fx,
-            y: fy,
-            latitude: Math.max(-85, Math.min(85, latitudeAtY(topY + (bottomY - topY) * fy))),
-            longitude: normalizeLongitude(rawLon),
-            hourly: null
-          });
-        }
+      east = Math.min(east,west+360);
+      const choose = span => samplingSteps.find(step=>step >= span/5) || 90;
+      const lonStep = Math.max(selectedLayer === 'aqi' ? .5 : .025,choose(east-west));
+      const latStep = Math.max(selectedLayer === 'aqi' ? .5 : .025, choose(Math.min(85,bounds.getNorth())-Math.max(-85,bounds.getSouth())));
+      west = Math.floor(west/lonStep)*lonStep; east = Math.min(west+360,Math.ceil(east/lonStep)*lonStep);
+      const north = Math.min(85,Math.ceil(Math.min(85,bounds.getNorth())/latStep)*latStep);
+      const south = Math.max(-85,Math.floor(Math.max(-85,bounds.getSouth())/latStep)*latStep);
+      const cols = Math.max(2,Math.round((east-west)/lonStep)+1);
+      const rows = Math.max(2,Math.ceil((north-south)/latStep)+1);
+      const topY = mercatorY(north), bottomY = mercatorY(south), points = [];
+      for (let row=0;row<rows;row++) for (let col=0;col<cols;col++) {
+        const latitude = Math.max(south,north-row*latStep), rawLon = west+col*lonStep;
+        points.push({x:(rawLon-west)/(east-west),y:(topY-mercatorY(latitude))/(topY-bottomY),
+          latitude:latitude,longitude:normalizeLongitude(rawLon),hourly:null});
       }
-      var key = [west, east, north, south].map(function (value) { return value.toFixed(2); }).join(',');
-      return {
-        west: west, east: east, north: north, south: south,
-        coordinates: [[west, north], [east, north], [east, south], [west, south]],
-        points: points, key: key
-      };
+      return {west,east,north,south,cols,rows,points,
+        kind:selectedLayer === 'aqi' ? 'aqi' : 'weather',
+        coordinates:[[west,north],[east,north],[east,south],[west,south]],
+        key:[west,east,north,south,lonStep,latStep,selectedLayer === 'aqi' ? 'aqi' : 'weather'].join(',')};
     }
     function makeGridUrl(geometry) {
       var params = new URLSearchParams();
       params.set('latitude', geometry.points.map(function (point) { return point.latitude.toFixed(4); }).join(','));
       params.set('longitude', geometry.points.map(function (point) { return point.longitude.toFixed(4); }).join(','));
-      params.set('hourly', 'temperature_2m,precipitation_probability,wind_speed_10m');
-      params.set('temperature_unit', 'celsius');
-      params.set('wind_speed_unit', 'ms');
+      params.set('hourly', geometry.kind === 'aqi' ? 'us_aqi' : 'temperature_2m,precipitation_probability,wind_speed_10m');
+      if (geometry.kind !== 'aqi') { params.set('temperature_unit', 'celsius'); params.set('wind_speed_unit', 'ms'); }
       params.set('timezone', 'GMT');
       params.set('cell_selection', 'nearest');
       params.set('forecast_days', '2');
-      return 'https://api.open-meteo.com/v1/forecast?' + params.toString();
+      if (geometry.kind === 'aqi') params.set('domains','cams_global');
+      return (geometry.kind === 'aqi' ? 'https://air-quality-api.open-meteo.com/v1/air-quality?' : 'https://api.open-meteo.com/v1/forecast?') + params.toString();
     }
     function valueAtOrNearNow(times) {
       if (!times || !times.length) return 0;
@@ -537,19 +558,30 @@
       setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
       setBusy(true);
       requestTimer = setTimeout(function () { controller.abort(); }, 20000);
-      return fetch(makeGridUrl(geometry), { signal: controller.signal, credentials: 'omit' }).then(function (response) {
+      const pointKey = point => geometry.kind+':'+point.latitude.toFixed(5)+','+point.longitude.toFixed(5);
+      geometry.points.forEach(point=>{
+        const hit = sampleCache.get(pointKey(point));
+        if (hit && now-hit.at < 8*60*1000) point.hourly = hit.hourly;
+      });
+      const requested = geometry.points.filter(point=>!point.hourly);
+      const transport = requested.length ? fetch(makeGridUrl(Object.assign({},geometry,{points:requested})), {signal:controller.signal,credentials:'omit'}) : Promise.resolve({ok:true,json:()=>Promise.resolve([])});
+      return transport.then(function (response) {
         if (!response.ok) throw new Error('Forecast service returned ' + response.status);
         return response.json();
       }).then(function (payload) {
         if (!isOpen || controller !== activeController || activeRequestKey !== geometry.key) return null;
         clearTimeout(requestTimer);
         var locations = Array.isArray(payload) ? payload : [payload];
-        if (!locations.length || locations[0].error) throw new Error(locations[0] && locations[0].reason || 'No forecast data.');
-        geometry.points.forEach(function (point, index) {
+        if (requested.length && (!locations.length || locations[0].error)) throw new Error(locations[0] && locations[0].reason || 'No forecast data.');
+        requested.forEach(function (point, index) {
           var location = locations[index];
           point.hourly = location && location.hourly || null;
+          if (point.hourly) sampleCache.set(pointKey(point),{hourly:point.hourly,at:Date.now()});
+          while (sampleCache.size>256) sampleCache.delete(sampleCache.keys().next().value);
         });
-        var times = geometry.points[0] && geometry.points[0].hourly && geometry.points[0].hourly.time || [];
+        var availablePoint = geometry.points.find(point=>point.hourly && point.hourly.time && point.hourly.time.length);
+        var times = availablePoint && availablePoint.hourly.time || [];
+        if (!times.length) throw new Error('Forecast timestamps unavailable');
         var index = valueAtOrNearNow(times);
         var grid = { geometry: geometry, times: times, baseIndex: index, fetchedAt: Date.now() };
         cachedGrids.set(geometry.key, { grid: grid, fetchedAt: Date.now() });
@@ -579,7 +611,7 @@
     }
     function selectedDataValue(point, layer, index) {
       if (!point || !point.hourly) return null;
-      var key = layer === 'temperature' ? 'temperature_2m'
+      var key = layer === 'aqi' ? 'us_aqi' : layer === 'temperature' ? 'temperature_2m'
         : layer === 'precipitation' ? 'precipitation_probability' : 'wind_speed_10m';
       var series = point.hourly[key] || [];
       var value = series[index];
@@ -590,14 +622,21 @@
         [18,[173,222,113,194]],[28,[255,199,70,202]],[40,[235,86,68,210]]],
       precipitation: [[8,[109,203,255,72]],[25,[50,176,241,120]],[50,[63,122,232,165]],
         [75,[91,83,207,190]],[100,[153,78,214,210]]],
+      aqi: [[0,[70,190,122,170]],[50,[70,190,122,170]],[100,[241,211,68,185]],[150,[239,150,61,190]],[200,[223,75,73,200]],[300,[150,88,190,205]],[500,[126,48,76,210]]],
       wind: [[2,[73,176,217,75]],[6,[79,205,183,130]],[12,[190,218,97,175]],
         [18,[255,167,72,198]],[26,[228,80,95,214]]]
     };
     function writePalette(layer, value, target, offset) {
-      const kind = layer === 'temperature' || layer === 'precipitation' ? layer : 'wind';
+      const kind = ['temperature','precipitation','aqi'].includes(layer) ? layer : 'wind';
       const stops = PALETTE_STOPS[kind];
       if (!Number.isFinite(value) || (kind !== 'temperature' && value < stops[0][0])) {
         target[offset] = target[offset+1] = target[offset+2] = target[offset+3] = 0;
+        return;
+      }
+      if (kind === 'aqi') {
+        const n=Math.round(value), band=global.DusklineAqiMath ? global.DusklineAqiMath.band(n,'us') : n<=50?'Good':n<=100?'Moderate':n<=150?'UnhealthySG':n<=200?'Unhealthy':n<=300?'VeryUnhealthy':'Hazardous';
+        const color={Good:[70,190,122,170],Moderate:[241,211,68,185],UnhealthySG:[239,150,61,190],Unhealthy:[223,75,73,200],VeryUnhealthy:[150,88,190,205],Hazardous:[126,48,76,210]}[band];
+        for(let channel=0;channel<4;channel++) target[offset+channel]=color[channel];
         return;
       }
       let left = stops[0], right = left, mix = 0;
@@ -620,6 +659,7 @@
       return color;
     }
     function legendConfig(layer) {
+      if (layer === 'aqi') return {min:0,max:500,ticks:[0,50,100,150,200,300,500],transparentUntil:null,stops:PALETTE_STOPS.aqi.map(stop=>({value:stop[0],color:'rgb('+stop[1].slice(0,3).join(',')+')'}))};
       if (layer === 'precipitation') {
         return {
           min: 0, max: 100, ticks: [0, 25, 50, 75, 100], transparentUntil: 8,
@@ -664,57 +704,42 @@
     function formatLegendValue(layer, value) {
       if (layer === 'temperature') return typeof deps.fmtTemp === 'function' ? deps.fmtTemp(value) : value + '°';
       if (layer === 'precipitation') return value + '%';
+      if (layer === 'aqi') return String(value);
       return typeof deps.fmtWind === 'function' ? deps.fmtWind(value) : value + ' m/s';
     }
-    function spatialWeights(points, width, height) {
-      let same = rasterWeights && rasterWeights.width === width && rasterWeights.height === height
-        && rasterWeights.positions.length === points.length*2;
-      for (let i=0;same && i<points.length;i++) {
-        same = rasterWeights.positions[i*2] === points[i].x && rasterWeights.positions[i*2+1] === points[i].y;
-      }
-      if (same) return rasterWeights;
-      const count = points.length;
-      const state = {width:width,height:height,positions:new Float64Array(count*2),
-        weights:new Float64Array(width*height*count),sums:new Float64Array(width*height),
-        values:new Float64Array(count),indices:new Uint16Array(count)};
-      points.forEach(function (point,i) { state.positions[i*2]=point.x;state.positions[i*2+1]=point.y; });
+    // Four local corners per pixel: memory is independent of sample count.
+    function spatialWeights(points,width,height) {
+      const signature = points.map(p=>p.x+','+p.y).join(';');
+      if (rasterWeights && rasterWeights.width === width && rasterWeights.height === height && rasterWeights.signature === signature) return rasterWeights;
+      const xs = Array.from(new Set(points.map(p=>p.x))), ys = Array.from(new Set(points.map(p=>p.y)));
+      const count = width*height, state = {width,height,signature,indices:new Uint16Array(count*4),weights:new Float32Array(count*4)};
+      function cell(values,v) { let i=0;while(i<values.length-2 && v>values[i+1]) i++;return i; }
       for (let y=0;y<height;y++) for (let x=0;x<width;x++) {
-        const pixel = y*width+x;
-        let sum = 0;
-        for (let i=0;i<count;i++) {
-          const dx = x/(width-1)-points[i].x, dy = y/(height-1)-points[i].y;
-          const distance = dx*dx+dy*dy;
-          const weight = distance < .00001 ? Infinity : 1/(distance*distance);
-          state.weights[pixel*count+i] = weight;
-          sum += weight;
-        }
-        state.sums[pixel] = sum;
+        const nx=x/(width-1),ny=y/(height-1), col=cell(xs,nx), row=cell(ys,ny);
+        const fx=(nx-xs[col])/(xs[col+1]-xs[col]),fy=(ny-ys[row])/(ys[row+1]-ys[row]);
+        const offset=(y*width+x)*4, top=row*xs.length+col;
+        state.indices.set([top,top+1,top+xs.length,top+xs.length+1],offset);
+        state.weights.set([(1-fx)*(1-fy),fx*(1-fy),(1-fx)*fy,fx*fy],offset);
       }
-      rasterWeights = state;
-      return state;
+      rasterWeights=state;return state;
     }
-    function renderPixels(grid, layer, hourIndex, width, height, target) {
-      const points = grid.geometry.points;
-      const state = spatialWeights(points,width,height);
-      let valid = 0;
-      for (let i=0;i<points.length;i++) {
-        const value = selectedDataValue(points[i],layer,hourIndex);
-        if (value == null) continue;
-        state.values[i] = value;
-        state.indices[valid++] = i;
-      }
-      const allValid = valid === points.length;
+    function renderPixels(grid,layer,hourIndex,width,height,target) {
+      const points=grid.geometry.points, state=spatialWeights(points,width,height);
+      const stamp=grid.times && grid.times[hourIndex];
+      const values=points.map(point=>{
+        const index=stamp && point.hourly && point.hourly.time ? point.hourly.time.indexOf(stamp) : hourIndex;
+        return selectedDataValue(point,layer,index);
+      });
       for (let pixel=0;pixel<width*height;pixel++) {
-        let weighted = 0, sum = allValid ? state.sums[pixel] : 0, near = null;
-        const offset = pixel*points.length;
-        for (let j=0;j<valid;j++) {
-          const i = state.indices[j], weight = state.weights[offset+i];
-          if (weight === Infinity) { near = state.values[i]; break; }
-          weighted += state.values[i]*weight;
-          if (!allValid) sum += weight;
+        let value=0,missing=false;
+        for(let corner=0;corner<4;corner++) {
+          const offset=pixel*4+corner,weight=state.weights[offset];
+          if (weight<=.000001) continue;
+          const sample=values[state.indices[offset]];
+          if (sample == null) {missing=true;break;}
+          value+=sample*weight;
         }
-        const value = near != null ? near : sum > 0 ? weighted/sum : null;
-        writePalette(layer,value,target,pixel*4);
+        writePalette(layer,missing?null:value,target,pixel*4);
       }
       return target;
     }
@@ -806,8 +831,11 @@
     }
     function legendForLayer(layer) {
       var title = layer === 'temperature' ? t('settings.temperature', 'Temperature')
-        : layer === 'precipitation' ? t('weather.chanceOfPrecipitation', 'Chance of precipitation')
+        : layer === 'aqi' ? t('weather.aqi','Air Quality')+' · US AQI' : layer === 'precipitation' ? t('weather.chanceOfPrecipitation', 'Chance of precipitation')
           : t('weather.wind', 'Wind');
+      if(layer === 'temperature') title += ' · '+(typeof deps.useF === 'function' && deps.useF()?'°F':'°C');
+      const subhead=document.getElementById('weatherMapSubhead');
+      if(subhead) subhead.textContent=t('weather.mapEstimate','Interpolated forecast estimates')+(layer === 'aqi'?' · CAMS · ~45 km':'');
       if (legendTitle) legendTitle.textContent = title;
       if (legendGradient) legendGradient.dataset.layer = layer;
       var config = legendConfig(layer);
@@ -825,16 +853,18 @@
           tick.style.transform = fraction >= 0.999 ? 'translateX(-100%)' : (fraction <= 0.001 ? 'none' : 'translateX(-50%)');
           legendValues.appendChild(tick);
         });
-        legendValues.style.fontSize = config.ticks.length > 5 ? '9px' : '';
+        legendValues.style.fontSize = config.ticks.length > 5 ? '11px' : '';
       }
     }
     function applyGrid(grid) {
       if (!grid || !isOpen) return;
+      grid.baseIndex = valueAtOrNearNow(grid.times);
       activeGrid = grid;
       baseIndex = grid.baseIndex;
       if (map && map.getSource(RASTER_ID)) scheduleWeatherImage(grid);
       syncTimeControl(grid);
       legendForLayer(selectedLayer);
+      if(contextCity && contextMenu && !contextMenu.hidden) paintContextCity(contextCity,contextMenu.getAttribute('aria-busy') === 'true');
       setStatus('', false);
       setBusy(false);
     }
@@ -1019,7 +1049,7 @@
     var fallbackZoom = 1;
     var fallbackPan = { x: 0, y: 0 };
     function fitFallback() {
-      if (!fallbackHost || !fallbackActive) return;
+      if (!fallbackHost || !isOpen) return;
       const atlas = fallbackHost.querySelector('.weather-map-atlas');
       if (!atlas) return;
       const width = Math.min(fallbackHost.clientWidth, fallbackHost.clientHeight * 2);
@@ -1095,6 +1125,7 @@
     function useFallback(reason) {
       if (!isOpen || fallbackActive) return;
       fallbackActive = true;
+      if (root) {root.classList.remove('is-map-ready');root.dataset.mapState='fallback';}
       mapLoadGeneration++;
       clearTimeout(styleTimer);
       clearTimeout(requestTimer);
@@ -1133,15 +1164,15 @@
       if (global.navigator && global.navigator.onLine === false) { useFallback(); return; }
       var city = selectedCity(options);
       mapTimeZone = 'UTC';
-      var center = [Number(city.lon), Number(city.lat)];
+      var center = lastCamera ? lastCamera.center : [Number(city.lon), Number(city.lat)];
       if (!Number.isFinite(center[0]) || !Number.isFinite(center[1])) center = [-74.006, 40.713];
       if (canvasHost) canvasHost.hidden = false;
-      if (fallbackHost) fallbackHost.hidden = true;
+      if (fallbackHost) { fallbackHost.hidden = false; renderFallbackPlaces(); }
       if (mapControls) mapControls.hidden = false;
       setStatus(t('weather.mapLoading', 'Loading map…'), true, true);
       setBusy(true);
       styleTimer = setTimeout(function () {
-        if (isOpen && generation === mapLoadGeneration && !styleReady) useFallback();
+        if (isOpen && generation === mapLoadGeneration && !root.classList.contains('is-map-ready')) useFallback();
       },12000);
       loadMapLibrary().then(function (library) {
         if (!isOpen || generation !== mapLoadGeneration || fallbackActive) return;
@@ -1150,7 +1181,7 @@
           container: canvasHost,
           style: STYLE_URL,
           center: center,
-          zoom: 3.4,
+          zoom: lastCamera ? lastCamera.zoom : 3.4,
           minZoom: 1.3,
           maxZoom: 11,
           maxPitch: 0,
@@ -1163,7 +1194,14 @@
         map.once('load', function () {
           if (!isOpen || !map || generation !== mapLoadGeneration) return;
           styleReady = true;
-          clearTimeout(styleTimer);
+          map.once('render',function () {
+            if (!isOpen || generation !== mapLoadGeneration) return;
+            root.classList.add('is-map-ready');root.dataset.mapState='ready';
+            if (fallbackHost) fallbackHost.hidden=true;
+            clearTimeout(styleTimer);
+          });
+          map.getCanvas().addEventListener('webglcontextlost',function (event) {event.preventDefault();useFallback();},{once:true});
+          map.triggerRepaint();
           try {
             installWeatherRaster(library);
             map.resize();
@@ -1198,7 +1236,7 @@
       if (activeGrid) scheduleWeatherImage(activeGrid);
       if (map && !styleReady) {
         const generation = mapLoadGeneration;
-        styleTimer = setTimeout(function () { if (isOpen && generation === mapLoadGeneration && !styleReady) useFallback(); },12000);
+        styleTimer = setTimeout(function () { if (isOpen && generation === mapLoadGeneration && !root.classList.contains('is-map-ready')) useFallback(); },12000);
       }
       queueVisibleWeather();
     });
@@ -1218,6 +1256,7 @@
       if (root.parentElement !== document.body) document.body.appendChild(root);
       root.hidden = false;
       root.setAttribute('aria-hidden', 'false');
+      root.classList.remove('is-map-ready');root.dataset.mapState='loading';
       root.classList.add('is-open');
       lockBackground();
       updatePlaces(places);
@@ -1230,6 +1269,56 @@
       document.addEventListener('keydown', onDialogKeydown, true);
       setTimeout(function () { if (isOpen && closeButton) closeButton.focus({ preventScroll: true }); }, 0);
       loadCityMap(options || {});
+    }
+    if (inspect) inspect.addEventListener('click',function () {
+      const rect = stageHost.getBoundingClientRect();
+      showContextMenu(rect.left+rect.width/2,rect.top+rect.height/2);
+    });
+    if (search && results) {
+      search.addEventListener('input',function () {
+        clearTimeout(searchTimer); if (searchController) searchController.abort();
+        const generation=++searchGeneration, query=search.value.trim();
+        results.replaceChildren(); results.hidden=true; search.setAttribute('aria-expanded','false');
+        if (query.length<2 || typeof deps.searchCities !== 'function') return;
+        searchTimer=setTimeout(async function () {
+          searchController=new AbortController();search.setAttribute('aria-busy','true');
+          try {
+            const cities=await deps.searchCities(query,searchController.signal);
+            if (!isOpen || generation !== searchGeneration) return;
+            cities.forEach(function (city) {
+              const button=document.createElement('button');button.type='button';button.setAttribute('role','option');
+              button.textContent=[city.name,city.admin1,city.country].filter(Boolean).join(' · ');
+              button.addEventListener('click',function () {
+                results.hidden=true;search.setAttribute('aria-expanded','false');search.value=city.name;
+                places.push({city:city,name:city.name,featured:true});updatePlaces(places);
+                const reveal=function () {
+                  const rect=stageHost.getBoundingClientRect();
+                  contextMenu.hidden=false;paintContextCity(city,false);
+                  positionContextMenu(rect.left+rect.width/2,rect.top+rect.height/2);
+                  contextViewButton.focus({preventScroll:true});
+                };
+                if (map) {
+                  map.once('moveend',reveal);
+                  map.flyTo({center:[city.lon,city.lat],zoom:8,duration:reducedMotion()?0:350});
+                } else reveal();
+              });
+              results.appendChild(button);
+            });
+            if (!cities.length) results.textContent=t('weather.emptySearch','No cities found.');
+            results.hidden=false;search.setAttribute('aria-expanded','true');
+          } catch (error) {
+            if (generation === searchGeneration && error.name !== 'AbortError') setStatus(t('weather.error','Could not load weather data.'),true);
+          } finally { if(generation === searchGeneration) search.removeAttribute('aria-busy'); }
+        },250);
+      });
+      search.addEventListener('keydown',function (event) {
+        if (event.key === 'ArrowDown' && !results.hidden) {event.preventDefault();results.querySelector('button')?.focus();}
+      });
+      results.addEventListener('keydown',function (event) {
+        const items=Array.from(results.querySelectorAll('button')),index=items.indexOf(document.activeElement);
+        if(event.key === 'ArrowDown' || event.key === 'ArrowUp') {event.preventDefault();items[(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length]?.focus();}
+        if(event.key === 'Escape') {event.preventDefault();event.stopPropagation();results.hidden=true;search.setAttribute('aria-expanded','false');search.focus();}
+      });
     }
     if (closeButton) closeButton.addEventListener('click', close);
     if (zoomInButton) zoomInButton.addEventListener('click', function () {
@@ -1254,7 +1343,8 @@
         item.setAttribute('aria-pressed', item === button ? 'true' : 'false');
       });
       legendForLayer(selectedLayer);
-      if (activeGrid) scheduleWeatherImage(activeGrid);
+      if (activeGrid && (selectedLayer === 'aqi') === (activeGrid.geometry.kind === 'aqi')) scheduleWeatherImage(activeGrid);
+      else { activeGrid=null; if(map && map.getLayer(RASTER_ID)) map.setPaintProperty(RASTER_ID,'raster-opacity',0); if (timeInput) timeInput.disabled=true; if(timeOutput) timeOutput.textContent=''; requestVisibleWeather(); }
     });
     if (timeInput) timeInput.addEventListener('input', function () {
       var next = Math.max(0, Math.min(maxOffset, Number(timeInput.value) || 0));
@@ -1290,6 +1380,8 @@
       isOpen: function () { return isOpen; },
       helpers: {
         gridGeometry: gridGeometry,
+        makeGridUrl:makeGridUrl,
+        estimatedValue:estimatedValue,
         palette: palette,
         formatTime: formatTime,
         formatLocalTime: formatLocalTime,
