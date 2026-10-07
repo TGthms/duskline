@@ -25,6 +25,7 @@
     }
 
     const all = read();
+    const signatures = new Map();
     function save(pack, opts) {
       if (!pack || !pack.city || !pack.weather || !pack.fetchedAt || pack.error) return;
       opts = opts || {};
@@ -37,6 +38,8 @@
         needsEnrich: !!pack.needsEnrich, light: !!pack.light,
         visited: !!opts.visited || !!(previous && previous.visited)
       };
+      const signature = JSON.stringify(snapshot);
+      if (signatures.get(key) === signature) return;
       const next = all.filter(function (p) { return cityKey(p.city) !== key; });
       if (opts.visited) next.unshift(snapshot);
       else if (previousIndex >= 0) next.splice(previousIndex, 0, snapshot);
@@ -47,6 +50,7 @@
         try {
           storage.setItem(KEY, JSON.stringify({ version: 1, packs: next }));
           all.splice(0, all.length, ...next);
+          signatures.set(key, signature);
           return;
         } catch (e) {
           const drop = next.map(function (p) { return cityKey(p.city); }).lastIndexOf(key) === next.length - 1
@@ -57,11 +61,12 @@
       }
     }
     function find(city) {
-      const hit = all.find(function (pack) { return sameCity(pack.city, city); });
+      const hit = all.find(function (pack) { return sameCity(pack.city, city) && now() - pack.fetchedAt < MAX_AGE; });
       return hit ? Object.assign({}, hit, { stored: true }) : null;
     }
     function forget(city) {
       if (!city) return;
+      signatures.delete(cityKey(city));
       const next = all.filter(function (pack) { return !sameCity(pack.city, city); });
       all.splice(0, all.length, ...next);
       try { storage.setItem(KEY, JSON.stringify({ version: 1, packs: next })); } catch (e) {}

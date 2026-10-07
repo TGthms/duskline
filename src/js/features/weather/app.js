@@ -299,6 +299,7 @@
   let lastDetailInsightKey = '';
   let greetingVisitSeed = null;
   const aqiDetailInflight = new Map();
+  let cityRefreshApi = null;
   let activeSheetKind = null;
   let toastTimer = 0;
   const toastEl = $('weatherToast');
@@ -508,6 +509,7 @@
           if (pack.stored && updatedEl) updatedEl.textContent = rowUpdatedLabel(pack);
           else setUpdated(pack.fetchedAt);
         }
+        if (pack && pack.weather && !pack.light && openCity && sameCity(openCity.city, city) && isDetailShowingOrOpening()) openDetail(pack);
         if (mapApi && mapApi.isOpen()) mapApi.updatePlaces(getMapPlaces());
         if (pack && pack.city && pack.city.isMyLocation && isPageActive()) applyAmbientPageSky();
         // The greeting starts with a lightweight “checking” line while the
@@ -536,6 +538,22 @@
       scheduleListPaintFromAlerts: function (pack) {
         if (typeof scheduleListPaintFromAlerts === 'function') scheduleListPaintFromAlerts(pack);
       }
+    });
+    cityRefreshApi = W.factories.cityRefresh({
+      cityKey: cityKey,
+      load: function () { return dataApi.loadCity.apply(null, arguments); },
+      alerts: function () { return alertsApi.ensureAlerts.apply(null, arguments); },
+      paint: function (pack) {
+        if (productApi) productApi.render();
+        replaceCityCard(pack.city, pack);
+        updateGreeting();
+        if (openCity && sameCity(openCity.city, pack.city) && isDetailShowingOrOpening()) {
+          const options = history.state && history.state.duskline && history.state.duskline.sheet;
+          openDetail(pack);
+          if (sheetIntentOpen && options && !['units','primary'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
+        }
+      },
+      failed: function () { notify(t('weather.refreshToRetry','Refresh to try again'), 'error'); }
     });
     if (W.factories.map) {
       mapApi = W.factories.map({
@@ -919,7 +937,7 @@
     } catch (e) { return []; }
   }
   function saveFavorites(list) {
-    try { localStorage.setItem(FAV_KEY, JSON.stringify(list.slice(0, 24))); } catch (e) {}
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) {}
   }
   function isFavorite(c) {
     return loadFavorites().some((f) => sameCity(f, c));
@@ -929,6 +947,10 @@
     const previous = list.slice();
     const previousPack = cache.get(cityKey(c));
     const removing = list.some((f) => sameCity(f, c));
+    if (!removing && list.length >= 24) {
+      notify(t('weather.savedPlacesLimit', 'My Sky holds 24 saved places. Remove a place before adding another.'), 'error');
+      return list;
+    }
     if (removing) {
       list = list.filter((f) => !sameCity(f, c));
     } else {
@@ -1539,7 +1561,7 @@
   function loadAqiDetail(pack) {
     if (!pack || !pack.city || !dataApi || typeof dataApi.fetchJson !== 'function') return Promise.resolve(null);
     // Cache a successful detailed response even if a region omits optional fields.
-    if (pack.air && pack.air._detailFetchedAt) return Promise.resolve(pack);
+    if (pack.air && Date.now() - (pack.air._detailFetchedAt || 0) < REFRESH_MS) return Promise.resolve(pack);
     const key = cityKey(pack.city);
     if (aqiDetailInflight.has(key)) return aqiDetailInflight.get(key);
     const fields = AQI_DETAIL_FIELDS.join(',');
@@ -1549,11 +1571,13 @@
       + '&hourly=us_aqi,european_aqi&forecast_hours=24&timezone=auto';
     const request = dataApi.fetchJson(url).then(function (detail) {
       if (!detail || !detail.current) return null;
-      const oldAir = pack.air || {};
+      const latest = cache.get(key) || pack;
+      if (latest.air && latest.air._detailFetchedAt > (pack.air && pack.air._detailFetchedAt || 0)) return latest;
+      const oldAir = latest.air || {};
       const current = Object.assign({}, oldAir.current || {}, detail.current);
-      pack.air = Object.assign({}, oldAir, detail, { current: current, _detailFetchedAt: Date.now() });
-      cache.set(key, pack);
-      return pack;
+      latest.air = Object.assign({}, oldAir, detail, { current: current, _detailFetchedAt: Date.now() });
+      cache.set(key, latest);
+      return latest;
     }).catch(function () {
       return null;
     }).finally(function () {
@@ -1576,6 +1600,7 @@
     const candidates = [];
     for (let i = 0; i < times.length; i++) {
       const at = stampToMs(times[i], timeZone);
+      if (values[i] == null || values[i] === '') continue;
       const value = Number(values[i]);
       if (!Number.isFinite(at) || !Number.isFinite(value) || at < now - 45 * 60 * 1000 || at > now + 24 * 60 * 60 * 1000) continue;
       candidates.push({ time: times[i], at: at, value: value });
@@ -2983,9 +3008,11 @@
     const quiet = !!opts.quiet;
     const viewLoad = opts.reason === 'view';
     if (viewLoad) setViewLoading(true);
-    if (opts.reason === 'manual' || opts.reason === 'manual-detail') {
-      greetingVisitSeed = null;
-      updateGreeting();
+    if (opts.reason === 'manual-detail' && openCity && openCity.city) {
+      const city = openCity.city;
+      setRefreshBusy(true);
+      try { return await cityRefreshApi.refresh(city); }
+      finally { setRefreshBusy(false); }
     }
     const gen = ++refreshGen;
 
@@ -3018,6 +3045,12 @@
       const featured = horizonExpanded ? MAJOR : MAJOR.filter((c) => HORIZON_PREVIEW_SLUGS.has(c.slug));
       featured.forEach((c) => { if (!seen.has(cityKey(c))) cities.push(c); });
     }
+    const visibleCity = openCity && openCity.city || (weatherMode === 'my-sky' && getGreetingSourceCity());
+    const cityWork = force && visibleCity ? cityRefreshApi.refresh(visibleCity) : Promise.resolve(null);
+    if (force && visibleCity) {
+      const index = cities.findIndex(function (city) { return sameCity(city, visibleCity); });
+      if (index >= 0) cities.splice(index, 1);
+    }
     // Mode changes and boot only request places without a usable recent forecast.
     if (!force) {
       for (let i = cities.length - 1; i >= 0; i--) {
@@ -3026,6 +3059,7 @@
       }
     }
     if (!cities.length) {
+      await cityWork;
       setRefreshBusy(false);
       if (shellEl) shellEl.removeAttribute('aria-busy');
       if (viewLoad) setViewLoading(false);
@@ -3054,6 +3088,7 @@
           quiet: quiet,
           forceFetch: !!force
         });
+        await cityWork;
         if (gen !== refreshGen) return;
         lastListFetch = Date.now();
         const sort = document.getElementById('weatherSort');
@@ -3613,7 +3648,7 @@
         fresh._enriching = false;
         // Keep alerts from pre-enrich pack (enrich path does not re-fetch them)
         if (Array.isArray(pack.alerts)) fresh.alerts = pack.alerts;
-        else if (openCity && Array.isArray(openCity.alerts)) fresh.alerts = openCity.alerts;
+        else if (openCity && sameCity(openCity.city, pack.city) && Array.isArray(openCity.alerts)) fresh.alerts = openCity.alerts;
         cache.set(enrichKey, fresh);
         // Gate on intent, not on `.open`: an instant Open-Meteo response can land while the
         // enter animation is still deferring that class, and skipping the re-render here left
@@ -3633,7 +3668,7 @@
       }).catch(function () {
         pack._enriching = false;
         pack.enrichmentError = true;
-        openDetail(pack);
+        if (openCity && sameCity(openCity.city, pack.city) && isDetailShowingOrOpening()) openDetail(pack);
       });
     }
   }
@@ -4775,6 +4810,7 @@
   }
 
   function closeDetail() {
+    if (openCity && cityRefreshApi) cityRefreshApi.cancel(openCity.city);
     if (navigationApi) navigationApi.close("detail");
     if (!detailEl) return;
     const returnFocus = detailReturnFocus;

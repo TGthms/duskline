@@ -34,7 +34,8 @@
     "weather.update": "Update",
     "weather.offline": "Offline · Showing saved forecasts",
     "weather.sunUnavailable": "Sun times unavailable",
-    "weather.settings": "Settings"
+    "weather.settings": "Settings",
+    "weather.savedPlacesLimit": "My Sky holds 24 saved places. Remove a place before adding another."
   },
   "es": {
     "weather.undo": "Deshacer",
@@ -68,7 +69,8 @@
     "weather.update": "Actualizar",
     "weather.offline": "Sin conexión · Mostrando previsiones guardadas",
     "weather.sunUnavailable": "Horas solares no disponibles",
-    "weather.settings": "Ajustes"
+    "weather.settings": "Ajustes",
+    "weather.savedPlacesLimit": "My Sky admite 24 lugares. Elimina uno antes de añadir otro."
   },
   "fr": {
     "weather.undo": "Annuler",
@@ -102,7 +104,8 @@
     "weather.update": "Mettre à jour",
     "weather.offline": "Hors ligne · Affichage des prévisions enregistrées",
     "weather.sunUnavailable": "Horaires du soleil indisponibles",
-    "weather.settings": "Réglages"
+    "weather.settings": "Réglages",
+    "weather.savedPlacesLimit": "My Sky peut enregistrer 24 lieux. Supprimez-en un avant d’en ajouter un autre."
   },
   "de": {
     "weather.undo": "Rückgängig",
@@ -136,7 +139,8 @@
     "weather.update": "Aktualisieren",
     "weather.offline": "Offline · Gespeicherte Vorhersagen werden angezeigt",
     "weather.sunUnavailable": "Sonnenzeiten nicht verfügbar",
-    "weather.settings": "Einstellungen"
+    "weather.settings": "Einstellungen",
+    "weather.savedPlacesLimit": "My Sky speichert 24 Orte. Entferne einen, bevor du einen weiteren hinzufügst."
   },
   "it": {
     "weather.undo": "Annulla",
@@ -170,7 +174,8 @@
     "weather.update": "Aggiorna",
     "weather.offline": "Offline · Previsioni salvate",
     "weather.sunUnavailable": "Orari del sole non disponibili",
-    "weather.settings": "Impostazioni"
+    "weather.settings": "Impostazioni",
+    "weather.savedPlacesLimit": "My Sky contiene 24 luoghi. Rimuovine uno prima di aggiungerne un altro."
   },
   "pt-BR": {
     "weather.undo": "Desfazer",
@@ -204,7 +209,8 @@
     "weather.update": "Atualizar",
     "weather.offline": "Offline · Exibindo previsões salvas",
     "weather.sunUnavailable": "Horários do sol indisponíveis",
-    "weather.settings": "Configurações"
+    "weather.settings": "Configurações",
+    "weather.savedPlacesLimit": "My Sky comporta 24 lugares. Remova um antes de adicionar outro."
   },
   "pt-PT": {
     "weather.undo": "Anular",
@@ -238,7 +244,8 @@
     "weather.update": "Atualizar",
     "weather.offline": "Offline · A mostrar previsões guardadas",
     "weather.sunUnavailable": "Horários do sol indisponíveis",
-    "weather.settings": "Definições"
+    "weather.settings": "Definições",
+    "weather.savedPlacesLimit": "My Sky guarda 24 locais. Remova um antes de adicionar outro."
   },
   "nl": {
     "weather.undo": "Ongedaan maken",
@@ -272,7 +279,8 @@
     "weather.update": "Bijwerken",
     "weather.offline": "Offline · Opgeslagen voorspellingen worden getoond",
     "weather.sunUnavailable": "Zonnetijden niet beschikbaar",
-    "weather.settings": "Instellingen"
+    "weather.settings": "Instellingen",
+    "weather.savedPlacesLimit": "My Sky bewaart 24 plaatsen. Verwijder een plaats voordat je een nieuwe toevoegt."
   },
   "da": {
     "weather.undo": "Fortryd",
@@ -306,7 +314,8 @@
     "weather.update": "Opdater",
     "weather.offline": "Offline · Viser gemte vejrudsigter",
     "weather.sunUnavailable": "Soltider er ikke tilgængelige",
-    "weather.settings": "Indstillinger"
+    "weather.settings": "Indstillinger",
+    "weather.savedPlacesLimit": "My Sky kan gemme 24 steder. Fjern et sted, før du tilføjer et nyt."
   },
   "sv": {
     "weather.undo": "Ångra",
@@ -340,7 +349,8 @@
     "weather.update": "Uppdatera",
     "weather.offline": "Offline · Visar sparade prognoser",
     "weather.sunUnavailable": "Soltider inte tillgängliga",
-    "weather.settings": "Inställningar"
+    "weather.settings": "Inställningar",
+    "weather.savedPlacesLimit": "My Sky rymmer 24 platser. Ta bort en innan du lägger till en ny."
   },
   "nb": {
     "weather.undo": "Angre",
@@ -374,7 +384,8 @@
     "weather.update": "Oppdater",
     "weather.offline": "Frakoblet · Viser lagrede værmeldinger",
     "weather.sunUnavailable": "Soltider utilgjengelige",
-    "weather.settings": "Innstillinger"
+    "weather.settings": "Innstillinger",
+    "weather.savedPlacesLimit": "My Sky har plass til 24 steder. Fjern ett før du legger til et nytt."
   },
   "fi": {
     "weather.undo": "Kumoa",
@@ -408,7 +419,8 @@
     "weather.update": "Päivitä",
     "weather.offline": "Offline · Näytetään tallennetut ennusteet",
     "weather.sunUnavailable": "Auringon ajat eivät ole saatavilla",
-    "weather.settings": "Asetukset"
+    "weather.settings": "Asetukset",
+    "weather.savedPlacesLimit": "My Sky tallentaa 24 paikkaa. Poista yksi ennen uuden lisäämistä."
   },
   "pl": {
     "weather.undo": "Cofnij",
@@ -442,7 +454,8 @@
     "weather.update": "Aktualizuj",
     "weather.offline": "Offline · Wyświetlane są zapisane prognozy",
     "weather.sunUnavailable": "Godziny słoneczne niedostępne",
-    "weather.settings": "Ustawienia"
+    "weather.settings": "Ustawienia",
+    "weather.savedPlacesLimit": "My Sky mieści 24 miejsca. Usuń jedno, zanim dodasz kolejne."
   },
   "cs": {
     "weather.undo": "Zpět",
@@ -476,7 +489,8 @@
     "weather.update": "Aktualizovat",
     "weather.offline": "Offline · Zobrazují se uložené předpovědi",
     "weather.sunUnavailable": "Časy slunce nejsou dostupné",
-    "weather.settings": "Nastavení"
+    "weather.settings": "Nastavení",
+    "weather.savedPlacesLimit": "My Sky pojme 24 míst. Před přidáním dalšího jedno odeberte."
   },
   "hu": {
     "weather.undo": "Visszavonás",
@@ -510,7 +524,8 @@
     "weather.update": "Frissítés",
     "weather.offline": "Offline · Mentett előrejelzések láthatók",
     "weather.sunUnavailable": "Napadatok nem érhetők el",
-    "weather.settings": "Beállítások"
+    "weather.settings": "Beállítások",
+    "weather.savedPlacesLimit": "A My Sky 24 helyet tárol. Új hely hozzáadása előtt távolíts el egyet."
   },
   "ro": {
     "weather.undo": "Anulează",
@@ -544,7 +559,8 @@
     "weather.update": "Actualizează",
     "weather.offline": "Offline · Se afișează prognozele salvate",
     "weather.sunUnavailable": "Orele soarelui nu sunt disponibile",
-    "weather.settings": "Setări"
+    "weather.settings": "Setări",
+    "weather.savedPlacesLimit": "My Sky poate salva 24 de locuri. Șterge unul înainte să adaugi altul."
   },
   "el": {
     "weather.undo": "Αναίρεση",
@@ -578,7 +594,8 @@
     "weather.update": "Ενημέρωση",
     "weather.offline": "Εκτός σύνδεσης · Εμφάνιση αποθηκευμένων προγνώσεων",
     "weather.sunUnavailable": "Οι ώρες του ήλιου δεν είναι διαθέσιμες",
-    "weather.settings": "Ρυθμίσεις"
+    "weather.settings": "Ρυθμίσεις",
+    "weather.savedPlacesLimit": "Το My Sky αποθηκεύει 24 μέρη. Αφαιρέστε ένα πριν προσθέσετε άλλο."
   },
   "tr": {
     "weather.undo": "Geri al",
@@ -612,7 +629,8 @@
     "weather.update": "Güncelle",
     "weather.offline": "Çevrimdışı · Kayıtlı tahminler gösteriliyor",
     "weather.sunUnavailable": "Güneş saatleri kullanılamıyor",
-    "weather.settings": "Ayarlar"
+    "weather.settings": "Ayarlar",
+    "weather.savedPlacesLimit": "My Sky 24 yer kaydeder. Yeni bir yer eklemeden önce birini kaldırın."
   },
   "ru": {
     "weather.undo": "Отменить",
@@ -646,7 +664,8 @@
     "weather.update": "Обновить",
     "weather.offline": "Офлайн · Показаны сохранённые прогнозы",
     "weather.sunUnavailable": "Время восхода и заката недоступно",
-    "weather.settings": "Настройки"
+    "weather.settings": "Настройки",
+    "weather.savedPlacesLimit": "My Sky сохраняет 24 места. Удалите одно, прежде чем добавить новое."
   },
   "uk": {
     "weather.undo": "Скасувати",
@@ -680,7 +699,8 @@
     "weather.update": "Оновити",
     "weather.offline": "Офлайн · Показано збережені прогнози",
     "weather.sunUnavailable": "Час сходу та заходу сонця недоступний",
-    "weather.settings": "Налаштування"
+    "weather.settings": "Налаштування",
+    "weather.savedPlacesLimit": "My Sky зберігає 24 місця. Видаліть одне, перш ніж додати нове."
   },
   "ar": {
     "weather.undo": "تراجع",
@@ -714,7 +734,8 @@
     "weather.update": "تحديث",
     "weather.offline": "دون اتصال · تُعرض توقعات محفوظة",
     "weather.sunUnavailable": "أوقات الشمس غير متاحة",
-    "weather.settings": "الإعدادات"
+    "weather.settings": "الإعدادات",
+    "weather.savedPlacesLimit": "يحفظ My Sky 24 مكانًا. أزل مكانًا قبل إضافة آخر."
   },
   "he": {
     "weather.undo": "ביטול",
@@ -748,7 +769,8 @@
     "weather.update": "עדכון",
     "weather.offline": "לא מקוון · מוצגות תחזיות שמורות",
     "weather.sunUnavailable": "זמני השמש אינם זמינים",
-    "weather.settings": "הגדרות"
+    "weather.settings": "הגדרות",
+    "weather.savedPlacesLimit": "My Sky שומר 24 מקומות. יש להסיר מקום לפני הוספת מקום נוסף."
   },
   "hi": {
     "weather.undo": "पूर्ववत करें",
@@ -782,7 +804,8 @@
     "weather.update": "अपडेट करें",
     "weather.offline": "ऑफ़लाइन · सहेजे गए पूर्वानुमान दिखाए जा रहे हैं",
     "weather.sunUnavailable": "सूर्योदय और सूर्यास्त का समय उपलब्ध नहीं है",
-    "weather.settings": "सेटिंग्स"
+    "weather.settings": "सेटिंग्स",
+    "weather.savedPlacesLimit": "My Sky में 24 जगहें सहेजी जा सकती हैं। नई जगह जोड़ने से पहले एक हटाएँ।"
   },
   "th": {
     "weather.undo": "เลิกทำ",
@@ -816,7 +839,8 @@
     "weather.update": "อัปเดต",
     "weather.offline": "ออฟไลน์ · กำลังแสดงพยากรณ์ที่บันทึกไว้",
     "weather.sunUnavailable": "ไม่สามารถดูเวลาพระอาทิตย์ได้",
-    "weather.settings": "การตั้งค่า"
+    "weather.settings": "การตั้งค่า",
+    "weather.savedPlacesLimit": "My Sky บันทึกได้ 24 สถานที่ ลบหนึ่งแห่งก่อนเพิ่มสถานที่ใหม่"
   },
   "vi": {
     "weather.undo": "Hoàn tác",
@@ -850,7 +874,8 @@
     "weather.update": "Cập nhật",
     "weather.offline": "Ngoại tuyến · Đang hiển thị dự báo đã lưu",
     "weather.sunUnavailable": "Không có giờ mặt trời",
-    "weather.settings": "Cài đặt"
+    "weather.settings": "Cài đặt",
+    "weather.savedPlacesLimit": "My Sky lưu được 24 địa điểm. Hãy xóa một địa điểm trước khi thêm địa điểm khác."
   },
   "id": {
     "weather.undo": "Urungkan",
@@ -884,7 +909,8 @@
     "weather.update": "Perbarui",
     "weather.offline": "Offline · Menampilkan prakiraan tersimpan",
     "weather.sunUnavailable": "Waktu matahari tidak tersedia",
-    "weather.settings": "Pengaturan"
+    "weather.settings": "Pengaturan",
+    "weather.savedPlacesLimit": "My Sky menyimpan 24 tempat. Hapus satu sebelum menambahkan tempat lain."
   },
   "ja": {
     "weather.undo": "元に戻す",
@@ -918,7 +944,8 @@
     "weather.update": "更新",
     "weather.offline": "オフライン · 保存済みの予報を表示中",
     "weather.sunUnavailable": "日の出・日の入り時刻を取得できません",
-    "weather.settings": "設定"
+    "weather.settings": "設定",
+    "weather.savedPlacesLimit": "My Skyには24か所保存できます。別の場所を追加する前に1か所削除してください。"
   },
   "ko": {
     "weather.undo": "실행 취소",
@@ -952,7 +979,8 @@
     "weather.update": "업데이트",
     "weather.offline": "오프라인 · 저장된 예보 표시 중",
     "weather.sunUnavailable": "일출·일몰 시간을 사용할 수 없습니다",
-    "weather.settings": "설정"
+    "weather.settings": "설정",
+    "weather.savedPlacesLimit": "My Sky에는 24개 장소를 저장할 수 있습니다. 새 장소를 추가하기 전에 하나를 삭제하세요."
   },
   "zh": {
     "weather.undo": "撤销",
@@ -986,7 +1014,8 @@
     "weather.update": "更新",
     "weather.offline": "离线 · 正在显示已保存的预报",
     "weather.sunUnavailable": "无法获取日出日落时间",
-    "weather.settings": "设置"
+    "weather.settings": "设置",
+    "weather.savedPlacesLimit": "My Sky 可保存24个地点。添加新地点前请移除一个。"
   },
   "zh-TW": {
     "weather.undo": "復原",
@@ -1020,7 +1049,8 @@
     "weather.update": "更新",
     "weather.offline": "離線 · 正在顯示已儲存的預報",
     "weather.sunUnavailable": "無法取得日出日落時間",
-    "weather.settings": "設定"
+    "weather.settings": "設定",
+    "weather.savedPlacesLimit": "My Sky 可儲存24個地點。新增地點前請移除一個。"
   }
 };
   Object.keys(rows).forEach(function (code) {

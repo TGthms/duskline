@@ -18,6 +18,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `network-policy.js` | Provider retry timing and cancellable backoff |
 | `haptics.js` | Vibration API delegation; trusted iOS label taps with non-rendered native switches in Shadow DOM |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
+| `city-refresh.js` | Cancellable full-city refresh ownership (`W.factories.cityRefresh`) |
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
 | `navigation.js` | Browser history for city details and forecast sheets |
 | `product.js` | Personal dashboard and Horizon filtering/sorting controls |

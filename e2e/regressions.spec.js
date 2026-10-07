@@ -2037,3 +2037,29 @@ test('haptic off disables all vibration feedback', async ({ page }) => {
   await page.locator('#weatherDetailFav').click();
   expect(await page.evaluate(() => window.__vibrations.length)).toBe(before);
 });
+
+test('city refresh updates a searched city outside the current list and forces its alerts',async ({page})=>{
+  await stubWeather(page,null);
+  let generation=1, checks=0;
+  await page.route('https://api.open-meteo.com/v1/forecast?**',route=>route.fulfill({json:body(false,Date.now(),generation)}));
+  await page.route('**/api/international-alerts?**',route=>{checks++;return route.fulfill({json:{availability:'available',alerts:[],truncated:false}});});
+  await page.goto('/?lat=48.85&lon=2.35&name=Paris&country=France&cc=FR');
+  await expect(page.locator('.weather-detail-temp')).toHaveText('70°');
+  await expect.poll(()=>checks).toBeGreaterThan(0);
+  const before=checks;generation=10;
+  await page.locator('#weatherDetailRefresh').click();
+  await expect(page.locator('.weather-detail-temp')).toHaveText('86°');
+  await expect.poll(()=>checks).toBeGreaterThan(before);
+});
+
+test('a slow air-quality response does not hold up current weather',async ({page})=>{
+  await stubWeather(page,null);
+  let release;
+  const pending=new Promise(r=>{release=r;});
+  await page.route('https://air-quality-api.open-meteo.com/**',async route=>{await pending;await route.fulfill({json:{current:{us_aqi:90}}});});
+  await page.goto('/?city=tokyo');
+  await expect(page.locator('.weather-detail-temp')).not.toHaveText('—');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  release();
+  await expect(page.locator('[data-sheet="aqi"] .weather-mod-value')).toHaveText('90');
+});

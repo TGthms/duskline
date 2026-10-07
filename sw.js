@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v69';
+const CACHE = 'duskline-shell-v70';
 const SHELL = [
   './',
   './index.html',
@@ -56,6 +56,7 @@ const SHELL = [
   './src/js/features/weather/network-policy.js',
   './src/js/features/weather/haptics.js',
   './src/js/features/weather/data.js',
+  './src/js/features/weather/city-refresh.js',
   './src/js/features/weather/snapshots.js',
   './src/js/features/weather/navigation.js',
   './src/js/features/weather/product.js',
@@ -71,7 +72,7 @@ function navigationResponse(response) {
     status: response.status, statusText: response.statusText, headers: response.headers
   });
 }
-const LOCALES = 'duskline-locales-v69';
+const LOCALES = 'duskline-locales-v70';
 const LOCALE_LIMIT = 8; // Four recently used languages, weather + legal packs.
 function isLocale(url) {
   return /\/src\/js\/data\/(?:weather-packs|legal\/packs)\/[a-zA-Z-]+\.json$/.test(url.pathname);

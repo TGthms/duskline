@@ -403,27 +403,46 @@
       return pack;
     }
 
+    // Optional air-quality enrichment never blocks the weather response.
+    const airEpochs = new Map();
+    function startAir(cities, signal) {
+      const epochs = cities.map(function (city) {
+        const key = cityKey(city), epoch = (airEpochs.get(key) || 0) + 1;
+        airEpochs.set(key, epoch); return epoch;
+      });
+      const url = AIR + '?latitude=' + cities.map(c=>c.lat).join(',') + '&longitude=' + cities.map(c=>c.lon).join(',') + '&current=us_aqi,pm2_5,pm10,european_aqi&timezone=auto';
+      const promise = fetchJson(url, signal).catch(function () { return null; });
+      return function (packs) {
+        const ready = promise.then(function (raw) {
+          if (!raw || signal && signal.aborted) return;
+          const readings = Array.isArray(raw) ? raw : [raw];
+          packs.forEach(function (pack, index) {
+            const key = cityKey(cities[index]);
+            if (!pack || !pack.weather || airEpochs.get(key) !== epochs[index] || !readings[index]) return;
+            pack.air = readings[index];
+            const latest = cache.get(key);
+            if (latest && latest.weather) {
+              if (latest.air && latest.air._detailFetchedAt) return;
+              latest.air = readings[index]; cache.set(key, latest);
+              if (typeof deps.onCityLoaded === 'function') deps.onCityLoaded(cities[index], latest);
+            }
+          });
+        });
+        packs.forEach(function (pack) { if (pack) pack._airReady = ready; });
+        return ready;
+      };
+    }
+
     async function loadOpenMeteoCity(c, signal, light) {
       const wUrl = FORECAST + '?latitude=' + c.lat + '&longitude=' + c.lon + '&'
         + (light ? FORECAST_Q_LIST : FORECAST_Q);
-      const aUrl = AIR + '?latitude=' + c.lat + '&longitude=' + c.lon + '&current=us_aqi,pm2_5,pm10,european_aqi&timezone=auto';
-
+      const attachAir = startAir([c], signal);
       async function once() {
-        const pair = await Promise.all([
-          fetchJson(wUrl, signal),
-          fetchJson(aUrl, signal).catch(function () { return null; })
-        ]);
-        return {
-          weather: pair[0],
-          air: pair[1],
-          fetchedAt: Date.now(),
-          city: c,
-          source: 'open-meteo',
-          /* A light pack is missing everything the detail view needs (hourly, sunrise, UV,
-             precipitation sums), so it advertises that it wants enriching. */
-          needsEnrich: !!light,
-          light: !!light
-        };
+        const weather = await fetchJson(wUrl, signal);
+        const pack = {weather:weather, air:null, fetchedAt:Date.now(), city:c,
+          source:'open-meteo', needsEnrich:!!light, light:!!light};
+        attachAir([pack]);
+        return pack;
       }
 
       try {
@@ -500,11 +519,7 @@
                   row[name] = v;
                   continue;
                 }
-                if (name === 'temperature_2m_max' && Number.isFinite(Number(v))) {
-                  row[name] = Math.max(Number(row[name]), Number(v));
-                } else if (name === 'temperature_2m_min' && Number.isFinite(Number(v))) {
-                  row[name] = Math.min(Number(row[name]), Number(v));
-                }
+                // The first provider owns valid values; enrichment only fills gaps.
               }
             }
           }
@@ -562,6 +577,7 @@
         }
 
         if (!pack.air && om.air) pack.air = om.air;
+        if (om._airReady) pack._airReady = om._airReady;
         pack.source = pack.source === 'nws' || pack.source === 'nws+om' ? 'nws+om' : pack.source;
         pack.needsEnrich = false;
         pack.enrichmentError = false;
@@ -677,24 +693,18 @@
       const lons = cities.map(function (c) { return c.lon; }).join(',');
       const wUrl = FORECAST + '?latitude=' + lats + '&longitude=' + lons + '&'
         + (light ? FORECAST_Q_LIST : FORECAST_Q);
-      const aUrl = AIR + '?latitude=' + lats + '&longitude=' + lons + '&current=us_aqi,pm2_5,pm10,european_aqi&timezone=auto';
-      const pair = await Promise.all([
-        fetchJson(wUrl, signal),
-        fetchJson(aUrl, signal).catch(function () { return null; })
-      ]);
-      const weatherRaw = pair[0];
-      const airRaw = pair[1];
+      const attachAir = startAir(cities, signal);
+      const weatherRaw = await fetchJson(wUrl, signal);
       const weatherList = Array.isArray(weatherRaw) ? weatherRaw : [weatherRaw];
-      const airList = airRaw == null ? [] : (Array.isArray(airRaw) ? airRaw : [airRaw]);
       const now = Date.now();
-      return cities.map(function (c, i) {
+      const packs = cities.map(function (c, i) {
         const weather = weatherList[i];
         if (!weather || !weather.current) {
           return { error: true, city: c, fetchedAt: 0 };
         }
         return {
           weather: weather,
-          air: airList[i] || null,
+          air: null,
           fetchedAt: now,
           city: c,
           source: 'open-meteo',
@@ -702,6 +712,8 @@
           light: !!light
         };
       });
+      attachAir(packs);
+      return packs;
     }
 
     async function loadMany(cities, opts) {
@@ -762,9 +774,19 @@
                 packs = await loadCityBatchOm(slice, signal, true);
               } else {
                 packs = [];
-                for (let j = 0; j < slice.length; j++) {
-                  packs.push(await loadOpenMeteoCity(slice[j], signal, true));
-                }
+                let cursor = 0;
+                packs = new Array(slice.length);
+                await Promise.all(Array.from({length: Math.min(3, slice.length)}, async function () {
+                  while (cursor < slice.length && !(signal && signal.aborted)) {
+                    const j = cursor++;
+                    const pack = await loadOpenMeteoCity(slice[j], signal, true);
+                    const idx = sliceIdx[j], previous = cache.get(cityKey(cities[idx]));
+                    packs[j] = pack && pack.weather ? pack : previous && previous.weather ? Object.assign({}, previous, {stored:true}) : pack;
+                    out[idx] = packs[j];
+                    cache.set(cityKey(cities[idx]), packs[j]);
+                    onCityLoaded(cities[idx], packs[j]);
+                  }
+                }));
               }
             }
             for (let j = 0; j < packs.length; j++) {

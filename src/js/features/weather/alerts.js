@@ -652,7 +652,7 @@
           pending.foreground = true;
           global.DusklineLoading.run(function () { return pending.promise; },t('weather.alertsLoading','Checking public alerts…')).catch(function () {});
         }
-        return;
+        return pending.promise;
       }
       if (options && options.force && !pack._alertsLoading) { pack.alertsFetchedAt = 0; pack.alertsErrorAt = 0; }
       if (options && options.retryFailed && pack.alertsError && !pack._alertsLoading) pack.alertsErrorAt = 0;
@@ -665,7 +665,7 @@
         pack._alertsLoading = true;
         pack.alertsError = false;
         patchDetailAlerts(pack);
-        loadInternationalAlerts(pack.city,options && options.force).then(function (payload) {
+        return loadInternationalAlerts(pack.city,options && options.force).then(function (payload) {
           applyInternationalAlerts(pack, payload);
           patchDetailAlerts(pack);
           scheduleListPaintFromAlerts(pack);
@@ -674,7 +674,6 @@
           patchDetailAlerts(pack);
           scheduleListPaintFromAlerts(pack);
         });
-        return;
       }
       if (!needsAlertFetch(pack)) return;
       pack._alertsLoading = true;
@@ -683,7 +682,7 @@
       const city = pack.city;
       const lat = roundCoord(city.lat);
       const lon = roundCoord(city.lon);
-      loadNwsAlerts(lat, lon, null).then(function (alerts) {
+      return loadNwsAlerts(lat, lon, null).then(function (alerts) {
         applyAlertsToPack(pack, alerts || []);
         // Surgical DOM update only — full openDetail() was wiping open <details>
         patchDetailAlerts(pack);

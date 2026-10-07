@@ -61,3 +61,11 @@ test('Open-Meteo enrichment fills missing NWS current temperature and condition 
   assert.ok(Math.abs(preserved.weather.current.temperature_2m - 20) < 0.01);
   assert.equal(preserved.weather.current.weather_code, 0);
 });
+test('daily provider precedence fills gaps without inventing a wider temperature envelope',async()=>{
+  const data=createDataModule();
+  const pack={city:{name:'Boston'},weather:{current:{},daily:{time:['2026-10-06'],temperature_2m_max:[22],temperature_2m_min:[12]},hourly:{}}};
+  const om={weather:{current:{},daily:{time:['2026-10-06','2026-10-07'],temperature_2m_max:[25,23],temperature_2m_min:[9,10]},hourly:{}}};
+  const result=await data.enrichWithOpenMeteo(pack,null,om);
+  assert.deepEqual(Array.from(result.weather.daily.temperature_2m_max),[22,23]);
+  assert.deepEqual(Array.from(result.weather.daily.temperature_2m_min),[12,10]);
+});
