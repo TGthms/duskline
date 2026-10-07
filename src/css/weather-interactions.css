@@ -80,3 +80,17 @@ body.duskline .weather-chart { font-family: var(--ff-body); }
   body.duskline .weather-mode-switch { flex-basis: 98px; }
   body.duskline .weather-mode-switch button { font-size: 11px; }
 }
+
+.weather-manage-places { margin-inline-start:auto; border:0; padding:8px 0; background:transparent; color:inherit; font:inherit; font-size:12px; text-decoration:underline; text-underline-offset:3px; min-height:44px; cursor:pointer; }
+.weather-manage-places[hidden] { display:none; }
+.wx-insight-reveal {animation:wx-insight-reveal .18s ease both;}
+@keyframes wx-insight-reveal {from{opacity:.65}to{opacity:1}}
+html[data-motion-effective="off"] .wx-insight-reveal,html[data-motion-effective="reduced"] .wx-insight-reveal {animation:none;}
+.weather-chart text {font-family:var(--ff-body);font-size:11px;}
+.weather-place-order-row .weather-ui-icon {width:18px;height:18px;}
+.weather-place-order-row span {min-width:0;overflow-wrap:anywhere;}
+
+.weather-home-plan {display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;}
+.weather-home-plan span {font-size:12px;flex-basis:100%;}
+.weather-home-plan strong {font-weight:600;}
+.weather-home-plan small {font-size:13px;}

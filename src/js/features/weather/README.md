@@ -10,6 +10,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 |------|------|
 | `ns.js` | Page gate + `window.DusklineWeather` factory registry |
 | `aqi-math.js` | Pure US and European AQI band and scale helpers |
+| `planning.js` | Pure hourly rain-window planning (`W.planning`) |
 | `sky.js` | Sky / ambient FX (`W.factories.sky`) |
 | `charts.js` | Daily bars + hourly/sun charts (`W.factories.charts`) |
 | `forecast-sheet.js` | Shared date-aware temperature/precipitation renderer (`W.factories.forecastSheet`) |

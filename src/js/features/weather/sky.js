@@ -464,7 +464,12 @@
       const sky = document.getElementById('weatherPageSky');
       if (!sky) return;
       const now = new Date();
-      const hour = now.getHours() + now.getMinutes() / 60;
+      let hour = now.getHours() + now.getMinutes() / 60;
+      const primary=typeof deps.primary === 'function' ? deps.primary() : null;
+      try { if(primary && primary.timeZone) {
+        const parts=new Intl.DateTimeFormat('en-US',{timeZone:primary.timeZone,hour:'numeric',minute:'numeric',hourCycle:'h23'}).formatToParts(now);
+        hour=Number(parts.find(p=>p.type==='hour').value)+Number(parts.find(p=>p.type==='minute').value)/60;
+      }} catch(error) { /* A malformed saved timezone falls back to device time. */ }
       const theme = (document.documentElement.getAttribute('data-theme') || 'default');
       const period = hour < 5 ? 'night' : hour < 8 ? 'dawn' : hour < 17 ? 'day' : hour < 20 ? 'dusk' : 'night';
       // Keep the page canvas stable while a city loads. Weather remains visible on

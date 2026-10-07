@@ -228,7 +228,7 @@ test('Change My Sky city follows My Location by default, can use a saved city, a
   await expect(page.getByRole('radio', { name: /Boston, Massachusetts, United States/i })).toHaveAttribute('aria-checked', 'true');
 });
 
-test('greetings reroll on refresh, re-entry, and mode changes', async ({ page }) => {
+test('greetings stay stable on refresh and update on re-entry and mode changes', async ({ page }) => {
   await page.addInitScript(() => {
     let next = Number(sessionStorage.getItem('__duskline_greeting_seed') || '100');
     Object.defineProperty(window.crypto, 'getRandomValues', {
@@ -251,7 +251,7 @@ test('greetings reroll on refresh, re-entry, and mode changes', async ({ page })
   const firstCopy = fullCopy;
 
   await page.locator('#weatherRefresh').click();
-  await expect(heading).not.toHaveAttribute('aria-label', firstCopy);
+  await expect(heading).toHaveAttribute('aria-label', firstCopy);
   fullCopy = await heading.getAttribute('aria-label');
   await expect(visibleCopy).toHaveText(fullCopy, { timeout: 5000 });
   const refreshedCopy = fullCopy;

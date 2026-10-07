@@ -287,7 +287,9 @@
   let openCity = null;
   let weatherMode = null;
   let weatherModeExplicit = false;
-  let horizonExpanded = !!readWeatherModePreference();
+  let horizonExpanded = (function () {try{return localStorage.getItem('duskline-horizon-expanded')==='true';}catch(error){return false;}})();
+  const modeScroll = {horizon:0,'my-sky':0};
+  let greetingAnimated = false;
   let selectedGreetingCity = null;
   let selectingGreetingPlace = false;
   let greetingBoundaryTimer = 0;
@@ -466,6 +468,7 @@
 
   var skyApi = (W.factories.sky && W.factories.sky({
     motionLevel: motionLevel,
+    primary: function () { const city=weatherMode === 'my-sky' && getGreetingSourceCity();return city ? {timeZone:city.tz || cityTimeZone(cache.get(cityKey(city)),city)} : null; },
     staticListFx: typeof WEATHER_STATIC_LIST_FX !== 'undefined' ? WEATHER_STATIC_LIST_FX : true
   })) || {};
   var applySky = skyApi.applySky;
@@ -553,7 +556,7 @@
         if (openCity && sameCity(openCity.city, pack.city) && isDetailShowingOrOpening()) {
           const options = history.state && history.state.duskline && history.state.duskline.sheet;
           openDetail(pack);
-          if (sheetIntentOpen && options && !['units','primary'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
+          if (sheetIntentOpen && options && !['units','primary','places'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
         }
       },
       failed: function () { notify(t('weather.refreshToRetry','Refresh to try again'), 'error'); }
@@ -585,11 +588,13 @@
           if (mapApi) mapApi.updatePlaces(getMapPlaces());
         },
         onAddCity: function (city) {
-          if (!city || isFavorite(city)) return;
+          if (!city || isFavorite(city)) return false;
           toggleFavorite(city);
+          if (!isFavorite(city)) return false;
           refreshListsFromCache({ force: true, skipAmbient: true });
           if (mapApi && mapApi.isOpen()) mapApi.updatePlaces(getMapPlaces());
           if (weatherMode === 'my-sky') mapMySkyRefreshPending = true;
+          return true;
         },
         onOpen: function () {
           if (navigationApi) navigationApi.map();
@@ -986,6 +991,7 @@
       if (previousPack) cache.set(cityKey(c),previousPack);
       refreshListsFromCache({force:true});
       if (openCity && sameCity(openCity.city,c)) syncDetailFav(c);
+      if(sheetIntentOpen && activeSheetKind === 'places') openPlacesSheet();
     } : null);
     const snapshot = removing ? savedSnapshotFor(c) : null;
     if (removing && !sameCity(c, myLocationCity) && !sameCity(c, selectedGreetingCity)
@@ -1163,19 +1169,23 @@
     if (mode !== 'horizon' && mode !== 'my-sky') return;
     const changed = weatherMode !== mode;
     if (weatherMode !== mode) greetingVisitSeed = null;
+    if(changed && weatherMode) modeScroll[weatherMode]=window.scrollY;
     weatherMode = mode;
     document.body.dataset.weatherView = mode;
-    if (mode === 'horizon' && remember) horizonExpanded = true;
     if (remember) {
       weatherModeExplicit = true;
       try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
     }
     if (changed && !skipLoad) setViewLoading(true);
     refreshListsFromCache({ force: true });
+    if(changed) requestAnimationFrame(function () {window.scrollTo({top:modeScroll[mode] || 0,behavior:'auto'});});
     if (!skipLoad) refresh(false, { quiet: true, reason: 'view' });
     else if (changed) setViewLoading(false);
   }
 
+  function rememberHorizon() {
+    try {localStorage.setItem('duskline-horizon-expanded',String(horizonExpanded));}catch(error){}
+  }
   function requestWeatherMode(mode) {
     if (mode !== 'horizon' && mode !== 'my-sky' || mode === weatherMode) return;
     if (finishViewLoading) { finishViewLoading();finishViewLoading = null; }
@@ -1274,7 +1284,7 @@
     if (code === 82 || code === 65) return weatherIcon('cloud.heavyrain', c);
     if (code === 80 || code === 61) return weatherIcon('cloud.drizzle', c);
     if ((code >= 81 && code <= 82) || code === 63) return weatherIcon('cloud.rain', c);
-    if (code === 66 || code === 67 || code === 56 || code === 57) return weatherIcon('cloud.snow', c);
+    if (code === 66 || code === 67 || code === 56 || code === 57) return weatherIcon('duskline-freezing-rain', c);
     if (code === 55) return weatherIcon('cloud.rain', c);
     if (code >= 51 && code < 60) return weatherIcon('cloud.drizzle', c);
     if (code === 45 || code === 48) return weatherIcon('cloud.fog', c);
@@ -1286,7 +1296,7 @@
 
   function modLabelIcon(key) {
     const map = {
-      aqi: 'wind', feels: 'thermometer', humidity: 'drop', wind: 'wind',
+      aqi: 'duskline-aqi', feels: 'thermometer', humidity: 'drop', wind: 'wind',
       uv: 'sun.max', vis: 'eye', pressure: 'barometer', precip: 'umbrella',
       sun: 'sunrise', conditions: 'cloud.sun'
     };
@@ -1772,6 +1782,12 @@
       element.style.setProperty('--wx-sky-2',palette.bottom);
       element.dataset.weatherPalette = palette.name;
     },
+    plan: function (pack) {
+      const zone=cityTimeZone(pack,pack.city),rain=W.planning.rainWindow(pack.weather.hourly || {},time=>stampToMs(time,zone),Date.now());
+      if(!rain) return '';
+      const clock=new Intl.DateTimeFormat(localeTag(),{weekday:'short',hour:'numeric',minute:'2-digit',timeZone:zone});
+      return '<span>'+escapeHtml(t('weather.chanceOfPrecipitation','Chance of precipitation'))+'</span><strong>'+Math.round(rain.peak)+'% · '+escapeHtml(clock.format(rain.start))+' – '+escapeHtml(clock.format(rain.end))+'</strong>'+(rain.amount == null?'':'<small>'+escapeHtml(fmtPrecip(rain.amount))+'</small>');
+    },
     dailyPreview: function (pack) { return chartsApi.dailyBarsHtml(pack.weather.daily || {}, {
       timeZone:cityTimeZone(pack,pack.city), hourly:pack.weather.hourly, limit:5, skipToday:true
     }); },
@@ -1784,9 +1800,9 @@
       if (!pack || !pack.weather || !openCity || !sameCity(openCity.city,city) || sheetIntentOpen) return;
       openSheet('day',pack,{dayKey:date,hourIndex:hourIndex});
     },
-    icon: condIcon, repaint: function () { horizonExpanded = true; refreshListsFromCache({force:true}); refresh(false,{quiet:true,reason:'view'}); },
+    icon: condIcon, repaint: function () { horizonExpanded = true; rememberHorizon(); refreshListsFromCache({force:true}); refresh(false,{quiet:true,reason:'view'}); },
     expanded: function () { return horizonExpanded; },
-    collapseHorizon: function () { horizonExpanded = false; refreshListsFromCache({force:true}); },
+    collapseHorizon: function () { horizonExpanded = false; rememberHorizon(); refreshListsFromCache({force:true}); },
     enrich: function (city) { return dataApi.loadCity(city,null,{enrich:true}); },
     open: openMapCity
   });
@@ -1808,7 +1824,8 @@
       }).catch(function () { closeDetail(); }); }
     },
     openSheet: function (kind, options) {
-      if (kind === 'units') openUnitsSheet();
+      if (kind === 'places') openPlacesSheet();
+      else if (kind === 'units') openUnitsSheet();
       else if (kind === 'primary') openGreetingLocationSheet();
       else if (openCity && openCity.weather) openSheet(kind,openCity,options);
     }
@@ -1989,7 +2006,7 @@
     main.className = 'weather-row-main';
     main.innerHTML = `
         <div class="weather-row-city"><span class="weather-row-city-name">${escapeHtml(displayCityName(c))}</span></div>
-        <div class="weather-row-meta">${escapeHtml(localTime)}${displayAdmin1(c) ? ' · ' + escapeHtml(displayAdmin1(c)) : ''}</div>
+        <div class="weather-row-meta">${escapeHtml(localTime)}${[displayAdmin1(c),c.country].filter((part,index,all)=>part && part.toLowerCase() !== displayCityName(c).toLowerCase() && all.indexOf(part)===index).map(part=>' · '+escapeHtml(part)).join('')}</div>
         ${statusLine}
         ${rowInsight ? '<div class="weather-row-insight">' + escapeHtml(rowInsight) + '</div>' : ''}
         ${stampLine ? '<div class="weather-row-updated">' + escapeHtml(stampLine) + '</div>' : ''}`;
@@ -2618,6 +2635,7 @@
     });
   }
   function typeGreeting(fullText, animate) {
+    if (animate) {animate = !greetingAnimated;greetingAnimated=true;}
     if (!greetingTitleEl || !greetingTextEl) return;
     if (fullText === lastGreetingText) return;
     const wasTyping = greetingTitleEl.hasAttribute('data-typing');
@@ -2696,22 +2714,9 @@
       element.removeAttribute('data-typing');
       return;
     }
-    const direction = getComputedStyle(element).direction;
-    const chars = typeof Intl.Segmenter === 'function'
-      ? Array.from(new Intl.Segmenter(lang(), { granularity: 'grapheme' }).segment(text), part => part.segment)
-      : Array.from(text);
-    const glyphs = prepareTypewriter(element, text, direction);
-    let shown = 0;
-    const interval = Math.min(520, Math.max(280, chars.length * 7)) / Math.max(1, chars.length);
-    element.setAttribute('data-typing', 'true');
-    const tick = function () {
-      if (generation !== detailInsightGeneration) return;
-      revealTypewriterGlyph(glyphs[shown]);
-      shown++;
-      if (shown < chars.length) detailInsightTimer = window.setTimeout(tick, interval);
-      else { element.textContent = text; element.removeAttribute('data-typing'); }
-    };
-    detailInsightTimer = window.setTimeout(tick, interval);
+    element.textContent = text;
+    element.classList.add('wx-insight-reveal');
+    detailInsightTimer=window.setTimeout(function () {element.classList.remove('wx-insight-reveal');},180);
   }
   function scheduleGreetingBoundary(timeZone, parts, pack) {
     window.clearTimeout(greetingBoundaryTimer);
@@ -2773,23 +2778,7 @@
           .replace('{greeting}', greet).replace('{place}', displayCityName(selectedCity));
       } else {
         animateGreeting = true;
-        const place = displayCityName(selectedCity);
-        const temp = fmtTemp(cur.temperature_2m);
-        const weatherPhrase = greetingWeatherPhrase(cur.weather_code);
-        const isSpecial = greetingWeatherUsesSpecialTemplate(cur.weather_code);
-        const template = isSpecial
-          ? t('weather.greeting.mySkySpecialForecast', '{greeting} — {place}: {temp}, {condition}.')
-          : t('weather.greeting.mySkyForecast', '{greeting} — {temp} and {condition} in {place}.');
-        fullText = template
-          .replace('{greeting}', greet).replace('{temp}', temp)
-          .replace('{condition}', weatherPhrase).replace('{place}', place);
-        const insight = greetingWeatherInsight(pack, timeZone, parts, selectionSeed);
-        if (insight) {
-          const dict = typeof getI18nDict === 'function' ? getI18nDict(lang()) : null;
-          const separator = dict && typeof dict['weather.greeting.insightSeparator'] === 'string'
-            ? dict['weather.greeting.insightSeparator'] : ' ';
-          fullText += separator + insight;
-        }
+        fullText = greet+' · '+displayCityName(selectedCity);
       }
     } else {
       const horizonFallbacks = [
@@ -2813,6 +2802,8 @@
         + t('weather.greeting.horizon' + choice, horizonFallbacks[choice]);
     }
     typeGreeting(fullText, animateGreeting);
+    const manage=document.getElementById('weatherManagePlaces');
+    if(manage) manage.hidden=weatherMode !== 'my-sky' || !greetingSourceOptions().length;
     if (greetingPlaceBtn) {
       const hasGreetingSources = greetingSourceOptions().length > 0;
       greetingPlaceBtn.hidden = weatherMode !== 'my-sky';
@@ -5019,8 +5010,8 @@
     }
   }
 
-  function openUnitsSheet() {
-    if (navigationApi) navigationApi.sheet("units");
+  function openUnitsSheet(options) {
+    if (navigationApi && !(options && options.skipNavigation)) navigationApi.sheet("units");
     activeSheetKind = 'units';
     if (!sheetEl || !sheetBody) return;
     closeSuggest();
@@ -5202,6 +5193,10 @@
           });
           row.append(button);
         });
+        const remove=document.createElement('button');remove.type='button';remove.innerHTML=weatherIcon('x','weather-ui-icon');
+        remove.setAttribute('aria-label',t('weather.removeFromMySky','Remove from My Sky')+': '+displayCityName(city));
+        remove.addEventListener('click',function () {toggleFavorite(city);paintOrder();refreshListsFromCache({force:true});});
+        row.append(remove);
         order.append(row);
       });
       if (myLocationCity) {
@@ -5219,6 +5214,33 @@
     paintOrder(); sheetBody.append(order);
     presentSheet();
   }
+
+  function openPlacesSheet() {
+    openUnitsSheet({skipNavigation:true});
+    if(navigationApi) navigationApi.sheet('places');
+    activeSheetKind='places';
+    const manager=sheetBody.querySelector('.weather-place-order');
+    sheetBody.replaceChildren();
+    setSheetTitle('<div class="wx-sheet-head" data-sheet-title><div class="wx-sheet-icon">'+weatherIcon('map-pin','weather-mod-icon')+'</div><h3 class="wx-sheet-title">'+escapeHtml(t('weather.rearrange','Rearrange saved places'))+'</h3></div>');
+    const primary=document.createElement('button');primary.type='button';primary.className='weather-place-clear';
+    primary.textContent=t('weather.primaryLocationTitle','Primary city')+' · '+displayCityName(getGreetingSourceCity() || {});
+    primary.addEventListener('click',openGreetingLocationSheet);sheetBody.append(primary);
+    if(selectedGreetingCity && !isFavorite(selectedGreetingCity)) {
+      const clear=document.createElement('button');clear.type='button';clear.className='weather-place-clear';
+      const city=selectedGreetingCity;
+      clear.textContent=t('weather.removeFromMySky','Remove from My Sky')+': '+displayCityName(city);
+      clear.addEventListener('click',function () {
+        selectedGreetingCity=null;try{localStorage.removeItem(SELECTED_CITY_KEY);localStorage.removeItem(GREETING_SOURCE_KEY);}catch(error){}
+        refreshListsFromCache({force:true});openPlacesSheet();
+        notify(t('weather.notice.removed','Removed from My Sky'),null,function () {saveGreetingCity(city);saveGreetingSource('city:'+cityKey(city));refreshListsFromCache({force:true});if(sheetIntentOpen && activeSheetKind==='places') openPlacesSheet();});
+      });sheetBody.append(clear);
+    }
+    if(manager) sheetBody.append(manager);
+    const choose=document.createElement('button');choose.type='button';choose.className='weather-place-clear';choose.textContent=t('weather.search','Search city');
+    choose.addEventListener('click',function () {closeSheet({afterClose:startGreetingPlaceSelection});});sheetBody.append(choose);
+  }
+  const managePlaces=document.getElementById('weatherManagePlaces');
+  if(managePlaces) managePlaces.addEventListener('click',openPlacesSheet);
 
   function openGreetingLocationSheet() {
     if (navigationApi) navigationApi.sheet("primary");
@@ -5486,7 +5508,7 @@
   if (startSearchBtn) startSearchBtn.addEventListener('click', startGreetingPlaceSelection);
   if (startLocateBtn && locateBtn) startLocateBtn.addEventListener('click', function () { locateBtn.click(); });
   if (moreBtn) moreBtn.addEventListener('click', function () {
-    horizonExpanded = true;
+    horizonExpanded = true; rememberHorizon();
     refreshListsFromCache({ force: true });
     refresh(false, { quiet: true, reason: 'expand' });
   });

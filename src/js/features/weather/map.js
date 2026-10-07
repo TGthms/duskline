@@ -436,8 +436,7 @@
         hideContextMenu(false);
         if (action === 'view' && typeof deps.onSelectCity === 'function') deps.onSelectCity(city);
         else if (action === 'add' && !contextIsSaved && typeof deps.onAddCity === 'function') {
-          deps.onAddCity(city);
-          showMapFeedback(t('weather.notice.added', 'Added to My Sky'));
+          if (deps.onAddCity(city) !== false) showMapFeedback(t('weather.notice.added', 'Added to My Sky'));
         }
       });
     }

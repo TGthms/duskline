@@ -71,8 +71,10 @@
         const label = [deps.clock(times[i],pack),condLabel((hourly.weather_code || [])[i]),fmtTemp((hourly.temperature_2m || [])[i]),probability == null ? '' : Math.round(probability)+'%'].filter(Boolean).join(', ');
         hours += `<button type="button" class="weather-hourly-item" data-home-hour="${i}" aria-label="${esc(label)}"><div>${esc(deps.shortClock ? deps.shortClock(times[i],pack) : deps.clock(times[i],pack))}</div><div class="ic">${deps.icon((hourly.weather_code || [])[i],deps.night(pack,times[i]))}</div><div class="t">${esc(fmtTemp((hourly.temperature_2m || [])[i]))}</div><div class="p">${(hourly.precipitation_probability || [])[i] != null ? Math.round(hourly.precipitation_probability[i])+'%' : '—'}</div></button>`;
       }
-      const insight = deps.insight(pack);
+      const plan=deps.plan ? deps.plan(pack) : '';
+      const insight = plan ? '' : deps.insight(pack);
       const daily = deps.dailyPreview ? deps.dailyPreview(pack) : '';
+      const previewCount=(daily.match(/data-day-date=/g) || []).length;
       const markup = `
         <div class="weather-home-current">
           <div class="weather-home-reading"><h3>${esc(deps.cityName(city))}</h3><span class="weather-home-temperature">${esc(fmtTemp(current.temperature_2m))}</span><p class="weather-home-feels">${esc(t('weather.feelsLike','Feels like'))} ${esc(fmtTemp(current.apparent_temperature))}</p></div>
@@ -82,12 +84,12 @@
             <p class="weather-home-range"><span>${esc(t('weather.high','H'))}:${esc(fmtTemp(range.hi))}</span><span>${esc(t('weather.low','L'))}:${esc(fmtTemp(range.lo))}</span></p>
           </div>
         </div>
-        ${insight ? `<p class="weather-home-insight">${esc(insight)}</p>` : ''}
+        ${plan ? `<div class="weather-home-insight weather-home-plan">${plan}</div>` : insight ? `<p class="weather-home-insight">${esc(insight)}</p>` : ''}
         <div class="weather-home-outlook"><div class="weather-home-hours">
           <span class="weather-home-caption">${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}</span>
           <div class="weather-hourly" tabindex="0" role="group" aria-label="${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}">${hours || `<div class="weather-hourly-loading">${!pack.stored && !pack.enrichmentError ? '<span class="loader" aria-hidden="true"></span>' : ''}<span>${esc(pack.stored || pack.enrichmentError ? t('weather.hourlyUnavailable','Hourly forecast unavailable') : t('weather.loadingForecast','Loading forecast…'))}</span></div>`}</div>
         </div>
-        ${daily ? `<div class="weather-home-daily"><span class="weather-home-caption">${esc(t('weather.daily','10-Day Forecast'))}</span>${daily}</div>` : ''}</div>
+        ${daily ? `<div class="weather-home-daily"><span class="weather-home-caption">${esc(t('weather.dailyN','{n}-Day Forecast').replace('{n}',String(previewCount)))}</span>${daily}</div>` : ''}</div>
         <div class="weather-home-meta"><small>${esc(deps.updated(pack))}</small><div class="weather-home-actions"><button type="button" data-home-open>${esc(t('weather.viewForecast','View forecast'))}</button></div></div>`;
       const paintKey = cityKey(city)+'|'+markup;
       if (paintedMarkup === paintKey) return;

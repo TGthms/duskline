@@ -2136,3 +2136,26 @@ test('map search is keyboard-operable and opens the matching place actions',asyn
  await expect(page.locator('#weatherMapContextView')).toContainText('Paris');
  await expect(page.locator('#weatherMapContextMenu')).toBeVisible();
 });
+
+test('My Sky exposes a focused place manager with removal and primary selection',async ({page})=>{
+ await page.addInitScript(()=>{
+  localStorage.setItem('duskline-weather-mode','my-sky');
+  localStorage.setItem('duskline-weather-favorites',JSON.stringify([{name:'Tokyo',lat:35.6762,lon:139.6503,country:'Japan',country_code:'JP'},{name:'London',lat:51.5074,lon:-.1278,country:'United Kingdom',country_code:'GB'}]));
+ });
+ await stubWeather(page,null);await page.goto('/');
+ await page.locator('#weatherManagePlaces').click();
+ await expect(page.locator('#weatherSheetTitle')).toHaveText('Rearrange saved places');
+ await expect(page.locator('.weather-motion-select')).toHaveCount(0);
+ await page.getByRole('button',{name:'Remove from My Sky: London',exact:true}).click();
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('duskline-weather-favorites')).map(c=>c.name))).toEqual(['Tokyo']);
+ await page.getByRole('button',{name:/Primary city/}).click();
+ await expect(page.locator('.weather-greeting-source')).toHaveCount(1);
+});
+
+test('returning to Horizon preserves its preview scope instead of expanding the catalog',async ({page})=>{
+ await stubWeather(page,null);await page.goto('/');
+ await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
+ await page.locator('[data-weather-mode="my-sky"]').click();await page.locator('[data-weather-mode="horizon"]').click();
+ await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
+ await page.reload();await expect(page.locator('#weatherList .weather-row')).toHaveCount(6);
+});

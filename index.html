@@ -94,6 +94,8 @@
 <body class="page-tools duskline">
 <!-- Lucide icons from lucide-static v1.48.0; see assets/icons/LUCIDE-LICENSE.txt for the complete ISC and Feather MIT notices. -->
 <svg class="duskline-icon-sprite" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false">
+<symbol id="duskline-aqi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h8M3 12h5M3 16h8"/><circle cx="16" cy="7" r="1.5"/><circle cx="19" cy="12" r="2"/><circle cx="15" cy="17" r="1.5"/></symbol>
+<symbol id="duskline-freezing-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13a4 4 0 0 1 0-8 6 6 0 0 1 11-1 4 4 0 0 1 3 8H5M6 16l-1 3M10 16l-1 3M17 15v7M14 17l6 3M14 20l6-3"/></symbol>
 <symbol id="lucide-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" />
   <path d="M19 12H5" /></symbol>
   <symbol id="lucide-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></symbol>
@@ -285,6 +287,7 @@
     <div class="weather-status-row">
       <span id="weatherConnection" class="weather-connection" role="status" hidden></span>
       <p class="weather-updated" id="weatherUpdated" aria-live="polite"></p>
+      <button type="button" class="weather-manage-places" id="weatherManagePlaces" hidden data-i18n="weather.rearrange">Rearrange saved places</button>
 
     </div>
     <div class="weather-product-controls" id="weatherDiscovery">
@@ -460,6 +463,7 @@
 <script src="src/js/duskline-controls.js" defer></script>
 <script src="src/js/features/weather/ns.js" defer></script>
 <script src="src/js/features/weather/aqi-math.js" defer></script>
+<script src="src/js/features/weather/planning.js" defer></script>
 <script src="src/js/features/weather/sky.js" defer></script>
 <script src="src/js/features/weather/charts.js" defer></script>
 <script src="src/js/features/weather/forecast-sheet.js" defer></script>
