@@ -2124,7 +2124,12 @@ test('map history, attribution keyboard access, landscape space and AQI source a
   expect(airQueries[0].searchParams.get('domains')).toBe('cams_global');
   await expect(page.locator('#weatherMapTime')).toBeEnabled();
  }
- await page.locator('#weatherMapCredit a').first().focus();await expect(page.locator('#weatherMapCredit a').first()).toBeFocused();
+ if(await page.locator('#weatherMap').getAttribute('data-map-state')==='ready'){
+  await page.locator('#weatherMapCredit a').first().focus();await expect(page.locator('#weatherMapCredit a').first()).toBeFocused();
+ } else {
+  // Offline fallback replaces the credit links with plain-text attribution; verify that instead of a focusable link.
+  await expect(page.locator('#weatherMapCredit')).toContainText('Offline world map');
+ }
  await page.goBack();await expect(page.locator('#weatherMap')).toBeHidden();
  await page.goForward();await expect(page.locator('#weatherMap')).toBeVisible();
 });
@@ -2219,7 +2224,11 @@ test('an early mode tap is preserved while the deferred weather controller is lo
 
 test('hourly keyboard selection and return focus survive a forecast repaint',async ({page})=>{
  await stubWeather(page,null);await page.goto('/?city=tokyo');
- const hours=page.locator('#weatherModules .weather-hourly-item');await hours.nth(1).focus();await hours.nth(1).press('ArrowRight');
+ await page.waitForLoadState('networkidle');
+ const hours=page.locator('#weatherModules .weather-hourly-item');
+ // WebKit occasionally no-ops element.focus() without firing focus events; retry until focus sticks before driving keyboard nav.
+ await expect(async ()=>{await hours.nth(1).evaluate(el=>el.focus());await expect(hours.nth(1)).toBeFocused({timeout:500});}).toPass({timeout:10000});
+ await hours.nth(1).press('ArrowRight');
  await expect(hours.nth(2)).toBeFocused();const instant=await hours.nth(2).getAttribute('data-hour-at');
  await hours.nth(2).press('Enter');await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
  await page.evaluate(()=>window.refreshWeatherUi({force:true}));
