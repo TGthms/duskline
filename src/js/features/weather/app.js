@@ -629,7 +629,7 @@
           return true;
         },
         onOpen: function () {
-          if (navigationApi) navigationApi.map();
+          if (navigationApi && !mapNavigationSuspended) navigationApi.map();
           clearAutoRefresh();
           if (skyApi.pauseStormFx) skyApi.pauseStormFx(detailFx);
         },
@@ -4440,6 +4440,7 @@
     try {
       document.body.classList.remove('weather-detail-open');
       document.documentElement.classList.remove('weather-detail-open');
+      if (mapApi && mapApi.isOpen()) return;
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     } catch (e) {}
@@ -4500,15 +4501,11 @@
     // closeDetail already dismissed its sheet. A list-level sheet may have opened
     // during this exit transition; do not close that newer interaction here.
     ensureListTappable();
-    // Return to the map when the closed detail was opened from it.
-    if (detailReturnToMap && mapApi) {
-      const returnCity = detailReturnToMap;
-      detailReturnToMap = null;
-      mapApi.open({ initialCity: returnCity, places: getMapPlaces(), returnFocus: mapOpenBtn });
-    }
+    if (mapApi) mapApi.finishReturn();
   }
 
-  function closeDetail() {
+  function closeDetail(options) {
+    if (options && options.returnToMap === false) detailReturnToMap = null;
     if (openCity && cityRefreshApi) cityRefreshApi.cancel(openCity.city);
     if (navigationApi) navigationApi.close("detail");
     if (!detailEl) return;
@@ -4529,8 +4526,18 @@
 
     // Restore city list immediately — no solid-sky void under the fade.
     unlockDetailPage();
-    const returnRow = returnKey && shellEl && shellEl.querySelector('li[data-city-key="' + CSS.escape(returnKey) + '"] .weather-row');
-    restoreFocus(returnFocus && returnFocus.isConnected ? returnFocus : returnRow, searchEl);
+    const returnCity = detailReturnToMap;
+    detailReturnToMap = null;
+    if (returnCity && mapApi) {
+      // Put the map beneath the exiting detail in the same frame. Its ready
+      // renderer is reused, and no dashboard frame or history entry intervenes.
+      mapNavigationSuspended = true;
+      try { mapApi.open({initialCity:returnCity,places:getMapPlaces(),returnFocus:mapOpenBtn,immediate:true}); }
+      finally { mapNavigationSuspended = false; }
+    } else {
+      const returnRow = returnKey && shellEl && shellEl.querySelector('li[data-city-key="' + CSS.escape(returnKey) + '"] .weather-row');
+      restoreFocus(returnFocus && returnFocus.isConnected ? returnFocus : returnRow, searchEl);
+    }
 
     if (!isOpen) {
       finishDetailClose();

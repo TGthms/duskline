@@ -34,7 +34,10 @@
     var isOpen = false;
     var styleReady = false;
     var fallbackActive = false;
-    var tileErrors = 0;
+    var rendererReady = false;
+    var releaseTimer = 0;
+    var recoveryTimer = 0;
+    var recoveryAttempts = 0;
     var mapTimeZone = 'UTC';
     var selectedLayer = 'temperature';
     var selectedOffset = 0;
@@ -176,21 +179,20 @@
       renderFrame = 0;
       if (placesFrame) global.cancelAnimationFrame(placesFrame);
       placesFrame = 0;
-      citySourceSignature = '';
       longPressPointer = null;
       longPressStart = null;
       hideContextMenu(false);
       if (activeController) activeController.abort();
       activeController = null;
+      clearTimeout(recoveryTimer);
       if (map) {
-        try { lastCamera={center:map.getCenter().toArray(),zoom:map.getZoom()}; } catch (e) {}
-        try { map.remove(); } catch (e) { /* tolerate partially initialized maps */ }
-        map = null;
+        try { lastCamera={center:map.getCenter().toArray(),zoom:map.getZoom()}; map.stop(); } catch (e) {}
       }
-      rasterWeights = rasterCanvas = rasterContext = rasterImage = lastRaster = null;
+      if (!rendererReady) disposeRenderer();
+      else releaseTimer = setTimeout(function () { if (!isOpen) disposeRenderer(); }, 120000);
       document.removeEventListener('keydown', onDialogKeydown, true);
       if (root) {
-        root.classList.remove('is-open');
+        root.classList.remove('is-open', 'is-returning');
         root.setAttribute('aria-hidden', 'true');
         root.hidden = true;
         root.removeAttribute('aria-busy');
@@ -867,8 +869,8 @@
       syncTimeControl(grid);
       legendForLayer(selectedLayer);
       if(contextCity && contextMenu && !contextMenu.hidden) paintContextCity(contextCity,contextMenu.getAttribute('aria-busy') === 'true');
-      setStatus('', false);
-      setBusy(false);
+      if (rendererReady) { setStatus('', false); setBusy(false); }
+      else { setStatus(t('weather.mapLoading', 'Loading map…'), true, true); setBusy(true); }
     }
     function requestVisibleWeather() {
       if (!map || !styleReady || fallbackActive || !isOpen || document.visibilityState === 'hidden') return;
@@ -888,7 +890,7 @@
     }
     function queueVisibleWeather() {
       clearTimeout(moveTimer);
-      if (document.visibilityState === 'hidden') return;
+      if (!isOpen || document.visibilityState === 'hidden') return;
       moveTimer = setTimeout(requestVisibleWeather, 520);
     }
     function installWeatherRaster(library) {
@@ -1124,10 +1126,33 @@
       });
       if (typeof ResizeObserver === 'function') new ResizeObserver(fitFallback).observe(fallbackHost);
     }
-    function useFallback(reason) {
+    function disposeRenderer() {
+      clearTimeout(releaseTimer);
+      if (map) { try { map.remove(); } catch (error) {} }
+      map = null;
+      styleReady = rendererReady = false;
+      citySourceSignature = '';
+      rasterWeights = rasterCanvas = rasterContext = rasterImage = lastRaster = null;
+    }
+    function recoverMap() {
+      clearTimeout(recoveryTimer);
+      if (!isOpen || !fallbackActive || document.visibilityState === 'hidden' || global.navigator.onLine === false) return;
+      recoveryAttempts++;
+      fallbackActive = false;
+      root.classList.remove('is-map-ready');
+      root.dataset.mapState = 'loading';
+      loadCityMap(currentMapOptions || {initialCity:selectedCity()});
+    }
+    function scheduleRecovery() {
+      clearTimeout(recoveryTimer);
+      if (!isOpen || !fallbackActive || recoveryAttempts >= 2 || document.visibilityState === 'hidden' || global.navigator.onLine === false) return;
+      const delay = recoveryAttempts === 0 ? 3000 : 12000;
+      recoveryTimer = setTimeout(recoverMap, delay);
+    }
+    function useFallback(reason, retryable = true) {
       if (!isOpen || fallbackActive) return;
       fallbackActive = true;
-      if (root) {root.classList.remove('is-map-ready');root.dataset.mapState='fallback';}
+      root.classList.remove('is-map-ready');root.dataset.mapState='fallback';
       mapLoadGeneration++;
       clearTimeout(styleTimer);
       clearTimeout(requestTimer);
@@ -1135,31 +1160,22 @@
       activeController = null;
       if (renderFrame) global.cancelAnimationFrame(renderFrame);
       renderFrame = 0;
+      disposeRenderer();
       activeGrid = null;
-      rasterWeights = rasterCanvas = rasterContext = rasterImage = lastRaster = null;
-      selectedOffset = 0;
-      if (timeInput) { timeInput.disabled = true;timeInput.value = '0'; }
+      if (timeInput) timeInput.disabled = true;
       if (timeOutput) timeOutput.textContent = '';
-      if (map) {
-        try { map.remove(); } catch (e) {}
-        map = null;
-      }
       if (canvasHost) canvasHost.hidden = true;
-      if (fallbackHost) {
-        fallbackHost.hidden = false;
-        renderFallbackPlaces();
-      }
+      if (fallbackHost) { fallbackHost.hidden = false; renderFallbackPlaces(); }
       if (mapControls) mapControls.hidden = false;
       if(credit) delete credit.dataset.layerCredits;
       if (credit) credit.textContent = t('weather.mapOfflineCredit', 'Offline world map · Natural Earth · Geographic city coordinates');
       setBusy(false);
       setStatus(reason || t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'), true);
       legendForLayer(selectedLayer);
-      if (!activeGrid) setStatus(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'), true);
+      if (retryable) scheduleRecovery();
     }
     function loadCityMap(options) {
       currentMapOptions = options || {};
-      tileErrors = 0;
       const generation = ++mapLoadGeneration;
       clearTimeout(styleTimer);
       if (document.visibilityState === 'hidden') { deferredMapOptions = options || {}; return; }
@@ -1175,7 +1191,7 @@
       setStatus(t('weather.mapLoading', 'Loading map…'), true, true);
       setBusy(true);
       styleTimer = setTimeout(function () {
-        if (isOpen && generation === mapLoadGeneration && !root.classList.contains('is-map-ready')) useFallback();
+        if (isOpen && generation === mapLoadGeneration && !rendererReady) useFallback();
       },12000);
       loadMapLibrary().then(function (library) {
         if (!isOpen || generation !== mapLoadGeneration || fallbackActive) return;
@@ -1194,41 +1210,53 @@
           cooperativeGestures: false,
           canvasContextAttributes: { antialias: true, preserveDrawingBuffer: false }
         });
-        map.once('load', function () {
-          if (!isOpen || !map || generation !== mapLoadGeneration) return;
+        const instance = map;
+        let geographicLayers = [];
+        function revealGeography() {
+          if (map !== instance || !isOpen || !styleReady || rendererReady) return;
+          // One painted geographic tile is enough. Optional labels and other
+          // tiles can finish later, without replacing useful geography with the atlas.
+          if (geographicLayers.length && !instance.queryRenderedFeatures({layers:geographicLayers}).length) return;
+          rendererReady = true;
+          root.classList.add('is-map-ready');root.dataset.mapState='ready';
+          if (fallbackHost) fallbackHost.hidden=true;
+          clearTimeout(styleTimer);
+          instance.off('render',revealGeography);
+          if (activeGrid) { setStatus('',false);setBusy(false); }
+        }
+        instance.on('render',revealGeography);
+        instance.once('style.load', function () {
+          if (map !== instance || !isOpen) return;
           styleReady = true;
-          map.once('render',function () {
-            if (!isOpen || generation !== mapLoadGeneration) return;
-            root.classList.add('is-map-ready');root.dataset.mapState='ready';
-            if (fallbackHost) fallbackHost.hidden=true;
-            clearTimeout(styleTimer);
-          });
-          map.getCanvas().addEventListener('webglcontextlost',function (event) {event.preventDefault();useFallback();},{once:true});
-          map.triggerRepaint();
+          geographicLayers = (instance.getStyle().layers || []).filter(layer=>layer.source && ['fill','line','circle','fill-extrusion'].includes(layer.type)).map(layer=>layer.id);
           try {
             installWeatherRaster(library);
-            map.resize();
-            requestAnimationFrame(function () { if (map && generation === mapLoadGeneration) map.resize(); });
-          } catch (error) {
-            useFallback(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'));
-          }
+            instance.resize();
+            requestAnimationFrame(function () { if (map === instance && isOpen) instance.resize(); });
+            instance.triggerRepaint();
+          } catch (error) { useFallback(); }
         });
-        map.on('error', function (event) {
-          if (!isOpen || fallbackActive || generation !== mapLoadGeneration) return;
-          tileErrors++;
-          var sourceFailure = !!(event && (event.sourceId || event.source));
-          if (!styleReady && tileErrors >= 4) useFallback();
-          else if (styleReady && (sourceFailure || !global.navigator.onLine) && tileErrors >= 4) useFallback();
+        instance.getCanvas().addEventListener('webglcontextlost',function (event) {
+          event.preventDefault();
+          if (map !== instance) return;
+          if (isOpen) useFallback(); else disposeRenderer();
+        },{once:true});
+        instance.on('error', function (event) {
+          if (!isOpen || fallbackActive || map !== instance) return;
+          // Source/tile/glyph errors belong to the SDK's recovery. A single
+          // unavailable resource must not tear down an otherwise useful map.
+          if (!styleReady && !(event && (event.sourceId || event.source))) useFallback();
         });
-        map.on('moveend', queueVisibleWeather);
-      }).catch(function () {
+        instance.on('moveend', queueVisibleWeather);
+      }).catch(function (error) {
         if (!isOpen || generation !== mapLoadGeneration) return;
-        useFallback(t('weather.mapOffline', 'Detailed tiles unavailable. Showing the offline world map.'));
+        useFallback(undefined, !/WebGL|GPU|context/i.test(error && error.message || ''));
       });
     }
     if (typeof document.addEventListener === 'function') document.addEventListener('visibilitychange',function () {
-      if (!isOpen) return;
+      if (!isOpen) { if (document.visibilityState === 'hidden') disposeRenderer(); return; }
       if (document.visibilityState === 'hidden') {
+        clearTimeout(recoveryTimer);
         clearTimeout(moveTimer);clearTimeout(styleTimer);
         if (renderFrame) global.cancelAnimationFrame(renderFrame);
         renderFrame = 0;
@@ -1237,7 +1265,9 @@
       }
       if (deferredMapOptions) { loadCityMap(deferredMapOptions); return; }
       if (activeGrid) scheduleWeatherImage(activeGrid);
-      if (map && !styleReady) {
+      if (fallbackActive) { scheduleRecovery(); return; }
+      if (map) map.resize();
+      if (map && !rendererReady) {
         const generation = mapLoadGeneration;
         styleTimer = setTimeout(function () { if (isOpen && generation === mapLoadGeneration && !root.classList.contains('is-map-ready')) useFallback(); },12000);
       }
@@ -1250,16 +1280,22 @@
       if (typeof deps.getPlaces === 'function') places = deps.getPlaces() || [];
       if (options && Array.isArray(options.places)) places = options.places;
       isOpen = true;
-      styleReady = false;
+      clearTimeout(releaseTimer);
+      clearTimeout(recoveryTimer);
+      recoveryAttempts = 0;
       fallbackActive = false;
-      tileErrors = 0;
-      selectedOffset = 0;
-      activeGrid = null;
+      if (!rendererReady) {
+        activeGrid = null;
+        if (timeInput) timeInput.disabled = true;
+        if (timeOutput) timeOutput.textContent = '';
+      }
       returnFocus = options && options.returnFocus || document.activeElement;
       if (root.parentElement !== document.body) document.body.appendChild(root);
       root.hidden = false;
       root.setAttribute('aria-hidden', 'false');
-      root.classList.remove('is-map-ready');root.dataset.mapState='loading';
+      root.classList.toggle('is-map-ready', rendererReady);
+      root.classList.toggle('is-returning', !!(options && options.immediate));
+      root.dataset.mapState = rendererReady ? 'ready' : 'loading';
       root.classList.add('is-open');
       lockBackground();
       updatePlaces(places);
@@ -1271,7 +1307,14 @@
       }
       document.addEventListener('keydown', onDialogKeydown, true);
       setTimeout(function () { if (isOpen && closeButton) closeButton.focus({ preventScroll: true }); }, 0);
-      loadCityMap(options || {});
+      currentMapOptions = options || {};
+      if (rendererReady && map) {
+        if (fallbackHost) fallbackHost.hidden = true;
+        map.resize();map.triggerRepaint();
+        if (activeGrid && Date.now()-activeGrid.fetchedAt < 8*60*1000) applyGrid(activeGrid);
+        else { setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'),true,true);setBusy(true); }
+        requestVisibleWeather();
+      } else loadCityMap(options || {});
     }
     if (closeButton) closeButton.addEventListener('click', close);
     if (zoomInButton) zoomInButton.addEventListener('click', function () {
@@ -1317,18 +1360,12 @@
     });
     if (root) root.addEventListener('close', close);
     global.addEventListener('online', function () {
-      if (isOpen && fallbackActive) {
-        fallbackActive = false;
-        styleReady = false;
-        if (fallbackHost) fallbackHost.hidden = true;
-        if (canvasHost) canvasHost.hidden = false;
-        if (mapControls) mapControls.hidden = false;
-        loadCityMap(currentMapOptions || {initialCity:selectedCity()});
-      }
+      if (isOpen && fallbackActive) { recoveryAttempts = 0; recoverMap(); }
     });
     return {
       open: open,
       close: close,
+      finishReturn: function () { if (root) root.classList.remove('is-returning'); },
       updatePlaces: updatePlaces,
       isOpen: function () { return isOpen; },
       helpers: {

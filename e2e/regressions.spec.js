@@ -1956,6 +1956,8 @@ test.describe('native iOS tap feedback',()=>{
   });
   test('city-card foreground text receives one native tick and opens its forecast',async ({page})=>{
     await prepareIosNativeTaps(page,27);await stubWeather(page,null);await page.goto('/');
+    // Observe the settled row's switch; initial AQI/forecast enrichment can replace it.
+    await page.waitForLoadState('networkidle');
     const row=page.locator('#weatherList .weather-row').first();
     await expect(row.locator('.weather-row-hl')).toContainText('H:');await recordNativeTick(row);
     const name=await row.locator('.weather-row-city-name').textContent();
@@ -2263,4 +2265,105 @@ test('landscape My Sky keeps the current reading in view and all toolbar actions
  expect(await temperature.evaluate(el=>el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(390);
  for(const id of ['weatherMapOpen','weatherUnitsBtn','weatherLocate','weatherRefresh']) await expect(page.locator('#'+id)).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(844);
+});
+
+for(const motion of ['full','off']) test('returning from a map city keeps an opaque map behind the exit and reuses its renderer with '+motion,async ({page})=>{
+ await page.addInitScript(motion=>localStorage.setItem('duskline-motion',motion),motion);
+ await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');
+ await expect(page.locator('#weatherMapStatus')).toBeHidden();
+ await page.locator('[data-weather-layer="wind"]').click();await page.locator('#weatherMapTime').fill('2');
+ const canvas=page.locator('#weatherMapCanvas canvas');
+ await canvas.click({button:'right',position:{x:150,y:150}});
+ await expect(page.locator('#weatherMapContextView')).toBeVisible();await page.locator('#weatherMapContextView').click();
+ await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
+ await page.evaluate(()=>{
+  window.__returnFrames=[];window.__watchReturn=true;
+  const sample=()=>{if(!window.__watchReturn)return;const map=document.getElementById('weatherMap');window.__returnFrames.push({shown:!map.hidden,opacity:Number(getComputedStyle(map).opacity)});requestAnimationFrame(sample);};
+  document.getElementById('weatherDetailBack').addEventListener('click',()=>requestAnimationFrame(sample),{once:true});
+ });
+ await page.locator('#weatherDetailBack').click();
+ await expect(page.locator('#weatherDetail')).toBeHidden();await expect(page.locator('#weatherMap')).toBeVisible();
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ const frames=await page.evaluate(()=>{window.__watchReturn=false;return window.__returnFrames;});
+ expect(frames.length).toBeGreaterThan(0);expect(frames.every(frame=>frame.shown && frame.opacity===1)).toBe(true);
+ expect(await page.evaluate(()=>window.__mapCtorCount)).toBe(1);
+ await expect(page.locator('[data-weather-layer="wind"]')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('#weatherMapTime')).toHaveValue('2');
+ await expect(page.locator('html')).toHaveClass(/weather-map-open/);
+ expect(await page.evaluate(()=>history.state.duskline)).toMatchObject({map:true,city:null});
+ await page.goBack();await expect(page.locator('#weatherMap')).toBeHidden();
+ expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
+});
+
+test('isolated tile and glyph failures keep the ready map and weather layers alive',async ({page})=>{
+ await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');await expect(page.locator('#weatherMapTime')).toBeEnabled();
+ await page.evaluate(()=>{for(let i=0;i<6;i++)window.__mapForTest.fire('error',{error:new Error('One unavailable tile'),sourceId:'basemap'});window.__mapForTest.fire('error',{error:new Error('One unavailable glyph')});});
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');await expect(page.locator('#weatherMapFallback')).toBeHidden();
+ expect(await page.evaluate(()=>window.__mapCtorCount)).toBe(1);
+ await expect(page.locator('#weatherMapTime')).toBeEnabled();
+});
+
+test('geography and forecasts become usable before an unrelated map source finishes',async ({page})=>{
+ await instrumentMap(page);let release;const held=new Promise(resolve=>{release=resolve;});
+ await page.route('https://tiles.openfreemap.org/slow-source.json',async route=>{await held;await route.fulfill({json:{type:'FeatureCollection',features:[]}}).catch(()=>{});});
+ await page.route('https://tiles.openfreemap.org/styles/liberty',route=>route.fulfill({json:{version:8,sources:{land:{type:'geojson',data:{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[-120,10],[30,10],[30,70],[-120,70],[-120,10]]]}}]}},slow:{type:'geojson',data:'https://tiles.openfreemap.org/slow-source.json'}},layers:[{id:'background',type:'background',paint:{'background-color':'#102137'}},{id:'land',type:'fill',source:'land',paint:{'fill-color':'#657e61'}},{id:'unrelated',type:'line',source:'slow'}]}}));
+ try {
+  await page.goto('/');await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready',{timeout:10000});
+  await expect(page.locator('#weatherMapTime')).toBeEnabled();await expect(page.locator('#weatherMapStatus')).toBeHidden();
+  expect(await page.evaluate(()=>window.__mapForTest.loaded())).toBe(false);
+ } finally {release();}
+});
+
+test('a transient map style outage recovers in place without an online event or extra tap',async ({page})=>{
+ await instrumentMap(page);let styles=0;
+ await page.route('https://tiles.openfreemap.org/styles/liberty',route=>++styles===1 ? route.fulfill({status:503,body:'Temporarily unavailable'}) : route.fulfill({json:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ccddee'}}]}}));
+ await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','fallback');
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready',{timeout:10000});
+ await expect(page.locator('#weatherMapStatus')).toBeHidden();expect(styles).toBe(2);
+});
+
+test('map recovery is bounded and closing cancels queued recovery',async ({page})=>{
+ test.setTimeout(45000);await instrumentMap(page);let styles=0;
+ await page.route('https://tiles.openfreemap.org/styles/liberty',route=>{styles++;return route.fulfill({status:503,body:'Unavailable'});});
+ await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect.poll(()=>styles,{timeout:20000}).toBe(3);
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','fallback');
+ await page.waitForTimeout(3500);expect(styles).toBe(3);
+ await page.locator('#weatherMapClose').click();await page.locator('#weatherMapOpen').click();
+ await expect.poll(()=>styles).toBe(4);await page.locator('#weatherMapClose').click();
+ await page.waitForTimeout(3500);expect(styles).toBe(4);
+});
+
+for(const release of ['background','idle']) test('closed map renderers release resources on '+release,async ({page})=>{
+ await page.clock.install();await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');
+ await page.locator('#weatherMapClose').click();await expect(page.locator('#weatherMap')).toBeHidden();
+ await expect(page.locator('#weatherMapCanvas canvas')).toHaveCount(1);
+ if(release==='idle') await page.clock.fastForward(120001);
+ else await page.evaluate(()=>{
+  window.__visibilityForTest='hidden';Object.defineProperty(document,'visibilityState',{configurable:true,get(){return window.__visibilityForTest;}});document.dispatchEvent(new Event('visibilitychange'));
+ });
+ await expect(page.locator('#weatherMapCanvas canvas')).toHaveCount(0);
+ if(release==='background') await page.evaluate(()=>{window.__visibilityForTest='visible';document.dispatchEvent(new Event('visibilitychange'));});
+ await page.locator('#weatherMapOpen').click();await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');
+ expect(await page.evaluate(()=>window.__mapCtorCount)).toBe(2);
+});
+
+test('backgrounding defers map recovery without spending an attempt',async ({page})=>{
+ await page.clock.install();await instrumentMap(page);let styles=0;
+ await page.route('https://tiles.openfreemap.org/styles/liberty',route=>{styles++;return route.fulfill({status:503,body:'Unavailable'});});
+ await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','fallback');
+ async function visibility(value) {await page.evaluate(value=>{window.__visibilityForTest=value;Object.defineProperty(document,'visibilityState',{configurable:true,get(){return window.__visibilityForTest;}});document.dispatchEvent(new Event('visibilitychange'));},value);}
+ await visibility('hidden');await page.clock.fastForward(20000);expect(styles).toBe(1);
+ await visibility('visible');await page.clock.fastForward(3100);await expect.poll(()=>styles).toBe(2);
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','fallback');
+ await visibility('hidden');await page.clock.fastForward(20000);expect(styles).toBe(2);
+ await visibility('visible');await page.clock.fastForward(12100);await expect.poll(()=>styles).toBe(3);
+ await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','fallback');
+ await page.clock.fastForward(40000);expect(styles).toBe(3);
 });

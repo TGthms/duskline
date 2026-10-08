@@ -17,7 +17,7 @@ body.duskline .weather-detail:not(.wx-mods-light) .weather-mod {
 body.duskline .weather-hourly-item .p { font-size: 12px; opacity: 1; }
 body.duskline .weather-mod-label { opacity: 1; }
 body.duskline .weather-hourly, body.duskline .weather-hourly-loading {
-  box-sizing: border-box; min-height: 116px; height: auto;
+  box-sizing: border-box; min-height: 132px; height: auto;
 }
 body.duskline .weather-daily { gap: 0; width: 100%; max-width: 640px; margin-inline: auto; }
 body.duskline .weather-daily-row { min-height: 44px; padding-block: 5px; }

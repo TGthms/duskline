@@ -76,7 +76,7 @@
       if (next.map && deps.openMap && !deps.mapOpen()) deps.openMap();
       if (deps.sheetOpen()) deps.dismissSheet();
       const currentCity = deps.currentCity();
-      if (!next.city) { if (currentCity) deps.dismissDetail(); }
+      if (!next.city) { if (currentCity) deps.dismissDetail({returnToMap:!!next.map}); }
       else if (!currentCity || !deps.sameCity(currentCity,next.city)) deps.openCity(next.city);
       if (next.sheet) deps.openSheet(next.sheet.kind, next.sheet.options);
       applying = false;

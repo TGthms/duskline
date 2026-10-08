@@ -48,3 +48,13 @@ The user-reported target is **iOS 27.0.1, installed Home Screen PWA**. Desktop W
 6. Update from a prior installed worker; relaunch offline with saved forecasts and local fonts. Confirm long-lived resume checks and safe recovery when an update stalls.
 
 Production CI status, Cloudflare deployment gating and the actual deployment are external checks. Cloudflare Git-connected deployments must be gated equivalently to repository CI; GitHub Pages' successful-CI publishing cannot configure Cloudflare settings.
+
+## October 7 follow-up
+
+The map search bar and persistent “View weather here” button were removed at the user's request. Right-click/long-press place actions remain; keyboard users can open them with Enter, the context-menu key or Shift+F10 while the map is focused. The reclaimed row increases map space. Hourly strips fit their contents and allow internal horizontal scrolling only; the surrounding page still scrolls vertically. Loading placeholders reserve the same space as the loaded detail timeline.
+
+City Back restores an opaque map beneath the exiting detail in the same frame, preserving camera, layer and forecast-hour selection without adding a history entry. Ready map renderers are retained for up to two foreground minutes while closed; backgrounding releases them immediately. Startup installs weather layers at style readiness and reveals detailed geography after geographic features paint, without waiting for every optional source or label. Individual tile/glyph failures preserve the usable map. Retryable failures get two actual recovery attempts, after three and twelve seconds; backgrounding pauses recovery without spending an attempt, and close cancels it.
+
+Live OpenFreeMap geography, right-click city opening, direct return and final map dismissal were checked in the in-app browser. Browser fixtures separately verify partial-source loading, isolated errors, recovery limits, return-frame opacity, history, focus, hourly sizing and resource cleanup. Only the reviewed landscape-map baseline was updated for the requested UI removal. The user's prior test adjustments and visual tolerances were preserved. Physical iOS 27.0.1 installed-PWA acceptance remains required.
+
+Follow-up validation: 78 syntax checks and 100 unit tests passed; the complete Chromium suite passed 177 tests, including all 22 visual cases. The affected desktop/mobile WebKit suite passed 62 checks (two Chromium-only visual cases skipped). The focused native-feedback and background/recovery-budget regressions also passed separately in Chromium, desktop WebKit and mobile WebKit. The native-tick observer now waits for initial fixture enrichment to settle before attaching; its exact one-trusted-tick assertion remains intact.

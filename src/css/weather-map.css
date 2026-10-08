@@ -21,6 +21,7 @@
 }
 .weather-map-overlay[hidden] { display: none !important; }
 .weather-map-overlay.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
+.weather-map-overlay.is-returning { z-index:10049; transition:none; }
 .weather-map-panel {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -289,7 +290,7 @@ html[data-motion-effective="off"] .weather-map-overlay { transition: none; }
 
 .weather-map-status[hidden] { display: none; }
 
-.weather-map-canvas { opacity: 0; transition: opacity .18s ease; }
+.weather-map-canvas { opacity: 0; }
 .weather-map-overlay.is-map-ready .weather-map-canvas { opacity: 1; }
 /* Short screens retain every control and never overlap the legend with the map. */
 .weather-map-places-icon { display:none; }
