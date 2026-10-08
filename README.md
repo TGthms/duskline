@@ -23,7 +23,7 @@ duskline balances a quiet, atmospheric sky with the details that help you decide
 - **Current conditions, hourly detail, and a 10-day outlook** make it easy to move from “right now” to “what should I plan for?”
 - **Useful weather context** includes air quality, feels-like temperature, wind, humidity, UV, pressure, precipitation, and sun times.
 - **Saved places and direct links** make it simple to return to the forecasts that matter to you or share a city.
-- **Weather maps** layer temperature, precipitation chance, wind, and US AQI over a searchable global map, with a forecast-hour scrubber and a bundled geographic offline world map.
+- **Weather maps** layer temperature, precipitation chance, wind, and US AQI over a global map, with a forecast-hour scrubber and a bundled geographic offline world map.
 - **Public alerts use authoritative sources:** the National Weather Service for eligible U.S. places and official, rebroadcastable CAP feeds through IFRC Alert Hub for supported international places.
 - **A living sky** brings day, night, cloud, and precipitation conditions into the city detail view.
 - **30 interface languages** include Arabic and Hebrew, with right-to-left layouts.

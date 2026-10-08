@@ -750,7 +750,7 @@ button.weather-mod-label:focus-visible {
   overflow: hidden;
 }
 .weather-hourly {
-  display: flex; gap: 14px; overflow-x: auto;
+  display: flex; gap: 14px; overflow-x: auto; overflow-y: hidden;
   padding: 4px 2px 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;

@@ -2134,16 +2134,34 @@ test('map history, attribution keyboard access, landscape space and AQI source a
  await page.goForward();await expect(page.locator('#weatherMap')).toBeVisible();
 });
 
-test('map search is keyboard-operable and opens the matching place actions',async ({page})=>{
- await instrumentMap(page);
- await page.route('https://geocoding-api.open-meteo.com/**',route=>route.fulfill({json:{results:[{id:1,name:'Paris',latitude:48.85,longitude:2.35,country:'France',country_code:'FR',admin1:'Île-de-France',timezone:'Europe/Paris'}]}}));
- await page.goto('/');await page.locator('#weatherMapOpen').click();
+test('map omits persistent search and inspect controls but retains keyboard place actions',async ({page})=>{
+ await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
+ await expect(page.locator('#weatherMapSearch')).toHaveCount(0);
+ await expect(page.locator('#weatherMapInspect')).toHaveCount(0);
  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state',/ready|fallback/,{timeout:15000});
- await page.locator('#weatherMapSearch').fill('Paris');
- await expect(page.locator('#weatherMapSearchResults button')).toHaveCount(1);
- await page.locator('#weatherMapSearch').press('ArrowDown');await page.keyboard.press('Enter');
- await expect(page.locator('#weatherMapContextView')).toContainText('Paris');
+ const target=await page.locator('#weatherMapFallback').isVisible() ? page.locator('#weatherMapFallback') : page.locator('#weatherMapCanvas canvas');
+ await target.focus();await target.press('Enter');
  await expect(page.locator('#weatherMapContextMenu')).toBeVisible();
+ await expect(page.locator('#weatherMapContextView')).toBeVisible();
+});
+
+for(const width of [320,430,844,1440]) test('hourly timelines scroll horizontally without a vertical scroll area at '+width,async ({page})=>{
+ await page.setViewportSize({width,height:932});
+ await page.addInitScript(()=>{localStorage.setItem('duskline-weather-greeting-city',JSON.stringify({name:'Tokyo',lat:35.6762,lon:139.6503,country:'Japan',country_code:'JP'}));});
+ await stubWeather(page,null);await page.goto('/?city=tokyo');
+ const strip=page.locator('#weatherModules .weather-hourly');await expect(strip.locator('button').first()).toBeVisible();
+ await expect(strip).toHaveCSS('overflow-y','hidden');
+ const dimensions=await strip.evaluate(el=>({height:el.clientHeight,content:el.scrollHeight}));
+ expect(dimensions.content).toBeLessThanOrEqual(dimensions.height+1);
+ await strip.locator('button').first().focus();await strip.locator('button').first().press('End');
+ await expect(strip.locator('button').last()).toBeFocused();
+ expect(await strip.evaluate(el=>el.scrollTop)).toBe(0);
+ await page.locator('#weatherDetailBack').click();
+ await page.locator('[data-weather-mode="my-sky"]').click();
+ const home=page.locator('#weatherHome .weather-hourly');await expect(home.locator('button').first()).toBeVisible();
+ if(width<1024) await expect(home).toHaveCSS('overflow-y','hidden');
+ const homeDimensions=await home.evaluate(el=>({height:el.clientHeight,content:el.scrollHeight}));
+ expect(homeDimensions.content).toBeLessThanOrEqual(homeDimensions.height+1);
 });
 
 test('My Sky exposes a focused place manager with removal and primary selection',async ({page})=>{

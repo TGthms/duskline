@@ -606,10 +606,6 @@
         fmtTemp: fmtTemp,
         fmtWind: fmtWind,
         getPlaces: getMapPlaces,
-        searchCities: async function (query, signal) {
-          const payload=await dataApi.fetchJson(GEOCODE+'?name='+encodeURIComponent(query)+'&count=7&language='+geocodeLangParam()+'&format=json',signal);
-          return W.searchPlaces.deduplicate(payload.results || []).map(function (city) { return {name:city.name,admin1:city.admin1 || '',lat:city.latitude,lon:city.longitude,country:city.country || '',country_code:city.country_code || '',tz:city.timezone}; });
-        },
         isFavorite: isFavorite,
         onSelectCity: openMapCity,
         resolveCity: reverseGeocode,

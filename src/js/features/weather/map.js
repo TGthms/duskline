@@ -72,10 +72,6 @@
     var mapLoadGeneration = 0;
     var deferredMapOptions = null;
     var currentMapOptions = null;
-    let searchController = null, searchTimer = 0, searchGeneration = 0;
-    const search = document.getElementById('weatherMapSearch');
-    const results = document.getElementById('weatherMapSearchResults');
-    const inspect = document.getElementById('weatherMapInspect');
     var RASTER_ID = 'duskline-weather-field';
     var GRID_ID = 'duskline-weather-grid';
     var CITY_SOURCE = 'duskline-weather-places';
@@ -164,8 +160,6 @@
     function close() {
       if (!isOpen) return;
       isOpen = false;
-      searchGeneration++; clearTimeout(searchTimer); if (searchController) searchController.abort();
-      if (results) results.hidden=true;
       mapLoadGeneration++;
       deferredMapOptions = null;
       currentMapOptions = null;
@@ -217,7 +211,6 @@
     }
     function onDialogKeydown(event) {
       if (event.key === 'Escape') {
-        if (results && !results.hidden) { results.hidden=true;search.setAttribute('aria-expanded','false');search.focus();event.preventDefault();event.stopPropagation();return; }
         event.preventDefault();
         if (contextMenu && !contextMenu.hidden) {
           hideContextMenu(true);
@@ -444,6 +437,13 @@
     }
     if (stageHost) {
       stageHost.addEventListener('contextmenu', onMapContextMenu);
+      stageHost.addEventListener('keydown', function (event) {
+        if (event.target !== fallbackHost && (!map || event.target !== map.getCanvas())) return;
+        if (event.key !== 'Enter' && event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+        event.preventDefault();
+        const bounds = stageHost.getBoundingClientRect();
+        showContextMenu(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+      });
       stageHost.addEventListener('pointerdown', onMapPointerDown, true);
       stageHost.addEventListener('pointermove', onMapPointerMove, true);
       stageHost.addEventListener('pointerup', onMapPointerEnd, true);
@@ -1272,56 +1272,6 @@
       document.addEventListener('keydown', onDialogKeydown, true);
       setTimeout(function () { if (isOpen && closeButton) closeButton.focus({ preventScroll: true }); }, 0);
       loadCityMap(options || {});
-    }
-    if (inspect) inspect.addEventListener('click',function () {
-      const rect = stageHost.getBoundingClientRect();
-      showContextMenu(rect.left+rect.width/2,rect.top+rect.height/2);
-    });
-    if (search && results) {
-      search.addEventListener('input',function () {
-        clearTimeout(searchTimer); if (searchController) searchController.abort();
-        const generation=++searchGeneration, query=search.value.trim();
-        results.replaceChildren(); results.hidden=true; search.setAttribute('aria-expanded','false');
-        if (query.length<2 || typeof deps.searchCities !== 'function') return;
-        searchTimer=setTimeout(async function () {
-          searchController=new AbortController();search.setAttribute('aria-busy','true');
-          try {
-            const cities=await deps.searchCities(query,searchController.signal);
-            if (!isOpen || generation !== searchGeneration) return;
-            cities.forEach(function (city) {
-              const button=document.createElement('button');button.type='button';button.setAttribute('role','option');
-              button.textContent=[city.name,city.admin1,city.country].filter(Boolean).join(' · ');
-              button.addEventListener('click',function () {
-                results.hidden=true;search.setAttribute('aria-expanded','false');search.value=city.name;
-                places.push({city:city,name:city.name,featured:true});updatePlaces(places);
-                const reveal=function () {
-                  const rect=stageHost.getBoundingClientRect();
-                  contextMenu.hidden=false;paintContextCity(city,false);
-                  positionContextMenu(rect.left+rect.width/2,rect.top+rect.height/2);
-                  contextViewButton.focus({preventScroll:true});
-                };
-                if (map) {
-                  map.once('moveend',reveal);
-                  map.flyTo({center:[city.lon,city.lat],zoom:8,duration:reducedMotion()?0:350});
-                } else reveal();
-              });
-              results.appendChild(button);
-            });
-            if (!cities.length) results.textContent=t('weather.emptySearch','No cities found.');
-            results.hidden=false;search.setAttribute('aria-expanded','true');
-          } catch (error) {
-            if (generation === searchGeneration && error.name !== 'AbortError') setStatus(t('weather.error','Could not load weather data.'),true);
-          } finally { if(generation === searchGeneration) search.removeAttribute('aria-busy'); }
-        },250);
-      });
-      search.addEventListener('keydown',function (event) {
-        if (event.key === 'ArrowDown' && !results.hidden) {event.preventDefault();results.querySelector('button')?.focus();}
-      });
-      results.addEventListener('keydown',function (event) {
-        const items=Array.from(results.querySelectorAll('button')),index=items.indexOf(document.activeElement);
-        if(event.key === 'ArrowDown' || event.key === 'ArrowUp') {event.preventDefault();items[(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length]?.focus();}
-        if(event.key === 'Escape') {event.preventDefault();event.stopPropagation();results.hidden=true;search.setAttribute('aria-expanded','false');search.focus();}
-      });
     }
     if (closeButton) closeButton.addEventListener('click', close);
     if (zoomInButton) zoomInButton.addEventListener('click', function () {

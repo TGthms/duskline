@@ -23,7 +23,7 @@
 .weather-map-overlay.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
 .weather-map-panel {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   grid-template-columns:minmax(0,1fr);
   width: 100%;
   height: 100%;
@@ -291,13 +291,6 @@ html[data-motion-effective="off"] .weather-map-overlay { transition: none; }
 
 .weather-map-canvas { opacity: 0; transition: opacity .18s ease; }
 .weather-map-overlay.is-map-ready .weather-map-canvas { opacity: 1; }
-.weather-map-search-wrap { position:relative; z-index:4; padding:8px 16px; background:#0d1b2c; }
-#weatherMapSearch { width:100%; min-height:44px; box-sizing:border-box; border:1px solid rgba(226,239,252,.25); border-radius:12px; padding:10px 12px; background:#14283c; color:#f4f7fb; font:inherit; }
-#weatherMapSearchResults { position:absolute; top:100%; inset-inline:16px; max-height:40vh; overflow:auto; padding:6px; border-radius:12px; background:#14283c; box-shadow:0 12px 30px #0008; }
-#weatherMapSearchResults[hidden] { display:none; }
-#weatherMapSearchResults button { display:block; width:100%; min-height:44px; padding:10px; border:0; color:inherit; background:transparent; font:inherit; text-align:start; cursor:pointer; }
-#weatherMapSearchResults button:hover,#weatherMapSearchResults button:focus-visible { background:#29415b; }
-.weather-map-inspect { position:absolute; bottom:16px; inset-inline-start:16px; z-index:2; min-height:44px; padding:8px 12px; border:1px solid #ffffff40; border-radius:12px; color:#fff; background:#0c1b2de8; font:inherit; cursor:pointer; }
 /* Short screens retain every control and never overlap the legend with the map. */
 .weather-map-places-icon { display:none; }
 @media (max-height:620px) {
@@ -311,8 +304,6 @@ html[data-motion-effective="off"] .weather-map-overlay { transition: none; }
  .weather-map-place-picker > summary span,.weather-map-place-picker > summary::after { display:none; }
  .weather-map-places-icon { display:block; width:18px; height:18px; }
  .weather-map-places { inset-inline-start:auto; inset-inline-end:0; width:min(340px,calc(100vw - 36px)); }
- .weather-map-search-wrap { padding-block:2px; }
- #weatherMapSearch { height:44px; min-height:44px; padding-block:6px; font-size:14px; line-height:1.2; }
  .weather-map-stage { min-height:140px; }
  .weather-map-footer { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); padding-block:6px; gap:6px 12px; }
  .weather-map-legend strong { line-height:1.2; margin-bottom:4px; }
@@ -323,7 +314,6 @@ html[data-motion-effective="off"] .weather-map-overlay { transition: none; }
  .weather-map-credit { grid-column:1/-1; margin:0; font-size:10px; line-height:1.2; }
  .weather-map-control-stack { bottom:8px; right:8px; gap:0; padding:0; }
  .weather-map-control-stack button { width:44px; height:44px; }
- .weather-map-inspect { bottom:8px; }
 }
 
 @media (min-width:760px) and (max-height:620px) {
