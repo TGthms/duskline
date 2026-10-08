@@ -2267,7 +2267,14 @@ test('landscape My Sky keeps the current reading in view and all toolbar actions
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(844);
 });
 
-for(const motion of ['full','off']) test('returning from a map city keeps an opaque map behind the exit and reuses its renderer with '+motion,async ({page})=>{
+// Map recovery tests require a working WebGL map to reach the ready state.
+// Firefox CI has no WebGL (getContext returns null), so the map correctly
+// falls back to its offline atlas there. Skip these in firefox; they run in
+// chromium and webkit where WebGL is available.
+const noWebGLReason = 'requires WebGL; firefox CI has no WebGL and the map uses its offline fallback';
+
+for(const motion of ['full','off']) test('returning from a map city keeps an opaque map behind the exit and reuses its renderer with '+motion,async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  await page.addInitScript(motion=>localStorage.setItem('duskline-motion',motion),motion);
  await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');
@@ -2296,7 +2303,8 @@ for(const motion of ['full','off']) test('returning from a map city keeps an opa
  expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
 });
 
-test('isolated tile and glyph failures keep the ready map and weather layers alive',async ({page})=>{
+test('isolated tile and glyph failures keep the ready map and weather layers alive',async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');await expect(page.locator('#weatherMapTime')).toBeEnabled();
  await page.evaluate(()=>{for(let i=0;i<6;i++)window.__mapForTest.fire('error',{error:new Error('One unavailable tile'),sourceId:'basemap'});window.__mapForTest.fire('error',{error:new Error('One unavailable glyph')});});
@@ -2305,7 +2313,8 @@ test('isolated tile and glyph failures keep the ready map and weather layers ali
  await expect(page.locator('#weatherMapTime')).toBeEnabled();
 });
 
-test('geography and forecasts become usable before an unrelated map source finishes',async ({page})=>{
+test('geography and forecasts become usable before an unrelated map source finishes',async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  await instrumentMap(page);let release;const held=new Promise(resolve=>{release=resolve;});
  await page.route('https://tiles.openfreemap.org/slow-source.json',async route=>{await held;await route.fulfill({json:{type:'FeatureCollection',features:[]}}).catch(()=>{});});
  await page.route('https://tiles.openfreemap.org/styles/liberty',route=>route.fulfill({json:{version:8,sources:{land:{type:'geojson',data:{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[-120,10],[30,10],[30,70],[-120,70],[-120,10]]]}}]}},slow:{type:'geojson',data:'https://tiles.openfreemap.org/slow-source.json'}},layers:[{id:'background',type:'background',paint:{'background-color':'#102137'}},{id:'land',type:'fill',source:'land',paint:{'fill-color':'#657e61'}},{id:'unrelated',type:'line',source:'slow'}]}}));
@@ -2317,7 +2326,8 @@ test('geography and forecasts become usable before an unrelated map source finis
  } finally {release();}
 });
 
-test('a transient map style outage recovers in place without an online event or extra tap',async ({page})=>{
+test('a transient map style outage recovers in place without an online event or extra tap',async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  await instrumentMap(page);let styles=0;
  await page.route('https://tiles.openfreemap.org/styles/liberty',route=>++styles===1 ? route.fulfill({status:503,body:'Temporarily unavailable'}) : route.fulfill({json:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ccddee'}}]}}));
  await page.goto('/');await page.locator('#weatherMapOpen').click();
@@ -2326,7 +2336,8 @@ test('a transient map style outage recovers in place without an online event or 
  await expect(page.locator('#weatherMapStatus')).toBeHidden();expect(styles).toBe(2);
 });
 
-test('map recovery is bounded and closing cancels queued recovery',async ({page})=>{
+test('map recovery is bounded and closing cancels queued recovery',async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  test.setTimeout(45000);await instrumentMap(page);let styles=0;
  await page.route('https://tiles.openfreemap.org/styles/liberty',route=>{styles++;return route.fulfill({status:503,body:'Unavailable'});});
  await page.goto('/');await page.locator('#weatherMapOpen').click();
@@ -2338,7 +2349,8 @@ test('map recovery is bounded and closing cancels queued recovery',async ({page}
  await page.waitForTimeout(3500);expect(styles).toBe(4);
 });
 
-for(const release of ['background','idle']) test('closed map renderers release resources on '+release,async ({page})=>{
+for(const release of ['background','idle']) test('closed map renderers release resources on '+release,async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  await page.clock.install();await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');
  await page.locator('#weatherMapClose').click();await expect(page.locator('#weatherMap')).toBeHidden();
@@ -2353,7 +2365,8 @@ for(const release of ['background','idle']) test('closed map renderers release r
  expect(await page.evaluate(()=>window.__mapCtorCount)).toBe(2);
 });
 
-test('backgrounding defers map recovery without spending an attempt',async ({page})=>{
+test('backgrounding defers map recovery without spending an attempt',async ({page,browserName})=>{
+ test.skip(browserName==='firefox', noWebGLReason);
  await page.clock.install();await instrumentMap(page);let styles=0;
  await page.route('https://tiles.openfreemap.org/styles/liberty',route=>{styles++;return route.fulfill({status:503,body:'Unavailable'});});
  await page.goto('/');await page.locator('#weatherMapOpen').click();
