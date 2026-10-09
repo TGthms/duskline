@@ -20,6 +20,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `search-places.js` | Geocoder deduplication and minimum forecast validation |
 | `network-policy.js` | Provider retry timing and cancellable backoff |
 | `haptics.js` | Vibration API delegation; trusted iOS label taps with non-rendered native switches in Shadow DOM |
+| `push-notifications.js` | Background-alert settings and subscription reconciliation |
 | `data.js` | NWS + Open-Meteo fetch/normalize (`W.factories.data`) |
 | `city-refresh.js` | Cancellable full-city refresh ownership (`W.factories.cityRefresh`) |
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |

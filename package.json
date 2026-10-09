@@ -16,10 +16,14 @@
     "test:cross": "playwright test --project=firefox --project=webkit --project=mobile-webkit"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0"
+    "@playwright/test": "^1.55.0",
+    "wrangler": "4.149.0"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "2.0.0"
   }
 }

@@ -1,0 +1,3 @@
+const {DatabaseSync}=require('node:sqlite');const fs=require('node:fs');const path=require('node:path');
+exports.database=function(){const sqlite=new DatabaseSync(':memory:');sqlite.exec(fs.readFileSync(path.join(__dirname,'../../workers/alert-poller/migrations/0001_notifications.sql'),'utf8'));
+ return {sqlite,prepare(sql){let args=[];return {bind(...values){args=values;return this;},async first(){return sqlite.prepare(sql).get(...args)||null;},async all(){return {results:sqlite.prepare(sql).all(...args)};},async run(){return sqlite.prepare(sql).run(...args);}};},async batch(statements){sqlite.exec('BEGIN');try{const results=[];for(const s of statements)results.push(await s.run());sqlite.exec('COMMIT');return results;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};};

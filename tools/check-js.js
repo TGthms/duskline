@@ -27,6 +27,7 @@ function walk(dir, acc) {
 const files = [];
 walk(path.join(root, 'src'), files);
 walk(path.join(root, 'functions'), files);
+walk(path.join(root, 'workers'), files);
 walk(path.join(root, 'tools'), files);
 walk(path.join(root, 'e2e'), files);
 walk(path.join(root, 'test'), files);

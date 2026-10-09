@@ -1,17 +1,22 @@
 name = "duskline-alert-poller"
 main = "src/index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-10-09"
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *"]
 
+[[d1_databases]]
+binding = "PUSH_DB"
+database_name = "duskline-notifications"
+database_id = "f487c40d-160a-4ecf-ba1f-2c8aab99aadc"
+migrations_dir = "migrations"
+
+# Temporary migration source; no KV polling after the D1 legacy marker is done.
 [[kv_namespaces]]
 binding = "PUSH_KV"
-# Replace with your KV namespace id after creating it:
-# wrangler kv namespace create PUSH_KV
-id = "1d9658aae87a4c0dbc56b41bdcaf540f" # duskline-push
+id = "1d9658aae87a4c0dbc56b41bdcaf540f"
 
-# Secrets (set via wrangler, never commit):
-#   wrangler secret put VAPID_PUBLIC_KEY
-#   wrangler secret put VAPID_PRIVATE_KEY
-#   wrangler secret put VAPID_SUBJECT   (e.g. mailto:you@example.com)
+[observability]
+enabled = true
+# Keep the existing VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT secrets.
+# Pages uses a PUSH_SENDER service binding with entrypoint PushService.
