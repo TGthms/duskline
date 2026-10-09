@@ -1,0 +1,17 @@
+name = "duskline-alert-poller"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[kv_namespaces]]
+binding = "PUSH_KV"
+# Replace with your KV namespace id after creating it:
+# wrangler kv namespace create PUSH_KV
+id = "1d9658aae87a4c0dbc56b41bdcaf540f" # duskline-push
+
+# Secrets (set via wrangler, never commit):
+#   wrangler secret put VAPID_PUBLIC_KEY
+#   wrangler secret put VAPID_PRIVATE_KEY
+#   wrangler secret put VAPID_SUBJECT   (e.g. mailto:you@example.com)

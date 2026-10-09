@@ -65,6 +65,7 @@ const SHELL = [
   './src/js/features/weather/search-places.js',
   './src/js/features/weather/network-policy.js',
   './src/js/features/weather/haptics.js',
+  './src/js/features/weather/push-notifications.js',
   './src/js/features/weather/data.js',
   './src/js/features/weather/city-refresh.js',
   './src/js/features/weather/snapshots.js',
@@ -145,6 +146,41 @@ self.addEventListener('message', (event) => {
       }
     }).catch(() => {}));
   }
+});
+
+// Web Push: severe weather alerts. Payload is JSON:
+// { title, body, tag, data: { url, location } }
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+  const title = data.title || 'Weather alert';
+  const options = {
+    body: data.body || '',
+    tag: data.tag || 'duskline-alert',
+    renotify: true,
+    icon: './assets/duskline-icon-192.png',
+    badge: './assets/duskline-icon-192.png',
+    data: data.data || {},
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil((async () => {
+    const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of all) {
+      if ('focus' in client) {
+        try {
+          await client.focus();
+          if (url !== './' && 'navigate' in client) await client.navigate(url);
+          return;
+        } catch (e) {}
+      }
+    }
+    if (clients.openWindow) await clients.openWindow(url);
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
