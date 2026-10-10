@@ -11,6 +11,7 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
   const root = path.resolve(__dirname, '..'),
     out = fs.mkdtempSync(path.join(os.tmpdir(), 'duskline-push-runtime-'));
   let mf;
+  const pushRequests = [];
   try {
     const cli = path.join(root, 'node_modules/wrangler/bin/wrangler.js'),
       env = {
@@ -59,6 +60,24 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
           },
           {
             name: 'sender',
+            outboundService: async (request) => {
+              assert.ok(
+                [
+                  'https://web.push.apple.com/Q/runtime-test',
+                  'https://web.push.apple.com/Q/runtime-test-redirect',
+                ].includes(request.url),
+              );
+              pushRequests.push(request.url);
+              assert.equal(request.method, 'POST');
+              assert.equal(request.headers.get('content-encoding'), 'aes128gcm');
+              assert.equal((await request.arrayBuffer()).byteLength, 4096);
+              return request.url.endsWith('-redirect')
+                ? new Response(null, {
+                    status: 308,
+                    headers: { Location: 'https://redirect.invalid/' },
+                  })
+                : new Response(null, { status: 201 });
+            },
             modules: true,
             compatibilityDate: '2026-10-01',
             modulesRoot: path.join(out, 'worker'),
@@ -122,6 +141,22 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
     const status = await call('status', body);
     assert.equal(status.status, 200);
     assert.equal((await status.json()).registered, true);
+    const testDelivery = await call('test', body);
+    assert.equal(testDelivery.status, 200, await testDelivery.text());
+    assert.equal(
+      (await db.prepare("SELECT status FROM push_deliveries WHERE kind='test'").first()).status,
+      'accepted',
+    );
+    const redirectBody = { ...body, endpoint: body.endpoint + '-redirect' };
+    assert.equal((await call('subscribe', redirectBody)).status, 200);
+    assert.equal((await call('test', redirectBody)).status, 502);
+    assert.equal(
+      (await db.prepare("SELECT error_code FROM push_deliveries WHERE status='failed'").first())
+        .error_code,
+      'push_308',
+    );
+    assert.equal(pushRequests.length, 2);
+    assert.equal((await call('unsubscribe', redirectBody)).status, 200);
     assert.equal((await call('status', { ...body, capability: 'B'.repeat(43) })).status, 404);
     assert.equal((await call('unsubscribe', body)).status, 200);
     assert.equal((await call('status', body)).status, 404);
@@ -129,7 +164,9 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
     const sender = await mf.getWorker('sender');
     const scheduled = await sender.scheduled({ cron: '* * * * *' });
     assert.equal(scheduled.outcome, 'ok');
-    console.log('Push runtime passed: Pages + default Worker RPC + D1 + ownership + deletion.');
+    console.log(
+      'Push runtime passed: Pages + default Worker RPC + D1 + encrypted send + redirect isolation + ownership + deletion.',
+    );
   } finally {
     if (mf) await mf.dispose();
     fs.rmSync(out, { recursive: true, force: true });

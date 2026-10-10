@@ -58,7 +58,9 @@ export async function sendPush(
   );
   const response = await fetcher(subscription.endpoint, {
     ...init,
-    redirect: 'error',
+    // Workers supports manual/follow, but rejects the browser's "error" mode.
+    // Never forward endpoint credentials or ciphertext to a redirect target.
+    redirect: 'manual',
     signal: AbortSignal.timeout(10000),
   });
   await response.body?.cancel();

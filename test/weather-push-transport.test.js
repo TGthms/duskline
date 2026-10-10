@@ -45,7 +45,7 @@ test('push transport emits a verifiable ES256 VAPID token and independently decr
   assert.equal(status, 201);
   assert.equal(init.headers['content-encoding'], 'aes128gcm');
   assert.equal(init.headers.ttl, '120');
-  assert.equal(init.redirect, 'error');
+  assert.equal(init.redirect, 'manual');
   const jwt = init.headers.authorization.match(/t=([^,]+)/)[1].split('.');
   assert.equal(
     await crypto.subtle.verify(
