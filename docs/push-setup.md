@@ -34,7 +34,7 @@ Deploy the Worker before the Pages release:
 npx wrangler deploy --config workers/alert-poller/wrangler.toml
 ```
 
-Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v81.
+Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v82.
 
 ## Retired KV setup
 

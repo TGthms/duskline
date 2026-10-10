@@ -15,7 +15,10 @@ const favorite = {
 };
 const publicKey =
   'BP3dIi3qXzMN8PueacJpT5wJH7Vje5o7SV8U4kqGZJcyM2yy9JWUd-OeHl7m50bXEPdWxI4JxN60qPCTBzNNbbk';
-async function fixtures(page, { permission = 'granted', onlyLocation = false } = {}) {
+async function fixtures(
+  page,
+  { permission = 'granted', onlyLocation = false, city = primary } = {},
+) {
   const calls = [],
     records = new Map();
   let failSubscribe = false,
@@ -68,7 +71,7 @@ async function fixtures(page, { permission = 'granted', onlyLocation = false } =
         get: () => Promise.resolve({ pushManager: manager }),
       });
     },
-    { permission, primary, favorite, onlyLocation },
+    { permission, primary: city, favorite, onlyLocation },
   );
   await page.route('**/api/push/**', async (route) => {
     const path = new URL(route.request().url()).pathname.split('/').pop(),
@@ -185,6 +188,65 @@ test('My Location alone supports notification enrollment', async ({ page }) => {
   await page.getByLabel('Weather notifications', { exact: true }).check();
   await expect.poll(() => f.calls.filter((c) => c.path === 'subscribe').length).toBe(1);
   expect(f.calls.find((c) => c.path === 'subscribe').body.locations[0].name).toBe('Boston');
+});
+test('a saved lowercase US device location can enable notifications', async ({ page }) => {
+  const f = await fixtures(page, {
+    onlyLocation: true,
+    city: {
+      name: 'Fremont',
+      lat: 37.55,
+      lon: -121.99,
+      country_code: 'us',
+      tz: 'America/Los_Angeles',
+    },
+  });
+  await page.goto('/');
+  await settings(page);
+  await page.getByLabel('Weather notifications', { exact: true }).click();
+  await expect(page.locator('.weather-push-status')).toContainText('On ·');
+  expect(f.calls.find((c) => c.path === 'subscribe').body.locations[0]).toMatchObject({
+    name: 'Fremont',
+    country_code: 'US',
+  });
+});
+test('a fresh Nominatim device location is normalized before notification enrollment', async ({
+  page,
+}) => {
+  const f = await fixtures(page);
+  await page.addInitScript(() => {
+    navigator.geolocation.getCurrentPosition = (done) =>
+      done({ coords: { latitude: 37.55, longitude: -121.99 } });
+  });
+  await page.route(/api\.bigdatacloud\.net/, (route) => route.fulfill({ status: 503, json: {} }));
+  await page.route(/nominatim\.openstreetmap\.org/, (route) =>
+    route.fulfill({
+      json: {
+        address: {
+          city: 'Fremont',
+          state: 'California',
+          country: 'United States',
+          country_code: 'us',
+        },
+      },
+    }),
+  );
+  await page.goto('/');
+  await page.locator('#weatherLocate').click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => JSON.parse(localStorage.getItem('duskline-weather-myloc') || 'null')?.country_code,
+      ),
+    )
+    .toBe('US');
+  await expect(page.locator('#weatherLocate')).toBeEnabled();
+  await settings(page);
+  await page.getByLabel('Weather notifications', { exact: true }).click();
+  await expect(page.locator('.weather-push-status')).toContainText('On ·');
+  expect(f.calls.find((c) => c.path === 'subscribe').body.locations[0]).toMatchObject({
+    name: 'Fremont',
+    country_code: 'US',
+  });
 });
 test('permission denial remains visible and does not register a subscription', async ({ page }) => {
   const f = await fixtures(page, { permission: 'denied' });

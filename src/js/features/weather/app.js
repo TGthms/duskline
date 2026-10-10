@@ -1242,7 +1242,7 @@
           admin1: data.principalSubdivision || '',
           lat, lon,
           country: shortCountryName(data.countryName, data.countryCode),
-          country_code: data.countryCode || ''
+          country_code: String(data.countryCode || '').trim().toUpperCase()
         };
       }
     } catch (e) { /* fall through */ }
@@ -1258,7 +1258,7 @@
           admin1: a.state || a.county || '',
           lat, lon,
           country: shortCountryName(a.country, a.country_code),
-          country_code: a.country_code || ''
+          country_code: String(a.country_code || '').trim().toUpperCase()
         };
       }
     } catch (e) { /* fall through */ }

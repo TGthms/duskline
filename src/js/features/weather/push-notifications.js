@@ -131,6 +131,11 @@
     function key(p) {
       return Number(p.lat).toFixed(2) + ',' + Number(p.lon).toFixed(2);
     }
+    function countryCode(place) {
+      return String(place.country_code || place.countryCode || '')
+        .trim()
+        .toUpperCase();
+    }
     function selected(draft = state) {
       const all = known(),
         wanted = draft.follow
@@ -153,7 +158,7 @@
       validateQuiet(draft);
       const all = selected(draft);
       if (!all.length) throw Error('choose');
-      if (all.some((p) => p.country_code !== 'US')) throw Error('coverage');
+      if (all.some((p) => countryCode(p) !== 'US')) throw Error('coverage');
       if (all.length > 5) throw Error('limit');
       return {
         locations: all.map((p) => ({
@@ -161,7 +166,7 @@
           lat: Number(p.lat),
           lon: Number(p.lon),
           tz: p.tz || 'UTC',
-          country_code: p.country_code,
+          country_code: countryCode(p),
         })),
         preferences: draft.preferences,
       };
@@ -612,7 +617,7 @@
       places.append(cityBox);
       const all = known();
       all.forEach((city) => {
-        const supportedPlace = city.country_code === 'US';
+        const supportedPlace = countryCode(city) === 'US';
         const input = check(
           cityBox,
           deps.cityName(city) + (supportedPlace ? '' : ' · ' + t('coverageShort', 'US only')),
