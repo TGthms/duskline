@@ -36,8 +36,7 @@ export async function save(db, body, subscription, locations, prefs) {
     VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET keys_json=excluded.keys_json,token_hash=excluded.token_hash,
     locations_json=excluded.locations_json,preferences_json=excluded.preferences_json,
     renewed_at=excluded.renewed_at,expires_at=excluded.expires_at
-    WHERE push_subscriptions.token_hash=excluded.token_hash
-      OR (push_subscriptions.token_hash='legacy' AND push_subscriptions.keys_json=excluded.keys_json) RETURNING id`,
+    WHERE push_subscriptions.token_hash=excluded.token_hash RETURNING id`,
     )
     .bind(
       id,

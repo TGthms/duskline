@@ -7,20 +7,21 @@ import {
   eligible,
   payload,
 } from '../../../functions/_lib/push/alerts.js';
-import { migrateLegacy } from '../../../functions/_lib/push/migrate.js';
 import { queryBudget } from '../../../functions/_lib/push/budget.js';
 // Independent delivery leases and stable notification tags bound crash retries.
 export async function poll(env, { now = Date.now(), fetcher = fetch, sender = sendPush } = {}) {
   if (!senderConfigured(env)) throw new Error('push_not_configured');
   const database = env.PUSH_DB;
-  // An unused service performs no scheduler/ledger writes. Expired rows still
-  // enter normal cleanup; a pending legacy migration still gets its lease.
+  // An unused service performs no scheduler or ledger writes.
   if (!(await database.prepare('SELECT id FROM push_subscriptions LIMIT 1').first())) {
-    if (!env.PUSH_KV) return { checked: 0, failures: 0 };
-    const legacy = await database
-      .prepare("SELECT cursor FROM push_scheduler WHERE name='legacy'")
-      .first();
-    if (legacy?.cursor === 'done') return { checked: 0, failures: 0 };
+    if (
+      await database
+        .prepare('SELECT key FROM push_limits WHERE expires_at<? LIMIT 1')
+        .bind(now)
+        .first()
+    )
+      await database.prepare('DELETE FROM push_limits WHERE expires_at<?').bind(now).run();
+    return { checked: 0, failures: 0 };
   }
   const run = await database
     .prepare(
@@ -38,7 +39,6 @@ export async function poll(env, { now = Date.now(), fetcher = fetch, sender = se
     db = budget.db;
   let sends = 0;
   try {
-    await migrateLegacy({ ...env, PUSH_DB: db }, now);
     let rows = (
       await db
         .prepare(

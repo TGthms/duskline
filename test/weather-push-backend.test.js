@@ -289,39 +289,6 @@ test('scheduler lease prevents overlapping polls; expired subscriptions and acti
   await poll(env, { fetcher: async () => Response.json({ features: [] }) });
   assert.equal(db.sqlite.prepare('SELECT count(*) n FROM push_subscriptions').get().n, 0);
 });
-test('legacy migration scans once, keeps subscribers and supports capability adoption', async () => {
-  const { db, p, s, env } = await setup();
-  const pair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
-      'deriveBits',
-    ]),
-    keys = {
-      p256dh: Buffer.from(await crypto.subtle.exportKey('raw', pair.publicKey)).toString(
-        'base64url',
-      ),
-      auth: Buffer.alloc(16).toString('base64url'),
-    };
-  let lists = 0;
-  env.PUSH_KV = {
-    list: async () => {
-      lists++;
-      return { keys: [{ name: 'push:sub:old' }], list_complete: true };
-    },
-    get: async () => ({ endpoint: endpoint + 'old', keys, location }),
-  };
-  const { migrateLegacy } = await import('../functions/_lib/push/migrate.js');
-  await migrateLegacy(env);
-  await migrateLegacy(env);
-  assert.equal(lists, 1);
-  const e = endpoint + 'old';
-  await s.save(
-    db,
-    { endpoint: e, capability: token },
-    { endpoint: e, keys },
-    [location],
-    p.preferences(),
-  );
-  assert.ok(await s.authorize(db, { endpoint: e, capability: token }));
-});
 test('alert bursts stay below the D1 Free query limit and preserve a rotating cursor', async () => {
   const { db, p, s, env } = await setup();
   for (let i = 0; i < 55; i++)
@@ -390,6 +357,54 @@ test('an idle service uses no scheduler or ledger writes', async () => {
   const before = db.sqlite.prepare('SELECT total_changes() n').get().n;
   assert.deepEqual(await poll(env), { checked: 0, failures: 0 });
   assert.equal(db.sqlite.prepare('SELECT total_changes() n').get().n, before);
-  assert.equal(db.queryCount, 1);
+  assert.equal(db.queryCount, 2);
 });
-test('critical warnings lead the bounded notification batch',async()=>{const {fetchAlerts}=await alerts;const results=await fetchAlerts(location,async()=>Response.json({features:[warning('moderate',{severity:'Moderate'}),warning('severe'),warning('extreme',{severity:'Extreme'})]}));assert.deepEqual(results.map(a=>a.id),['extreme','severe','moderate']);});
+test('an idle service collects expired rate limits without deleting live limits', async () => {
+  const { database } = require('./helpers/push-db'),
+    db = database(),
+    { poll } = await import('../workers/alert-poller/src/poll.js'),
+    now = Date.now();
+  db.sqlite
+    .prepare('INSERT INTO push_limits(key,count,expires_at) VALUES (?,?,?)')
+    .run('expired', 1, now - 1);
+  db.sqlite
+    .prepare('INSERT INTO push_limits(key,count,expires_at) VALUES (?,?,?)')
+    .run('live', 1, now + 60000);
+  assert.deepEqual(
+    await poll(
+      {
+        PUSH_DB: db,
+        VAPID_PUBLIC_KEY: 'x',
+        VAPID_PRIVATE_KEY: 'x',
+        VAPID_SUBJECT: 'mailto:test@example.com',
+      },
+      { now },
+    ),
+    { checked: 0, failures: 0 },
+  );
+  assert.deepEqual(
+    db.sqlite
+      .prepare('SELECT key FROM push_limits')
+      .all()
+      .map((row) => row.key),
+    ['live'],
+  );
+  assert.equal(db.sqlite.prepare('SELECT count(*) n FROM push_scheduler').get().n, 0);
+  assert.equal(db.sqlite.prepare('SELECT count(*) n FROM push_deliveries').get().n, 0);
+});
+test('critical warnings lead the bounded notification batch', async () => {
+  const { fetchAlerts } = await alerts;
+  const results = await fetchAlerts(location, async () =>
+    Response.json({
+      features: [
+        warning('moderate', { severity: 'Moderate' }),
+        warning('severe'),
+        warning('extreme', { severity: 'Extreme' }),
+      ],
+    }),
+  );
+  assert.deepEqual(
+    results.map((a) => a.id),
+    ['extreme', 'severe', 'moderate'],
+  );
+});

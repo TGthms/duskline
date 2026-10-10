@@ -86,7 +86,11 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
         .filter(Boolean))
         await db.prepare(statement).run();
     }
-    const response = await mf.dispatchFetch('https://app.test/api/push/config');
+    const checks = await Promise.all(
+      Array.from({ length: 10 }, () => mf.dispatchFetch('https://app.test/api/push/config')),
+    );
+    const response = checks[0];
+    for (const other of checks.slice(1)) assert.equal((await other.json()).available, true);
     assert.equal(response.status, 200);
     const config = await response.json();
     assert.equal(config.available, true);
@@ -123,8 +127,8 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
     assert.equal((await call('status', body)).status, 404);
     assert.equal((await db.prepare('SELECT count(*) n FROM push_subscriptions').first()).n, 0);
     const sender = await mf.getWorker('sender');
-    const scheduled = await sender.scheduled({cron:'* * * * *'});
-    assert.equal(scheduled.outcome,'ok');
+    const scheduled = await sender.scheduled({ cron: '* * * * *' });
+    assert.equal(scheduled.outcome, 'ok');
     console.log('Push runtime passed: Pages + default Worker RPC + D1 + ownership + deletion.');
   } finally {
     if (mf) await mf.dispose();

@@ -13,12 +13,7 @@ database_name = "duskline-notifications"
 database_id = "f487c40d-160a-4ecf-ba1f-2c8aab99aadc"
 migrations_dir = "migrations"
 
-# Temporary migration source; no KV polling after the D1 legacy marker is done.
-[[kv_namespaces]]
-binding = "PUSH_KV"
-id = "1d9658aae87a4c0dbc56b41bdcaf540f"
-
 [observability]
 enabled = true
 # Keep the existing VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT secrets.
-# Pages uses a PUSH_SENDER service binding with entrypoint PushService.
+# Pages uses a PUSH_SENDER service binding with the Default entrypoint.
