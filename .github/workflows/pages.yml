@@ -23,18 +23,28 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
       - name: Skip superseded release
+        id: release
         run: |
           latest=$(git ls-remote origin refs/heads/main | cut -f1)
-          test "$latest" = "${{ github.event.workflow_run.head_sha }}"
+          if [ "$latest" = "${{ github.event.workflow_run.head_sha }}" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping superseded release."
+          fi
       - name: Stage site files
+        if: steps.release.outputs.current == 'true'
         run: |
           mkdir -p _site
           rsync -a --exclude node_modules --exclude test --exclude e2e --exclude tools --exclude .git --exclude .github --exclude test-results --exclude playwright-report --exclude playwright.config.js --exclude package.json --exclude package-lock.json --exclude _site ./ _site/
       - uses: actions/configure-pages@v6
+        if: steps.release.outputs.current == 'true'
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v5
+        if: steps.release.outputs.current == 'true'
         with:
           path: _site
       - id: deployment
+        if: steps.release.outputs.current == 'true'
         uses: actions/deploy-pages@v5
