@@ -7,7 +7,7 @@
   "legal.privacy.title": "Adatvédelmi szabályzat",
   "legal.privacy.intro": "Világos magyarázat arról, mi marad a böngészőben, és mi kerül elküldésre az időjárási szolgáltatóknak.",
   "legal.privacy.h1": "Mit tárol a duskline",
-  "legal.privacy.p1": "A duskline-nak nincsenek fiókjai, profiljai, hirdetési azonosítói és privát irányítópultja. A nyelv, az egységbeállítás, a kedvencek, a gyorsítótárazott válaszok és egy hozzávetőleges mentett hely helyben tárolható a böngészőben. Ezeket az adatokat nem töltjük fel a duskline-ra.",
+  "legal.privacy.p1": "A duskline fiók nélkül használható. A nyelv, mértékegységek, mentett helyek és előrejelzések alapértelmezetten csak a böngészőben tárolódnak.",
   "legal.privacy.h2": "Helyadatok, előrejelzések és riasztások",
   "legal.privacy.p2": "Ha a „Saját helyzet használata” lehetőséget választja, a böngésző engedélyt kér. A duskline az eredményt előrejelzés kérésére használja, és kerekíti a mentett koordinátákat a pontosság csökkentése érdekében. A fordított geokódolást a BigDataCloud, hiba esetén az OpenStreetMap Nominatim kapja, így ezek a szolgáltatások megkapják a kerekített koordinátákat. Az engedélyt bármikor megtagadhatja, eltávolíthatja a mentett jelölőt, törölheti a kedvenceket vagy a webhelyadatait.",
   "legal.privacy.p3": "Az előrejelzési kérések a böngészőből az Open-Meteóhoz, a támogatott amerikai előrejelzések és riasztások esetén pedig az U.S. National Weather Service-hez kerülnek. A nemzetközi nyilvános riasztásokhoz a böngésző elküldi a kiválasztott ország kódját és nevét, valamint a felület nyelvét a duskline Cloudflare Pages-funkciójának, amely hivatalos CAP-riasztásokat kér le az IFRC Alert Hubtól. Ha rendelkezésre áll, a kiválasztott hely első szintű közigazgatási régiója (például állam vagy tartomány) is elküldésre kerül ennek a funkciónak; a város koordinátái a böngészőben maradnak. A szolgáltatások megkapják a válaszadáshoz szükséges adatokat, és saját adatvédelmi szabályzatuk szerint járnak el.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Használja a duskline-t jogszerűen és felelősséggel. Ne zavarja az alkalmazást, ne terhelje túl a szolgáltatók rendszereit, és ne támaszkodjon rá ott, ahol szakmai vagy hivatalos forrás szükséges.",
   "legal.terms.h5": "Változások",
   "legal.terms.p5": "Ezek a feltételek az alkalmazás fejlődésével módosulhatnak. A hatálybalépési dátum utáni további használat a frissített feltételek elfogadását jelenti.",
-  "legal.privacy.map": "A térképcsempe-kérések elküldik a látható térképterületet és a nagyítási szintet az OpenFreeMap szolgáltatásnak. A részletes térkép betöltésekor a duskline az adott nézet mintavételezett koordinátarácsát is elküldi az Open-Meteo szolgáltatásnak. A térkép mozgatása új rácsot kér; a réteg vagy az óra módosítása a már betöltött adatokat használja."
+  "legal.privacy.map": "A térképcsempe-kérések elküldik a látható térképterületet és a nagyítási szintet az OpenFreeMap szolgáltatásnak. A részletes térkép betöltésekor a duskline az adott nézet mintavételezett koordinátarácsát is elküldi az Open-Meteo szolgáltatásnak. A térkép mozgatása új rácsot kér; a réteg vagy az óra módosítása a már betöltött adatokat használja.",
+  "legal.privacy.pushTitle": "Értesítések",
+  "legal.privacy.push": "Bekapcsoláskor a duskline 90 napig tárolja a helyeket és a feliratkozást a szerveren; a használat meghosszabbítja ezt. Kikapcsoláskor törli a bejegyzést."
 }

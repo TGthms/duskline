@@ -396,6 +396,31 @@ test('storage failure cannot prevent disabling delivery', async ({ page }) => {
   });
   await page.getByLabel('Weather notifications', { exact: true }).uncheck();
   await expect.poll(() => f.records.size).toBe(0);
-  expect(await page.evaluate(() => window.__push.sub)).toBe(null);
   await expect(page.locator('.weather-push-status')).toContainText('local storage');
+  expect(await page.evaluate(() => window.__push.sub)).toBe(null);
+});
+test('returning from a notification does not wait for a slow alert check', async ({ page }) => {
+  await fixtures(page);
+  let release;
+  const held = new Promise((r) => (release = r)),
+    batches = [];
+  page.on('request', (request) => {
+    if (request.url().includes('api.open-meteo.com')) {
+      const coordinates = new URL(request.url()).searchParams.get('latitude') || '';
+      if (coordinates && coordinates !== '42.36') batches.push(coordinates);
+    }
+  });
+  await page.route('https://api.weather.gov/alerts/**', async (route) => {
+    await held;
+    await route.fulfill({ json: { features: [] } }).catch(() => {});
+  });
+  try {
+    await page.goto('/?lat=42.36&lon=-71.06&name=Boston&country_code=US&alert=slow');
+    await expect(page.locator('#weatherDetail')).toBeVisible();
+    await page.locator('#weatherDetailBack').click();
+    await expect(page.locator('#weatherDetail')).toBeHidden();
+    await expect.poll(() => batches.length).toBeGreaterThan(0);
+  } finally {
+    release();
+  }
 });

@@ -7,7 +7,7 @@
   "legal.privacy.title": "Chính sách quyền riêng tư",
   "legal.privacy.intro": "Giải thích rõ những gì ở lại trình duyệt và những gì được gửi tới nhà cung cấp thời tiết.",
   "legal.privacy.h1": "Những gì duskline lưu trữ",
-  "legal.privacy.p1": "duskline không có tài khoản, hồ sơ, mã nhận dạng quảng cáo hay bảng điều khiển riêng. Ngôn ngữ, tùy chọn đơn vị, mục yêu thích, phản hồi đã lưu và một vị trí đã lưu gần đúng có thể được lưu cục bộ trong trình duyệt. Thông tin này không được tải lên duskline.",
+  "legal.privacy.p1": "Bạn có thể dùng duskline mà không cần tài khoản. Theo mặc định, ngôn ngữ, đơn vị, địa điểm và dự báo đã lưu chỉ được lưu trong trình duyệt.",
   "legal.privacy.h2": "Vị trí, dự báo và cảnh báo",
   "legal.privacy.p2": "Nếu bạn chọn «Dùng vị trí của tôi», trình duyệt sẽ xin quyền. duskline dùng kết quả để yêu cầu dự báo và làm tròn tọa độ đã lưu để giảm độ chính xác. Geocoding ngược được yêu cầu từ BigDataCloud và nếu thất bại thì từ OpenStreetMap Nominatim, nên các dịch vụ đó nhận tọa độ đã làm tròn. Bạn có thể từ chối quyền, gỡ ghim đã lưu, xóa mục yêu thích hoặc dữ liệu trang bất cứ lúc nào.",
   "legal.privacy.p3": "Yêu cầu dự báo được gửi từ trình duyệt của bạn đến Open-Meteo và, với dự báo và cảnh báo Hoa Kỳ được hỗ trợ, đến U.S. National Weather Service. Với cảnh báo công cộng quốc tế, trình duyệt gửi mã và tên quốc gia đã chọn cùng ngôn ngữ giao diện đến hàm Cloudflare Pages của duskline; hàm này yêu cầu cảnh báo CAP chính thức từ IFRC Alert Hub. Khi có sẵn, khu vực hành chính cấp một của địa điểm đã chọn (chẳng hạn tiểu bang hoặc tỉnh) cũng được gửi đến hàm này; tọa độ thành phố vẫn nằm trong trình duyệt. Các dịch vụ này nhận thông tin cần thiết để trả lời và áp dụng chính sách quyền riêng tư riêng.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Hãy dùng duskline hợp pháp và có trách nhiệm. Đừng can thiệp vào ứng dụng, đừng quá tải dịch vụ của nhà cung cấp, và đừng dựa vào nó khi cần nguồn chuyên môn hoặc chính thức.",
   "legal.terms.h5": "Thay đổi",
   "legal.terms.p5": "Các điều khoản này có thể được sửa khi ứng dụng phát triển. Tiếp tục sử dụng sau ngày hiệu lực nghĩa là bạn chấp nhận điều khoản đã cập nhật.",
-  "legal.privacy.map": "Yêu cầu ô bản đồ gửi vùng bản đồ đang hiển thị và mức thu phóng đến OpenFreeMap. Khi bản đồ chi tiết tải xong, duskline cũng gửi một lưới tọa độ lấy mẫu của chế độ xem đó đến Open-Meteo. Di chuyển bản đồ sẽ yêu cầu lưới mới; đổi lớp hoặc giờ sẽ dùng dữ liệu đã tải."
+  "legal.privacy.map": "Yêu cầu ô bản đồ gửi vùng bản đồ đang hiển thị và mức thu phóng đến OpenFreeMap. Khi bản đồ chi tiết tải xong, duskline cũng gửi một lưới tọa độ lấy mẫu của chế độ xem đó đến Open-Meteo. Di chuyển bản đồ sẽ yêu cầu lưới mới; đổi lớp hoặc giờ sẽ dùng dữ liệu đã tải.",
+  "legal.privacy.pushTitle": "Thông báo",
+  "legal.privacy.push": "Khi bật, duskline lưu địa điểm và đăng ký trên máy chủ trong 90 ngày, gia hạn khi dùng ứng dụng. Tắt sẽ xóa bản ghi."
 }

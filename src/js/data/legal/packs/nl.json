@@ -7,7 +7,7 @@
   "legal.privacy.title": "Privacybeleid",
   "legal.privacy.intro": "Een duidelijke uitleg van wat in je browser blijft en wat naar weeraanbieders wordt gestuurd.",
   "legal.privacy.h1": "Wat duskline opslaat",
-  "legal.privacy.p1": "duskline heeft geen accounts, profielen, advertentie-identificaties of een privédashboard. Je taal, eenhedenvoorkeur, favorieten, gecachte antwoorden en een bij benadering opgeslagen locatie kunnen lokaal in je browser worden bewaard. Deze informatie wordt niet naar duskline geüpload.",
+  "legal.privacy.p1": "Je kunt duskline zonder account gebruiken. Taal, eenheden, opgeslagen plaatsen en bewaarde voorspellingen blijven standaard alleen in je browser.",
   "legal.privacy.h2": "Locatie, verwachtingen en waarschuwingen",
   "legal.privacy.p2": "Als je “Mijn locatie gebruiken” kiest, vraagt de browser om toestemming. duskline gebruikt het resultaat om een verwachting op te vragen en rondt opgeslagen coördinaten af om de precisie te verlagen. Reverse geocoding gaat via BigDataCloud en bij falen via OpenStreetMap Nominatim; die diensten ontvangen de afgeronde coördinaten. Je kunt toestemming weigeren, de opgeslagen pin verwijderen, favorieten wissen of sitedata op elk moment wissen.",
   "legal.privacy.p3": "Voorspellingsverzoeken gaan vanuit je browser naar Open-Meteo en voor ondersteunde Amerikaanse verwachtingen en waarschuwingen naar de U.S. National Weather Service. Voor internationale openbare waarschuwingen stuurt je browser de code en naam van het gekozen land en de interfacetaal naar de Cloudflare Pages-functie van duskline. Die vraagt officiële CAP-waarschuwingen op bij IFRC Alert Hub. Wanneer beschikbaar wordt ook de bestuurlijke regio op het eerste niveau van de gekozen plaats (zoals een staat of provincie) naar deze functie gestuurd; de coördinaten van de stad blijven in je browser. Deze diensten ontvangen de nodige verzoekinformatie en hanteren hun eigen privacybeleid.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Gebruik duskline wettig en verantwoord. Verstoor de app niet, overbelast geen diensten van aanbieders en vertrouw er niet op waar een professionele of officiële bron vereist is.",
   "legal.terms.h5": "Wijzigingen",
   "legal.terms.p5": "Deze voorwaarden kunnen worden herzien naarmate de app evolueert. Voortgezet gebruik na de ingangsdatum betekent dat je de bijgewerkte voorwaarden accepteert.",
-  "legal.privacy.map": "Kaarttegelverzoeken sturen het zichtbare kaartgebied en zoomniveau naar OpenFreeMap. Wanneer de gedetailleerde kaart wordt geladen, stuurt duskline ook een bemonsterd coördinatenraster voor die weergave naar Open-Meteo. Als je de kaart verplaatst, wordt een nieuw raster opgevraagd; een andere laag of tijd gebruikt de al geladen gegevens."
+  "legal.privacy.map": "Kaarttegelverzoeken sturen het zichtbare kaartgebied en zoomniveau naar OpenFreeMap. Wanneer de gedetailleerde kaart wordt geladen, stuurt duskline ook een bemonsterd coördinatenraster voor die weergave naar Open-Meteo. Als je de kaart verplaatst, wordt een nieuw raster opgevraagd; een andere laag of tijd gebruikt de al geladen gegevens.",
+  "legal.privacy.pushTitle": "Meldingen",
+  "legal.privacy.push": "Inschakelen bewaart je plaatsen en abonnement 90 dagen op de server van duskline, verlengd bij gebruik. Uitschakelen verwijdert het record."
 }

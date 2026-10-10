@@ -7,7 +7,7 @@
   "legal.privacy.title": "Zásady ochrany soukromí",
   "legal.privacy.intro": "Jasné vysvětlení, co zůstává v prohlížeči a co se odesílá poskytovatelům počasí.",
   "legal.privacy.h1": "Co duskline ukládá",
-  "legal.privacy.p1": "duskline nemá účty, profily, reklamní identifikátory ani soukromý panel. Jazyk, preference jednotek, oblíbené položky, odpovědi v mezipaměti a přibližná uložená poloha se mohou ukládat lokálně v prohlížeči. Tyto informace se na duskline nenahrávají.",
+  "legal.privacy.p1": "duskline můžete používat bez účtu. Jazyk, jednotky, uložená místa a uložené předpovědi zůstávají ve výchozím nastavení pouze v prohlížeči.",
   "legal.privacy.h2": "Poloha, předpovědi a upozornění",
   "legal.privacy.p2": "Pokud zvolíte „Použít mou polohu“, prohlížeč požádá o oprávnění. duskline použije výsledek k vyžádání předpovědi a zaokrouhlí uložené souřadnice, aby snížil přesnost. Reverzní geokódování se žádá u BigDataCloud a při selhání u OpenStreetMap Nominatim, takže tyto služby obdrží zaokrouhlené souřadnice. Oprávnění můžete odmítnout, odebrat uložený špendlík, vymazat oblíbené nebo data webu kdykoli.",
   "legal.privacy.p3": "Požadavky na předpověď se z vašeho prohlížeče odesílají do Open-Meteo a u podporovaných předpovědí a upozornění pro USA také do U.S. National Weather Service. U mezinárodních veřejných upozornění odešle prohlížeč kód a název zvolené země a jazyk rozhraní funkci duskline na Cloudflare Pages, která získá oficiální upozornění CAP z IFRC Alert Hub. Je-li k dispozici, odesílá se této funkci také správní oblast první úrovně zvoleného místa (například stát nebo provincie); souřadnice města zůstávají ve vašem prohlížeči. Služby obdrží potřebné informace a řídí se vlastními zásadami ochrany soukromí.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Používejte duskline zákonně a odpovědně. Nerušte aplikaci, nepřetěžujte služby poskytovatelů a nespoléhejte na ni tam, kde je vyžadován profesionální nebo oficiální zdroj.",
   "legal.terms.h5": "Změny",
   "legal.terms.p5": "Tyto podmínky se mohou revidovat s vývojem aplikace. Pokračující používání po datu účinnosti znamená, že přijímáte aktualizované podmínky.",
-  "legal.privacy.map": "Požadavky na mapové dlaždice odesílají do OpenFreeMap viditelnou oblast mapy a úroveň přiblížení. Po načtení podrobné mapy odešle duskline do Open-Meteo také vzorkovanou síť souřadnic pro tento pohled. Posunutím mapy se vyžádá nová síť; změna vrstvy nebo hodiny používá již načtená data."
+  "legal.privacy.map": "Požadavky na mapové dlaždice odesílají do OpenFreeMap viditelnou oblast mapy a úroveň přiblížení. Po načtení podrobné mapy odešle duskline do Open-Meteo také vzorkovanou síť souřadnic pro tento pohled. Posunutím mapy se vyžádá nová síť; změna vrstvy nebo hodiny používá již načtená data.",
+  "legal.privacy.pushTitle": "Oznámení",
+  "legal.privacy.push": "Zapnutí uloží místa a odběr na server duskline na 90 dní, obnovených používáním aplikace. Vypnutí záznam odstraní."
 }

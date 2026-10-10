@@ -7,7 +7,7 @@
   "legal.privacy.title": "Privacy Policy",
   "legal.privacy.intro": "A clear explanation of what stays in your browser and what is sent to weather and public-alert providers.",
   "legal.privacy.h1": "What duskline stores",
-  "legal.privacy.p1": "duskline has no accounts, profiles, advertising identifiers, or private dashboard. Your language, unit preference, favorites, cached responses, and an approximate saved location may be stored locally in your browser. This information is not uploaded to duskline.",
+  "legal.privacy.p1": "You can use duskline without an account. By default, language, units, saved places and forecast snapshots are stored only in your browser.",
   "legal.privacy.h2": "Location, forecasts, and alerts",
   "legal.privacy.p2": "If you choose “Use my location,” your browser asks for permission. duskline uses the result to request a forecast and rounds saved coordinates to reduce precision. Reverse geocoding is requested from BigDataCloud and, if that fails, OpenStreetMap Nominatim, so those services receive the rounded coordinates. You can deny permission, remove the saved pin in the app, clear favorites, or clear site data at any time.",
   "legal.privacy.p3": "Forecast requests go directly from your browser to Open-Meteo and, for eligible U.S. forecasts and alerts, to the U.S. National Weather Service. For international public alerts, your browser sends the selected country code, country name, and interface language to duskline’s Cloudflare Pages endpoint, which requests official CAP alerts from IFRC Alert Hub. When available, the selected place’s first-level administrative region (such as a state or province) is also sent to that endpoint; city coordinates remain in your browser. These services receive the information needed to answer requests and maintain their own privacy policies.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Use duskline lawfully and responsibly. Do not interfere with the app, overload provider services, or rely on it where a professional or official source is required.",
   "legal.terms.h5": "Changes",
   "legal.terms.p5": "These terms may be revised as the app evolves. Continued use after the effective date means you accept the updated terms.",
-  "legal.privacy.map": "Map tile requests send the visible map area and zoom level to OpenFreeMap. When the detailed map loads, duskline also sends a sampled grid of coordinates for that view to Open-Meteo. Moving the map requests another grid; changing the displayed layer or hour uses data already loaded."
+  "legal.privacy.map": "Map tile requests send the visible map area and zoom level to OpenFreeMap. When the detailed map loads, duskline also sends a sampled grid of coordinates for that view to Open-Meteo. Moving the map requests another grid; changing the displayed layer or hour uses data already loaded.",
+  "legal.privacy.pushTitle": "Notifications",
+  "legal.privacy.push": "Enabling notifications stores your selected places and subscription securely on duskline’s server for 90 days, renewed when you use the app. Turning notifications off removes the server record."
 }

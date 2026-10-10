@@ -7,7 +7,7 @@
   "legal.privacy.title": "Politica de confidențialitate",
   "legal.privacy.intro": "O explicație clară a ceea ce rămâne în browser și a ceea ce este trimis furnizorilor de vreme.",
   "legal.privacy.h1": "Ce stochează duskline",
-  "legal.privacy.p1": "duskline nu are conturi, profiluri, identificatori publicitari sau un tablou de bord privat. Limba, preferința de unități, favoritele, răspunsurile din cache și o locație salvată aproximativă pot fi stocate local în browser. Aceste informații nu sunt încărcate către duskline.",
+  "legal.privacy.p1": "Poți folosi duskline fără cont. În mod implicit, limba, unitățile, locurile salvate și prognozele stocate rămân doar în browser.",
   "legal.privacy.h2": "Locație, prognoze și alerte",
   "legal.privacy.p2": "Dacă alegeți „Folosește locația mea”, browserul cere permisiunea. duskline folosește rezultatul pentru a cere o prognoză și rotunjește coordonatele salvate pentru a reduce precizia. Geocodarea inversă este solicitată de la BigDataCloud și, dacă eșuează, de la OpenStreetMap Nominatim, astfel că acele servicii primesc coordonatele rotunjite. Puteți refuza permisiunea, elimina pinul salvat, șterge favoritele sau datele site-ului oricând.",
   "legal.privacy.p3": "Solicitările de prognoză sunt trimise din browser către Open-Meteo și, pentru prognozele și alertele SUA acceptate, către U.S. National Weather Service. Pentru alertele publice internaționale, browserul trimite codul și numele țării selectate și limba interfeței către funcția Cloudflare Pages a duskline, care solicită alerte CAP oficiale de la IFRC Alert Hub. Dacă este disponibilă, regiunea administrativă de primul nivel a locului selectat (de exemplu, un stat sau o provincie) este trimisă și acestei funcții; coordonatele orașului rămân în browser. Aceste servicii primesc informațiile necesare pentru a răspunde și au propriile politici de confidențialitate.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Folosiți duskline în mod legal și responsabil. Nu interferați cu aplicația, nu supraîncărcați serviciile furnizorilor și nu vă bazați pe ea acolo unde este necesară o sursă profesională sau oficială.",
   "legal.terms.h5": "Modificări",
   "legal.terms.p5": "Acești termeni pot fi revizuiți pe măsură ce aplicația evoluează. Continuarea utilizării după data de intrare în vigoare înseamnă că acceptați termenii actualizați.",
-  "legal.privacy.map": "Solicitările dalelor hărții trimit către OpenFreeMap zona vizibilă și nivelul de zoom. Când se încarcă harta detaliată, duskline trimite și către Open-Meteo o grilă eșantionată de coordonate pentru acea vizualizare. Mutarea hărții solicită o altă grilă; schimbarea stratului sau a orei folosește datele deja încărcate."
+  "legal.privacy.map": "Solicitările dalelor hărții trimit către OpenFreeMap zona vizibilă și nivelul de zoom. Când se încarcă harta detaliată, duskline trimite și către Open-Meteo o grilă eșantionată de coordonate pentru acea vizualizare. Mutarea hărții solicită o altă grilă; schimbarea stratului sau a orei folosește datele deja încărcate.",
+  "legal.privacy.pushTitle": "Notificări",
+  "legal.privacy.push": "Activarea stochează locurile și abonamentul pe serverul duskline timp de 90 de zile, reînnoite la utilizare. Dezactivarea șterge înregistrarea."
 }

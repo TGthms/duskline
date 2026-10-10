@@ -7,7 +7,7 @@
   "legal.privacy.title": "Privatlivspolitik",
   "legal.privacy.intro": "En klar forklaring af, hvad der bliver i din browser, og hvad der sendes til vejrudbydere.",
   "legal.privacy.h1": "Hvad duskline gemmer",
-  "legal.privacy.p1": "duskline har ingen konti, profiler, reklame-id’er eller et privat dashboard. Sprog, enhedspræference, favoritter, cachede svar og en omtrentlig gemt placering kan gemmes lokalt i din browser. Disse oplysninger uploades ikke til duskline.",
+  "legal.privacy.p1": "Du kan bruge duskline uden en konto. Sprog, enheder, gemte steder og gemte prognoser opbevares som standard kun i din browser.",
   "legal.privacy.h2": "Placering, prognoser og varsler",
   "legal.privacy.p2": "Hvis du vælger “Brug min placering”, beder browseren om tilladelse. duskline bruger resultatet til at hente en udsigt og afrunder gemte koordinater for at sænke præcisionen. Omvendt geokodning anmodes hos BigDataCloud og, hvis det fejler, OpenStreetMap Nominatim, så disse tjenester modtager de afrundede koordinater. Du kan afvise tilladelsen, fjerne den gemte nål, rydde favoritter eller slettede data når som helst.",
   "legal.privacy.p3": "Prognoseforespørgsler sendes fra din browser til Open-Meteo og, for understøttede amerikanske prognoser og varsler, til U.S. National Weather Service. Ved internationale offentlige varsler sender din browser koden og navnet på det valgte land samt grænsefladens sprog til duskline-funktionen på Cloudflare Pages, som henter officielle CAP-varsler fra IFRC Alert Hub. Når det er muligt, sendes den valgte placeringens administrative region på første niveau (f.eks. en delstat eller provins) også til funktionen; byens koordinater bliver i din browser. Tjenesterne modtager de nødvendige oplysninger og har deres egne privatlivspolitikker.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Brug duskline lovligt og ansvarligt. Forstyr ikke appen, overbelast ikke udbydernes tjenester, og stol ikke på den, hvor en professionel eller officiel kilde er påkrævet.",
   "legal.terms.h5": "Ændringer",
   "legal.terms.p5": "Disse vilkår kan revideres, efterhånden som appen udvikler sig. Fortsat brug efter ikrafttrædelsesdatoen betyder, at du accepterer de opdaterede vilkår.",
-  "legal.privacy.map": "Anmodninger om kortfelter sender det synlige kortområde og zoomniveau til OpenFreeMap. Når det detaljerede kort indlæses, sender duskline også et samplet koordinatnet for visningen til Open-Meteo. Flyttes kortet, hentes et nyt net; skift af lag eller tidspunkt bruger allerede indlæste data."
+  "legal.privacy.map": "Anmodninger om kortfelter sender det synlige kortområde og zoomniveau til OpenFreeMap. Når det detaljerede kort indlæses, sender duskline også et samplet koordinatnet for visningen til Open-Meteo. Flyttes kortet, hentes et nyt net; skift af lag eller tidspunkt bruger allerede indlæste data.",
+  "legal.privacy.pushTitle": "Notifikationer",
+  "legal.privacy.push": "Aktivering gemmer steder og abonnement på duskline-serveren i 90 dage, fornyet ved brug. Deaktivering fjerner registreringen."
 }

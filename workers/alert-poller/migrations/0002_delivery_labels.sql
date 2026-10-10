@@ -1,0 +1,1 @@
+ALTER TABLE push_deliveries ADD COLUMN label TEXT NOT NULL DEFAULT '';

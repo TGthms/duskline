@@ -5611,16 +5611,15 @@
       try { clearWeatherSkeleton(); } catch (e) { /* ignore */ }
       const alertCheck=alertId?alertsApi.ensureAlerts(pack,{force:true,retryFailed:true}):null;
       openDetail(pack);
-      if(alertId){
-        await alertCheck;
-        if(!openCity || !sameCity(openCity.city,city))return true;
-        openDetail(pack);
+      if(alertId)Promise.resolve(alertCheck).then(function () {
+        if(!openCity || !sameCity(openCity.city,city))return;
+        openDetail(cache.get(cityKey(city)) || pack);
         const matches=pack.alerts && (pack.alerts.find(alert=>alert.id===alertId) || pack.alerts.find(alert=>alertEvent && alert.event===alertEvent));
         if(matches && openCity && sameCity(openCity.city,city)){
           alertsApi.restoreOpenAlertTitles([matches.event]);
-          requestAnimationFrame(()=>{const target=detailMods.querySelector('.weather-alert.is-open');if(target)target.scrollIntoView({block:'center',behavior:motionFull()?'smooth':'auto'});});
+          requestAnimationFrame(()=>{if(!openCity || !sameCity(openCity.city,city))return;const target=detailMods.querySelector('.weather-alert.is-open');if(target)target.scrollIntoView({block:'center',behavior:motionFull()?'smooth':'auto'});});
         }else notify(pack.alertsError?t('weather.push.providerError','The last check failed. Retrying automatically.'):t('weather.push.expired','This warning is no longer active. Showing current alerts.'));
-      }
+      }).catch(function () { console.warn('weather_notification_navigation_failed'); });
       return true;
     } catch (e) {
       return false;

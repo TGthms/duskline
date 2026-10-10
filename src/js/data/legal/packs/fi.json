@@ -7,7 +7,7 @@
   "legal.privacy.title": "Tietosuojakäytäntö",
   "legal.privacy.intro": "Selkeä selitys siitä, mitä selaimeen jää ja mitä lähetetään sääpalveluntarjoajille.",
   "legal.privacy.h1": "Mitä duskline tallentaa",
-  "legal.privacy.p1": "dusklinella ei ole tilejä, profiileja, mainostunnisteita eikä yksityistä hallintapaneelia. Kieli, yksikköasetus, suosikit, välimuistissa olevat vastaukset ja likimääräinen tallennettu sijainti voidaan tallentaa paikallisesti selaimeen. Näitä tietoja ei lähetetä dusklinelle.",
+  "legal.privacy.p1": "Voit käyttää dusklinea ilman tiliä. Kieli, yksiköt, tallennetut paikat ja ennusteet säilytetään oletuksena vain selaimessasi.",
   "legal.privacy.h2": "Sijainti, ennusteet ja varoitukset",
   "legal.privacy.p2": "Jos valitset ”Käytä sijaintiani”, selain pyytää lupaa. duskline käyttää tulosta ennusteen hakemiseen ja pyöristää tallennetut koordinaatit tarkkuuden vähentämiseksi. Käänteinen geokoodaus pyydetään BigDataCloudilta ja epäonnistuessa OpenStreetMap Nominatimilta, joten nämä palvelut saavat pyöristetyt koordinaatit. Voit evätä luvan, poistaa tallennetun merkin, tyhjentää suosikit tai sivuston tiedot milloin tahansa.",
   "legal.privacy.p3": "Ennustepyynnöt lähetetään selaimestasi Open-Meteolle ja tuettujen Yhdysvaltain ennusteiden ja varoitusten osalta U.S. National Weather Servicelle. Kansainvälisiä julkisia varoituksia varten selaimesi lähettää valitun maan koodin ja nimen sekä käyttöliittymän kielen duskline Cloudflare Pages -toiminnolle, joka pyytää viralliset CAP-varoitukset IFRC Alert Hubilta. Kun se on saatavilla, myös valitun paikan ensimmäisen tason hallintoalue (kuten osavaltio tai maakunta) lähetetään tälle toiminnolle; kaupungin koordinaatit pysyvät selaimessasi. Palvelut saavat vastaamiseen tarvittavat tiedot ja noudattavat omia tietosuojakäytäntöjään.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Käytä dusklinea lainmukaisesti ja vastuullisesti. Älä häiritse sovellusta, ylikuormita tarjoajien palveluita äläkä luota siihen, kun tarvitaan ammattimaista tai virallista lähdettä.",
   "legal.terms.h5": "Muutokset",
   "legal.terms.p5": "Näitä ehtoja voidaan tarkistaa sovelluksen kehittyessä. Jatkuva käyttö voimaantulopäivän jälkeen merkitsee päivitettyjen ehtojen hyväksymistä.",
-  "legal.privacy.map": "Karttaruutupyynnöt lähettävät näkyvän kartta-alueen ja zoomaustason OpenFreeMapille. Kun yksityiskohtainen kartta latautuu, duskline lähettää Open-Meteolle myös näytön koordinaateista muodostetun näyteruudukon. Kartan siirtäminen pyytää uuden ruudukon; kerroksen tai tunnin vaihtaminen käyttää jo ladattuja tietoja."
+  "legal.privacy.map": "Karttaruutupyynnöt lähettävät näkyvän kartta-alueen ja zoomaustason OpenFreeMapille. Kun yksityiskohtainen kartta latautuu, duskline lähettää Open-Meteolle myös näytön koordinaateista muodostetun näyteruudukon. Kartan siirtäminen pyytää uuden ruudukon; kerroksen tai tunnin vaihtaminen käyttää jo ladattuja tietoja.",
+  "legal.privacy.pushTitle": "Ilmoitukset",
+  "legal.privacy.push": "Käyttöönotto tallentaa paikat ja tilauksen duskline-palvelimelle 90 päiväksi; käyttö uusii ajan. Poistaminen käytöstä poistaa tietueen."
 }

@@ -7,7 +7,7 @@
   "legal.privacy.title": "Polityka prywatności",
   "legal.privacy.intro": "Jasne wyjaśnienie, co zostaje w przeglądarce, a co jest wysyłane do dostawców pogody.",
   "legal.privacy.h1": "Co przechowuje duskline",
-  "legal.privacy.p1": "duskline nie ma kont, profili, identyfikatorów reklamowych ani prywatnego panelu. Język, preferencja jednostek, ulubione, odpowiedzi z pamięci podręcznej i przybliżona zapisana lokalizacja mogą być przechowywane lokalnie w przeglądarce. Te informacje nie są przesyłane do duskline.",
+  "legal.privacy.p1": "Możesz korzystać z duskline bez konta. Domyślnie język, jednostki, zapisane miejsca i zapisane prognozy są przechowywane tylko w przeglądarce.",
   "legal.privacy.h2": "Lokalizacja, prognozy i alerty",
   "legal.privacy.p2": "Jeśli wybierzesz „Użyj mojej lokalizacji”, przeglądarka poprosi o zgodę. duskline używa wyniku do pobrania prognozy i zaokrągla zapisane współrzędne, aby zmniejszyć dokładność. Odwrotne geokodowanie jest żądane od BigDataCloud, a w razie niepowodzenia od OpenStreetMap Nominatim, więc te usługi otrzymują zaokrąglone współrzędne. Możesz odmówić zgody, usunąć zapisaną pinezkę, wyczyścić ulubione lub dane witryny w dowolnym momencie.",
   "legal.privacy.p3": "Zapytania o prognozę są wysyłane z przeglądarki do Open-Meteo, a w przypadku obsługiwanych prognoz i alertów dla USA także do U.S. National Weather Service. Przy międzynarodowych alertach publicznych przeglądarka wysyła kod i nazwę wybranego kraju oraz język interfejsu do funkcji Cloudflare Pages duskline, która pobiera oficjalne alerty CAP z IFRC Alert Hub. Jeśli jest dostępny, do tej funkcji wysyłany jest również region administracyjny pierwszego stopnia wybranego miejsca (np. stan lub prowincja); współrzędne miasta pozostają w przeglądarce. Usługi otrzymują informacje potrzebne do odpowiedzi i stosują własne polityki prywatności.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Korzystaj z duskline zgodnie z prawem i odpowiedzialnie. Nie zakłócaj działania aplikacji, nie przeciążaj usług dostawców i nie polegaj na niej tam, gdzie wymagane jest źródło profesjonalne lub oficjalne.",
   "legal.terms.h5": "Zmiany",
   "legal.terms.p5": "Niniejsze warunki mogą być rewidowane wraz z rozwojem aplikacji. Dalsze korzystanie po dacie wejścia w życie oznacza akceptację zaktualizowanych warunków.",
-  "legal.privacy.map": "Żądania kafelków wysyłają do OpenFreeMap widoczny obszar mapy i poziom powiększenia. Po załadowaniu szczegółowej mapy duskline wysyła też do Open-Meteo próbkowaną siatkę współrzędnych dla tego widoku. Przesunięcie mapy pobiera nową siatkę; zmiana warstwy lub godziny korzysta z już wczytanych danych."
+  "legal.privacy.map": "Żądania kafelków wysyłają do OpenFreeMap widoczny obszar mapy i poziom powiększenia. Po załadowaniu szczegółowej mapy duskline wysyła też do Open-Meteo próbkowaną siatkę współrzędnych dla tego widoku. Przesunięcie mapy pobiera nową siatkę; zmiana warstwy lub godziny korzysta z już wczytanych danych.",
+  "legal.privacy.pushTitle": "Powiadomienia",
+  "legal.privacy.push": "Włączenie zapisuje miejsca i subskrypcję na serwerze duskline na 90 dni, odnawiane podczas używania aplikacji. Wyłączenie usuwa rekord."
 }

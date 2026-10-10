@@ -7,7 +7,7 @@
   "legal.privacy.title": "隐私政策",
   "legal.privacy.intro": "清晰说明哪些信息留在浏览器中，以及哪些信息会发送给天气服务提供商。",
   "legal.privacy.h1": "duskline 保存的信息",
-  "legal.privacy.p1": "duskline 没有账户、个人资料、广告标识符或私人控制台。您的语言、单位偏好、收藏、缓存响应以及大致保存的位置可能会存储在浏览器本地。这些信息不会上传到 duskline。",
+  "legal.privacy.p1": "使用 duskline 无需账户。默认情况下，语言、单位、已保存地点和预报快照仅存储在浏览器中。",
   "legal.privacy.h2": "位置、预报与预警",
   "legal.privacy.p2": "如果您选择“使用我的位置”，浏览器会请求权限。duskline 用该结果请求预报，并对保存的坐标进行取整以降低精度。反向地理编码会向 BigDataCloud 请求，失败时再向 OpenStreetMap Nominatim 请求，因此这些服务会收到取整后的坐标。您可以随时拒绝权限、移除已保存的图钉、清除收藏或站点数据。",
   "legal.privacy.p3": "预报请求会由浏览器发送至 Open-Meteo；对于受支持的美国预报和预警，也会发送至美国国家气象局。查询国际公共预警时，浏览器会将所选国家/地区的代码、名称和界面语言发送至 duskline 的 Cloudflare Pages 函数，由该函数向 IFRC Alert Hub 请求官方 CAP 预警。如有该信息，所选地点的一级行政区（例如州或省）也会发送至此函数；城市坐标仍保留在浏览器中。这些服务会接收响应请求所需的信息，并遵循各自的隐私政策。",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "请合法、负责任地使用 duskline。请勿干扰应用、使提供商服务过载，或在需要专业或官方来源的场合依赖本应用。",
   "legal.terms.h5": "变更",
   "legal.terms.p5": "随着应用演进，本条款可能会修订。生效日期之后继续使用，即表示您接受更新后的条款。",
-  "legal.privacy.map": "地图瓦片请求会将可见地图区域和缩放级别发送至 OpenFreeMap。详细地图加载时，duskline 也会将该视图的采样坐标网格发送至 Open-Meteo。移动地图会请求新的网格；切换图层或时间则使用已加载的数据。"
+  "legal.privacy.map": "地图瓦片请求会将可见地图区域和缩放级别发送至 OpenFreeMap。详细地图加载时，duskline 也会将该视图的采样坐标网格发送至 Open-Meteo。移动地图会请求新的网格；切换图层或时间则使用已加载的数据。",
+  "legal.privacy.pushTitle": "通知",
+  "legal.privacy.push": "开启通知后，duskline 会在服务器上保存所选地点和推送订阅信息 90 天，使用应用时续期。关闭通知会删除该记录。"
 }

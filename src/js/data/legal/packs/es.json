@@ -7,7 +7,7 @@
   "legal.privacy.title": "Política de privacidad",
   "legal.privacy.intro": "Una explicación clara de qué permanece en tu navegador y qué se envía a los proveedores meteorológicos.",
   "legal.privacy.h1": "Qué almacena duskline",
-  "legal.privacy.p1": "duskline no tiene cuentas, perfiles, identificadores publicitarios ni un panel privado. Tu idioma, preferencia de unidades, favoritos, respuestas en caché y una ubicación guardada aproximada pueden almacenarse localmente en tu navegador. Esta información no se envía a duskline.",
+  "legal.privacy.p1": "Puedes usar duskline sin cuenta. De forma predeterminada, el idioma, las unidades, los lugares guardados y las previsiones almacenadas se guardan solo en tu navegador.",
   "legal.privacy.h2": "Ubicación, previsiones y alertas",
   "legal.privacy.p2": "Si eliges «Usar mi ubicación», el navegador pide permiso. duskline usa el resultado para pedir una previsión y redondea las coordenadas guardadas para reducir la precisión. La geocodificación inversa se solicita a BigDataCloud y, si falla, a OpenStreetMap Nominatim, de modo que esos servicios reciben las coordenadas redondeadas. Puedes denegar el permiso, quitar el pin guardado, borrar favoritos o borrar los datos del sitio en cualquier momento.",
   "legal.privacy.p3": "Las solicitudes de pronóstico se envían desde tu navegador a Open-Meteo y, para los pronósticos y alertas de EE. UU. cubiertos, al National Weather Service de EE. UU. Para las alertas públicas internacionales, tu navegador envía el código y el nombre del país seleccionado y el idioma de la interfaz a la función de Cloudflare Pages de duskline, que solicita alertas CAP oficiales a IFRC Alert Hub. Cuando está disponible, también se envía a esa función la región administrativa de primer nivel del lugar elegido, como un estado o provincia; las coordenadas de la ciudad permanecen en tu navegador. Estos servicios reciben la información necesaria para responder y tienen sus propias políticas de privacidad.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Usa duskline de forma lícita y responsable. No interfieras con la aplicación, no sobrecargues los servicios de los proveedores ni confíes en ella donde se requiera una fuente profesional u oficial.",
   "legal.terms.h5": "Cambios",
   "legal.terms.p5": "Estos términos pueden revisarse a medida que evoluciona la aplicación. El uso continuado después de la fecha de vigencia significa que aceptas los términos actualizados.",
-  "legal.privacy.map": "Las solicitudes de mapas envían a OpenFreeMap el área visible y el nivel de zoom. Cuando se carga el mapa detallado, duskline también envía a Open-Meteo una cuadrícula de coordenadas muestreadas de esa vista. Al mover el mapa se solicita otra cuadrícula; cambiar la capa o la hora mostrada utiliza los datos ya cargados."
+  "legal.privacy.map": "Las solicitudes de mapas envían a OpenFreeMap el área visible y el nivel de zoom. Cuando se carga el mapa detallado, duskline también envía a Open-Meteo una cuadrícula de coordenadas muestreadas de esa vista. Al mover el mapa se solicita otra cuadrícula; cambiar la capa o la hora mostrada utiliza los datos ya cargados.",
+  "legal.privacy.pushTitle": "Notificaciones",
+  "legal.privacy.push": "Al activar los avisos, duskline guarda tus lugares y suscripción en su servidor durante 90 días, renovados al usar la app. Al desactivarlos, se elimina el registro."
 }

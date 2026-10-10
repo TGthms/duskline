@@ -7,7 +7,7 @@
   "legal.privacy.title": "Kebijakan Privasi",
   "legal.privacy.intro": "Penjelasan jelas tentang apa yang tetap di peramban dan apa yang dikirim ke penyedia cuaca.",
   "legal.privacy.h1": "Apa yang disimpan duskline",
-  "legal.privacy.p1": "duskline tidak memiliki akun, profil, pengenal iklan, atau dasbor pribadi. Bahasa, preferensi satuan, favorit, respons tersimpan, dan lokasi tersimpan perkiraan dapat disimpan secara lokal di peramban. Informasi ini tidak diunggah ke duskline.",
+  "legal.privacy.p1": "Anda dapat memakai duskline tanpa akun. Secara bawaan, bahasa, satuan, tempat tersimpan, dan prakiraan tersimpan hanya berada di browser.",
   "legal.privacy.h2": "Lokasi, prakiraan, dan peringatan",
   "legal.privacy.p2": "Jika Anda memilih «Gunakan lokasi saya», peramban meminta izin. duskline memakai hasilnya untuk meminta prakiraan dan membulatkan koordinat tersimpan agar presisi berkurang. Geocoding terbalik diminta dari BigDataCloud dan, jika gagal, dari OpenStreetMap Nominatim, sehingga layanan itu menerima koordinat yang dibulatkan. Anda dapat menolak izin, menghapus pin tersimpan, menghapus favorit, atau data situs kapan saja.",
   "legal.privacy.p3": "Permintaan prakiraan dikirim dari browser Anda ke Open-Meteo dan, untuk prakiraan dan peringatan AS yang didukung, ke U.S. National Weather Service. Untuk peringatan publik internasional, browser mengirim kode dan nama negara yang dipilih serta bahasa antarmuka ke fungsi Cloudflare Pages duskline, yang meminta peringatan CAP resmi dari IFRC Alert Hub. Jika tersedia, wilayah administratif tingkat pertama dari lokasi yang dipilih (seperti negara bagian atau provinsi) juga dikirim ke fungsi ini; koordinat kota tetap berada di browser Anda. Layanan ini menerima informasi yang diperlukan untuk merespons dan memiliki kebijakan privasi masing-masing.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "Gunakan duskline secara sah dan bertanggung jawab. Jangan mengganggu aplikasi, membebani layanan penyedia, atau mengandalkannya jika sumber profesional atau resmi diperlukan.",
   "legal.terms.h5": "Perubahan",
   "legal.terms.p5": "Ketentuan ini dapat direvisi seiring perkembangan aplikasi. Penggunaan berkelanjutan setelah tanggal berlaku berarti Anda menerima ketentuan yang diperbarui.",
-  "legal.privacy.map": "Permintaan ubin peta mengirim area peta yang terlihat dan tingkat zoom ke OpenFreeMap. Saat peta terperinci dimuat, duskline juga mengirim kisi koordinat sampel untuk tampilan itu ke Open-Meteo. Menggeser peta meminta kisi baru; mengganti lapisan atau jam menggunakan data yang sudah dimuat."
+  "legal.privacy.map": "Permintaan ubin peta mengirim area peta yang terlihat dan tingkat zoom ke OpenFreeMap. Saat peta terperinci dimuat, duskline juga mengirim kisi koordinat sampel untuk tampilan itu ke Open-Meteo. Menggeser peta meminta kisi baru; mengganti lapisan atau jam menggunakan data yang sudah dimuat.",
+  "legal.privacy.pushTitle": "Notifikasi",
+  "legal.privacy.push": "Mengaktifkan akan menyimpan tempat dan langganan di server duskline selama 90 hari, diperbarui saat aplikasi digunakan. Menonaktifkan menghapus catatan."
 }

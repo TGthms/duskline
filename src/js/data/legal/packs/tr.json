@@ -7,7 +7,7 @@
   "legal.privacy.title": "Gizlilik Politikası",
   "legal.privacy.intro": "Tarayıcınızda neyin kaldığının ve hava durumu sağlayıcılarına neyin gönderildiğinin açık bir açıklaması.",
   "legal.privacy.h1": "duskline’ın sakladıkları",
-  "legal.privacy.p1": "duskline’ın hesapları, profilleri, reklam tanımlayıcıları veya özel bir panosu yoktur. Diliniz, birim tercihiniz, favorileriniz, önbelleğe alınmış yanıtlar ve yaklaşık kaydedilmiş bir konum tarayıcınızda yerel olarak saklanabilir. Bu bilgiler duskline’a yüklenmez.",
+  "legal.privacy.p1": "duskline’ı hesap olmadan kullanabilirsiniz. Dil, birimler, kayıtlı yerler ve saklanan tahminler varsayılan olarak yalnızca tarayıcınızda tutulur.",
   "legal.privacy.h2": "Konum, tahminler ve uyarılar",
   "legal.privacy.p2": "“Konumumu kullan”ı seçerseniz tarayıcı izin ister. duskline sonucu bir tahmin istemek için kullanır ve kaydedilen koordinatları hassasiyeti azaltmak için yuvarlar. Ters jeokodlama BigDataCloud’dan, başarısız olursa OpenStreetMap Nominatim’den istenir; bu hizmetler yuvarlanmış koordinatları alır. İzni reddedebilir, kaydedilen pini kaldırabilir, favorileri veya site verilerini istediğiniz zaman silebilirsiniz.",
   "legal.privacy.p3": "Tahmin istekleri tarayıcınızdan Open-Meteo'ya ve desteklenen ABD tahmin ve uyarıları için U.S. National Weather Service'e gönderilir. Uluslararası kamu uyarıları için tarayıcınız seçilen ülkenin kodunu ve adını ve arayüz dilini duskline'ın Cloudflare Pages işlevine gönderir; bu işlev IFRC Alert Hub'dan resmî CAP uyarılarını ister. Mevcut olduğunda, seçilen yerin birinci düzey idari bölgesi (örneğin bir eyalet veya il) de bu işleve gönderilir; şehir koordinatları tarayıcınızda kalır. Bu hizmetler yanıt için gereken bilgileri alır ve kendi gizlilik politikalarını uygular.",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "duskline’ı yasalara uygun ve sorumlu şekilde kullanın. Uygulamaya müdahale etmeyin, sağlayıcı hizmetlerini aşırı yüklemeyin ve profesyonel veya resmi bir kaynağın gerektiği yerde ona güvenmeyin.",
   "legal.terms.h5": "Değişiklikler",
   "legal.terms.p5": "Uygulama geliştikçe bu koşullar gözden geçirilebilir. Yürürlük tarihinden sonra kullanıma devam etmek, güncellenmiş koşulları kabul ettiğiniz anlamına gelir.",
-  "legal.privacy.map": "Harita döşemesi istekleri, görünür harita alanını ve yakınlaştırma düzeyini OpenFreeMap’e gönderir. Ayrıntılı harita yüklendiğinde duskline bu görünüm için örneklenmiş koordinat ızgarasını da Open-Meteo’ya gönderir. Haritayı taşımak yeni bir ızgara ister; katmanı veya saati değiştirmek zaten yüklenmiş verileri kullanır."
+  "legal.privacy.map": "Harita döşemesi istekleri, görünür harita alanını ve yakınlaştırma düzeyini OpenFreeMap’e gönderir. Ayrıntılı harita yüklendiğinde duskline bu görünüm için örneklenmiş koordinat ızgarasını da Open-Meteo’ya gönderir. Haritayı taşımak yeni bir ızgara ister; katmanı veya saati değiştirmek zaten yüklenmiş verileri kullanır.",
+  "legal.privacy.pushTitle": "Bildirimler",
+  "legal.privacy.push": "Etkinleştirme, yerleri ve aboneliği duskline sunucusunda 90 gün saklar; uygulamayı kullanmak süreyi yeniler. Kapatmak kaydı siler."
 }

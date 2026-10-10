@@ -649,7 +649,8 @@ test('privacy page uses the home language picker and full translations', async (
   await page.locator('#dusklineLanguage').selectOption('fr');
   await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('Politique de confidentialité');
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr-FR');
-  await expect(page.locator('[data-i18n="legal.privacy.p1"]')).toContainText('ni comptes');
+  await expect(page.locator('[data-i18n="legal.privacy.p1"]')).toContainText('sans compte');
+  await expect(page.locator('[data-i18n="legal.privacy.push"]')).toContainText('90 jours');
   await expect(page.locator('[data-legal="english-note"]')).toHaveCount(0);
   await page.locator('#dusklineLanguage').selectOption('ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');

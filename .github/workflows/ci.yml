@@ -18,6 +18,7 @@ jobs:
       - run: npm run check
       - run: npm run weather:i18n && git diff --exit-code -- src/js/data/weather-packs src/js/data/weather-locale-registry.js
       - run: npm run test:unit
+      - run: npm run test:push-runtime
   browsers:
     needs: check-and-test
     runs-on: ubuntu-24.04

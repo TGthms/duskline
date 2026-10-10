@@ -7,7 +7,7 @@
   "legal.privacy.title": "隱私權政策",
   "legal.privacy.intro": "清楚說明哪些資訊留在瀏覽器中，以及哪些資訊會傳送給天氣服務提供者。",
   "legal.privacy.h1": "duskline 儲存的資訊",
-  "legal.privacy.p1": "duskline 沒有帳戶、個人檔案、廣告識別碼或私人控制台。您的語言、單位偏好、收藏、快取回應以及大致儲存的位置可能會儲存在瀏覽器本機。這些資訊不會上傳到 duskline。",
+  "legal.privacy.p1": "使用 duskline 無需帳戶。預設情況下，語言、單位、已儲存地點和預報快照僅儲存在瀏覽器中。",
   "legal.privacy.h2": "位置、預報與警報",
   "legal.privacy.p2": "若您選擇「使用我的位置」，瀏覽器會請求權限。duskline 會用該結果請求預報，並對儲存的座標取整以降低精度。反向地理編碼會向 BigDataCloud 請求，失敗時再向 OpenStreetMap Nominatim 請求，因此這些服務會收到取整後的座標。您可隨時拒絕權限、移除已儲存的圖釘、清除收藏或網站資料。",
   "legal.privacy.p3": "預報請求會由瀏覽器傳送至 Open-Meteo；對於支援的美國預報和警報，也會傳送至美國國家氣象局。查詢國際公共警報時，瀏覽器會將所選國家／地區的代碼、名稱及介面語言傳送至 duskline 的 Cloudflare Pages 函式，由該函式向 IFRC Alert Hub 請求官方 CAP 警報。如有該資訊，所選地點的第一級行政區（例如州或省）也會傳送至此函式；城市座標仍保留在瀏覽器中。這些服務會接收回應請求所需的資訊，並遵循各自的隱私權政策。",
@@ -28,5 +28,7 @@
   "legal.terms.p4": "請合法、負責任地使用 duskline。請勿干擾應用程式、使提供者服務過載，或在需要專業或官方來源的場合依賴本應用程式。",
   "legal.terms.h5": "變更",
   "legal.terms.p5": "隨著應用程式演進，本條款可能會修訂。生效日期之後繼續使用，即表示您接受更新後的條款。",
-  "legal.privacy.map": "地圖磚請求會將可見地圖區域與縮放層級傳送至 OpenFreeMap。詳細地圖載入時，duskline 也會將該畫面的取樣座標網格傳送至 Open-Meteo。移動地圖會重新請求網格；切換圖層或時間則使用已載入的資料。"
+  "legal.privacy.map": "地圖磚請求會將可見地圖區域與縮放層級傳送至 OpenFreeMap。詳細地圖載入時，duskline 也會將該畫面的取樣座標網格傳送至 Open-Meteo。移動地圖會重新請求網格；切換圖層或時間則使用已載入的資料。",
+  "legal.privacy.pushTitle": "通知",
+  "legal.privacy.push": "開啟通知後，duskline 會在伺服器上儲存所選地點與推播訂閱資訊 90 天，使用應用程式時續期。關閉通知會刪除該紀錄。"
 }

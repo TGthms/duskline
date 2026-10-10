@@ -5,7 +5,7 @@
   var codes = window.DUSKLINE_LANG_CODES || locales.map(function (item) { return item[0]; });
   var page = document.body && document.body.dataset.legalPage;
   var select = document.getElementById('dusklineLanguage');
-  var EFFECTIVE = new Date(Date.UTC(2026, 7, 27));
+  var EFFECTIVE = new Date(Date.UTC(2026, page === 'privacy' ? 9 : 7, page === 'privacy' ? 9 : 27));
   var REPO = '<a href="https://github.com/TGthms/duskline" rel="noreferrer">github.com/TGthms/duskline</a>';
   var applySeq = 0;
 
@@ -49,7 +49,7 @@
     try {
       return new Intl.DateTimeFormat(tag, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(EFFECTIVE);
     } catch (e) {
-      return 'August 27, 2026';
+      return page === 'privacy' ? 'October 9, 2026' : 'August 27, 2026';
     }
   }
 

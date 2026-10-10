@@ -32,17 +32,21 @@ duskline balances a quiet, atmospheric sky with the details that help you decide
 
 duskline is an installable progressive web app. Its cached app shell and recent saved forecasts can be opened offline; saved data is labeled with its original check time, and public alerts need a connection. International alert coverage depends on whether an official CAP feed is available for the place. Forecast snapshots are kept in your browser for up to seven days.
 
+Optional US weather notifications can monitor your My Sky primary city or up to five saved places, with severity/type filters, quiet hours, significant updates and a delivery test. Configure them in Settings → Notifications.
+
 No account or advertising identifier is needed. Your language, units, favorites, recent places, and saved forecasts stay in local browser storage. If you use your location, duskline requests permission through your browser and rounds coordinates before storage or weather requests.
 
 ## Privacy and weather data
 
 Forecast requests go directly from your browser to [Open-Meteo](https://open-meteo.com/) and, for eligible U.S. locations, the [National Weather Service](https://www.weather.gov/). For international public alerts, duskline sends the selected country code, country name, and interface language to its same-origin Cloudflare Pages function, which requests official CAP data from [IFRC Alert Hub](https://alerthub.ifrc.org/). When available, the selected place’s first-level administrative region (such as a state or province) is also sent for alert matching; city coordinates stay in your browser. Opening the weather map sends the visible map area and zoom level to [OpenFreeMap](https://openfreemap.org/) for map tiles and sampled forecast-grid coordinates to Open-Meteo. Reverse geocoding for device location uses BigDataCloud and may fall back to OpenStreetMap Nominatim. Hosting and Google Fonts may receive ordinary technical request data.
 
+Enabling background notifications sends the selected places (coordinates rounded to two decimals), notification preferences, and browser push subscription to duskline’s Cloudflare service. Subscriptions expire after 90 days without renewal; using the app renews them. Turning notifications off online removes the server record. Clear browser data after disabling notifications if you also want immediate server removal; otherwise the record expires.
+
 Forecasts are for planning and exploration, not emergency decisions. Read the [Privacy Policy](https://dusklineweather.pages.dev/privacy.html) and [Terms of Use](https://dusklineweather.pages.dev/terms.html) for details. Removing a saved place removes its forecast snapshot unless the same place remains saved elsewhere; clear the site's browser data to remove all local history.
 
 ## For contributors
 
-The app shell is static HTML, CSS, and classic JavaScript; it has no build step. Cloudflare Pages runs one small function for international CAP alerts. With Node.js 20 or newer:
+The app shell is static HTML, CSS, and classic JavaScript; it has no build step. Cloudflare Pages provides the international CAP proxy and optional notification APIs; background notifications use the scheduled Worker and D1 described in [push setup](docs/push-setup.md). With Node.js 22 or newer:
 
 ```bash
 npm install
@@ -81,6 +85,6 @@ The worker stores a coherent, versioned shell. Navigation responses are reconstr
 
 English is included in the shell; other weather and legal language packs are fetched only when used. The separate locale cache keeps at most eight packs, and the currently selected language is retained after first installation. Offline language changes require a previously downloaded pack. Public alerts remain network-only.
 
-CI uses Node 20, verifies generated locale files and source translation coverage, and runs Chromium, Firefox, desktop WebKit, and phone-sized WebKit. GitHub Pages publishes only the exact successful CI revision, and skips superseded revisions. Cloudflare Git-connected automatic deployments are managed in the Cloudflare dashboard and must be disabled or configured with an equivalent check gate; the GitHub Pages workflow cannot govern them.
+CI uses Node 22, verifies generated locale files and source translation coverage, and runs Chromium, Firefox, desktop WebKit, and phone-sized WebKit. GitHub Pages publishes only the exact successful CI revision, and skips superseded revisions. Cloudflare Git-connected automatic deployments are managed in the Cloudflare dashboard and must be disabled or configured with an equivalent check gate; the GitHub Pages workflow cannot govern them.
 
 Runtime contracts and release acceptance checks: [weather contracts](docs/weather-contracts.md) · [production readiness](docs/production-readiness.md).
