@@ -17,9 +17,9 @@ export class PushService extends WorkerEntrypoint {
   async sendTest(body) {
     return sendTest(this.env, body);
   }
+  async scheduled() {
+    this.ctx.waitUntil(poll(this.env));
+  }
 }
-export default {
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(poll(env));
-  },
-};
+// The default entrypoint is supported by Pages' service-binding controls.
+export default PushService;

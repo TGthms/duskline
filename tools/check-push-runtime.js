@@ -1,5 +1,5 @@
 'use strict';
-/* Exercise the built Pages routes, named Worker RPC entrypoint and real D1
+/* Exercise the built Pages routes, default Worker RPC entrypoint and real D1
    runtime together. Disposable keys and an in-memory database; no pushes. */
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -55,7 +55,7 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
             modulesRoot: path.join(out, 'pages'),
             scriptPath: path.join(out, 'pages/index.js'),
             d1Databases: { PUSH_DB: database },
-            serviceBindings: { PUSH_SENDER: { name: 'sender', entrypoint: 'PushService' } },
+            serviceBindings: { PUSH_SENDER: { name: 'sender' } },
           },
           {
             name: 'sender',
@@ -122,7 +122,10 @@ const { Miniflare, convertV4MiniflareOptions } = require('miniflare');
     assert.equal((await call('unsubscribe', body)).status, 200);
     assert.equal((await call('status', body)).status, 404);
     assert.equal((await db.prepare('SELECT count(*) n FROM push_subscriptions').first()).n, 0);
-    console.log('Push runtime passed: Pages + named Worker RPC + D1 + ownership + deletion.');
+    const sender = await mf.getWorker('sender');
+    const scheduled = await sender.scheduled({cron:'* * * * *'});
+    assert.equal(scheduled.outcome,'ok');
+    console.log('Push runtime passed: Pages + default Worker RPC + D1 + ownership + deletion.');
   } finally {
     if (mf) await mf.dispose();
     fs.rmSync(out, { recursive: true, force: true });

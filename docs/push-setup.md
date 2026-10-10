@@ -7,7 +7,7 @@ Notifications use Cloudflare D1, Pages Functions, one scheduled Worker, and Web 
 - Pages project: `dusklineweather` (production branch `main`).
 - Worker: `duskline-alert-poller`, configured in `workers/alert-poller/wrangler.toml`.
 - D1: `duskline-notifications`, binding `PUSH_DB` in **both** Pages and Worker.
-- Pages service binding: `PUSH_SENDER` → `duskline-alert-poller`, named entrypoint **`PushService`**.
+- Pages service binding: `PUSH_SENDER` → `duskline-alert-poller`, entrypoint **Default** (the `PushService` class).
 - Existing Worker secrets: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
 
 The private key stays in the Worker. Pages gets the public key and validated configuration through the service binding; no key is hardcoded in browser code. `getConfig()` verifies the keypair before advertising availability. Test notifications also use the service binding, not a public sender endpoint. The Worker needs no public `workers.dev` or preview URL.
@@ -34,7 +34,7 @@ Deploy the Worker before the Pages release:
 npx wrangler deploy --config workers/alert-poller/wrangler.toml
 ```
 
-Confirm its D1 binding and existing secrets, add the production Pages D1 and named service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v80.
+Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v80.
 
 ## Legacy KV migration and cleanup
 
@@ -88,6 +88,6 @@ npm test
 npm run test:cross
 ```
 
-The runtime gate builds the actual Pages routes and Worker, then exercises named RPC, VAPID health, D1 ownership and deletion using disposable local keys/database. Independent tests verify JWT signatures and decrypt RFC 8291 payloads, plus failure, quota, deduplication and migration cases. Browser tests mock permission and provider APIs; they cannot certify physical notification receipt.
+The runtime gate builds the actual Pages routes and Worker, then exercises default-entrypoint RPC, VAPID health, D1 ownership and deletion using disposable local keys/database. Independent tests verify JWT signatures and decrypt RFC 8291 payloads, plus failure, quota, deduplication and migration cases. Browser tests mock permission and provider APIs; they cannot certify physical notification receipt.
 
 On the reported installed iOS PWA: accept Update, open Settings → Notifications, enable for a supported city, then Send test notification. Confirm it arrives with the app backgrounded and that a warning opens the intended city. “Accepted by push service” means transport acceptance, not confirmed device delivery. Disabling online must remove the server registration.
