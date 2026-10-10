@@ -34,7 +34,7 @@ Deploy the Worker before the Pages release:
 npx wrangler deploy --config workers/alert-poller/wrangler.toml
 ```
 
-Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v82.
+Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v83.
 
 ## Retired KV setup
 
@@ -79,6 +79,6 @@ npm test
 npm run test:cross
 ```
 
-The runtime gate builds the actual Pages routes and Worker, then exercises default-entrypoint RPC, VAPID health, D1 ownership and deletion using disposable local keys/database. Independent tests verify JWT signatures and decrypt RFC 8291 payloads, plus failure, quota, deduplication and retention cases. Browser tests mock permission and provider APIs; they cannot certify physical notification receipt.
+The runtime gate builds the actual Pages routes and Worker, then exercises default-entrypoint RPC, VAPID health, D1 ownership/deletion and an encrypted test send using disposable local keys/database and an intercepted push-service response. It also verifies a redirect is treated as failed delivery without contacting its target. Workers fetch supports `redirect:'manual'`, not `redirect:'error'`; do not regress this to browser-only behavior. Independent tests verify JWT signatures and decrypt RFC 8291 payloads, plus failure, quota, deduplication and retention cases. Browser tests mock permission and provider APIs; they cannot certify physical notification receipt.
 
 On the reported installed iOS PWA: accept Update, open Settings → Notifications, enable for a supported city, then Send test notification. Confirm it arrives with the app backgrounded and that a warning opens the intended city. “Accepted by push service” means transport acceptance, not confirmed device delivery. Disabling online must remove the server registration.

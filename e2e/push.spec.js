@@ -22,7 +22,9 @@ async function fixtures(
   const calls = [],
     records = new Map();
   let failSubscribe = false,
-    failDelete = false;
+    failDelete = false,
+    failTest = false,
+    failStatus = false;
   await page.addInitScript(
     ({ permission, primary, favorite, onlyLocation }) => {
       localStorage.setItem('duskline-motion', 'off');
@@ -95,9 +97,12 @@ async function fixtures(
       return route.fulfill({ json: { ok: true } });
     }
     if (path === 'status') {
+      if (failStatus) return route.fulfill({ status: 503, json: { error: 'unavailable' } });
       const row = records.get(body.endpoint);
       return route.fulfill({ status: row ? 200 : 404, json: row || { error: 'not_registered' } });
     }
+    if (path === 'test' && failTest)
+      return route.fulfill({ status: 502, json: { error: 'delivery_failed' } });
     return route.fulfill({ json: { accepted: true } });
   });
   await page.route(
@@ -136,6 +141,8 @@ async function fixtures(
     records,
     failSubscribe: (v) => (failSubscribe = v),
     failDelete: (v) => (failDelete = v),
+    failTest: (v) => (failTest = v),
+    failStatus: (v) => (failStatus = v),
   };
 }
 async function settings(page) {
@@ -156,11 +163,35 @@ for (const width of [320, 430, 844, 1440])
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       width,
     );
-    await page.locator('#weatherSheetClose').click();
+    await page.locator('.weather-sheet-back').click();
     await expect(page.locator('.weather-push-summary')).toBeVisible();
     await page.locator('.weather-push-summary').click();
     await expect(page.locator('.weather-push-toggle')).toBeVisible();
   });
+test('notification Back restores Settings focus and scroll; Close dismisses both levels', async ({
+  page,
+}) => {
+  await fixtures(page);
+  await page.goto('/');
+  await page.locator('#weatherUnitsBtn').click();
+  await page.locator('.weather-push-summary').scrollIntoViewIfNeeded();
+  const scroll = await page.locator('#weatherSheetBody').evaluate((el) => el.scrollTop);
+  await page.locator('.weather-push-summary').click();
+  await expect(page.locator('.weather-sheet-back')).toBeFocused();
+  await page.getByLabel('Minimum severity').selectOption('extreme');
+  await page.locator('.weather-sheet-back').click();
+  await expect(page.locator('.weather-push-summary')).toBeFocused();
+  await expect
+    .poll(() => page.locator('#weatherSheetBody').evaluate((el) => el.scrollTop))
+    .toBe(scroll);
+  await page.locator('.weather-push-summary').click();
+  await expect(page.getByLabel('Minimum severity')).toHaveValue('extreme');
+  await page.locator('#weatherSheetClose').click();
+  await expect(page.locator('#weatherSheet')).toHaveAttribute('aria-hidden', 'true');
+  await expect(page.locator('#weatherUnitsBtn')).toBeFocused();
+  await page.locator('#weatherUnitsBtn').click();
+  await expect(page.locator('.weather-push-summary')).toBeVisible();
+});
 test('notifications follow chosen My Sky primary rather than first favorite and save custom rules', async ({
   page,
 }) => {
@@ -188,6 +219,41 @@ test('My Location alone supports notification enrollment', async ({ page }) => {
   await page.getByLabel('Weather notifications', { exact: true }).check();
   await expect.poll(() => f.calls.filter((c) => c.path === 'subscribe').length).toBe(1);
   expect(f.calls.find((c) => c.path === 'subscribe').body.locations[0].name).toBe('Boston');
+});
+test('a failed test remains explicit after reconciliation and can be retried', async ({ page }) => {
+  const f = await fixtures(page);
+  await page.goto('/');
+  await settings(page);
+  await page.getByLabel('Weather notifications', { exact: true }).check();
+  await expect(page.locator('.weather-push-status')).toContainText('On ·');
+  f.failTest(true);
+  await page.getByRole('button', { name: 'Send test notification', exact: true }).click();
+  await expect(page.locator('.weather-push-status')).toContainText('The test could not be sent');
+  const before = f.calls.filter((c) => c.path === 'status').length;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect
+    .poll(() => f.calls.filter((c) => c.path === 'status').length)
+    .toBeGreaterThan(before);
+  await expect(page.locator('.weather-push-toggle')).toBeEnabled();
+  await expect(page.locator('.weather-push-status')).toContainText('The test could not be sent');
+  f.failTest(false);
+  await page.getByRole('button', { name: 'Send test notification', exact: true }).click();
+  await expect(page.locator('.weather-push-status')).toContainText('Test accepted');
+});
+test('an activity refresh failure cannot turn an accepted test into a delivery failure', async ({
+  page,
+}) => {
+  const f = await fixtures(page);
+  await page.goto('/');
+  await settings(page);
+  await page.getByLabel('Weather notifications', { exact: true }).check();
+  await expect(page.locator('.weather-push-status')).toContainText('On ·');
+  f.failStatus(true);
+  await page.getByRole('button', { name: 'Send test notification', exact: true }).click();
+  await expect(page.locator('.weather-push-status')).toContainText('Test accepted');
+  await expect(
+    page.getByRole('button', { name: 'Send test notification', exact: true }),
+  ).toBeEnabled();
 });
 test('a saved lowercase US device location can enable notifications', async ({ page }) => {
   const f = await fixtures(page, {
@@ -325,7 +391,7 @@ test('manual city selection and quiet hours persist across settings rebuilds', a
   const body = f.calls.find((c) => c.path === 'subscribe').body;
   expect(body.locations.map((p) => p.name)).toEqual(['New York']);
   expect(body.preferences.quiet).toMatchObject({ enabled: true, timeZone: 'Europe/Paris' });
-  await page.locator('#weatherSheetClose').click();
+  await page.locator('.weather-sheet-back').click();
   await page.locator('.weather-push-summary').click();
   await expect(page.getByLabel('Follow My Sky primary city', { exact: true })).not.toBeChecked();
   await expect(page.getByLabel('Time zone', { exact: true })).toHaveValue('Europe/Paris');

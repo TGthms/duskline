@@ -308,6 +308,7 @@
   let cityRefreshApi = null;
   let forecastSheetApi = null;
   let activeSheetKind = null;
+  let notificationSettingsReturnScroll = 0;
   let toastTimer = 0;
   const toastEl = $('weatherToast');
   function notify(message, kind, undo) {
@@ -350,7 +351,7 @@
   let sheetReturnHour = null;
 
   function restoreFocus(target, fallback) {
-    const next = target && target.isConnected && !target.closest('[inert]') ? target : fallback;
+    const next = target && target !== document.body && target !== document.documentElement && target.isConnected && !target.closest('[inert]') ? target : fallback;
     if (!next || typeof next.focus !== 'function') return;
     try { next.focus({ preventScroll: true }); } catch (e) { next.focus(); }
   }
@@ -4356,6 +4357,7 @@
 
     function onDragStart(e) {
       if (!sheetOpen || !sheetEl.classList.contains('open')) return;
+      if (e.target && e.target.closest && e.target.closest('button,input,select,textarea,a')) return;
       if (sheetCentered()) return;
       cancelSheetSpring();
       sheetPanel.style.transition = 'none';
@@ -4787,6 +4789,8 @@
   }
 
   function openUnitsSheet(options) {
+    const returningFromNotifications = activeSheetKind === 'notifications';
+    const startedFromPage = !isSheetOpen();
     if (navigationApi && !(options && options.skipNavigation)) navigationApi.sheet("units");
     activeSheetKind = 'units';
     if (!sheetEl || !sheetBody) return;
@@ -4990,13 +4994,24 @@
     paintOrder(); sheetBody.append(order);
     pushApi.mountSummary(sheetBody,openNotificationSettings);
     presentSheet();
+    if (startedFromPage) sheetReturnFocus = unitsBtn;
+    if (returningFromNotifications) {
+      sheetBody.scrollTop = notificationSettingsReturnScroll;
+      const summary = sheetBody.querySelector('.weather-push-summary');
+      if (summary) summary.focus({preventScroll:true});
+    }
   }
 
   function openNotificationSettings() {
-    if(navigationApi)navigationApi.sheet('notifications');
+    if (activeSheetKind === 'units') notificationSettingsReturnScroll = sheetBody.scrollTop;
+    if(navigationApi)navigationApi.sheet('notifications',{parent:'units'});
     activeSheetKind='notifications';closeSuggest();hoistOverlays();
-    setSheetTitle('<div class="wx-sheet-head" data-sheet-title><h3 class="wx-sheet-title">'+escapeHtml(t('weather.push.title','Notifications'))+'</h3></div>');
-    sheetBody.replaceChildren();pushApi.mountSettings(sheetBody);presentSheet();
+    setSheetTitle('<div class="wx-sheet-head" data-sheet-title><button type="button" class="weather-sheet-back" aria-label="'+escapeHtml(t('weather.settings','Settings'))+'">'+weatherIcon('arrow-left','weather-mod-icon')+'<span>'+escapeHtml(t('weather.settings','Settings'))+'</span></button><h3 class="wx-sheet-title">'+escapeHtml(t('weather.push.title','Notifications'))+'</h3></div>');
+    const back = sheetPanel.querySelector('.weather-sheet-back');
+    back.addEventListener('click',function () {
+      if (!navigationApi || !navigationApi.backSheet()) openUnitsSheet({skipNavigation:true});
+    });
+    sheetBody.replaceChildren();pushApi.mountSettings(sheetBody);presentSheet(back);
   }
 
   function openPlacesSheet() {

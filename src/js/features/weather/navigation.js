@@ -44,13 +44,14 @@
     }
     function close(view) {
       const current = state();
-      if (applying || view === 'map' && !current.map || view === 'sheet' && !current.sheet || view === 'detail' && !current.city) return false;
+      if (applying || view === 'map' && !current.map || (view === 'sheet' || view === 'sheet-parent') && !current.sheet || view === 'detail' && !current.city) return false;
       if (pendingClose) {
         if (view === 'detail') pendingClose.view = 'detail';
         return true;
       }
       pendingClose = {view:view};
-      history.go(view === 'detail' && current.sheet ? -2 : -1);
+      const nestedSettings = view === 'sheet' && current.sheet && current.sheet.options && current.sheet.options.parent === 'units';
+      history.go(view === 'detail' && current.sheet || nestedSettings ? -2 : -1);
       return true;
     }
     global.addEventListener('popstate', function () {
@@ -74,13 +75,14 @@
       }
       if (deps.mapOpen && deps.mapOpen() && !next.map) deps.dismissMap();
       if (next.map && deps.openMap && !deps.mapOpen()) deps.openMap();
-      if (deps.sheetOpen()) deps.dismissSheet();
       const currentCity = deps.currentCity();
+      const sameContext = !next.city && !currentCity || next.city && currentCity && deps.sameCity(currentCity,next.city);
+      if (deps.sheetOpen() && (!next.sheet || !sameContext)) deps.dismissSheet();
       if (!next.city) { if (currentCity) deps.dismissDetail({returnToMap:!!next.map}); }
       else if (!currentCity || !deps.sameCity(currentCity,next.city)) deps.openCity(next.city);
       if (next.sheet) deps.openSheet(next.sheet.kind, next.sheet.options);
       applying = false;
     });
-    return {detail: detail, sheet: sheet, map:map, close: close};
+    return {detail: detail, sheet: sheet, map:map, close: close, backSheet:function () {return close('sheet-parent');}};
   };
 })(window);

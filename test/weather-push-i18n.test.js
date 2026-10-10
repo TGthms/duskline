@@ -7,7 +7,7 @@ test('notification strings exist explicitly in all supported locales and generat
   vm.runInNewContext(fs.readFileSync('src/js/data/weather-push-i18n.js', 'utf8'), context);
   assert.equal(Object.keys(context.window.I18N).length, 30);
   const keys = Object.keys(context.window.I18N.en);
-  assert.equal(keys.length, 52);
+  assert.equal(keys.length, 53);
   const source = fs.readFileSync('src/js/features/weather/push-notifications.js', 'utf8');
   for (const match of source.matchAll(/(?<![.\w])t\('([^']+)'/g))
     assert.ok(context.window.I18N.en['weather.push.' + match[1]], match[1]);

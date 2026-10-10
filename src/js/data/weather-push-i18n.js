@@ -54,7 +54,8 @@ const copy={
     "activity": "Recent activity",
     "expired": "This warning is no longer active. Showing current alerts.",
     "testBody": "Notifications are connected on this device.",
-    "saved": "Preferences saved."
+    "saved": "Preferences saved.",
+    "testFailed": "The test could not be sent. Try again."
   },
   "es": {
     "title": "Notificaciones",
@@ -108,7 +109,8 @@ const copy={
     "deliveryNote": "La entrega depende de la conexión y del dispositivo. Se comprueban las alertas aproximadamente cada minuto; la aceptación no confirma su recepción.",
     "expired": "Esta alerta ya no está activa. Se muestran las alertas actuales.",
     "testBody": "Las notificaciones están conectadas en este dispositivo.",
-    "saved": "Preferencias guardadas."
+    "saved": "Preferencias guardadas.",
+    "testFailed": "No se pudo enviar la prueba. Inténtalo de nuevo."
   },
   "fr": {
     "title": "Notifications",
@@ -162,7 +164,8 @@ const copy={
     "deliveryNote": "La réception dépend de votre connexion et de vos réglages. Vérification environ chaque minute ; l’acceptation ne confirme pas la réception.",
     "expired": "Cette alerte n’est plus active. Affichage des alertes actuelles.",
     "testBody": "Les notifications sont connectées sur cet appareil.",
-    "saved": "Préférences enregistrées."
+    "saved": "Préférences enregistrées.",
+    "testFailed": "Le test n’a pas pu être envoyé. Réessayez."
   },
   "de": {
     "title": "Benachrichtigungen",
@@ -216,7 +219,8 @@ const copy={
     "deliveryNote": "Die Zustellung hängt von Verbindung und Gerät ab. Prüfung etwa jede Minute; die Annahme bestätigt keine Zustellung.",
     "expired": "Diese Warnung ist nicht mehr aktiv. Aktuelle Warnungen werden angezeigt.",
     "testBody": "Benachrichtigungen sind auf diesem Gerät verbunden.",
-    "saved": "Einstellungen gespeichert."
+    "saved": "Einstellungen gespeichert.",
+    "testFailed": "Die Testnachricht konnte nicht gesendet werden. Versuche es erneut."
   },
   "it": {
     "title": "Notifiche",
@@ -270,7 +274,8 @@ const copy={
     "deliveryNote": "La consegna dipende dalla connessione e dalle impostazioni. Controlli circa ogni minuto; l’accettazione non conferma la ricezione.",
     "expired": "Questo avviso non è più attivo. Vengono mostrati gli avvisi attuali.",
     "testBody": "Le notifiche sono collegate su questo dispositivo.",
-    "saved": "Preferenze salvate."
+    "saved": "Preferenze salvate.",
+    "testFailed": "Impossibile inviare il test. Riprova."
   },
   "pt-BR": {
     "title": "Notificações",
@@ -324,7 +329,8 @@ const copy={
     "deliveryNote": "A entrega depende da conexão e das configurações. Consultas aproximadamente a cada minuto; a aceitação não confirma a entrega.",
     "expired": "Este alerta não está mais ativo. Mostrando os alertas atuais.",
     "testBody": "As notificações estão conectadas neste dispositivo.",
-    "saved": "Preferências salvas."
+    "saved": "Preferências salvas.",
+    "testFailed": "Não foi possível enviar o teste. Tente novamente."
   },
   "pt-PT": {
     "title": "Notificações",
@@ -378,7 +384,8 @@ const copy={
     "deliveryNote": "A entrega depende da ligação e das definições. Consultas aproximadamente a cada minuto; a aceitação não confirma a entrega.",
     "expired": "Este alerta já não está ativo. A mostrar os alertas atuais.",
     "testBody": "As notificações estão ligadas neste dispositivo.",
-    "saved": "Preferências guardadas."
+    "saved": "Preferências guardadas.",
+    "testFailed": "Não foi possível enviar o teste. Tenta novamente."
   },
   "nl": {
     "title": "Meldingen",
@@ -432,7 +439,8 @@ const copy={
     "deliveryNote": "Bezorging hangt af van je verbinding en apparaat. Controle ongeveer elke minuut; acceptatie bevestigt geen ontvangst.",
     "expired": "Deze waarschuwing is niet meer actief. Huidige waarschuwingen worden getoond.",
     "testBody": "Meldingen zijn verbonden op dit apparaat.",
-    "saved": "Voorkeuren opgeslagen."
+    "saved": "Voorkeuren opgeslagen.",
+    "testFailed": "De test kon niet worden verzonden. Probeer het opnieuw."
   },
   "da": {
     "title": "Notifikationer",
@@ -486,7 +494,8 @@ const copy={
     "deliveryNote": "Levering afhænger af forbindelse og enhedsindstillinger. Kontrol cirka hvert minut; accept bekræfter ikke modtagelse.",
     "expired": "Advarslen er ikke længere aktiv. Viser aktuelle advarsler.",
     "testBody": "Notifikationer er tilsluttet på denne enhed.",
-    "saved": "Indstillinger gemt."
+    "saved": "Indstillinger gemt.",
+    "testFailed": "Testen kunne ikke sendes. Prøv igen."
   },
   "sv": {
     "title": "Notiser",
@@ -540,7 +549,8 @@ const copy={
     "deliveryNote": "Leverans beror på anslutning och enhetsinställningar. Kontroller ungefär varje minut; godkännande bekräftar inte mottagande.",
     "expired": "Varningen är inte längre aktiv. Visar aktuella varningar.",
     "testBody": "Notiser är anslutna på den här enheten.",
-    "saved": "Inställningarna har sparats."
+    "saved": "Inställningarna har sparats.",
+    "testFailed": "Testet kunde inte skickas. Försök igen."
   },
   "nb": {
     "title": "Varslinger",
@@ -594,7 +604,8 @@ const copy={
     "deliveryNote": "Levering avhenger av forbindelse og enhetsinnstillinger. Kontroller omtrent hvert minutt; godkjenning bekrefter ikke mottak.",
     "expired": "Varslet er ikke lenger aktivt. Viser gjeldende varsler.",
     "testBody": "Varslinger er tilkoblet på denne enheten.",
-    "saved": "Innstillingene er lagret."
+    "saved": "Innstillingene er lagret.",
+    "testFailed": "Testen kunne ikke sendes. Prøv igjen."
   },
   "fi": {
     "title": "Ilmoitukset",
@@ -648,7 +659,8 @@ const copy={
     "deliveryNote": "Toimitus riippuu yhteydestä ja laitteen asetuksista. Tarkistus noin minuutin välein; hyväksyntä ei vahvista vastaanottoa.",
     "expired": "Varoitus ei ole enää voimassa. Näytetään nykyiset varoitukset.",
     "testBody": "Ilmoitukset on yhdistetty tällä laitteella.",
-    "saved": "Asetukset tallennettu."
+    "saved": "Asetukset tallennettu.",
+    "testFailed": "Testiä ei voitu lähettää. Yritä uudelleen."
   },
   "pl": {
     "title": "Powiadomienia",
@@ -702,7 +714,8 @@ const copy={
     "deliveryNote": "Dostarczenie zależy od połączenia i ustawień. Sprawdzanie mniej więcej co minutę; przyjęcie nie potwierdza odbioru.",
     "expired": "Ostrzeżenie nie jest już aktywne. Wyświetlane są bieżące ostrzeżenia.",
     "testBody": "Powiadomienia są połączone na tym urządzeniu.",
-    "saved": "Ustawienia zapisane."
+    "saved": "Ustawienia zapisane.",
+    "testFailed": "Nie udało się wysłać testu. Spróbuj ponownie."
   },
   "cs": {
     "title": "Oznámení",
@@ -756,7 +769,8 @@ const copy={
     "deliveryNote": "Doručení závisí na připojení a nastavení. Kontrola přibližně každou minutu; přijetí nepotvrzuje doručení.",
     "expired": "Tato výstraha již není aktivní. Zobrazují se aktuální výstrahy.",
     "testBody": "Oznámení jsou na tomto zařízení připojena.",
-    "saved": "Nastavení uloženo."
+    "saved": "Nastavení uloženo.",
+    "testFailed": "Test se nepodařilo odeslat. Zkuste to znovu."
   },
   "hu": {
     "title": "Értesítések",
@@ -810,7 +824,8 @@ const copy={
     "deliveryNote": "A kézbesítés a kapcsolattól és az eszköztől függ. Ellenőrzés nagyjából percenként; az elfogadás nem igazolja az átvételt.",
     "expired": "Ez a riasztás már nem aktív. Az aktuális riasztások láthatók.",
     "testBody": "Az értesítések csatlakoztatva vannak ezen az eszközön.",
-    "saved": "Beállítások mentve."
+    "saved": "Beállítások mentve.",
+    "testFailed": "A tesztet nem sikerült elküldeni. Próbáld újra."
   },
   "ro": {
     "title": "Notificări",
@@ -864,7 +879,8 @@ const copy={
     "deliveryNote": "Livrarea depinde de conexiune și setări. Verificare aproximativ în fiecare minut; acceptarea nu confirmă primirea.",
     "expired": "Alerta nu mai este activă. Sunt afișate alertele actuale.",
     "testBody": "Notificările sunt conectate pe acest dispozitiv.",
-    "saved": "Preferințe salvate."
+    "saved": "Preferințe salvate.",
+    "testFailed": "Testul nu a putut fi trimis. Încearcă din nou."
   },
   "el": {
     "title": "Ειδοποιήσεις",
@@ -918,7 +934,8 @@ const copy={
     "deliveryNote": "Η παράδοση εξαρτάται από σύνδεση και ρυθμίσεις. Έλεγχος περίπου ανά λεπτό· η αποδοχή δεν επιβεβαιώνει παραλαβή.",
     "expired": "Η προειδοποίηση δεν είναι πλέον ενεργή. Εμφανίζονται οι τρέχουσες προειδοποιήσεις.",
     "testBody": "Οι ειδοποιήσεις έχουν συνδεθεί σε αυτή τη συσκευή.",
-    "saved": "Οι προτιμήσεις αποθηκεύτηκαν."
+    "saved": "Οι προτιμήσεις αποθηκεύτηκαν.",
+    "testFailed": "Δεν ήταν δυνατή η αποστολή της δοκιμής. Δοκιμάστε ξανά."
   },
   "tr": {
     "title": "Bildirimler",
@@ -972,7 +989,8 @@ const copy={
     "deliveryNote": "Teslimat bağlantıya ve ayarlara bağlıdır. Yaklaşık her dakika kontrol edilir; kabul edilmesi alındığını doğrulamaz.",
     "expired": "Bu uyarı artık etkin değil. Güncel uyarılar gösteriliyor.",
     "testBody": "Bildirimler bu cihazda bağlı.",
-    "saved": "Tercihler kaydedildi."
+    "saved": "Tercihler kaydedildi.",
+    "testFailed": "Test gönderilemedi. Tekrar deneyin."
   },
   "ru": {
     "title": "Уведомления",
@@ -1026,7 +1044,8 @@ const copy={
     "deliveryNote": "Доставка зависит от связи и настроек. Проверка примерно раз в минуту; принятие не подтверждает получение.",
     "expired": "Это предупреждение больше не действует. Показаны текущие предупреждения.",
     "testBody": "Уведомления подключены на этом устройстве.",
-    "saved": "Настройки сохранены."
+    "saved": "Настройки сохранены.",
+    "testFailed": "Не удалось отправить тест. Повторите попытку."
   },
   "uk": {
     "title": "Сповіщення",
@@ -1080,7 +1099,8 @@ const copy={
     "deliveryNote": "Доставка залежить від зв’язку та налаштувань. Перевірка приблизно щохвилини; прийняття не підтверджує отримання.",
     "expired": "Це попередження вже не діє. Показано поточні попередження.",
     "testBody": "Сповіщення підключені на цьому пристрої.",
-    "saved": "Налаштування збережено."
+    "saved": "Налаштування збережено.",
+    "testFailed": "Не вдалося надіслати тест. Спробуйте ще раз."
   },
   "ar": {
     "title": "الإشعارات",
@@ -1134,7 +1154,8 @@ const copy={
     "deliveryNote": "يعتمد التسليم على الاتصال وإعدادات الجهاز. يتم الفحص كل دقيقة تقريبًا؛ القبول لا يؤكد الاستلام.",
     "expired": "هذا التنبيه لم يعد نشطًا. تُعرض التنبيهات الحالية.",
     "testBody": "الإشعارات متصلة على هذا الجهاز.",
-    "saved": "تم حفظ التفضيلات."
+    "saved": "تم حفظ التفضيلات.",
+    "testFailed": "تعذر إرسال الاختبار. حاول مرة أخرى."
   },
   "he": {
     "title": "התראות",
@@ -1188,7 +1209,8 @@ const copy={
     "deliveryNote": "המסירה תלויה בחיבור ובהגדרות. בדיקה בערך בכל דקה; קבלה בשירות אינה אישור מסירה.",
     "expired": "האזהרה אינה פעילה עוד. מוצגות אזהרות עדכניות.",
     "testBody": "ההתראות מחוברות במכשיר הזה.",
-    "saved": "ההעדפות נשמרו."
+    "saved": "ההעדפות נשמרו.",
+    "testFailed": "לא ניתן לשלוח את הבדיקה. נסו שוב."
   },
   "hi": {
     "title": "सूचनाएँ",
@@ -1242,7 +1264,8 @@ const copy={
     "deliveryNote": "पहुँचना कनेक्शन और डिवाइस की सेटिंग पर निर्भर है। लगभग हर मिनट जाँच होती है; स्वीकार होना प्राप्ति की पुष्टि नहीं है।",
     "expired": "यह चेतावनी अब सक्रिय नहीं है। वर्तमान चेतावनियाँ दिखाई जा रही हैं।",
     "testBody": "इस डिवाइस पर सूचनाएँ कनेक्ट हैं।",
-    "saved": "प्राथमिकताएँ सहेजी गईं।"
+    "saved": "प्राथमिकताएँ सहेजी गईं।",
+    "testFailed": "परीक्षण भेजा नहीं जा सका। फिर से कोशिश करें।"
   },
   "th": {
     "title": "การแจ้งเตือน",
@@ -1296,7 +1319,8 @@ const copy={
     "deliveryNote": "การส่งขึ้นอยู่กับการเชื่อมต่อและการตั้งค่า ตรวจสอบประมาณทุกนาที การยอมรับไม่ได้ยืนยันว่าได้รับแล้ว",
     "expired": "คำเตือนนี้ไม่ทำงานแล้ว กำลังแสดงคำเตือนปัจจุบัน",
     "testBody": "เชื่อมต่อการแจ้งเตือนบนอุปกรณ์นี้แล้ว",
-    "saved": "บันทึกการตั้งค่าแล้ว"
+    "saved": "บันทึกการตั้งค่าแล้ว",
+    "testFailed": "ส่งการทดสอบไม่สำเร็จ โปรดลองอีกครั้ง"
   },
   "vi": {
     "title": "Thông báo",
@@ -1350,7 +1374,8 @@ const copy={
     "deliveryNote": "Việc nhận phụ thuộc kết nối và cài đặt. Kiểm tra khoảng mỗi phút; chấp nhận không xác nhận đã nhận.",
     "expired": "Cảnh báo này không còn hoạt động. Đang hiển thị cảnh báo hiện tại.",
     "testBody": "Thông báo đã được kết nối trên thiết bị này.",
-    "saved": "Đã lưu tùy chọn."
+    "saved": "Đã lưu tùy chọn.",
+    "testFailed": "Không thể gửi thông báo thử. Hãy thử lại."
   },
   "id": {
     "title": "Notifikasi",
@@ -1404,7 +1429,8 @@ const copy={
     "deliveryNote": "Pengiriman bergantung pada koneksi dan pengaturan. Pemeriksaan sekitar setiap menit; penerimaan layanan tidak memastikan notifikasi diterima.",
     "expired": "Peringatan ini tidak lagi aktif. Menampilkan peringatan saat ini.",
     "testBody": "Notifikasi terhubung di perangkat ini.",
-    "saved": "Preferensi disimpan."
+    "saved": "Preferensi disimpan.",
+    "testFailed": "Uji coba tidak dapat dikirim. Coba lagi."
   },
   "ja": {
     "title": "通知",
@@ -1458,7 +1484,8 @@ const copy={
     "deliveryNote": "配信は接続と端末の設定によります。約1分ごとに確認しますが、受付は受信確認ではありません。",
     "expired": "この警報はすでに終了しています。現在の警報を表示します。",
     "testBody": "この端末で通知が接続されています。",
-    "saved": "設定を保存しました。"
+    "saved": "設定を保存しました。",
+    "testFailed": "テストを送信できませんでした。もう一度お試しください。"
   },
   "ko": {
     "title": "알림",
@@ -1512,7 +1539,8 @@ const copy={
     "deliveryNote": "전달은 연결 및 기기 설정에 따라 다릅니다. 약 1분마다 확인하며 서비스 수락은 수신 확인이 아닙니다.",
     "expired": "이 경보는 더 이상 유효하지 않습니다. 현재 경보를 표시합니다.",
     "testBody": "이 기기에서 알림이 연결되었습니다.",
-    "saved": "설정을 저장했습니다."
+    "saved": "설정을 저장했습니다.",
+    "testFailed": "테스트를 보내지 못했습니다. 다시 시도해 주세요."
   },
   "zh": {
     "title": "通知",
@@ -1566,7 +1594,8 @@ const copy={
     "deliveryNote": "送达取决于网络与设备设置。预警约每分钟检查一次；服务接受请求并不代表通知已送达。",
     "expired": "此预警已失效。正在显示当前预警。",
     "testBody": "此设备的通知已连接。",
-    "saved": "偏好已保存。"
+    "saved": "偏好已保存。",
+    "testFailed": "测试未能发送。请重试。"
   },
   "zh-TW": {
     "title": "通知",
@@ -1620,7 +1649,8 @@ const copy={
     "deliveryNote": "送達取決於網路與裝置設定。警報約每分鐘檢查一次；服務接受請求不代表通知已送達。",
     "expired": "此警報已失效。正在顯示目前警報。",
     "testBody": "此裝置的通知已連接。",
-    "saved": "偏好已儲存。"
+    "saved": "偏好已儲存。",
+    "testFailed": "無法傳送測試通知。請再試一次。"
   }
 };
 for(const [code,strings]of Object.entries(copy)){global.I18N[code]=global.I18N[code]||{};for(const [key,value]of Object.entries(strings))global.I18N[code]['weather.push.'+key]=value;}

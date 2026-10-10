@@ -235,6 +235,19 @@ body.duskline .weather-detail.wx-mods-light .weather-daily-row:hover { backgroun
 /* Notification preferences share the sheet's typography and full-row targets. */
 .weather-push-summary { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; min-height:56px; margin-top:20px; padding:14px; border:1px solid rgba(127,153,175,.3); border-radius:14px; color:inherit; background:rgba(127,153,175,.08); font:inherit; text-align:start; cursor:pointer; }
 .weather-push-summary-status { font-size:12px; opacity:.8; max-width:60%; }
+.weather-push-summary > span:first-child { flex:1; }
+.weather-push-chevron { font-size:24px; line-height:1; opacity:.7; }
+[dir='rtl'] .weather-push-chevron { transform:rotate(180deg); }
+.wx-sheet-dragzone .weather-sheet-back { pointer-events:auto; display:inline-flex; align-items:center; gap:2px; flex:0 1 auto; min-width:44px; min-height:44px; max-width:45%; padding:6px 4px 6px 0; border:0; border-radius:10px; background:transparent; color:#8acfff; font:inherit; font-size:14px; cursor:pointer; touch-action:manipulation; }
+.weather-sheet-back span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.weather-sheet-back .weather-mod-icon { flex:0 0 20px; width:20px; height:20px; }
+[dir='rtl'] .weather-sheet-back .weather-mod-icon { transform:rotate(180deg); }
+.weather-sheet-back:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.weather-sheet-back:active { background:rgba(127,153,175,.15); }
+.weather-push-overview { padding:4px 14px 14px; border:1px solid rgba(127,153,175,.3); border-radius:16px; background:rgba(127,153,175,.08); }
+.weather-push-overview .weather-push-switch { font-weight:600; }
+.weather-push-overview .weather-push-status { opacity:.85; }
+.weather-sheet.wx-sheet-light .weather-sheet-back { color:#17649b; }
 .weather-push-settings { display:grid; gap:16px; min-width:0; }
 .weather-push-settings [hidden] { display:none!important; }
 .weather-push-settings a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
@@ -260,6 +273,9 @@ body.duskline .weather-detail.wx-mods-light .weather-daily-row:hover { backgroun
 .weather-push-times input { max-width:100%!important; width:100%; }
 .weather-push-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .weather-push-actions button { flex:1 1 140px; min-height:44px; white-space:normal; }
+.weather-push-actions { position:sticky; bottom:0; z-index:2; padding:10px; margin-inline:-10px; border:1px solid rgba(127,153,175,.2); border-radius:16px; background:rgba(18,24,38,.96); box-shadow:0 -6px 18px rgba(0,0,0,.1); }
+#weatherSheetBody:has(.weather-push-settings) { scroll-padding-block:12px 100px; }
+.weather-sheet.wx-sheet-light .weather-push-actions { background:rgba(246,249,252,.96); }
 .weather-push-settings .wx-sheet-context { margin:4px 0; font-size:12px; line-height:1.6; }
 .weather-push-section > p { font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
 @media (prefers-reduced-motion:reduce) { .weather-push-track,.weather-push-track::before { transition:none; } }

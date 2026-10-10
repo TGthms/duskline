@@ -24,12 +24,14 @@
       remote = null,
       busy = false,
       message = '',
+      deliveryMessage = '',
       phase = 'off',
       timer,
       checkedAt = 0,
       pendingEnabled = null,
       controlId = 0,
-      queuedReconcile = null;
+      queuedReconcile = null,
+      settingsDraft = null;
     let state = {
       enabled: false,
       follow: true,
@@ -193,6 +195,7 @@
     }
     function statusText() {
       if (message) return message;
+      if (deliveryMessage) return deliveryMessage;
       if (!supported())
         return t(
           'unsupported',
@@ -380,6 +383,7 @@
     async function enable(draft) {
       if (busy) return;
       message = '';
+      deliveryMessage = '';
       try {
         desired(draft);
         token();
@@ -440,6 +444,7 @@
     }
     async function disable() {
       if (busy) return;
+      deliveryMessage = '';
       state.enabled = false;
       // Storage failure must never prevent stopping browser/server delivery.
       let storageFailure;
@@ -478,6 +483,7 @@
     }
     async function save(draft) {
       if (busy) return;
+      deliveryMessage = '';
       try {
         validateQuiet(draft);
         if (state.enabled) desired(draft);
@@ -559,32 +565,37 @@
       button.type = 'button';
       button.append(element('span', '', t('title', 'Notifications')));
       const status = element('span', 'weather-push-summary-status');
-      button.append(status);
+      button.append(status, element('span', 'weather-push-chevron', '›'));
+      button.lastChild.setAttribute('aria-hidden', 'true');
       button.addEventListener('click', open);
       root.append(button);
       views.add({ root: button, status });
       paint();
     }
     function mountSettings(root) {
-      const draft = {
-        follow: state.follow,
-        selected: state.selected.slice(),
-        preferences: structuredClone(state.preferences),
-      };
+      const draft =
+        settingsDraft ||
+        (settingsDraft = {
+          follow: state.follow,
+          selected: state.selected.slice(),
+          preferences: structuredClone(state.preferences),
+        });
       const container = element('section', 'weather-push-settings'),
         status = element('p', 'weather-push-status');
       status.setAttribute('role', 'status');
       status.setAttribute('aria-live', 'polite');
-      container.append(status);
       root.append(container);
+      const overview = element('div', 'weather-push-overview');
+      container.append(overview);
       const toggle = check(
-        container,
+        overview,
         t('enable', 'Weather notifications'),
         state.enabled,
         (value) => (value ? enable(draft) : disable()),
         true,
       );
       toggle.className = 'weather-push-toggle';
+      overview.append(status);
       const disclosure = element(
         'p',
         'wx-sheet-context',
@@ -598,20 +609,20 @@
       const link = element('a', '', deps.t('legal.privacyLink', 'Privacy Policy'));
       link.href = 'privacy.html';
       disclosure.append(' ', link);
-      container.append(disclosure);
       const places = section(container, t('places', 'Monitored places'));
       check(places, t('follow', 'Follow My Sky primary city'), draft.follow, (v) => {
         draft.follow = v;
         cityBox.hidden = v;
+        primaryHint.hidden = !v;
       });
       const primary = deps.primary();
-      places.append(
-        element(
-          'p',
-          'wx-sheet-context',
-          primary ? deps.cityName(primary) : t('choose', 'Choose a saved place first.'),
-        ),
+      const primaryHint = element(
+        'p',
+        'wx-sheet-context',
+        primary ? deps.cityName(primary) : t('choose', 'Choose a saved place first.'),
       );
+      primaryHint.hidden = !draft.follow;
+      places.append(primaryHint);
       const cityBox = element('div', 'weather-push-cities');
       cityBox.hidden = draft.follow;
       places.append(cityBox);
@@ -746,20 +757,27 @@
         if (busy) return;
         busy = true;
         message = '';
+        deliveryMessage = '';
         paint();
         try {
           await request('test', {
             ...identity(),
             message: t('testBody', 'Notifications are connected on this device.'),
           });
-          message = t(
+          deliveryMessage = t(
             'testAccepted',
             'Test accepted by the push service. Check your device for the notification.',
           );
-          remote = await request('status', identity());
+          try {
+            remote = await request('status', identity());
+          } catch {
+            /* Transport acceptance remains true if activity refresh fails. */
+          }
         } catch (e) {
-          message = errorText(e);
-          phase = 'error';
+          deliveryMessage =
+            e.message === 'delivery_failed'
+              ? t('testFailed', 'The test could not be sent. Try again.')
+              : errorText(e);
         } finally {
           finishOperation();
         }
@@ -779,6 +797,7 @@
       const activity = section(container, t('activity', 'Recent activity'));
       const activityItems = element('div');
       activity.append(activityItems);
+      container.append(disclosure);
       views.add({ root: container, status, toggle, retry, test, activity: activityItems });
       paint();
       container.querySelectorAll('[data-unsupported]').forEach((e) => (e.disabled = true));
