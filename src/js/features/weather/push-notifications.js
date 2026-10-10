@@ -5,8 +5,7 @@
   const W = global.DusklineWeather;
   if (!W) return;
   W.factories.pushNotifications = function (deps) {
-    const KEY = 'duskline-push-settings-v2',
-      OLD = 'duskline-push-sub';
+    const KEY = 'duskline-push-settings-v2';
     const defaults = {
       severity: 'severe',
       categories: ['all'],
@@ -29,7 +28,8 @@
       timer,
       checkedAt = 0,
       pendingEnabled = null,
-      controlId = 0;
+      controlId = 0,
+      queuedReconcile = null;
     let state = {
       enabled: false,
       follow: true,
@@ -52,7 +52,6 @@
             quiet: { ...defaults.quiet, ...saved.preferences?.quiet },
           },
         };
-      else if (localStorage.getItem(OLD)) state.enabled = true;
     } catch {}
     function supported() {
       return !!(
@@ -290,13 +289,23 @@
       state.synced = sig;
       state.renewedAt = Date.now();
       persist();
-      try {
-        localStorage.removeItem(OLD);
-      } catch {}
       phase = 'active';
     }
+    function finishOperation() {
+      busy = false;
+      paint();
+      if (queuedReconcile !== null) {
+        const force = queuedReconcile;
+        queuedReconcile = null;
+        queueMicrotask(() => reconcile(force));
+      }
+    }
     async function reconcile(force = false) {
-      if (busy) return;
+      if (busy) {
+        queuedReconcile = queuedReconcile === true || force;
+        return;
+      }
+      const preserveBlocked = phase === 'blocked' && global.Notification?.permission === 'denied';
       busy = true;
       message = '';
       paint();
@@ -313,7 +322,7 @@
           if (sub && !(await sub.unsubscribe())) throw Error('cleanup');
           state.endpoint = '';
           persist();
-          phase = 'off';
+          phase = preserveBlocked ? 'blocked' : 'off';
           return;
         }
         if (Notification.permission === 'denied') {
@@ -360,8 +369,7 @@
         phase = e.message === 'not_configured' ? 'unavailable' : 'error';
         message = errorText(e);
       } finally {
-        busy = false;
-        paint();
+        finishOperation();
       }
     }
     async function enable(draft) {
@@ -382,23 +390,16 @@
         paint();
         return;
       }
-      // Call permission synchronously in the originating user gesture on iOS.
-      let permission;
-      try {
-        permission =
-          Notification.permission === 'default'
-            ? Notification.requestPermission()
-            : Promise.resolve(Notification.permission);
-      } catch (e) {
-        message = errorText(e);
-        phase = 'error';
-        paint();
-        return;
-      }
+      // Set ownership before the native prompt can dispatch foreground events.
+      // No await occurs before requesting permission in the original gesture.
       busy = true;
       pendingEnabled = true;
       paint();
       try {
+        const permission =
+          Notification.permission === 'default'
+            ? Notification.requestPermission()
+            : Promise.resolve(Notification.permission);
         if ((await permission) !== 'granted') throw Error('denied');
         state = { ...state, ...structuredClone(draft), enabled: true };
         persist();
@@ -429,8 +430,7 @@
         message = errorText(e);
       } finally {
         pendingEnabled = null;
-        busy = false;
-        paint();
+        finishOperation();
       }
     }
     async function disable() {
@@ -469,8 +469,7 @@
       }
       phase = failure ? 'error' : 'off';
       message = failure ? errorText(failure) : '';
-      busy = false;
-      paint();
+      finishOperation();
     }
     async function save(draft) {
       if (busy) return;
@@ -757,8 +756,7 @@
           message = errorText(e);
           phase = 'error';
         } finally {
-          busy = false;
-          paint();
+          finishOperation();
         }
       });
       actions.append(saveButton, retry, test);

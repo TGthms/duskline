@@ -424,3 +424,62 @@ test('returning from a notification does not wait for a slow alert check', async
     release();
   }
 });
+
+test('a primary change during registration is reconciled after the in-flight operation', async ({
+  page,
+}) => {
+  const f = await fixtures(page);
+  let release, started;
+  const held = new Promise((r) => (release = r)),
+    requestStarted = new Promise((r) => (started = r));
+  let requests = 0;
+  await page.route('**/api/push/subscribe', async (route) => {
+    if (++requests === 1) {
+      started();
+      await held;
+    }
+    await route.fallback();
+  });
+  try {
+    await page.goto('/');
+    await settings(page);
+    await page.getByLabel('Weather notifications', { exact: true }).check();
+    await requestStarted;
+    await page.evaluate(() => {
+      localStorage.setItem('duskline-weather-greeting-source', 'city:40.710,-74.010');
+      window.DusklineWeather.pushNotifications.placesChanged();
+    });
+    await page.waitForTimeout(900);
+    release();
+    await expect
+      .poll(() => f.calls.filter((c) => c.path === 'subscribe').at(-1)?.body.locations[0].name)
+      .toBe('New York');
+  } finally {
+    release();
+  }
+});
+
+test('foreground events from a denied native prompt preserve the recovery message', async ({
+  page,
+}) => {
+  await fixtures(page, { permission: 'default' });
+  await page.addInitScript(() => {
+    window.Notification.requestPermission = () => {
+      window.Notification.permission = 'denied';
+      queueMicrotask(() => window.dispatchEvent(new Event('pageshow')));
+      return Promise.resolve('denied');
+    };
+  });
+  await page.goto('/');
+  await settings(page);
+  await page.getByLabel('Weather notifications', { exact: true }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.DusklineWeather.pushNotifications.getState();
+        return state.phase + ':' + state.busy;
+      }),
+    )
+    .toBe('blocked:false');
+  await expect(page.locator('.weather-push-status')).toContainText('blocked');
+});
