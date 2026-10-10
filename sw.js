@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v79';
+const CACHE = 'duskline-shell-v80';
 const SHELL = [
   './',
   './index.html',
@@ -83,7 +83,7 @@ function navigationResponse(response) {
     status: response.status, statusText: response.statusText, headers: response.headers
   });
 }
-const LOCALES = 'duskline-locales-v79';
+const LOCALES = 'duskline-locales-v80';
 const LOCALE_LIMIT = 8; // Four recently used languages, weather + legal packs.
 function isLocale(url) {
   return /\/src\/js\/data\/(?:weather-packs|legal\/packs)\/[a-zA-Z-]+\.json$/.test(url.pathname);
@@ -148,39 +148,41 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Web Push: severe weather alerts. Payload is JSON:
-// { title, body, tag, data: { url, location } }
-self.addEventListener('push', (event) => {
-  let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch (e) {}
-  const title = data.title || 'Weather alert';
-  const options = {
-    body: data.body || '',
-    tag: data.tag || 'duskline-alert',
-    renotify: true,
-    icon: './assets/duskline-icon-192.png',
-    badge: './assets/duskline-icon-192.png',
-    data: data.data || {},
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
+// Push contents are untrusted provider data. Notification links stay in this app.
+function pushUrl(value) {
+  const base=new URL('./',self.registration.scope),url=new URL(typeof value==='string'?value:'./',base);
+  if(url.origin!==base.origin || ![base.pathname,base.pathname+'index.html'].includes(url.pathname))return base.href;
+  return url.href;
+}
+self.addEventListener('push',event=>{
+  let data={};try{const value=event.data?.json();if(value&&typeof value==='object')data=value;}catch{}
+  const info=data.data&&typeof data.data==='object'?data.data:{};
+  const expired=Number.isFinite(info.expiresAt)&&info.expiresAt<=Date.now();
+  let url;try{url=pushUrl(info.url);}catch{url=self.registration.scope;}
+  event.waitUntil(self.registration.showNotification(String(data.title||'duskline').slice(0,180),{
+    body:expired?'This warning has expired. Open duskline for current alerts.':String(data.body||'').slice(0,500),
+    tag:String(data.tag||'duskline-alert').slice(0,200),renotify:false,
+    icon:'./assets/duskline-icon-192.png',badge:'./assets/duskline-icon-192.png',
+    data:{...info,url,expired}
+  }));
 });
-
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick',event=>{
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || './';
-  event.waitUntil((async () => {
-    const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of all) {
-      if ('focus' in client) {
-        try {
-          await client.focus();
-          if (url !== './' && 'navigate' in client) await client.navigate(url);
-          return;
-        } catch (e) {}
-      }
+  event.waitUntil((async()=>{
+    let url;try{url=pushUrl(event.notification.data?.url);}catch{url=self.registration.scope;}
+    const windows=await clients.matchAll({type:'window',includeUncontrolled:true});
+    windows.sort((a,b)=>Number(b.visibilityState==='visible')-Number(a.visibilityState==='visible'));
+    for(const client of windows){
+      if(new URL(client.url).origin!==new URL(url).origin)continue;
+      try{if(!event.notification.data?.test)await client.navigate(url);await client.focus();return;}catch{}
     }
-    if (clients.openWindow) await clients.openWindow(url);
+    if(clients.openWindow)await clients.openWindow(url);
   })());
+});
+self.addEventListener('pushsubscriptionchange',event=>{
+  // Permission and installation identity belong to the foreground app. Keep
+  // the pending intent there; don't create an ownerless background subscription.
+  event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(windows=>Promise.all(windows.map(client=>client.postMessage({type:'PUSH_SUBSCRIPTION_CHANGED'})))));
 });
 
 self.addEventListener('fetch', (event) => {

@@ -35,7 +35,7 @@ test('provider backoff cancels immediately when user work is superseded', async 
 });
 test('literal runtime translation keys exist in every source locale before English fallback is merged', () => {
   const c = {window:{}};vm.createContext(c);
-  for (const name of ['i18n','duskline-locales','weather-about-i18n','weather-aqi-i18n','weather-copy-i18n','weather-greeting-pools-i18n','weather-greeting-settings-i18n','weather-stability-i18n']) vm.runInContext(fs.readFileSync('src/js/data/'+name+'.js','utf8'),c);
+  for (const name of ['i18n','duskline-locales','weather-about-i18n','weather-aqi-i18n','weather-copy-i18n','weather-greeting-pools-i18n','weather-greeting-settings-i18n','weather-stability-i18n','weather-push-i18n']) vm.runInContext(fs.readFileSync('src/js/data/'+name+'.js','utf8'),c);
   const keys = new Set();
   for (const name of ['app','charts','map','alerts','product']) {
     for (const match of fs.readFileSync('src/js/features/weather/'+name+'.js','utf8').matchAll(/\bt\(\s*['"]([^'"]+)['"]\s*[,)]/g)) keys.add(match[1]);

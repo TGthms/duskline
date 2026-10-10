@@ -8,7 +8,7 @@
     let pendingClose = false;
     let deferredSheet = null;
     const rootUrl = new URL(location.href);
-    ['city', 'dest', 'lat', 'lon', 'name', 'admin1', 'tz', 'country', 'country_code', 'cc'].forEach(key => rootUrl.searchParams.delete(key));
+    ['city', 'dest', 'lat', 'lon', 'name', 'admin1', 'tz', 'country', 'country_code', 'cc','alert','alert_until','alert_event'].forEach(key => rootUrl.searchParams.delete(key));
     function state() { return history.state && history.state.duskline || {city: null, sheet: null}; }
     function urlFor(city) {
       const url = new URL(rootUrl);

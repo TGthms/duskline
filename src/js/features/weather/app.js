@@ -588,7 +588,7 @@
         if (openCity && sameCity(openCity.city, pack.city) && isDetailShowingOrOpening()) {
           const options = history.state && history.state.duskline && history.state.duskline.sheet;
           openDetail(pack);
-          if (sheetIntentOpen && options && !['units','primary','places','install'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
+          if (sheetIntentOpen && options && !['units','primary','places','install','notifications'].includes(options.kind)) openSheet(options.kind, pack, Object.assign({}, options.options, {keepScroll:true}));
         }
       },
       failed: function () {
@@ -984,6 +984,7 @@
   }
   function saveFavorites(list) {
     try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) {}
+    if(pushApi)pushApi.placesChanged();
   }
   function isFavorite(c) {
     return loadFavorites().some((f) => sameCity(f, c));
@@ -1102,6 +1103,7 @@
     } catch (e) { return null; }
   }
   function saveMyLocation(c, opts) {
+    if(pushApi)pushApi.placesChanged();
     opts = opts || {};
     if (!c) {
       const oldLocation = myLocationCity || loadMyLocation();
@@ -1139,6 +1141,7 @@
     } catch (e) { return null; }
   }
   function saveGreetingCity(c) {
+    if(pushApi)pushApi.placesChanged();
     if (!c || c.isMyLocation || !c.name || !Number.isFinite(Number(c.lat)) || !Number.isFinite(Number(c.lon))) return;
     selectedGreetingCity = {
       name: String(c.name), admin1: c.admin1 || '', lat: Number(c.lat), lon: Number(c.lon),
@@ -1189,6 +1192,7 @@
     const option = greetingSourceOptions().find(function (item) { return item.id === id; });
     if (!option) return false;
     try { localStorage.setItem(GREETING_SOURCE_KEY, option.id); } catch (e) {}
+    if(pushApi)pushApi.placesChanged();
     return true;
   }
   function readWeatherModePreference() {
@@ -1580,10 +1584,14 @@
       if (kind === 'install') openInstallHelp();
       else if (kind === 'places') openPlacesSheet();
       else if (kind === 'units') openUnitsSheet();
+      else if (kind === 'notifications') openNotificationSettings();
       else if (kind === 'primary') openGreetingLocationSheet();
       else if (openCity && openCity.weather) openSheet(kind,openCity,options);
     }
   });
+
+  var pushApi=W.factories.pushNotifications({t,locale:localeTag,cityName:displayCityName,primary:getGreetingSourceCity,places:function(){return greetingSourceOptions().map(option=>option.city);}});
+  W.pushNotifications=pushApi;
 
   function clearWeatherSkeleton() {
     if (listEl) {
@@ -4980,7 +4988,15 @@
       }
     }
     paintOrder(); sheetBody.append(order);
+    pushApi.mountSummary(sheetBody,openNotificationSettings);
     presentSheet();
+  }
+
+  function openNotificationSettings() {
+    if(navigationApi)navigationApi.sheet('notifications');
+    activeSheetKind='notifications';closeSuggest();hoistOverlays();
+    setSheetTitle('<div class="wx-sheet-head" data-sheet-title><h3 class="wx-sheet-title">'+escapeHtml(t('weather.push.title','Notifications'))+'</h3></div>');
+    sheetBody.replaceChildren();pushApi.mountSettings(sheetBody);presentSheet();
   }
 
   function openPlacesSheet() {
@@ -5270,7 +5286,7 @@
   document.addEventListener('duskline:prefs', function (e) {
     if (e.detail && e.detail.type === 'lang' && activeSheetKind === 'units' && sheetOpen) {
       openUnitsSheet();
-    }
+    } else if(e.detail && e.detail.type==='lang' && activeSheetKind==='notifications' && sheetOpen)openNotificationSettings();
   });
   modeButtons.forEach(function (button) {
     button.addEventListener('click', function () {
@@ -5586,13 +5602,25 @@
   /** Fetch only the query city and open detail — do not wait for majors. */
   async function openDeepLinkFirst(city) {
     if (!city) return false;
+    const alertQuery=new URLSearchParams(location.search),alertId=alertQuery.get('alert'),alertEvent=alertQuery.get('alert_event');
     try {
       var pack = await dataApi.loadCity(city, null, { enrich: true, forceFetch: true });
       if (!pack || !pack.weather) return false;
       cache.set(cityKey(city), pack);
       listPaintLocked = false;
       try { clearWeatherSkeleton(); } catch (e) { /* ignore */ }
+      const alertCheck=alertId?alertsApi.ensureAlerts(pack,{force:true,retryFailed:true}):null;
       openDetail(pack);
+      if(alertId){
+        await alertCheck;
+        if(!openCity || !sameCity(openCity.city,city))return true;
+        openDetail(pack);
+        const matches=pack.alerts && (pack.alerts.find(alert=>alert.id===alertId) || pack.alerts.find(alert=>alertEvent && alert.event===alertEvent));
+        if(matches && openCity && sameCity(openCity.city,city)){
+          alertsApi.restoreOpenAlertTitles([matches.event]);
+          requestAnimationFrame(()=>{const target=detailMods.querySelector('.weather-alert.is-open');if(target)target.scrollIntoView({block:'center',behavior:motionFull()?'smooth':'auto'});});
+        }else notify(pack.alertsError?t('weather.push.providerError','The last check failed. Retrying automatically.'):t('weather.push.expired','This warning is no longer active. Showing current alerts.'));
+      }
       return true;
     } catch (e) {
       return false;
@@ -5611,6 +5639,7 @@
   // Kick off — paint the complete static catalog immediately, then refresh it quietly.
   myLocationCity = loadMyLocation();
   selectedGreetingCity = loadGreetingCity();
+  pushApi.init();
   savedSnapshots.forEach(function (pack) {
     cacheStore.set(cityKey(pack.city), Object.assign({}, pack, { stored: true }));
   });
