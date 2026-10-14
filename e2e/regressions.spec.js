@@ -891,6 +891,42 @@ test('map right-click can view and save a dropped pin', async ({ page }) => {
   await expect(page.locator('#weatherDetailTitle')).toHaveText('Bayview');
 });
 
+test('viewing a map city keeps its point temporary until explicitly added', async ({ page }) => {
+  await stubWeather(page, null);
+  await page.route('https://tiles.openfreemap.org/**', route => route.abort());
+  await page.goto('/');
+  await page.locator('#weatherMapOpen').click();
+  const surface = page.locator('#weatherMapFallback');
+  await expect(surface).toBeVisible({ timeout: 15000 });
+  const box = await surface.boundingBox();
+  const point = { x: box.width * 0.53, y: box.height * 0.45 };
+  const menu = page.locator('#weatherMapContextMenu');
+  await surface.click({ button: 'right', position: point });
+  await expect(menu.locator('[data-map-action="view"]')).toHaveText('View Bayview');
+  await menu.locator('[data-map-action="view"]').click();
+  await expect(page.locator('#weatherDetailTitle')).toHaveText('Bayview');
+  await expect(page.locator('#weatherModules .weather-hourly-item').first()).toBeVisible();
+  await page.locator('#weatherDetailBack').click();
+  await expect(page.locator('#weatherMap')).toBeVisible();
+  const previewPoint = page.locator('#weatherMapPlaces .weather-map-place').filter({ hasText: 'Bayview' });
+  const marker = page.locator('#weatherMapFallback .weather-map-fallback-marker[aria-label^="Bayview"]');
+  await expect(previewPoint).toHaveCount(0);
+  await expect(marker).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('duskline-weather-favorites') || '[]').some(city => city.name === 'Bayview'))).toBe(false);
+  await page.locator('#weatherMapClose').click();
+  await page.reload();
+  await page.locator('#weatherMapOpen').click();
+  await expect(surface).toBeVisible({ timeout: 15000 });
+  await expect(previewPoint).toHaveCount(0);
+  await expect(marker).toHaveCount(0);
+  const nextBox = await surface.boundingBox();
+  await surface.click({ button: 'right', position: { x: nextBox.width * 0.53, y: nextBox.height * 0.45 } });
+  await expect(menu.locator('[data-map-action="add"]')).toHaveText('Add Bayview to My Sky');
+  await menu.locator('[data-map-action="add"]').click();
+  await expect(previewPoint).toHaveCount(1);
+  await expect(marker).toHaveCount(1);
+});
+
 test('map supports long-press actions and responsive footer layouts', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await stubWeather(page, null);

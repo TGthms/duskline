@@ -26,6 +26,8 @@ Open-Meteo timestamps without an offset are city-local wall-clock values when `t
 
 Snapshots contain forecast data, air data, city metadata and original fetch time, never alerts. They are bounded to 34 records and seven days. Writes coalesce during idle time, and flush on pagehide/backgrounding. Favorites have an explicit 24-place limit; saving beyond capacity does not evict user-curated places.
 
+Map points come from deliberate My Sky places and the featured catalog. Viewing a map city's forecast can retain a recent offline snapshot, but that snapshot cannot add a marker or a place-list entry; only adding the city makes its point persistent.
+
 Weather maps use a stable, quantized geographic lattice capped at 64 samples per request. Four-corner interpolation is local; missing cells remain transparent. Individual sample and viewport caches are bounded and expire after eight minutes. A map estimate is a model estimate, not an observation. The global AQI map uses CAMS global/US AQI and discloses approximately 45km model resolution.
 
 The atlas remains visible until a frame paints geographic features; startup does not wait for all optional sources, labels and tiles. Isolated source failures do not destroy a usable renderer. A ready renderer is retained for at most two minutes while closed, and released when the app backgrounds. Returning from city detail puts the opaque map behind its exit immediately. Retryable map failures recover in place after three and twelve seconds, with at most two retries per open; close cancels recovery. Cold-load deadlines, close/reopen generations, context-loss recovery, visibility suspension and request throttling must remain paired with cleanup. Layer switches must not show temperature pixels under an AQI legend.

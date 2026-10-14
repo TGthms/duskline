@@ -1035,8 +1035,9 @@
 
   function getMapPlaces() {
     const favorites = loadFavorites();
-    const candidates = [myLocationCity, selectedGreetingCity].concat(favorites, MAJOR,
-      savedSnapshots.map(function (pack) { return pack && pack.city; }));
+    // Viewing a forecast may cache it for history/offline use, but does not save
+    // a map point. Only deliberate My Sky places and the catalog own markers.
+    const candidates = [myLocationCity, selectedGreetingCity].concat(favorites, MAJOR);
     const seen = new Set();
     const places = [];
     candidates.forEach(function (city, index) {
