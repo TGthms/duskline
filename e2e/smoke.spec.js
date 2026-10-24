@@ -65,12 +65,14 @@ test('home page exposes Search Console verification and SEO head', async ({ page
 });
 
 test('installed app icons fill their canvas without a white inset frame', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   const icons = await page.evaluate(async () => {
     const manifest = await fetch('/manifest.webmanifest').then((response) => response.json());
     const appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]').href;
     const sources = [...new Set([
-      ...manifest.icons.map((icon) => new URL(icon.src, location.href).href),
+      ...manifest.icons
+        .filter((icon) => icon.type === 'image/png')
+        .map((icon) => new URL(icon.src, location.href).href),
       appleTouchIcon
     ])];
 

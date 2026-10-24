@@ -610,7 +610,8 @@ test('My Sky checking copy is immediate and the completed forecast types in', as
 });
 
 test('first Horizon greeting keeps its editorial pause after typing', async ({ page }) => {
-  await page.goto('/');
+  await stubWeather(page, null);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed', 'true');
   const heading = page.locator('#weatherGreeting');
   await expect(heading).toHaveAttribute('aria-label', /^Good (morning|afternoon|evening|night) — [a-z]/);
