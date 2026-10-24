@@ -64,6 +64,50 @@ test('home page exposes Search Console verification and SEO head', async ({ page
   await expect(page.locator('h1')).toHaveCount(1);
 });
 
+test('installed app icons fill their canvas without a white inset frame', async ({ page }) => {
+  await page.goto('/');
+  const icons = await page.evaluate(async () => {
+    const manifest = await fetch('/manifest.webmanifest').then((response) => response.json());
+    const appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]').href;
+    const sources = [...new Set([
+      ...manifest.icons.map((icon) => new URL(icon.src, location.href).href),
+      appleTouchIcon
+    ])];
+
+    return Promise.all(sources.map(async (src) => {
+      const image = new Image();
+      image.src = src;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(image, 0, 0);
+      const edgePoints = [
+        [0, 0], [canvas.width >> 1, 0], [canvas.width - 1, 0],
+        [0, canvas.height >> 1], [canvas.width - 1, canvas.height >> 1],
+        [0, canvas.height - 1], [canvas.width >> 1, canvas.height - 1], [canvas.width - 1, canvas.height - 1]
+      ];
+      const pixels = edgePoints.map(([x, y]) => [...context.getImageData(x, y, 1, 1).data]);
+      return {
+        src,
+        hasWhiteEdge: pixels.some(([red, green, blue, alpha]) => red > 244 && green > 244 && blue > 244 && alpha > 244),
+        transparentEdge: pixels.some(([, , , alpha]) => alpha < 250)
+      };
+    }));
+  });
+
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+    'href',
+    'assets/duskline-icon-maskable-192.png'
+  );
+  expect(icons.length).toBeGreaterThan(0);
+  for (const icon of icons) {
+    expect(icon.hasWhiteEdge, icon.src).toBe(false);
+    expect(icon.transparentEdge, icon.src).toBe(false);
+  }
+});
+
 test('search combobox has an accessible name', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#weatherSearch')).toHaveAttribute('aria-labelledby', 'weatherSearchLabel');
