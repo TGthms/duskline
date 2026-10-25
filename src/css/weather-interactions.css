@@ -177,6 +177,11 @@ body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #we
 body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh):hover {
   background: rgba(255,255,255,.32) !important;
 }
+@media (hover:none) {
+  body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh):hover {
+    background:rgba(255,255,255,.22) !important;
+  }
+}
 body.duskline .weather-detail-bar :is(#weatherDetailBack, #weatherDetailFav, #weatherDetailShare, #weatherDetailRefresh) svg {
   width: 20px; height: 20px; color: inherit;
 }

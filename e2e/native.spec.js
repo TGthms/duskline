@@ -118,9 +118,9 @@ test('map gesture guidance can be dismissed and stays dismissed @core',async({pa
   await page.locator('#weatherMapClose').click();await page.locator('#weatherMapOpen').click();await expect(hint).toBeHidden();
 });
 
-test('representative languages keep Settings and phone layout usable @core',async({page})=>{
+for (const locales of [['fr','de','ja'],['ar','he']]) test('representative languages keep Settings and phone layout usable: '+locales.join(', ')+' @core',async({page})=>{
   await page.setViewportSize({width:390,height:844});await personalSky(page);await page.goto('/');
-  for(const code of ['fr','de','ja','ar','he']) {
+  for(const code of locales) {
     await page.locator('#weatherUnitsBtn').click();await page.locator('[data-shell-language]').selectOption(code);
     await expect(page.locator('html')).toHaveAttribute('data-lang',code);
     await expect(page.locator('html')).toHaveAttribute('dir',['ar','he'].includes(code)?'rtl':'ltr');

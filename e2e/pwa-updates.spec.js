@@ -63,6 +63,7 @@ test.describe('redirecting host worker upgrade', () => {
     expect(toastBox.height).toBeLessThan(160);
     expect(toastBox.y).toBeGreaterThanOrEqual(0);
     expect(toastBox.y+toastBox.height).toBeLessThanOrEqual(page.viewportSize().height);
+    expect((await update.boundingBox()).height).toBeGreaterThanOrEqual(44);
     await Promise.all([page.waitForEvent('load'), update.click()]);
     await expect(page.getByRole('heading')).toHaveText('duskline test shell');
     const cacheState = await page.evaluate(async cacheName => {

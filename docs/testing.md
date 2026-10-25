@@ -12,7 +12,7 @@ Choose checks by the behavior that changed. Keep regression assertions about obs
 
 Run the fast checks and affected scenarios while editing. Run core checks for changes spanning several views. Shared navigation, modal, boot and service-worker changes receive the complete browser matrix. UI changes also receive visual review. A provider-only change normally needs data tests and relevant forecast journeys.
 
-The 23 `@core` scenarios cover forecast loading and fallback; search and keyboard charts; units, persistence and saved places; official alerts and primary warning entry; map controls and gesture guidance; nested modal isolation and Back; notification denial and disable recovery; phone navigation; representative French, German, Japanese, Arabic and Hebrew layouts; deferred updates; and real offline worker upgrades. List the selected cases with:
+The 24 `@core` scenarios cover forecast loading and fallback; search and keyboard charts; units, persistence and saved places; official alerts and primary warning entry; map controls and gesture guidance; nested modal isolation and Back; notification denial and disable recovery; phone navigation; representative French, German, Japanese, Arabic and Hebrew layouts; deferred updates; and real offline worker upgrades. List the selected cases with:
 
 ```sh
 npx playwright test --project=chromium --grep @core --list

@@ -62,7 +62,7 @@ Useful checks:
 npm run check       # syntax-check first-party JavaScript
 npm run test:unit   # unit and content tests
 npm run test:fast   # syntax plus all unit/content checks
-npm run test:core   # 23 core journeys in Chrome and mobile Safari
+npm run test:core   # 24 core journeys in Chrome and mobile Safari
 npm test            # Chromium browser tests
 npm run test:cross  # Firefox, desktop WebKit, and phone-sized WebKit
 npm run test:all    # unit and Chromium suites
@@ -70,7 +70,7 @@ npm run test:visual # pinned macOS Chromium visual baselines
 npm run test:release # full release gate, including Worker integration
 ```
 
-Use the fast checks and affected browser scenarios while editing. The core suite covers 23 critical journeys; the release gate retains the full browser matrix. See [testing](docs/testing.md) for CI selection, locale coverage, and visual review.
+Use the fast checks and affected browser scenarios while editing. The core suite covers 24 critical journeys; the release gate retains the full browser matrix. See [testing](docs/testing.md) for CI selection, locale coverage, and visual review.
 
 Playwright tests mock the weather providers, so they do not use live API quotas. Localized README files live in [`docs/i18n/`](docs/i18n/README.md); regenerate them with `npm run readme:i18n` after changing their catalog in [`tools/render-readme-i18n.js`](tools/render-readme-i18n.js).
 
