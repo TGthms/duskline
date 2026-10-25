@@ -102,6 +102,22 @@ async function stubWeather(page, log, options = {}) {
   });
 }
 
+test('language switching updates visible tooltips together with accessible labels', async ({page}) => {
+  await stubWeather(page);
+  await page.goto('/');
+  await page.locator('#dusklineLanguage').selectOption('fr');
+  await expect(page.locator('html')).toHaveAttribute('lang','fr');
+  for (const id of ['weatherRefresh','weatherLocate','weatherMapOpen']) {
+    const control=page.locator('#'+id);
+    const label=await control.getAttribute('aria-label');
+    expect(label).toBeTruthy();
+    await expect(control).toHaveAttribute('title',label);
+  }
+  await page.locator('#dusklineLanguage').selectOption('en');
+  await expect(page.locator('#weatherRefresh')).toHaveAttribute('title','Refresh');
+  await expect(page.locator('#weatherLocate')).toHaveAttribute('title','Use my location');
+});
+
 test('the list loads the light query and the detail upgrades itself to full', async ({ page }) => {
   const log = [];
   await stubWeather(page, log);
@@ -388,6 +404,28 @@ test('detail and info sheet return focus to the control that opened them', async
   await expect(tile).toBeFocused();
   await page.locator('#weatherDetailBack').click();
   await expect(page.locator('#weatherList .weather-row').first()).toBeFocused();
+});
+
+test('dragging a mobile sheet closed returns focus to its opener', async ({page}) => {
+  await page.setViewportSize({width:430,height:932});
+  await stubWeather(page);
+  await page.goto('/');
+  const opener=page.locator('#weatherUnitsBtn');
+  await opener.click();
+  const sheet=page.locator('#weatherSheet');
+  await expect(sheet).toHaveClass(/is-raised/);
+  await expect(page.locator('#weatherSheetClose')).toBeFocused();
+  const grab=page.locator('#weatherSheet [data-sheet-grab]');
+  // Finish the entry transition before starting a real pointer gesture.
+  await expect.poll(()=>grab.evaluate(el=>el.getBoundingClientRect().top)).toBeGreaterThan(0);
+  await page.waitForTimeout(450);
+  const bounds=await grab.boundingBox();
+  await page.mouse.move(bounds.x+30,bounds.y+8);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x+30,bounds.y+220,{steps:12});
+  await page.mouse.up();
+  await expect(sheet).toHaveAttribute('aria-hidden','true');
+  await expect(opener).toBeFocused();
 });
 
 test('Units sheet locks background scrolling and restores the previous page position', async ({ page }) => {

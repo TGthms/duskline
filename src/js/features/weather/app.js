@@ -4122,8 +4122,18 @@
     const focusSheet = function () {
       const target = initialFocus && initialFocus.isConnected ? initialFocus : sheetClose;
       if (!target) return;
+      const previousFocus = document.activeElement;
+      const focusGen = sheetGen;
       target.focus({ preventScroll: true });
       if (target === initialFocus && typeof target.select === 'function') target.select();
+      // A visibility transition can still be hidden at its opening frame.
+      // Retry after paint only if the user has not moved focus elsewhere.
+      if (document.activeElement !== target) requestAnimationFrame(function () {
+        if (focusGen !== sheetGen || !sheetIntentOpen || !target.isConnected
+          || document.activeElement !== previousFocus) return;
+        target.focus({preventScroll:true});
+        if (target === initialFocus && typeof target.select === 'function') target.select();
+      });
     };
     if (!isSheetOpen()) {
       sheetReturnFocus = document.activeElement;
@@ -4236,7 +4246,7 @@
     sheetOpen = false;
     sheetIntentOpen = false;
     sheetPanel.classList.remove('is-dragging');
-    const reduce = sheetReduceMotion();
+    const reduce = sheetReduceMotion() || !!(options && options.immediate);
     const centered = sheetCentered();
     const closeMs = reduce ? 0 : (centered ? 320 : 380);
 
@@ -4256,8 +4266,7 @@
   }
 
   function finishDragClose() {
-    if (navigationApi) navigationApi.close("sheet");
-    forceCloseSheet();
+    closeSheet({immediate:true});
   }
 
   function initSheetDrag() {

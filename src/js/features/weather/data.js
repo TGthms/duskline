@@ -611,7 +611,10 @@
         if (wantsNws) {
           /* fall through so a fast Open-Meteo list pack can be upgraded */
         } else if (opts.enrich && hit.needsEnrich) {
+          const epoch = (forecastEpochs.get(key) || 0) + 1;
+          forecastEpochs.set(key, epoch);
           const en = await enrichWithOpenMeteo(hit, signal);
+          if (forecastEpochs.get(key) !== epoch) return cache.get(key) || en;
           cache.set(key, en);
           return en;
         } else {
@@ -680,7 +683,10 @@
 
       if(forecastEpochs.get(key)!==epoch) return cache.get(key) || pack;
       if (pack && pack.weather) cache.set(key, pack);
-      else if (hit && hit.weather) return Object.assign({}, hit, { stored: true });
+      else if (hit && hit.weather) {
+        pack = Object.assign({}, hit, { stored: true });
+        cache.set(key, pack);
+      }
       else if (pack) cache.set(key, pack);
       return pack || { error: true, city: c, fetchedAt: 0 };
     }

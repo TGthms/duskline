@@ -24,16 +24,18 @@ const I18N = window.I18N || {};
 const i18nEls = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-aria], [data-i18n-placeholder], [data-i18n-title]');
 const i18nOriginals = new Map();
 i18nEls.forEach(el => {
-  const isHtml = el.hasAttribute('data-i18n-html');
-  const isAria = el.hasAttribute('data-i18n-aria');
-  const isPh = el.hasAttribute('data-i18n-placeholder');
-  i18nOriginals.set(
-    el,
-    isAria ? el.getAttribute('aria-label')
-      : isPh ? el.getAttribute('placeholder')
-      : isHtml ? el.innerHTML
-      : el.textContent
-  );
+  const bindings = [];
+  ['aria', 'placeholder', 'title'].forEach(kind => {
+    const attribute = 'data-i18n-' + kind;
+    const target = kind === 'aria' ? 'aria-label' : kind;
+    if (el.hasAttribute(attribute)) bindings.push({key:el.getAttribute(attribute), target, original:el.getAttribute(target)});
+  });
+  const content = el.hasAttribute('data-i18n-html') ? 'data-i18n-html' : 'data-i18n';
+  if (el.hasAttribute(content)) {
+    const property = content === 'data-i18n-html' ? 'innerHTML' : 'textContent';
+    bindings.push({key:el.getAttribute(content), property, original:el[property]});
+  }
+  i18nOriginals.set(el, bindings);
 });
 
 /** Calendar year for © notices — never hardcode the year in UI copy. */
@@ -96,31 +98,12 @@ function dispatchPrefs(type, extra) {
 function applyLanguage(lang) {
   const dict = getI18nDict(lang);
   i18nEls.forEach(el => {
-    const isHtml = el.hasAttribute('data-i18n-html');
-    const isAria = el.hasAttribute('data-i18n-aria');
-    const isPh = el.hasAttribute('data-i18n-placeholder');
-    const isTitle = el.hasAttribute('data-i18n-title');
-    const key = isAria ? el.getAttribute('data-i18n-aria')
-      : isPh ? el.getAttribute('data-i18n-placeholder')
-      : isHtml ? el.getAttribute('data-i18n-html')
-      : isTitle ? el.getAttribute('data-i18n-title')
-      : el.getAttribute('data-i18n');
-    const translated = dict && dict[key];
-    if (lang === 'en' || !translated) {
-      const orig = withCopyrightYear(i18nOriginals.get(el));
-      if (isAria) el.setAttribute('aria-label', orig);
-      else if (isPh) el.setAttribute('placeholder', orig);
-      else if (isHtml) el.innerHTML = orig;
-      else if (isTitle) el.setAttribute('title', orig);
-      else el.textContent = orig;
-    } else {
-      const t = withCopyrightYear(translated);
-      if (isAria) el.setAttribute('aria-label', t);
-      else if (isPh) el.setAttribute('placeholder', t);
-      else if (isHtml) el.innerHTML = t;
-      else if (isTitle) el.setAttribute('title', t);
-      else el.textContent = t;
-    }
+    i18nOriginals.get(el).forEach(binding => {
+      const translated = dict && dict[binding.key];
+      const value = withCopyrightYear(lang === 'en' || !translated ? binding.original : translated);
+      if (binding.property) el[binding.property] = value;
+      else el.setAttribute(binding.target, value);
+    });
   });
   var localeTag = (window.DUSKLINE_LOCALE_TAGS && window.DUSKLINE_LOCALE_TAGS[lang]) || lang;
   document.documentElement.setAttribute('lang', localeTag);
