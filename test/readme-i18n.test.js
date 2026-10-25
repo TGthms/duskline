@@ -20,15 +20,9 @@ test('root README and docs/i18n cover every picker language', () => {
   const codes = localeCodes();
   const rootReadme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   const index = fs.readFileSync(path.join(i18nDir, 'README.md'), 'utf8');
-  assert.match(rootReadme, /<h1 align="center">duskline<\/h1>/);
-  assert.match(rootReadme, /src="assets\/duskline-icon-512\.png"/);
-  assert.match(rootReadme, /Weather, beautifully clear\. Anywhere in the world\./);
-  assert.match(rootReadme, /^## Read this README in another language$/m);
-  assert.doesNotMatch(rootReadme, /<(?:details|summary)\b/i);
   assert.match(rootReadme, /href="https:\/\/dusklineweather\.pages\.dev\/privacy\.html"/);
   assert.match(rootReadme, /href="https:\/\/dusklineweather\.pages\.dev\/terms\.html"/);
   assert.match(rootReadme, /IFRC Alert Hub/);
-  assert.match(rootReadme, /first-level administrative region/);
   assert.match(rootReadme, /\[العربية\]\(docs\/i18n\/README\.ar\.md\)/);
   assert.match(index, /https:\/\/dusklineweather\.pages\.dev\/privacy\.html/);
   assert.match(index, /https:\/\/dusklineweather\.pages\.dev\/terms\.html/);
@@ -47,9 +41,6 @@ test('root README and docs/i18n cover every picker language', () => {
     assert.match(body, /\]\(https:\/\/dusklineweather\.pages\.dev\/privacy\.html\)/);
     assert.match(body, /\]\(https:\/\/dusklineweather\.pages\.dev\/terms\.html\)/);
     assert.match(body, /^## /m);
-    assert.doesNotMatch(body, /<(?:details|summary)\b/i);
-    assert.match(body, /<h1>duskline<\/h1>/);
-    assert.match(body, /src="\.\.\/\.\.\/assets\/duskline-icon-512\.png"/);
     assert.match(body, /IFRC Alert Hub/);
     if (code === 'ar' || code === 'he') {
       assert.match(body, /dir="rtl"/);

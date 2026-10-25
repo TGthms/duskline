@@ -4,8 +4,30 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
+  scope:
+    runs-on: ubuntu-24.04
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+      browser: ${{ steps.scope.outputs.browser }}
+      runtime: ${{ steps.scope.outputs.runtime }}
+      visual: ${{ steps.scope.outputs.visual }}
+      localeSweep: ${{ steps.scope.outputs.localeSweep }}
+      grep: ${{ steps.scope.outputs.grep }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - id: scope
+        run: node tools/test-scope.js
   check-and-test:
+    needs: scope
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -19,8 +41,40 @@ jobs:
       - run: npm run weather:i18n && git diff --exit-code -- src/js/data/weather-packs src/js/data/weather-locale-registry.js
       - run: npm run test:unit
       - run: npm run test:push-runtime
+        if: needs.scope.outputs.runtime == 'true'
+  core-browsers:
+    needs: [scope, check-and-test]
+    if: needs.scope.outputs.browser == 'true' && needs.scope.outputs.full != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {project: chromium, browser: chromium}
+          - {project: mobile-webkit, browser: webkit}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx playwright test --project=${{ matrix.project }} --grep "$DUSKLINE_GREP" --grep-invert "$DUSKLINE_EXCLUDE" --reporter=list
+        env:
+          CI: true
+          DUSKLINE_GREP: ${{ needs.scope.outputs.grep }}
+          DUSKLINE_EXCLUDE: ${{ needs.scope.outputs.localeSweep == 'true' && '@visual' || '@visual|@localeAll' }}
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: core-failures-${{ matrix.project }}
+          path: test-results/
+          retention-days: 14
   browsers:
-    needs: check-and-test
+    needs: [scope, check-and-test]
+    if: needs.scope.outputs.browser == 'true' && needs.scope.outputs.full == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
@@ -45,7 +99,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
-      - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.part }}/${{ matrix.total }} --reporter=list
+      - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.part }}/${{ matrix.total }} --grep-invert @visual --reporter=list
         env:
           CI: true
       - uses: actions/upload-artifact@v6
@@ -56,7 +110,8 @@ jobs:
           retention-days: 14
 
   visual:
-    needs: check-and-test
+    needs: [scope, check-and-test]
+    if: needs.scope.outputs.visual == 'true'
     runs-on: macos-15
     timeout-minutes: 15
     steps:

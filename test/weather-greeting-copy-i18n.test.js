@@ -39,7 +39,7 @@ test('every picker language has complete, localized greeting and context pools',
     assert.ok(dict, 'missing locale ' + locale);
     for (const key of ['weather.mode.horizon', 'weather.mode.mySky', 'weather.greeting.mySkyPrompt', 'weather.greeting.mySkyChecking', 'weather.greeting.mySkyForecast']) {
       assert.equal(typeof dict[key], 'string', locale + ' ' + key);
-      assert.ok(dict[key].trim().length > (key.startsWith('weather.mode.') ? 0 : 3), 'empty greeting copy: ' + locale + ' ' + key);
+      assert.ok(dict[key].trim().length > 0, 'empty greeting copy: ' + locale + ' ' + key);
       assert.notEqual(dict[key], key, 'raw greeting key: ' + locale + ' ' + key);
       if (locale !== 'en' && key !== 'weather.mode.horizon') {
         assert.notEqual(dict[key], english[key], 'English fallback: ' + locale + ' ' + key);

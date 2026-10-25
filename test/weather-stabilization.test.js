@@ -38,9 +38,11 @@ test('literal runtime translation keys exist in every source locale before Engli
   for (const name of ['i18n','duskline-locales','weather-about-i18n','weather-aqi-i18n','weather-copy-i18n','weather-greeting-pools-i18n','weather-greeting-settings-i18n','weather-stability-i18n','weather-push-i18n','weather-shell-i18n']) vm.runInContext(fs.readFileSync('src/js/data/'+name+'.js','utf8'),c);
   const keys = new Set();
   for (const name of ['app','charts','map','alerts','product','primary-alerts','shell']) {
-    for (const match of fs.readFileSync('src/js/features/weather/'+name+'.js','utf8').matchAll(/\bt\(\s*['"]([^'"]+)['"]\s*[,)]/g)) keys.add(match[1]);
+    const source=fs.readFileSync('src/js/features/weather/'+name+'.js','utf8');
+    for (const match of source.matchAll(/\bt\(\s*['"]([^'"]+)['"]\s*[,)]/g)) keys.add(match[1]);
+    for (const match of source.matchAll(/\[\s*['"]((?:weather|settings)\.[^'"]+)['"]\s*,\s*['"]/g)) keys.add(match[1]);
   }
-  for (const match of fs.readFileSync('src/js/sw-register.js','utf8').matchAll(/\btKey\(\s*['"]([^'"]+)['"]\s*[,)]/g)) keys.add(match[1]);
+  for (const match of fs.readFileSync('src/js/sw-register.js','utf8').matchAll(/\b(?:tKey|text)\(\s*['"]([^'"]+)['"]\s*[,)]/g)) keys.add(match[1]);
   for (const [code] of c.window.DUSKLINE_LOCALES) for (const key of keys) assert.ok(c.window.I18N[code][key], code+' is missing '+key);
 });
 
