@@ -1051,6 +1051,22 @@ test('daily forecast rows open the selected date with a day range, matching icon
   await expect(monday).toBeFocused();
 });
 
+test('temperature mode repaint preserves a newer chart focus choice',async({page})=>{
+  await stubWeather(page);await page.goto('/?city=tokyo');
+  await page.locator('#weatherModules .weather-daily-row').nth(1).click();
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toBeVisible();
+  await page.locator('[data-temp-mode="feels"]').click();
+  await expect(page.locator('[data-temp-mode="feels"]')).toBeFocused();
+  await page.evaluate(()=>{
+    document.querySelector('[data-temp-mode="actual"]').click();
+    document.querySelector('#weatherSheetBody .weather-chart-wrap').focus();
+  });
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toHaveAttribute('aria-valuenow','0');
+});
+
 test('NWS alert details open and collapse on repeated activation', async ({ page }) => {
   const expires = new Date(Date.now() + 4 * 3600000).toISOString();
   await stubWeather(page, null);

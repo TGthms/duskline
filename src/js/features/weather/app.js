@@ -3832,7 +3832,10 @@
 
     if (kind === 'day' || kind === 'conditions') {
       const focusDayControl = function (attribute, value) {
+        const generation=sheetGen,previousFocus=document.activeElement;
         requestAnimationFrame(function () {
+          if (generation!==sheetGen || !sheetIntentOpen
+            || (document.activeElement!==previousFocus && document.activeElement!==document.body && document.activeElement!==sheetPanel)) return;
           const controls = Array.from(sheetBody.querySelectorAll('[' + attribute + ']'));
           const target = controls.find(function (button) { return button.getAttribute(attribute) === value; });
           if (target && target.isConnected) target.focus({ preventScroll: true });

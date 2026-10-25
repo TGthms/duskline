@@ -7,7 +7,7 @@ The October 25 audit recommendations are implemented on `main`.
 - Portrait phones use a compact header and persistent My Sky/Horizon/Map navigation. Language lives in Settings; a short Saved places entry retains direct management. Wider and landscape views retain the desktop controls. The same controls and handlers are reused across layouts.
 - The map offers dismissible first-use guidance for long-press, right-click and keyboard place actions.
 - Update notices have a Later action for the current session. Settings retains Update and Check for updates, with explicit checking, failure and retry states. Activation remains an explicit action.
-- Source catalogs include the new controls in all 30 interface languages. The shell is v92 and the locale cache is v85.
+- Source catalogs include the new controls in all 30 interface languages. The shell is v93 and the locale cache is v85.
 
 Testing now has a fast unit/content command, 24 core browser journeys and change-aware CI selection. The full release matrix, offline upgrades, reviewed visuals and actual Worker integration remain available. See [testing](testing.md).
 
@@ -27,5 +27,7 @@ Ten phone/map baselines were deliberately refreshed after visual review. Compari
 Linux mobile WebKit validation identified additional update-notice wrapping and an overlong combined locale journey. The notice now reserves a full text row and 44px action targets; locale journeys run in smaller groups with the same assertions. Touch controls keep a consistent resting surface after activation instead of retaining hover styling.
 
 The desktop WebKit opening-focus retry was reproduced with a delayed-visible sheet. Modal focus now also settles when the active surface's transition finishes; the return-focus and background-isolation assertions remain unchanged.
+
+The Firefox keyboard-chart retry exposed a deferred mode-button focus callback overriding a newer chart selection. Its callback now checks both sheet generation and the user's latest focus before restoring the mode button. A same-frame mode-change/chart-focus regression verifies the keyboard Home action remains on the chart.
 
 Physical iOS acceptance remains separate: Home Screen cold launch and first tap; VoiceOver modal boundaries; keyboard and touch scrolling; haptics; background/resume and rotation; offline relaunch; accepting an update; and actual push receipt. Local Firefox could not launch because of this Mac environment's sandbox/framebuffer failure; Linux CI retains Firefox coverage. Production hosting configuration is unchanged.
