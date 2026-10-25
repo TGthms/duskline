@@ -38,6 +38,17 @@ test('modal surfaces isolate the page and restore nested contexts @core',async({
   await page.locator('#weatherMapClose').click();await isolated(false);
 });
 
+test('sheet focus waits for its visible surface without leaving the page active',async({page})=>{
+  await personalSky(page);await page.goto('/');
+  await page.addStyleTag({content:'#weatherSheetPanel{visibility:hidden;transition:visibility .01s linear .18s !important} #weatherSheet.open #weatherSheetPanel{visibility:visible}'});
+  await page.locator('#weatherUnitsBtn').click();
+  await expect(page.locator('#main')).toHaveJSProperty('inert',true);
+  await expect.poll(()=>page.evaluate(()=>!!document.activeElement.closest('#weatherSheetPanel'))).toBe(true);
+  await page.locator('#weatherSheetClose').click();
+  await expect(page.locator('#main')).toHaveJSProperty('inert',false);
+  await expect(page.locator('#weatherUnitsBtn')).toBeFocused();
+});
+
 test('My Sky exposes the active warning and opens its expanded detail @core',async({page,context},testInfo)=>{
   await personalSky(page);
   await page.route('**/api/international-alerts?**',route=>route.fulfill({json:{availability:'available',alerts:[{

@@ -22,6 +22,10 @@
   document.addEventListener('focusin',containFocus);
   document.addEventListener('focusout',containFocus);
   document.addEventListener('click',containFocus);
+  document.addEventListener('transitionend',function (event) {
+    const owner=stack[stack.length-1];
+    if (owner && (event.target===owner.element || event.target.matches('[role="dialog"]'))) containFocus();
+  });
   function sync() {
     saved.forEach((value, element) => {
       element.inert=value.inert;
