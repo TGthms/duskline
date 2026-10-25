@@ -28,6 +28,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `navigation.js` | Browser history for city details and forecast sheets |
 | `product.js` | Personal dashboard and Horizon filtering/sorting controls |
 | `primary-alerts.js` | Primary-card alert summaries, retry and expiry |
+| `shell.js` | Responsive navigation and application settings |
 | `app.js` | UI state, list/detail/sheets, boot |
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone. The map module loads MapLibre only after the map opens; its files stay out of the startup request path.

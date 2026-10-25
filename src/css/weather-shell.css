@@ -1,0 +1,44 @@
+/* Responsive navigation and application settings. */
+.weather-mobile-nav { display:none; }
+.weather-mobile-nav[hidden] { display:none !important; }
+.weather-settings-language { display:grid; gap:8px; margin:0 0 24px; font-size:12px; }
+.weather-settings-language select { width:100%; min-height:44px; border:1px solid rgba(127,153,175,.35); border-radius:12px; background:transparent; color:inherit; padding:8px 12px; font:inherit; font-size:16px; }
+.weather-settings-language select:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+.weather-sheet-panel:focus { outline:none; }
+
+@media (max-width:640px) and (min-height:500px) {
+  body.duskline[data-mobile-shell] { padding-top:calc(72px + env(safe-area-inset-top)); padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
+  body.duskline[data-mobile-shell] .duskline-header { min-height:60px; height:calc(60px + env(safe-area-inset-top)); padding:calc(6px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 6px max(12px,env(safe-area-inset-left)); gap:8px; box-sizing:border-box; }
+  body.duskline[data-mobile-shell] .duskline-brand { font-size:1rem; letter-spacing:.05em; gap:8px; }
+  body.duskline[data-mobile-shell] .duskline-logo { width:28px; height:28px; }
+  body.duskline[data-mobile-shell] #dusklineLanguage { display:none; }
+  body.duskline[data-mobile-shell] .duskline-header .nav-actions { display:flex; align-items:center; gap:4px; }
+  body.duskline[data-mobile-shell] .weather-greeting-wrap { flex-direction:row; align-items:center; width:100%; gap:12px; margin:0 0 10px; min-height:44px; }
+  body.duskline[data-mobile-shell] .weather-greeting-title { flex:1; font-size:20px; line-height:1.2; min-width:0; }
+  body.duskline[data-mobile-shell] .weather-greeting-place { flex:0 1 112px; min-height:44px; margin:0; text-align:end; line-height:1.4; }
+  body.duskline[data-mobile-shell] .weather-toolbar-actions { display:none !important; }
+  body.duskline[data-mobile-shell] #weatherManagePlaces { display:none; }
+  body.duskline[data-mobile-shell] #tools.weather-root.tools-page { padding-top:0; }
+  body.duskline[data-mobile-shell] .weather-status-row { margin-bottom:12px; }
+  body.duskline[data-mobile-shell] .weather-mobile-nav {
+    position:fixed; z-index:250; inset:auto 12px max(10px,env(safe-area-inset-bottom));
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; max-width:560px; margin-inline:auto;
+    padding:6px; border:1px solid rgba(188,214,239,.24); border-radius:22px;
+    color:#eef5fc; background:rgba(12,27,46,.96); box-shadow:0 8px 30px rgba(0,0,0,.22);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  }
+  body.duskline[data-mobile-shell] .weather-mobile-nav .weather-mode-switch { display:contents; }
+  body.duskline[data-mobile-shell] .weather-mobile-nav button,
+  body.duskline[data-mobile-shell] #weatherMobileNav #weatherMapOpen {
+    display:flex; align-items:center; justify-content:center; gap:6px; width:auto !important; min-width:0 !important; max-width:none !important;
+    min-height:48px; height:auto; margin:0; padding:8px !important; border:0 !important; border-radius:16px !important;
+    background:transparent !important; color:inherit !important; box-shadow:none !important; font:600 13px/1.3 var(--ff-body); white-space:normal; overflow-wrap:anywhere;
+  }
+  body.duskline[data-mobile-shell] #weatherMobileNav #weatherMapOpen span { display:inline; }
+  body.duskline[data-mobile-shell] #weatherMobileNav #weatherMapOpen svg { display:none; }
+  body.duskline[data-mobile-shell] #weatherMobileNav button[aria-pressed="true"] { background:rgba(145,205,255,.2) !important; }
+  body.duskline[data-mobile-shell] #weatherMobileNav button:focus-visible { outline:2px solid currentColor; outline-offset:-3px; }
+  body.duskline.weather-sky-light[data-mobile-shell] #weatherMobileNav { background:rgba(246,250,255,.96); color:#16344f; border-color:rgba(22,52,79,.18); }
+  body.duskline.weather-sky-light[data-mobile-shell] #weatherMobileNav button[aria-pressed="true"] { background:#dceaf7 !important; }
+  html[data-weather-modal] #weatherMobileNav,body:has(#weatherSearch:focus) #weatherMobileNav { visibility:hidden; pointer-events:none; }
+}

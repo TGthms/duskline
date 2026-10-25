@@ -60,8 +60,29 @@ test('primary alert checks can retry without interrupting the forecast',async({p
     : route.fulfill({status:503,json:{error:'upstream_unavailable'}}));
   await page.goto('/');
   await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
   const retry=page.locator('[data-primary-alert-retry]');await expect(retry).toBeVisible();
   available=true;await retry.click();await expect(retry).toHaveCount(0);
   await expect(page.locator('[data-primary-alert]')).toHaveCount(0);
   await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
+});
+
+test('phone navigation stays reachable and Settings owns the language picker @core',async({page},testInfo)=>{
+  await page.setViewportSize({width:430,height:932});await personalSky(page);await page.goto('/');
+  await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
+  const nav=page.locator('#weatherMobileNav');await expect(nav).toBeVisible();
+  await page.screenshot({path:testInfo.outputPath('phone-home.png'),fullPage:true});
+  expect((await page.locator('#weatherHome').boundingBox()).y).toBeLessThan(280);
+  await expect(page.locator('#dusklineLanguage')).toBeHidden();
+  await page.locator('#weatherUnitsBtn').click();await expect(nav).toBeHidden();
+  await page.locator('[data-shell-language]').selectOption('he');await expect(page.locator('html')).toHaveAttribute('dir','rtl');
+  await page.locator('#weatherSheetClose').click();await expect(nav).toBeVisible();
+  await page.setViewportSize({width:320,height:568});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.locator('#weatherUnitsBtn').click();await page.locator('[data-shell-language]').selectOption('en');
+  await page.locator('#weatherSheetClose').click();
+  await page.setViewportSize({width:1440,height:1000});await expect(nav).toBeHidden();
+  await expect(page.locator('#dusklineLanguage')).toBeVisible();
+  await expect(page.locator('.weather-toolbar-actions #weatherMapOpen')).toBeVisible();
+  await page.locator('#weatherUnitsBtn').click();await expect(page.locator('[data-shell-language]')).toHaveValue('en');
 });

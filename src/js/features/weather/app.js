@@ -1522,6 +1522,7 @@
   }
 
   wireRemainingModules();
+  const shellApi = W.factories.shell({t});
   const primaryAlertsApi = W.factories.primaryAlerts({
     t,escapeHtml,current:alertsApi.currentAlerts,ensure:alertsApi.ensureAlerts,
     repaint:function () { if (productApi) productApi.render(); },
@@ -5020,6 +5021,7 @@
       }
     }
     paintOrder(); sheetBody.append(order);
+    shellApi.mountSettings(sheetBody);
     pushApi.mountSummary(sheetBody,openNotificationSettings);
     presentSheet();
     if (startedFromPage) sheetReturnFocus = unitsBtn;
