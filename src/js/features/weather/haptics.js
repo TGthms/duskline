@@ -139,6 +139,9 @@
 
         event.stopPropagation();
       });
+      tick.addEventListener('change', function () {
+        if (W.modal) W.modal.containFocus();
+      });
       root.append(style,label,tick);
       surface.appendChild(host);
       hosts.set(surface,host);

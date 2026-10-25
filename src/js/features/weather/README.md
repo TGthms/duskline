@@ -9,6 +9,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | File | Role |
 |------|------|
 | `ns.js` | Page gate + `window.DusklineWeather` factory registry |
+| `modal.js` | Shared background isolation for detail, sheet and map surfaces |
 | `aqi-math.js` | Pure US and European AQI band and scale helpers |
 | `aqi.js` | AQI data ownership, pollutant detail, scale and outlook rendering (`W.factories.aqi`) |
 | `planning.js` | Pure hourly rain-window planning (`W.planning`) |
@@ -26,6 +27,7 @@ Classic (non-module) scripts loaded by `index.html` in this order:
 | `snapshots.js` | Bounded, local forecast history for recent places and offline use (`W.factories.snapshots`) |
 | `navigation.js` | Browser history for city details and forecast sheets |
 | `product.js` | Personal dashboard and Horizon filtering/sorting controls |
+| `primary-alerts.js` | Primary-card alert summaries, retry and expiry |
 | `app.js` | UI state, list/detail/sheets, boot |
 
 `app.js` creates deps (units, DOM, cache) and calls each factory. Do not load `app.js` alone. The map module loads MapLibre only after the map opens; its files stay out of the startup request path.

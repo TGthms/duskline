@@ -414,7 +414,7 @@ test('dragging a mobile sheet closed returns focus to its opener', async ({page}
   await opener.click();
   const sheet=page.locator('#weatherSheet');
   await expect(sheet).toHaveClass(/is-raised/);
-  await expect(page.locator('#weatherSheetClose')).toBeFocused();
+  await expect(page.locator('#weatherSheetPanel')).toBeFocused();
   const grab=page.locator('#weatherSheet [data-sheet-grab]');
   // Finish the entry transition before starting a real pointer gesture.
   await expect.poll(()=>grab.evaluate(el=>el.getBoundingClientRect().top)).toBeGreaterThan(0);

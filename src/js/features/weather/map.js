@@ -59,7 +59,6 @@
     var contextIsSaved = false;
     var returnFocus = null;
     var previousStyles = null;
-    var previousInert = [];
     var activeRequestKey = '';
     var lastGridRequestAt = 0;
     var cachedGrids = new Map();
@@ -133,13 +132,7 @@
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
       document.documentElement.classList.add('weather-map-open');
-      previousInert = [];
-      ['navbar', 'main', 'dusklineFooter', 'weatherToast'].forEach(function (id) {
-        var element = document.getElementById(id);
-        if (!element) return;
-        previousInert.push({ element: element, value: !!element.inert });
-        element.inert = true;
-      });
+      W.modal.open('map', root);
       if (typeof deps.onOpen === 'function') deps.onOpen();
     }
     function unlockBackground() {
@@ -149,8 +142,7 @@
         document.body.style.overflow = previousStyles.bodyOverflow;
       }
       previousStyles = null;
-      previousInert.forEach(function (row) { row.element.inert = row.value; });
-      previousInert = [];
+      W.modal.close('map');
       if (typeof deps.onClose === 'function') deps.onClose();
     }
     function hideContextMenu(restoreFocus) {

@@ -359,7 +359,7 @@
 
 <!-- Info sheet — bottom sheet w/ drag-to-dismiss (about hub Preferences pattern) -->
 <div class="weather-sheet" id="weatherSheet" aria-hidden="true">
-  <div class="weather-sheet-panel" id="weatherSheetPanel" role="dialog" aria-modal="true" aria-labelledby="weatherSheetTitle">
+  <div class="weather-sheet-panel" id="weatherSheetPanel" role="dialog" aria-modal="true" aria-labelledby="weatherSheetTitle" tabindex="-1">
     <!-- Full drag zone: grabber + title (title filled by weather.js on open) -->
     <div class="wx-sheet-dragzone" data-sheet-grab>
       <div class="wx-sheet-grab" aria-hidden="true"></div>
@@ -455,6 +455,7 @@
 <script src="src/js/core/runtime.js" defer></script>
 <script src="src/js/duskline-controls.js" defer></script>
 <script src="src/js/features/weather/ns.js" defer></script>
+<script src="src/js/features/weather/modal.js" defer></script>
 <script src="src/js/features/weather/aqi-math.js" defer></script>
 <script src="src/js/features/weather/aqi.js" defer></script>
 <script src="src/js/features/weather/planning.js" defer></script>
@@ -472,6 +473,7 @@
 <script src="src/js/features/weather/snapshots.js" defer></script>
 <script src="src/js/features/weather/navigation.js" defer></script>
 <script src="src/js/features/weather/product.js" defer></script>
+<script src="src/js/features/weather/primary-alerts.js" defer></script>
 <script src="src/js/features/weather/app.js" defer></script>
 <script src="src/js/app.js" defer></script>
 <script src="src/js/sw-register.js"></script>

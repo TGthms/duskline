@@ -280,3 +280,16 @@ body.duskline .weather-detail.wx-mods-light .weather-daily-row:hover { backgroun
 .weather-push-section > p { font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
 @media (prefers-reduced-motion:reduce) { .weather-push-track,.weather-push-track::before { transition:none; } }
 html[data-motion-effective='off'] .weather-push-track,html[data-motion-effective='off'] .weather-push-track::before { transition:none; }
+
+.weather-home-alert {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px;
+  width:100%; margin:4px 0 20px; padding:14px 16px; border:1px solid #e4b55b;
+  border-radius:14px; background:#4c3817; color:#fff2d2; text-align:start; font:inherit; cursor:pointer;
+}
+.weather-home-alert > span:first-child { font-size:12px; }
+.weather-home-alert strong { grid-column:1; font-size:15px; overflow-wrap:anywhere; }
+.weather-home-alert > span:last-child { grid-column:2; grid-row:1 / 3; align-self:center; font-size:22px; }
+.weather-home-alert[data-severity="extreme"],.weather-home-alert[data-severity="severe"] { background:#652c32; border-color:#f5a1a7; color:#fff1f1; }
+.weather-home-alert:focus-visible,.weather-home-alert-note button:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+.weather-home-alert-note { display:flex; align-items:center; gap:12px; margin:0 0 16px; color:var(--home-secondary); font-size:12px; line-height:1.5; }
+.weather-home-alert-note button { flex:none; min-height:44px; border:1px solid currentColor; border-radius:10px; padding:6px 12px; background:transparent; color:inherit; font:inherit; cursor:pointer; }

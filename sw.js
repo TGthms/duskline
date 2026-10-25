@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v86';
+const CACHE = 'duskline-shell-v87';
 const SHELL = [
   './',
   './index.html',
@@ -54,6 +54,7 @@ const SHELL = [
   './src/js/core/runtime.js',
   './src/js/duskline-controls.js',
   './src/js/features/weather/ns.js',
+  './src/js/features/weather/modal.js',
   './src/js/features/weather/aqi-math.js',
   './src/js/features/weather/aqi.js',
   './src/js/features/weather/planning.js',
@@ -71,6 +72,7 @@ const SHELL = [
   './src/js/features/weather/snapshots.js',
   './src/js/features/weather/navigation.js',
   './src/js/features/weather/product.js',
+  './src/js/features/weather/primary-alerts.js',
   './src/js/features/weather/app.js'
 ];
 

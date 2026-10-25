@@ -34,7 +34,7 @@
       if (!home) return;
       const city = selectedCity();
       home.hidden = !personal || !city;
-      if (home.hidden) return;
+      if (home.hidden) { deps.alertsMarkup(null); return; }
       const previousStrip = home.querySelector('.weather-hourly');
       const samePlace = home.dataset.cityKey === cityKey(city);
       const previousScroll = samePlace && previousStrip ? previousStrip.scrollLeft : 0;
@@ -86,6 +86,7 @@
             <p class="weather-home-range"><span>${esc(t('weather.high','H'))}:${esc(fmtTemp(range.hi))}</span><span>${esc(t('weather.low','L'))}:${esc(fmtTemp(range.lo))}</span></p>
           </div>
         </div>
+        ${deps.alertsMarkup(pack)}
         ${plan ? `<div class="weather-home-insight weather-home-plan">${plan}</div>` : insight ? `<p class="weather-home-insight">${esc(insight)}</p>` : ''}
         <div class="weather-home-outlook"><div class="weather-home-hours">
           <span class="weather-home-caption">${esc(pack.stored ? t('weather.savedHourlyForecast', 'Saved hourly forecast') : t('weather.nextHours', 'Next hours'))}</span>
@@ -112,6 +113,7 @@
         if (day) day.focus({preventScroll:true});
       }
       home.querySelector('[data-home-open]').addEventListener('click', () => deps.open(selectedCity()));
+      deps.bindAlerts(home,pack);
       if(deps.bindHourly) deps.bindHourly(strip);
 
       if (pack.needsEnrich && !pack.stored && !pack.enrichmentError && !enriching.has(cityKey(city))) {

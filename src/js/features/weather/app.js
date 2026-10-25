@@ -1522,7 +1522,21 @@
   }
 
   wireRemainingModules();
+  const primaryAlertsApi = W.factories.primaryAlerts({
+    t,escapeHtml,current:alertsApi.currentAlerts,ensure:alertsApi.ensureAlerts,
+    repaint:function () { if (productApi) productApi.render(); },
+    open:function (pack,alert) {
+      openDetail(cache.get(cityKey(pack.city)) || pack);
+      if (alert) alertsApi.restoreOpenAlertTitles([alert.event]);
+      requestAnimationFrame(function () {
+        if (!openCity || !sameCity(openCity.city,pack.city) || sheetIntentOpen) return;
+        const target=detailMods.querySelector('.weather-alerts');
+        if (target) target.scrollIntoView({block:'start',behavior:motionFull()?'smooth':'auto'});
+      });
+    }
+  });
   if (W.factories.product) productApi = W.factories.product({
+    alertsMarkup:primaryAlertsApi.markup,bindAlerts:primaryAlertsApi.bind,
     t: t, escapeHtml: escapeHtml, cityKey: cityKey, sameCity: sameCity, cache: cache,
     cities: MAJOR, fmtTemp: fmtTemp, condLabel: condLabel, cityName: displayCityName,
     localHour: localHourForPack, mode: function () { return weatherMode; },
@@ -2986,6 +3000,7 @@
   }
 
   function lockDetailPage() {
+    W.modal.open('detail', detailEl);
     try {
       document.body.classList.add('weather-detail-open');
       document.documentElement.classList.add('weather-detail-open');
@@ -4012,7 +4027,6 @@
   /** Instantly inert sheet — no animation. Use when opening detail or recovering stuck UI. */
   function setDetailBehindSheet(behind) {
     if (!detailEl) return;
-    try { detailEl.inert = !!behind; } catch (e) { /* older browsers */ }
     if (behind) detailEl.style.pointerEvents = 'none';
     else detailEl.style.pointerEvents = '';
   }
@@ -4085,6 +4099,7 @@
     sheetEl.style.pointerEvents = 'none';
     sheetEl.style.opacity = '';
     try { sheetEl.inert = true; } catch (e) { /* older browsers */ }
+    W.modal.close('sheet');
     setDetailBehindSheet(false);
     try { document.documentElement.classList.remove('wx-sheet-open'); } catch (eCls) { /* ignore */ }
     resetSheetInline();
@@ -4120,7 +4135,7 @@
     options = options || {};
     if (!sheetEl || !sheetPanel) return;
     const focusSheet = function () {
-      const target = initialFocus && initialFocus.isConnected ? initialFocus : sheetClose;
+      const target = initialFocus && initialFocus.isConnected ? initialFocus : sheetPanel;
       if (!target) return;
       const previousFocus = document.activeElement;
       const focusGen = sheetGen;
@@ -4128,12 +4143,13 @@
       if (target === initialFocus && typeof target.select === 'function') target.select();
       // A visibility transition can still be hidden at its opening frame.
       // Retry after paint only if the user has not moved focus elsewhere.
-      if (document.activeElement !== target) requestAnimationFrame(function () {
+      requestAnimationFrame(function () { setTimeout(function () {
         if (focusGen !== sheetGen || !sheetIntentOpen || !target.isConnected
-          || document.activeElement !== previousFocus) return;
+          || document.activeElement === target
+          || (document.activeElement !== previousFocus && document.activeElement !== document.body)) return;
         target.focus({preventScroll:true});
         if (target === initialFocus && typeof target.select === 'function') target.select();
-      });
+      },0); });
     };
     if (!isSheetOpen()) {
       sheetReturnFocus = document.activeElement;
@@ -4155,6 +4171,7 @@
     sheetEl.setAttribute('aria-hidden', 'false');
     sheetEl.style.pointerEvents = 'auto';
     setDetailBehindSheet(true);
+    W.modal.open('sheet', sheetEl);
     try { document.documentElement.classList.add('wx-sheet-open'); } catch (eOpen) { /* ignore */ }
     sheetEl.classList.toggle('wx-sheet-light', !!(detailEl && detailEl.classList.contains('wx-mods-light')));
     sheetEl.classList.toggle('wx-sheet-centered', sheetCentered());
@@ -4457,6 +4474,7 @@
   }
   initSheetDrag();
   function unlockDetailPage() {
+    W.modal.close('detail');
     try {
       document.body.classList.remove('weather-detail-open');
       document.documentElement.classList.remove('weather-detail-open');
@@ -5486,10 +5504,13 @@
   }
   function trapTab(container, e) {
     const list = focusables(container);
-    if (list.length < 2) return;
+    if (!list.length) return;
     const first = list[0];
     const last = list[list.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
+    if (!container.contains(document.activeElement)) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+    } else if (e.shiftKey && document.activeElement === first) {
       e.preventDefault();
       last.focus();
     } else if (!e.shiftKey && document.activeElement === last) {
