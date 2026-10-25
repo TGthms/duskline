@@ -22,7 +22,7 @@ test.describe('redirecting host worker upgrade', () => {
       }
       if (pathname === '/' || /\/(terms|privacy|licenses)$/.test(pathname)) {
         response.setHeader('Content-Type','text/html');
-        return response.end('<!doctype html><link rel="stylesheet" href="/src/css/duskline.css"><link rel="stylesheet" href="/src/css/weather-product.css"><h1>duskline test shell</h1><div id="weatherToast"></div><script src="/src/js/sw-register.js"></script>');
+        return response.end('<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/src/css/duskline.css"><link rel="stylesheet" href="/src/css/weather-product.css"><h1>duskline test shell</h1><div id="weatherToast"></div><script src="/src/js/sw-register.js"></script>');
       }
       if (pathname === '/sw.js') {
         response.setHeader('Content-Type','text/javascript');
@@ -49,7 +49,7 @@ test.describe('redirecting host worker upgrade', () => {
   });
   test.afterEach(async () => {await new Promise(resolve => server.close(resolve));});
 
-  test('Update activates a coherent redirect-free shell and reloads online and offline', async ({page, context}) => {
+  test('Update activates a coherent redirect-free shell and reloads online and offline @core', async ({page, context}) => {
     await page.goto(origin);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
@@ -61,7 +61,8 @@ test.describe('redirecting host worker upgrade', () => {
     await expect(update).toBeVisible();
     const toastBox = await page.locator('#weatherUpdateToast').boundingBox();
     expect(toastBox.height).toBeLessThan(160);
-    expect(toastBox.y).toBeLessThan(200);
+    expect(toastBox.y).toBeGreaterThanOrEqual(0);
+    expect(toastBox.y+toastBox.height).toBeLessThanOrEqual(page.viewportSize().height);
     await Promise.all([page.waitForEvent('load'), update.click()]);
     await expect(page.getByRole('heading')).toHaveText('duskline test shell');
     const cacheState = await page.evaluate(async cacheName => {
@@ -92,7 +93,7 @@ test.describe('redirecting host worker upgrade', () => {
     await expect(page.getByRole('heading')).toBeVisible();
     unavailable = false;
   });
-  test('Update replaces stale cached translations and retains the refreshed pack offline', async ({page}) => {
+  test('Update replaces stale cached translations and retains the refreshed pack offline @core', async ({page}) => {
     await page.goto(origin);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);

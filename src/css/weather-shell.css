@@ -5,6 +5,16 @@
 .weather-settings-language select { width:100%; min-height:44px; border:1px solid rgba(127,153,175,.35); border-radius:12px; background:transparent; color:inherit; padding:8px 12px; font:inherit; font-size:16px; }
 .weather-settings-language select:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
 .weather-sheet-panel:focus { outline:none; }
+.weather-settings-updates { margin:24px 0 8px; padding-top:20px; border-top:1px solid rgba(127,153,175,.3); }
+.weather-settings-updates h4 { margin:0 0 8px; font:600 14px/1.4 var(--ff-body); }
+.weather-settings-updates p { font-size:13px; }
+.weather-settings-updates button { min-height:44px; padding:8px 14px; border:1px solid rgba(127,153,175,.4); border-radius:12px; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.weather-settings-updates button:disabled { opacity:.6; cursor:default; }
+.weather-map-hint { position:absolute; z-index:3; left:12px; bottom:16px; display:flex; align-items:center; gap:8px; max-width:min(340px,calc(100% - 94px)); padding:8px 8px 8px 12px; border:1px solid rgba(188,214,239,.3); border-radius:14px; background:rgba(12,27,46,.94); color:#eef5fc; }
+.weather-map-hint[hidden] { display:none; }
+.weather-map-hint p { margin:0; font-size:12px; line-height:1.5; }
+.weather-map-hint button { flex:none; width:44px; height:44px; border:0; border-radius:10px; background:transparent; color:inherit; font:24px/1 var(--ff-body); cursor:pointer; }
+.weather-map-hint button:focus-visible { outline:2px solid currentColor; outline-offset:-2px; }
 
 @media (max-width:640px) and (min-height:500px) {
   body.duskline[data-mobile-shell] { padding-top:calc(72px + env(safe-area-inset-top)); padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
@@ -41,4 +51,5 @@
   body.duskline.weather-sky-light[data-mobile-shell] #weatherMobileNav { background:rgba(246,250,255,.96); color:#16344f; border-color:rgba(22,52,79,.18); }
   body.duskline.weather-sky-light[data-mobile-shell] #weatherMobileNav button[aria-pressed="true"] { background:#dceaf7 !important; }
   html[data-weather-modal] #weatherMobileNav,body:has(#weatherSearch:focus) #weatherMobileNav { visibility:hidden; pointer-events:none; }
+  body.duskline[data-mobile-shell] .weather-update-toast { bottom:calc(90px + env(safe-area-inset-bottom)); }
 }

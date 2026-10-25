@@ -353,6 +353,7 @@
       contextMenu.style.top = Math.max(8,Math.min(stage.height-menu.height-8,clientY-stage.top))+'px';
     }
     function showContextMenu(clientX, clientY) {
+      dismissHint();
       if (!contextMenu || !stageHost || !isOpen) return;
       var selected = cityAtClientPoint(clientX, clientY);
       const generation = ++contextGeneration;
@@ -1266,6 +1267,13 @@
       queueVisibleWeather();
     });
     function open(options) {
+      const hint=document.getElementById('weatherMapHint'),hintText=document.getElementById('weatherMapHintText');
+      if(hint && hintText) {
+        let seen=false;try{seen=localStorage.getItem('duskline-map-hint-seen')==='true';}catch(error){}
+        const touch=global.matchMedia && global.matchMedia('(any-pointer:coarse)').matches;
+        hintText.textContent=touch?t('weather.mapGestureTouch','Touch and hold the map to view or save a place.'):t('weather.mapGestureDesktop','Right-click a place, or press Enter on the map, for place actions.');
+        hint.hidden=seen;
+      }
       const subhead = document.getElementById('weatherMapSubhead');
       if (subhead) subhead.textContent = t('weather.mapEstimate', 'Interpolated forecast estimates');
       if (!root || isOpen) return;
@@ -1308,6 +1316,12 @@
         requestVisibleWeather();
       } else loadCityMap(options || {});
     }
+    function dismissHint() {
+      const hint=document.getElementById('weatherMapHint');if(hint) hint.hidden=true;
+      try{localStorage.setItem('duskline-map-hint-seen','true');}catch(error){}
+    }
+    const hintClose=document.getElementById('weatherMapHintClose');
+    if(hintClose) hintClose.addEventListener('click',dismissHint);
     if (closeButton) closeButton.addEventListener('click', close);
     if (zoomInButton) zoomInButton.addEventListener('click', function () {
       if (fallbackActive) { fallbackZoom = Math.min(6, fallbackZoom * 1.4); fitFallback(); return; }

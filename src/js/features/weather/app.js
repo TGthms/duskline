@@ -5596,6 +5596,11 @@
     if (type === 'lang') {
       updateGreeting();
       window.refreshWeatherUi({ force: false });
+      if (sheetIntentOpen && activeSheetKind==='units') {
+        const scroll=sheetBody.scrollTop,languageFocused=!!document.activeElement.closest('[data-shell-language]');
+        openUnitsSheet({skipNavigation:true});sheetBody.scrollTop=scroll;
+        if(languageFocused) sheetBody.querySelector('[data-shell-language]').focus({preventScroll:true});
+      }
       return;
     }
     if (type === 'motion') {

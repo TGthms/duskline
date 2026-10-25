@@ -13,8 +13,8 @@ test('a stalled activation offers retry and a late controller change reloads exa
  const context={window,document,navigator:{serviceWorker,userAgent:'desktop',platform:'MacIntel',maxTouchPoints:0,onLine:true},location:{reload(){reloads++;}},setTimeout:fn=>{timers.set(++next,fn);return next;},clearTimeout:id=>timers.delete(id)};
  vm.runInNewContext(fs.readFileSync('src/js/sw-register.js','utf8'),context);
  windowEvents.get('load')();await new Promise(r=>setImmediate(r));
- const toast=elements.get('weatherUpdateToast'),action=toast.children[1],label=toast.children[0];
- action.events.get('click')();assert.equal(action.disabled,true);
- Array.from(timers.values())[0]();assert.equal(action.disabled,false);assert.match(label.textContent,/did not finish/);
+ const toast=elements.get('weatherUpdateToast');
+ toast.children[1].events.get('click')();assert.equal(toast.children[1].disabled,true);
+ Array.from(timers.values())[0]();assert.equal(toast.children[1].disabled,false);assert.match(toast.children[0].textContent,/did not finish/);
  workerEvents.get('controllerchange')();workerEvents.get('controllerchange')();assert.equal(reloads,1);
 });

@@ -105,7 +105,6 @@ body.duskline .weather-daily-row:hover { background: rgba(80,126,166,.1); }
   }
 }
 
-.weather-update-toast { top: calc(var(--weather-header-bottom,64px) + 12px); bottom: auto; z-index: 31000; }
 
 /* Kit's route indicator, adapted to the fixed Duskline chrome. */
 .weather-route-progress {

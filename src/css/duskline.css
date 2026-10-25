@@ -127,6 +127,9 @@ body.duskline .weather-detail-insight {
 }
 .weather-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
 .weather-toast[data-kind="error"] { border-color: rgba(255,127,127,.5); }
+.weather-update-toast { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px 12px; top:auto; bottom:max(20px,env(safe-area-inset-bottom)); z-index:31000; pointer-events:auto; }
+.weather-update-toast button { min-height:44px; }
+.weather-update-toast[hidden],html[data-weather-modal] .weather-update-toast { display:none !important; }
 @media (prefers-reduced-motion: reduce) {
   .weather-toast { transition: none; }
 }

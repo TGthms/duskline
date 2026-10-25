@@ -399,6 +399,10 @@
     <div class="weather-map-stage">
       <div class="weather-map-canvas" id="weatherMapCanvas" aria-label="Interactive weather map" data-i18n-aria="weather.mapInteractive"></div>
       <div class="weather-map-fallback" id="weatherMapFallback" hidden></div>
+      <div class="weather-map-hint" id="weatherMapHint" hidden>
+        <p id="weatherMapHintText"></p>
+        <button type="button" id="weatherMapHintClose" aria-label="Close" data-i18n-aria="weather.close">×</button>
+      </div>
       <div class="weather-map-context" id="weatherMapContextMenu" role="menu" aria-label="Place actions" data-i18n-aria="weather.mapPlaceActions" hidden>
         <div class="weather-map-context-place" id="weatherMapContextPlace"></div>
         <button type="button" role="menuitem" data-map-action="view" id="weatherMapContextView" data-i18n="weather.mapViewHere">View weather here</button>

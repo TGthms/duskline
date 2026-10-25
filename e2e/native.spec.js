@@ -86,3 +86,59 @@ test('phone navigation stays reachable and Settings owns the language picker @co
   await expect(page.locator('.weather-toolbar-actions #weatherMapOpen')).toBeVisible();
   await page.locator('#weatherUnitsBtn').click();await expect(page.locator('[data-shell-language]')).toHaveValue('en');
 });
+
+test('deferred updates stay available in Settings and activation can retry @core',async({page})=>{
+  await personalSky(page);
+  await page.clock.install();
+  await page.addInitScript(()=>{
+    window.__activations=0;
+    const registration={active:{postMessage(){}},waiting:{postMessage(){window.__activations++;}},addEventListener(){},update:async()=>{}};
+    Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{register:async()=>registration,ready:Promise.resolve(registration),controller:{},addEventListener(){}}});
+  });
+  await page.goto('/');
+  const notice=page.locator('#weatherUpdateToast');await expect(notice).toBeVisible();
+  await notice.getByRole('button',{name:'Later',exact:true}).click();await expect(notice).toBeHidden();
+  expect(await page.evaluate(()=>window.__activations)).toBe(0);
+  await page.locator('#weatherUnitsBtn').click();
+  const update=page.locator('[data-app-update]');await expect(update).toHaveText('Update');
+  await update.click();await expect(update).toBeDisabled();expect(await page.evaluate(()=>window.__activations)).toBe(1);
+  await page.clock.fastForward(10001);await expect(page.locator('.weather-settings-updates')).toContainText('The update did not finish');
+  await update.click();expect(await page.evaluate(()=>window.__activations)).toBe(2);
+});
+
+test('map gesture guidance can be dismissed and stays dismissed @core',async({page})=>{
+  await personalSky(page);await page.goto('/');
+  await page.locator('#weatherMapOpen').click();
+  const hint=page.locator('#weatherMapHint');await expect(hint).toBeVisible();
+  await expect(hint).toContainText(/map|place/);
+  await page.locator('#weatherMapHintClose').click();await expect(hint).toBeHidden();
+  await page.locator('#weatherMapClose').click();await page.locator('#weatherMapOpen').click();await expect(hint).toBeHidden();
+});
+
+test('representative languages keep Settings and phone layout usable @core',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await personalSky(page);await page.goto('/');
+  for(const code of ['fr','de','ja','ar','he']) {
+    await page.locator('#weatherUnitsBtn').click();await page.locator('[data-shell-language]').selectOption(code);
+    await expect(page.locator('html')).toHaveAttribute('data-lang',code);
+    await expect(page.locator('html')).toHaveAttribute('dir',['ar','he'].includes(code)?'rtl':'ltr');
+    await expect(page.locator('#weatherSheetTitle')).not.toHaveText('Settings');
+    await page.locator('#weatherSheetClose').click();
+    await expect(page.locator('#weatherMobileNav')).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  }
+});
+
+test('manual update checks distinguish failure from a current installation',async({page})=>{
+  await personalSky(page);
+  await page.addInitScript(()=>{
+    window.__updateFailure=true;
+    const registration={active:{postMessage(){}},waiting:null,addEventListener(){},update:async()=>{if(window.__updateFailure)throw Error('offline');}};
+    Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{register:async()=>registration,ready:Promise.resolve(registration),controller:{},addEventListener(){}}});
+  });
+  await page.goto('/');await page.locator('#weatherUnitsBtn').click();
+  const updates=page.locator('.weather-settings-updates'),action=page.locator('[data-app-update]');
+  await expect(updates).not.toContainText('is up to date');await action.click();
+  await expect(updates).toContainText('Could not check for updates');
+  await page.evaluate(()=>{window.__updateFailure=false;});await action.click();
+  await expect(updates).toContainText('duskline is up to date');
+});
