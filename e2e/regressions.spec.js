@@ -17,7 +17,7 @@
  * request stays full. Without that, this file could not tell the two apart.
  */
 const { test, expect } = require('@playwright/test');
-const {attemptUserScroll,prepareAppearance,changeAppearance}=require('./browser-actions');
+const {attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage}=require('./browser-actions');
 
 
 const LIGHT_DAILY = 'weather_code,temperature_2m_max,temperature_2m_min';
@@ -105,7 +105,7 @@ async function stubWeather(page, log, options = {}) {
 test('language switching updates visible tooltips together with accessible labels', async ({page}) => {
   await stubWeather(page);
   await page.goto('/');
-  await page.locator('#dusklineLanguage').selectOption('fr');
+  await changeLanguage(page,'fr');
   await expect(page.locator('html')).toHaveAttribute('lang','fr');
   for (const id of ['weatherRefresh','weatherLocate','weatherMapOpen']) {
     const control=page.locator('#'+id);
@@ -113,12 +113,12 @@ test('language switching updates visible tooltips together with accessible label
     expect(label).toBeTruthy();
     await expect(control).toHaveAttribute('title',label);
   }
-  await page.locator('#dusklineLanguage').selectOption('en');
+  await changeLanguage(page,'en');
   await expect(page.locator('#weatherRefresh')).toHaveAttribute('title','Refresh');
   await expect(page.locator('#weatherLocate')).toHaveAttribute('title','Use my location');
 });
 
-test('the list loads the light query and the detail upgrades itself to full', async ({ page }) => {
+test('the list loads the light query and the detail upgrades itself to full @core', async ({ page }) => {
   const log = [];
   await stubWeather(page, log);
   await page.goto('/');
@@ -169,7 +169,7 @@ test('the list loads the light query and the detail upgrades itself to full', as
   await expect(page.locator('#weatherSheetBody')).toContainText(/\d{1,2}:\d{2}/);
 });
 
-test('a deep link opens a complete detail immediately', async ({ page }) => {
+test('a deep link opens a complete detail immediately @core', async ({ page }) => {
   const log = [];
   await stubWeather(page, log);
   await page.goto('/?city=tokyo');
@@ -271,7 +271,7 @@ test('switching to an uncached My Sky place shows non-blocking progress until it
   await expect(page.locator('#weatherModeSwitch')).not.toHaveAttribute('aria-busy', 'true');
 });
 
-test('a failed search selection explains the failure and closes its loading detail', async ({ page }) => {
+test('a failed search selection explains the failure and closes its loading detail @core', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row .weather-row-hl').first()).toContainText('H:');
@@ -286,7 +286,7 @@ test('a failed search selection explains the failure and closes its loading deta
   await expect(page.locator('#weatherError')).toContainText('Could not load');
 });
 
-test('a saved forecast remains visible after provider failure and is marked as saved', async ({ page }) => {
+test('a saved forecast remains visible after provider failure and is marked as saved @core', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
   const row = page.locator('#weatherList .weather-row').first();
@@ -303,7 +303,7 @@ test('a saved forecast remains visible after provider failure and is marked as s
   await expect(saved.locator('.weather-row-temp')).not.toHaveText('—');
 });
 
-test('hourly charts can be explored with a keyboard', async ({ page }) => {
+test('hourly charts can be explored with a keyboard @core', async ({ page }) => {
   await stubWeather(page, null);
   await page.goto('/');
   await page.locator('#weatherList .weather-row').first().click();
@@ -375,16 +375,16 @@ test('recently used legal languages remain available offline without downloading
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.goto('/terms.html');
   const title = page.locator('[data-i18n="legal.terms.title"]');
-  await page.locator('#dusklineLanguage').selectOption('fr');
+  await changeLanguage(page,'fr');
   await expect(title).toHaveText('Conditions d’utilisation');
   await expect.poll(() => page.evaluate(async () => {
     const name=(await caches.keys()).find(key=>/^duskline-locales-v\d+$/.test(key));
     if (!name) return false;
     return (await (await caches.open(name)).keys()).some(request=>request.url.endsWith('/legal/packs/fr.json'));
   })).toBe(true);
-  await page.locator('#dusklineLanguage').selectOption('en');
+  await changeLanguage(page,'en');
   await page.context().setOffline(true);
-  await page.locator('#dusklineLanguage').selectOption('fr');
+  await changeLanguage(page,'fr');
   await expect(title).toHaveText('Conditions d’utilisation');
   await page.context().setOffline(false);
 });
@@ -428,42 +428,22 @@ test('dragging a mobile sheet closed returns focus to its opener', async ({page}
   await expect(opener).toBeFocused();
 });
 
-test('Units sheet locks background scrolling and restores the previous page position', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await stubWeather(page, null);
-  await page.goto('/');
-  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
-  const before = await page.evaluate(() => window.scrollY);
-
+test('Units sheet locks background scrolling and restores the previous page position @core', async ({page})=>{
+  await page.setViewportSize({width:390,height:844});await stubWeather(page);await page.goto('/');
+  await expect(page.locator('#weatherList .weather-row').first()).toBeVisible();
+  await page.evaluate(()=>window.scrollTo({top:320,behavior:'instant'}));
+  const before=await page.evaluate(()=>({scroll:scrollY,top:document.body.getBoundingClientRect().top}));
+  expect(before.scroll).toBeGreaterThan(0);
   await page.locator('#weatherUnitsBtn').click();
-  const sheet = page.locator('#weatherSheet');
-  await expect(sheet).toHaveClass(/open/);
-  await page.waitForTimeout(500); // Allow an in-flight city-list refresh to finish under the sheet.
-  const locked = await page.evaluate(() => ({
-    rootOverflow: document.documentElement.style.getPropertyValue('overflow'),
-    bodyPosition: document.body.style.getPropertyValue('position'),
-    bodyTop: parseFloat(document.body.style.getPropertyValue('top')),
-    bodyOverflow: document.body.style.getPropertyValue('overflow')
-  }));
-  expect(locked.rootOverflow).toBe('hidden');
-  expect(locked.bodyPosition).toBe('fixed');
-  expect(Math.abs(locked.bodyTop + before)).toBeLessThan(1);
-  expect(locked.bodyOverflow).toBe('hidden');
-
-  await page.mouse.move(24, 800);
-  await attemptUserScroll(page,600);
-  await expect.poll(() => page.evaluate(() => parseFloat(document.body.style.top))).toBe(locked.bodyTop);
-  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue('overflow'))).toBe('hidden');
-
-  await page.locator('#weatherSheetClose').click();
-  await expect(sheet).not.toHaveClass(/open/, { timeout: 4000 });
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
-  const restored = await page.evaluate(() => ({
-    rootOverflow: document.documentElement.style.getPropertyValue('overflow'),
-    bodyPosition: document.body.style.getPropertyValue('position'),
-    bodyTop: document.body.style.getPropertyValue('top')
-  }));
-  expect(restored).toEqual({ rootOverflow: '', bodyPosition: '', bodyTop: '' });
+  const sheet=page.locator('#weatherSheet');await expect(sheet).toHaveClass(/open/);
+  await expect(page.locator('#wxTempUnits')).toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>document.body.getBoundingClientRect().top)).toBe(before.top);
+  await page.mouse.move(24,800);await attemptUserScroll(page,600);
+  await expect.poll(()=>page.evaluate(()=>document.body.getBoundingClientRect().top)).toBe(before.top);
+  await page.locator('#weatherSheetClose').click();await expect(sheet).not.toHaveClass(/open/);
+  await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(before.scroll);
+  await page.mouse.move(24,800);await attemptUserScroll(page,600);
+  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(before.scroll);
 });
 
 test('closing a city does not dismiss a place picker opened during its exit transition', async ({ page }) => {
@@ -841,7 +821,7 @@ test('light air quality sheet uses readable dark band colors', async ({ page }) 
   expect(color).toBe('rgb(118, 83, 0)');
 });
 
-test('weather map opens as an accessible dialog with Lucide controls and selectable layers', async ({ page }) => {
+test('weather map opens as an accessible dialog with Lucide controls and selectable layers @core', async ({ page }) => {
   await stubWeather(page, null);
   await page.route('https://tiles.openfreemap.org/**', route => route.abort());
   await page.goto('/');
@@ -1117,7 +1097,7 @@ test('lists stay quiet and city-detail save removal can be undone', async ({page
   await expect(save).toHaveAttribute('aria-pressed','true');
 });
 
-test('browser Back closes a forecast sheet then city, and reload restores city', async ({page}) => {
+test('browser Back closes a forecast sheet then city, and reload restores city @core', async ({page}) => {
   await stubWeather(page,null);
   await page.goto('/');
   await page.locator('#weatherList .weather-row').filter({hasText:'Tokyo'}).first().click();
@@ -1411,6 +1391,7 @@ test('failed primary city selection keeps the previous city and offers a retry',
   await page.locator('#weatherGreetingPlace').click();
   await page.locator('.weather-greeting-source-search').click();
   await page.route(/^https:\/\/(api\.weather\.gov|api\.open-meteo\.com)\//, route => route.abort());
+  await expect(page.locator('#weatherSearch')).toBeFocused();
   await page.locator('#weatherSearch').fill('Paris');
   await page.locator('#weatherSuggest [data-place-choice]').click();
   await expect(page.locator('#weatherError')).toBeVisible();
@@ -1684,8 +1665,9 @@ test('search and actions align, all controls keep one row, and the gear matches 
     await page.setViewportSize({width,height:900});
     const layout=await page.locator('.weather-toolbar').evaluate(toolbar=>{
       const search=toolbar.querySelector('.weather-search-wrap').getBoundingClientRect();
-      const controls=[...toolbar.querySelector('.weather-toolbar-actions').children].filter(el=>!el.hidden).map(el=>el.getBoundingClientRect());
-      return {search:search.x,start:controls[0].x,centers:controls.map(b=>b.y+b.height/2),right:Math.max(...controls.map(b=>b.right)),page:document.documentElement.scrollWidth};
+      const mobile=!!document.body.dataset.mobileShell;
+      const controls=(mobile?[...document.querySelectorAll('#weatherMobileNav button')]:[...toolbar.querySelector('.weather-toolbar-actions').children].filter(el=>!el.hidden)).map(el=>el.getBoundingClientRect());
+      return {search:search.x,start:mobile?search.x:controls[0].x,centers:controls.map(b=>b.y+b.height/2),right:Math.max(...controls.map(b=>b.right)),page:document.documentElement.scrollWidth};
     });
     expect(Math.abs(layout.search-layout.start)).toBeLessThan(1);
     expect(Math.max(...layout.centers)-Math.min(...layout.centers)).toBeLessThan(1);
@@ -1693,7 +1675,7 @@ test('search and actions align, all controls keep one row, and the gear matches 
   }
   await expect(page.locator('#weatherUnitsBtn svg path').first()).toHaveAttribute('stroke-width','2');
   await expect(page.locator('#weatherUnitsBtn svg')).toHaveCSS('width','20px');
-  await page.locator('#dusklineLanguage').selectOption('de');
+  await changeLanguage(page,'de');
   await expect(page.locator('#weatherUnitsBtn')).toHaveAttribute('aria-label','Einstellungen');
   await page.setViewportSize({width:320,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
@@ -1923,17 +1905,17 @@ test('real city buttons keep keyboard boundaries and haptics survive icon replac
   expect(await page.evaluate(()=>window.__vibrations.length)).toBe(offCount);
 });
 
-test('the narrow header keeps brand and language controls separate in long labels and RTL',async ({page})=>{
+test('the responsive header keeps brand and actions separate in long labels and RTL',async ({page})=>{
   await stubWeather(page,null);await page.goto('/');
   for(const code of ['en','pt-BR','de','zh-TW','ar','he']) {
-    await page.locator('#dusklineLanguage').selectOption(code);
+    await changeLanguage(page,code);
     await expect(page.locator('html')).toHaveAttribute('lang',code);
     for(const width of [320,360,390,640,768]) {
       await page.setViewportSize({width,height:844});
       const layout=await page.locator('#navbar').evaluate(header=>{
         const a=header.querySelector('.duskline-brand').getBoundingClientRect();
         const word=header.querySelector('.duskline-brand span').getBoundingClientRect();
-        const b=header.querySelector('select').getBoundingClientRect();
+        const b=header.querySelector('.nav-actions').getBoundingClientRect();
         const bounds=header.getBoundingClientRect();
         return {separate:a.right<=b.left||b.right<=a.left,wordInside:word.left>=a.left&&word.right<=a.right,inside:Math.min(a.left,b.left)>=bounds.left&&Math.max(a.right,b.right)<=bounds.right};
       });
@@ -2007,7 +1989,10 @@ test.describe('native iOS tap feedback',()=>{
     // Feedback is optional; the original trusted actions must succeed even when WebKit suppresses label activation.
     expect(state.ticks).toEqual([{trusted:true,hidden:true,checked:true,saved:'true'},{trusted:true,hidden:true,checked:false,saved:'false'}]);
     await page.locator('#weatherDetailBack').focus();await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('#weatherToast button')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
     await expect(page.locator('#weatherModules [data-sheet="sun"]')).toBeFocused();
+    await page.keyboard.press('Tab');await expect(page.locator('#weatherToast button')).toBeFocused();
     await page.keyboard.press('Tab');await expect(page.locator('#weatherDetailBack')).toBeFocused();
   });
   test('iOS gestures, disabled controls, and Motion Off produce no native tick or accidental action',async ({page})=>{

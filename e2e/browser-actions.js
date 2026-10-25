@@ -33,4 +33,15 @@ async function changeAppearance(page,scheme,browserName) {
   await page.emulateMedia({colorScheme:scheme});
   if(browserName==='firefox') await page.evaluate(next=>window.__setPreferredSchemeForTest(next),scheme);
 }
-module.exports={attemptUserScroll,prepareAppearance,changeAppearance};
+async function changeLanguage(page,code) {
+  const header=page.locator('#dusklineLanguage');
+  if(await header.isVisible()) await header.selectOption(code);
+  else {
+    await page.locator('#weatherUnitsBtn').click();
+    await page.locator('[data-shell-language]').selectOption(code);
+    await page.waitForFunction(value=>document.documentElement.dataset.lang===value,code);
+    await page.locator('#weatherSheetClose').click();
+  }
+  await page.waitForFunction(value=>document.documentElement.dataset.lang===value,code);
+}
+module.exports={attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage};

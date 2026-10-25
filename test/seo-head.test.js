@@ -18,6 +18,8 @@ test('homepage WebSite JSON-LD names duskline at the live origin', () => {
   assert.match(html, new RegExp('rel="canonical" href="' + ORIGIN + '/"'));
   assert.match(html, /property="og:site_name" content="duskline"/);
   assert.doesNotMatch(html, /https:\/\/duskline\.pages\.dev/);
+  assert.match(html, /name="google-site-verification" content="[^"]+"/);
+  assert.equal((html.match(/<h1\b/g) || []).length,1);
 
   const data = jsonLdFrom(html);
   const nodes = Array.isArray(data['@graph']) ? data['@graph'] : [data];

@@ -1,6 +1,7 @@
 'use strict';
 const {test,expect}=require('@playwright/test');
 const {visualWeather}=require('./fixtures/visual-weather');
+const {changeLanguage}=require('./browser-actions');
 const sizes=[{width:320,height:568},{width:430,height:932},{width:768,height:1024},{width:1440,height:1000},{width:844,height:390}];
 test.describe('visual baselines @visual',()=>{
  test.use({locale:'en-US',timezoneId:'America/Los_Angeles'});
@@ -30,7 +31,7 @@ test.describe('visual baselines @visual',()=>{
   await page.locator('#weatherSheetBody').evaluate(el=>el.scrollTop=el.scrollHeight);
   await expect(page).toHaveScreenshot('future-day-precipitation.png',{animations:'disabled',maxDiffPixelRatio:.06}); // Precipitation section is text/chart-dense; .06 absorbs cross-macOS font and canvas rasterization variance while still catching structural regressions.
   await page.locator('#weatherSheetClose').click();await page.locator('#weatherDetailBack').click();
-  await page.locator('#dusklineLanguage').selectOption('he');await expect(page.locator('html')).toHaveAttribute('dir','rtl');
+  await changeLanguage(page,'he');await expect(page.locator('html')).toHaveAttribute('dir','rtl');
   await expect(page).toHaveScreenshot('hebrew-phone.png',{animations:'disabled',maxDiffPixelRatio:.01});
  });
  test('landscape map',async ({page})=>{

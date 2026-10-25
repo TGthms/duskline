@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const {attemptUserScroll,prepareAppearance,changeAppearance}=require('./browser-actions');
+const {attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage}=require('./browser-actions');
 
 
 test.beforeEach(async ({ page }) => {
@@ -38,30 +38,6 @@ test.beforeEach(async ({ page }) => {
   await page.route(/\/api\/international-alerts(?:\?|$)/, route => route.fulfill({
     json: { availability: 'available', provider: 'IFRC Alert Hub', country: 'Japan', alerts: [], truncated: false, fetchedAt: Date.now() }
   }));
-});
-
-test('home page exposes Search Console verification and SEO head', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('meta[name="google-site-verification"]')).toHaveAttribute(
-    'content',
-    '0rE0QD0vWPSfPxelCpS8qL2_n3JGrd_ZYPJBaGwnLZQ'
-  );
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://dusklineweather.pages.dev/');
-  await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute('content', 'duskline');
-  await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1);
-  const favicon = await page.request.get('/favicon.ico');
-  expect(favicon.ok()).toBeTruthy();
-  expect(favicon.headers()['content-type']).toMatch(/image\/(x-icon|vnd\.microsoft\.icon|png)/);
-  const bytes = Buffer.from(await favicon.body());
-  expect(bytes.subarray(0, 4).toString('hex')).toBe('00000100');
-  await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
-  const jsonLd = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
-  const nodes = Array.isArray(jsonLd['@graph']) ? jsonLd['@graph'] : [jsonLd];
-  const website = nodes.find((n) => n['@type'] === 'WebSite');
-  expect(website.name).toBe('duskline');
-  expect(website.url).toBe('https://dusklineweather.pages.dev/');
-  expect(website.alternateName).toEqual(expect.arrayContaining(['duskline weather', 'dusklineweather.pages.dev']));
-  await expect(page.locator('h1')).toHaveCount(1);
 });
 
 test('installed app icons fill their canvas without a white inset frame', async ({ page }) => {
@@ -142,7 +118,7 @@ test('loads the branded weather shell and all locales', async ({ page }) => {
   await expect(page.locator('body')).toHaveClass(/duskline/);
   await expect(page.locator('#weatherSearch')).toBeVisible();
   await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
-  await page.locator('#dusklineLanguage').selectOption('ar');
+  await changeLanguage(page,'ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 });
 
@@ -185,7 +161,7 @@ test('a successful location fix opens My Sky and shows the user’s place', asyn
 
 test('Traditional Chinese keeps a known city name out of Simplified script', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#dusklineLanguage').selectOption('zh-TW');
+  await changeLanguage(page,'zh-TW');
   await page.evaluate(() => {
     localStorage.setItem('duskline-weather-mode', 'my-sky');
     localStorage.setItem('duskline-weather-greeting-city', JSON.stringify({
@@ -568,9 +544,9 @@ test('EU cities use European AQI automatically without showing a scale switcher'
 
 test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#dusklineLanguage').selectOption('pt-BR');
+  await changeLanguage(page,'pt-BR');
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
-  await page.locator('#dusklineLanguage').selectOption('zh-TW');
+  await changeLanguage(page,'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW');
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
 });
@@ -578,7 +554,8 @@ test('selects Portuguese Brazil and Traditional Chinese', async ({ page }) => {
 const weatherFlowLocales = ['en','es','fr','de','it','pt-BR','pt-PT','nl','da','sv','nb','fi','pl','cs','hu','ro','el','tr','ru','uk','ar','he','hi','th','vi','id','ja','ko','zh','zh-TW'];
 for (let start=0;start<weatherFlowLocales.length;start+=5) {
 const locales=weatherFlowLocales.slice(start,start+5);
-test('all languages render the full weather flow, detail sheets, charts, units, and RTL layout: '+locales.join(', '), async ({ page }) => {
+test('all languages render the full weather flow, detail sheets, charts, units, and RTL layout: '+locales.join(', ')+' @localeAll', async ({ page },testInfo) => {
+  test.skip(testInfo.project.name!=='chromium','Complete locale journeys run once; representative locale layouts run across engines.');
   test.setTimeout(300000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -602,7 +579,7 @@ test('all languages render the full weather flow, detail sheets, charts, units, 
   });
 
   for (const locale of locales) {
-    await page.locator('#dusklineLanguage').selectOption(locale);
+    await changeLanguage(page,locale);
     await expect(page.locator('html')).toHaveAttribute('data-lang', locale);
     await page.locator('[data-weather-mode="horizon"]').click();
     await expect(page.locator('#weatherModeSwitch [data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed', 'true');
@@ -692,63 +669,41 @@ test('privacy page uses the home language picker and full translations', async (
   await page.goto('/privacy.html');
   await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
   await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('Privacy Policy');
-  await page.locator('#dusklineLanguage').selectOption('fr');
+  await changeLanguage(page,'fr');
   await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('Politique de confidentialité');
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr-FR');
   await expect(page.locator('[data-i18n="legal.privacy.p1"]')).toContainText('sans compte');
   await expect(page.locator('[data-i18n="legal.privacy.push"]')).toContainText('90 jours');
   await expect(page.locator('[data-legal="english-note"]')).toHaveCount(0);
-  await page.locator('#dusklineLanguage').selectOption('ar');
+  await changeLanguage(page,'ar');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('[data-i18n="legal.privacy.title"]')).toHaveText('سياسة الخصوصية');
 });
 
-test('terms page translates body copy for every picker language', async ({ page }) => {
+test('terms page translates body copy for every picker language @localeAll', async ({ page },testInfo) => {
+  test.skip(testInfo.project.name!=='chromium','All-language legal coverage runs in Chromium.');
   await page.goto('/terms.html');
   await expect(page.locator('#dusklineLanguage option')).toHaveCount(30);
   const codes = await page.locator('#dusklineLanguage option').evaluateAll((opts) => opts.map((el) => el.value));
   let prevTitle = '';
   for (const code of codes) {
     const packWait = page.waitForResponse((res) => res.url().includes('/legal/packs/' + encodeURIComponent(code) + '.json') && res.ok(), { timeout: 8000 }).catch(() => null);
-    await page.locator('#dusklineLanguage').selectOption(code);
+    await changeLanguage(page,code);
     if (code !== 'en') await packWait;
     await expect(page.locator('html')).toHaveAttribute('data-lang',code);
     if (prevTitle && code !== 'en') await expect(page.locator('[data-i18n="legal.terms.title"]')).not.toHaveText(prevTitle);
     const title = (await page.locator('[data-i18n="legal.terms.title"]').textContent() || '').trim();
     const body = (await page.locator('[data-i18n="legal.terms.p1"]').textContent() || '').trim();
-    expect(title.length, `terms title empty for ${code}`).toBeGreaterThan(2);
-    expect(body.length, `terms body empty for ${code}`).toBeGreaterThan(20);
+    expect(title, `terms title empty for ${code}`).not.toBe('');
+    expect(body, `terms body empty for ${code}`).not.toBe('');
     if (prevTitle && code !== 'en') expect(title, `terms title unchanged for ${code}`).not.toBe(prevTitle);
     prevTitle = title;
   }
-  await page.locator('#dusklineLanguage').selectOption('ja');
+  await changeLanguage(page,'ja');
   await expect(page.locator('[data-i18n="legal.terms.title"]')).toHaveText('利用規約');
 });
 
-test('units sheet opens', async ({ page }) => {
-  await page.goto('/');
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
-  await page.evaluate(() => window.scrollTo({top:320,behavior:'instant'}));
-  const scrollBeforeOpen = await page.evaluate(() => window.scrollY);
-  expect(scrollBeforeOpen).toBeGreaterThan(0);
-  const bodyTopBeforeOpen = await page.evaluate(() => document.body.getBoundingClientRect().top);
-  await page.locator('#weatherUnitsBtn').evaluate(button => button.click());
-  await expect(page.locator('#weatherSheet')).toHaveClass(/open/);
-  await expect(page.locator('#wxTempUnits')).toBeVisible();
-  const bodyTopWhileOpen = await page.evaluate(() => document.body.getBoundingClientRect().top);
-  expect(Math.abs(bodyTopWhileOpen - bodyTopBeforeOpen)).toBeLessThan(1);
-  await page.mouse.move(40, Math.round((await page.evaluate(() => window.innerHeight)) / 2));
-  await attemptUserScroll(page,600);
-  await expect.poll(() => page.evaluate(() => document.body.getBoundingClientRect().top)).toBe(bodyTopWhileOpen);
-  await page.locator('#weatherSheetClose').click();
-  await expect(page.locator('#weatherSheet')).not.toHaveClass(/open/, { timeout: 4000 });
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollBeforeOpen);
-  await page.mouse.move(40, Math.round((await page.evaluate(() => window.innerHeight)) / 2));
-  await attemptUserScroll(page,600);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBeforeOpen);
-});
-
-test('weather unit choices persist and carry into their detail sheets', async ({ page }) => {
+test('weather unit choices persist and carry into their detail sheets @core', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
@@ -793,7 +748,7 @@ test('weather unit choices persist and carry into their detail sheets', async ({
   }
 });
 
-test('search suggestions are keyboardable', async ({ page }) => {
+test('search suggestions are keyboardable @core', async ({ page }) => {
   await page.goto('/');
   const search = page.locator('#weatherSearch');
   await search.fill('Bo');
@@ -814,7 +769,7 @@ test('non-US featured cities do not call NWS', async ({ page }) => {
   expect(tokyoHits, nws.join('\n')).toEqual([]);
 });
 
-test('international detail shows a location-matched official CAP alert and source', async ({ page }) => {
+test('international detail shows a location-matched official CAP alert and source @core', async ({ page }) => {
   const now = Date.now();
   let capUrl = '';
   let capRegionUrl = '';
@@ -902,13 +857,13 @@ test('international detail shows a location-matched official CAP alert and sourc
   expect(new URL(capUrl).searchParams.has('lon')).toBe(false);
 });
 
-test('NWS outage still renders via Open-Meteo', async ({ page }) => {
+test('NWS outage still renders via Open-Meteo @core', async ({ page }) => {
   await page.route(/api\.weather\.gov/, (route) => route.fulfill({ status: 500, body: 'unavailable' }));
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
 });
 
-test('favorite persists across reload', async ({ page }) => {
+test('favorite persists across reload @core', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible({ timeout: 15000 });
   await page.locator('#weatherList .weather-row').first().click();

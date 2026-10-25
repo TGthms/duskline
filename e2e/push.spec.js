@@ -314,7 +314,7 @@ test('a fresh Nominatim device location is normalized before notification enroll
     country_code: 'US',
   });
 });
-test('permission denial remains visible and does not register a subscription', async ({ page }) => {
+test('permission denial remains visible and does not register a subscription @core', async ({ page }) => {
   const f = await fixtures(page, { permission: 'denied' });
   await page.goto('/');
   await settings(page);
@@ -338,7 +338,7 @@ test('failed server enrollment retains durable repair intent and reconnect synch
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await expect(page.locator('.weather-push-status')).toContainText('On ·');
 });
-test('disable retries failed server deletion without resubscribing', async ({ page }) => {
+test('disable retries failed server deletion without resubscribing @core', async ({ page }) => {
   const f = await fixtures(page);
   await page.goto('/');
   await settings(page);
