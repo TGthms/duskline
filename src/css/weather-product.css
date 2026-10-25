@@ -292,3 +292,8 @@ html[data-motion-effective='off'] .weather-push-track,html[data-motion-effective
 .weather-home-alert:focus-visible,.weather-home-alert-note button:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
 .weather-home-alert-note { display:flex; align-items:center; gap:12px; margin:0 0 16px; color:var(--home-secondary); font-size:12px; line-height:1.5; }
 .weather-home-alert-note button { flex:none; min-height:44px; border:1px solid currentColor; border-radius:10px; padding:6px 12px; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+@media (min-width:1280px) {
+  .weather-home-alert,.weather-home-alert-note { grid-column:1; grid-row:2; align-self:start; }
+  .weather-home:has(.weather-home-alert,.weather-home-alert-note) .weather-home-insight { grid-row:3; }
+  .weather-home:has(.weather-home-alert,.weather-home-alert-note) .weather-home-outlook { grid-row:1 / span 3; }
+}

@@ -62,14 +62,18 @@
       try {
         await bounded(Promise.resolve().then(()=>registration.update()));
         const worker=registration.installing;
+        if(worker && worker.state==='redundant') throw Error('install');
         if(worker && !['installed','redundant'].includes(worker.state)) {
-          await bounded(new Promise((resolve,reject)=>{
-            const changed=()=>{
-              if(worker.state==='installed') {worker.removeEventListener('statechange',changed);resolve();}
-              else if(worker.state==='redundant') {worker.removeEventListener('statechange',changed);reject(Error('install'));}
-            };
-            worker.addEventListener('statechange',changed);changed();
-          }));
+          let changed;
+          try {
+            await bounded(new Promise((resolve,reject)=>{
+              changed=()=>{
+                if(worker.state==='installed') resolve();
+                else if(worker.state==='redundant') reject(Error('install'));
+              };
+              worker.addEventListener('statechange',changed);changed();
+            }));
+          } finally {worker.removeEventListener('statechange',changed);}
         }
         publish(registration.waiting?'ready':'current');
       } catch(error) {publish(registration.waiting?'ready':'error');}

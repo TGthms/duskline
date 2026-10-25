@@ -338,7 +338,7 @@
     toastEl.dataset.kind = kind === 'error' ? 'error' : 'success';
     toastEl.setAttribute('role', kind === 'error' ? 'alert' : 'status');
     toastEl.classList.add('is-visible');
-    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); }, undo ? 7000 : 2800);
+    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); toastEl.replaceChildren(); }, undo ? 7000 : 2800);
   }
   let detailReturnFocus = null;
   let detailReturnKey = null;

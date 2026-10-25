@@ -19,7 +19,7 @@ test('modal surfaces isolate the page and restore nested contexts @core',async({
     await expect(header).toHaveJSProperty('inert',value);
   };
   await page.locator('#weatherUnitsBtn').click();await isolated(true);
-  await expect(page.locator('#weatherSheetPanel')).toBeFocused();
+  await expect.poll(()=>page.evaluate(()=>!!document.activeElement.closest('#weatherSheetPanel'))).toBe(true);
   await page.locator('#weatherSearch').evaluate(el=>el.focus());
   await expect(page.locator('#weatherSearch')).not.toBeFocused();
   await page.keyboard.press('Tab');
@@ -34,9 +34,11 @@ test('modal surfaces isolate the page and restore nested contexts @core',async({
   await page.locator('#weatherMapOpen').click();await isolated(true);
   await page.locator('#weatherMapClose').click();await isolated(false);
   await expect(page.locator('#weatherMapOpen')).toBeFocused();
+  await page.locator('#weatherMapOpen').click();await expect(page.locator('#weatherMap')).toHaveJSProperty('inert',false);
+  await page.locator('#weatherMapClose').click();await isolated(false);
 });
 
-test('My Sky exposes the active warning and opens its expanded detail @core',async({page,context})=>{
+test('My Sky exposes the active warning and opens its expanded detail @core',async({page,context},testInfo)=>{
   await personalSky(page);
   await page.route('**/api/international-alerts?**',route=>route.fulfill({json:{availability:'available',alerts:[{
     id:'wind-paris',event:'Strong Wind Warning',severity:'Severe',description:'Secure loose outdoor objects.',
@@ -46,6 +48,7 @@ test('My Sky exposes the active warning and opens its expanded detail @core',asy
   await page.goto('/');
   const warning=page.locator('[data-primary-alert]');
   await expect(warning).toContainText('Strong Wind Warning');await expect(warning).toHaveAttribute('data-severity','severe');
+  await page.screenshot({path:testInfo.outputPath('primary-warning.png')});
   await warning.click();
   await expect(page.locator('.weather-alert.is-open')).toContainText('Secure loose outdoor objects.');
   await page.locator('#weatherDetailBack').click();
@@ -125,6 +128,10 @@ test('representative languages keep Settings and phone layout usable @core',asyn
     await page.locator('#weatherSheetClose').click();
     await expect(page.locator('#weatherMobileNav')).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await page.locator('#weatherHome [data-home-hour]').first().click();
+    await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toBeVisible();
+    expect((await page.locator('#weatherSheetPanel').boundingBox()).width).toBeLessThanOrEqual(390);
+    await page.locator('#weatherSheetClose').click();await page.locator('#weatherDetailBack').click();
   }
 });
 
@@ -132,13 +139,18 @@ test('manual update checks distinguish failure from a current installation',asyn
   await personalSky(page);
   await page.addInitScript(()=>{
     window.__updateFailure=true;
-    const registration={active:{postMessage(){}},waiting:null,addEventListener(){},update:async()=>{if(window.__updateFailure)throw Error('offline');}};
+    const registration={active:{postMessage(){}},waiting:null,addEventListener(){},update:async()=>{
+      if(window.__updateFailure)throw Error('offline');
+      registration.installing=window.__installFailure?{state:'redundant'}:null;
+    }};
     Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{register:async()=>registration,ready:Promise.resolve(registration),controller:{},addEventListener(){}}});
   });
   await page.goto('/');await page.locator('#weatherUnitsBtn').click();
   const updates=page.locator('.weather-settings-updates'),action=page.locator('[data-app-update]');
   await expect(updates).not.toContainText('is up to date');await action.click();
   await expect(updates).toContainText('Could not check for updates');
-  await page.evaluate(()=>{window.__updateFailure=false;});await action.click();
+  await page.evaluate(()=>{window.__updateFailure=false;window.__installFailure=true;});await action.click();
+  await expect(updates).toContainText('Could not check for updates');
+  await page.evaluate(()=>{window.__installFailure=false;});await action.click();
   await expect(updates).toContainText('duskline is up to date');
 });

@@ -27,7 +27,6 @@
   body.duskline[data-mobile-shell] .weather-greeting-title { flex:1; font-size:20px; line-height:1.2; min-width:0; }
   body.duskline[data-mobile-shell] .weather-greeting-place { flex:0 1 112px; min-height:44px; margin:0; text-align:end; line-height:1.4; }
   body.duskline[data-mobile-shell] .weather-toolbar-actions { display:none !important; }
-  body.duskline[data-mobile-shell] #weatherManagePlaces { display:none; }
   body.duskline[data-mobile-shell] #tools.weather-root.tools-page { padding-top:0; }
   body.duskline[data-mobile-shell] .weather-status-row { margin-bottom:12px; }
   body.duskline[data-mobile-shell] .weather-mobile-nav {
@@ -50,6 +49,6 @@
   body.duskline[data-mobile-shell] #weatherMobileNav button:focus-visible { outline:2px solid currentColor; outline-offset:-3px; }
   body.duskline.weather-sky-light[data-mobile-shell] #weatherMobileNav { background:rgba(246,250,255,.96); color:#16344f; border-color:rgba(22,52,79,.18); }
   body.duskline.weather-sky-light[data-mobile-shell] #weatherMobileNav button[aria-pressed="true"] { background:#dceaf7 !important; }
-  html[data-weather-modal] #weatherMobileNav,body:has(#weatherSearch:focus) #weatherMobileNav { visibility:hidden; pointer-events:none; }
+  html[data-weather-modal] #weatherMobileNav,body[data-soft-keyboard] #weatherMobileNav { visibility:hidden; pointer-events:none; }
   body.duskline[data-mobile-shell] .weather-update-toast { bottom:calc(90px + env(safe-area-inset-bottom)); }
 }
