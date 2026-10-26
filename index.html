@@ -267,8 +267,8 @@
       </div>
       <div class="weather-toolbar-actions" role="toolbar" aria-label="Weather actions" data-i18n-aria="weather.toolbarActions">
         <div class="weather-mode-switch" id="weatherModeSwitch" role="group" aria-label="Weather view" data-i18n-aria="weather.weatherView">
-          <button type="button" data-weather-mode="horizon" aria-pressed="true" data-i18n="weather.mode.horizon">Horizon</button>
-          <button type="button" data-weather-mode="my-sky" aria-pressed="false" data-i18n="weather.mode.mySky">My Sky</button>
+          <button type="button" data-weather-mode="horizon" aria-pressed="true"><svg class="weather-tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-sunrise" xlink:href="#lucide-sunrise"/></svg><span data-i18n="weather.mode.horizon">Horizon</span></button>
+          <button type="button" data-weather-mode="my-sky" aria-pressed="false"><svg class="weather-tab-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-sparkles" xlink:href="#lucide-sparkles"/></svg><span data-i18n="weather.mode.mySky">My Sky</span></button>
         </div>
         <button type="button" class="weather-btn weather-btn-pill weather-map-open-btn" id="weatherMapOpen" aria-label="Weather map" title="Weather map" data-i18n-aria="weather.map" data-i18n-title="weather.map"><svg class="weather-toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-map" xlink:href="#lucide-map"/></svg><span data-i18n="weather.mapShort">Map</span></button>
         <button type="button" class="weather-btn weather-btn-pill weather-btn-icon" id="weatherUnitsBtn" aria-label="Settings" data-i18n-aria="weather.settings">
@@ -289,11 +289,6 @@
       <button type="button" class="weather-btn weather-install-action" id="weatherInstall" hidden data-i18n="weather.install">Install duskline</button>
       <button type="button" class="weather-manage-places" id="weatherManagePlaces" hidden data-i18n="weather.rearrange">Rearrange saved places</button>
 
-    </div>
-    <div class="weather-product-controls" id="weatherDiscovery">
-      <label><span data-i18n="weather.region">Region</span><select id="weatherRegion"><option value="" data-i18n="weather.allRegions">All regions</option></select></label>
-      <label><span data-i18n="weather.sort">Sort</span><select id="weatherSort"><option value="featured" data-i18n="weather.featuredOrder">Featured</option><option value="temperature" data-i18n="weather.warmestFirst">Warmest first</option><option value="local-time" data-i18n="weather.localTimeOrder">Local time</option></select></label>
-      <button type="button" class="weather-btn" id="weatherCollapse" hidden data-i18n="weather.showPreview">Show fewer places</button>
     </div>
     <section class="weather-home" id="weatherHome" aria-label="Primary forecast" data-i18n-aria="weather.primaryForecast" hidden></section>
     <p class="weather-error" id="weatherError" role="alert" hidden></p>
@@ -317,6 +312,11 @@
       </div>
       <div id="weatherMajorsBlock">
         <div class="weather-section-label" data-i18n="weather.majorCities">Featured places</div>
+        <div class="weather-product-controls" id="weatherDiscovery">
+          <label><span data-i18n="weather.region">Region</span><select id="weatherRegion"><option value="" data-i18n="weather.allRegions">All regions</option></select></label>
+          <label><span data-i18n="weather.sort">Sort</span><select id="weatherSort"><option value="featured" data-i18n="weather.featuredOrder">Featured</option><option value="temperature" data-i18n="weather.warmestFirst">Warmest first</option><option value="local-time" data-i18n="weather.localTimeOrder">Local time</option></select></label>
+          <button type="button" class="weather-btn" id="weatherCollapse" hidden data-i18n="weather.showPreview">Show fewer places</button>
+        </div>
         <ul class="weather-list" id="weatherList"></ul>
         <button type="button" class="weather-more" id="weatherMore" hidden data-i18n="weather.showAllPlaces">Show all places</button>
       </div>

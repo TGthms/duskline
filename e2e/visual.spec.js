@@ -40,4 +40,15 @@ test.describe('visual baselines @visual',()=>{
   await expect(page.locator('#weatherMapStatus')).toBeHidden();
   await expect(page).toHaveScreenshot('landscape-map.png',{animations:'disabled',maxDiffPixelRatio:.01});
  });
+ for (const variant of ['clear','rain']) test('compact Settings '+variant,async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.emulateMedia({colorScheme:variant==='clear'?'light':'dark',reducedMotion:'reduce'});
+  await visualWeather(page,variant);await page.goto('/');
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();
+  await page.locator('#weatherUnitsBtn').click();
+  await expect(page.locator('.weather-push-summary-status')).not.toBeEmpty();
+  await expect(page).toHaveScreenshot('settings-'+variant+'.png',{animations:'disabled',maxDiffPixelRatio:.005});
+  await page.setViewportSize({width:320,height:568});
+  await page.locator('.weather-settings-units summary').click();
+  await expect(page).toHaveScreenshot('settings-units-'+variant+'.png',{animations:'disabled',maxDiffPixelRatio:.005});
+ });
 });
