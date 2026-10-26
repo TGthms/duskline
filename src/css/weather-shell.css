@@ -8,7 +8,9 @@
   --settings-line:rgba(210,226,242,.12);
   --settings-muted:#aebed1;
   background:#101c2b !important;
+  will-change:auto;
 }
+.weather-sheet[data-sheet-kind="units"].open:not(.is-leaving) .weather-sheet-panel { transform:none; }
 .weather-sheet.wx-sheet-light[data-sheet-kind="units"] .weather-sheet-panel {
   --settings-fill:rgba(255,255,255,.8);
   --settings-line:rgba(22,52,79,.12);
