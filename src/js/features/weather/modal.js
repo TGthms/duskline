@@ -12,7 +12,7 @@
     requestAnimationFrame(function settle() {
       if (stack[stack.length - 1] !== owner) return;
       if (!owner.element.contains(document.activeElement)) {
-        const target = owner.element.querySelector('[role="dialog"][tabindex="-1"]') || Array.from(owner.element.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex="0"]'))
+        const target = owner.element.querySelector('[role="dialog"][tabindex="-1"]') || Array.from(owner.element.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),summary,[tabindex="0"]'))
           .find(element=>element.getClientRects().length && !element.closest('[inert]') && getComputedStyle(element).visibility === 'visible');
         if (target) target.focus({preventScroll:true});
       }

@@ -308,6 +308,8 @@
   let cityRefreshApi = null;
   let forecastSheetApi = null;
   let activeSheetKind = null;
+  let settingsUnitsExpanded = false;
+  let settingsPlacesExpanded = false;
   let notificationSettingsReturnScroll = 0;
   let toastTimer = 0;
   const toastEl = $('weatherToast');
@@ -4138,6 +4140,7 @@
   function presentSheet(initialFocus, options) {
     options = options || {};
     if (!sheetEl || !sheetPanel) return;
+    sheetEl.dataset.sheetKind = activeSheetKind || '';
     const focusSheet = function () {
       const target = initialFocus && initialFocus.isConnected ? initialFocus : sheetPanel;
       if (!target) return;
@@ -4177,7 +4180,9 @@
     setDetailBehindSheet(true);
     W.modal.open('sheet', sheetEl);
     try { document.documentElement.classList.add('wx-sheet-open'); } catch (eOpen) { /* ignore */ }
-    sheetEl.classList.toggle('wx-sheet-light', !!(detailEl && detailEl.classList.contains('wx-mods-light')));
+    sheetEl.classList.toggle('wx-sheet-light', isDetailVisible()
+      ? detailEl.classList.contains('wx-mods-light')
+      : document.body.classList.contains('weather-sky-light'));
     sheetEl.classList.toggle('wx-sheet-centered', sheetCentered());
     try {
       sheetEl.style.removeProperty('--wx-sheet-backdrop');
@@ -4830,7 +4835,6 @@
     hoistOverlays();
     setSheetTitle(`
       <div class="wx-sheet-head" data-sheet-title>
-        <div class="wx-sheet-icon">${modLabelIcon('conditions')}</div>
         <h3 class="wx-sheet-title">${escapeHtml(t('weather.settings', 'Settings'))}</h3>
       </div>`);
     const tempPref = (typeof window.getTempUnitPreference === 'function')
@@ -4848,19 +4852,28 @@
       (useF() ? '°F' : '°C') + ' · ' + (useMi() ? 'mi' : 'km');
 
     sheetBody.innerHTML =
-      `<p class="weather-mod-label">${escapeHtml(tempLab)}</p>` +
-      `<div class="weather-units-row" id="wxTempUnits"></div>` +
-      `<p class="weather-mod-label">${escapeHtml(distLab)}</p>` +
-      `<div class="weather-units-row" id="wxDistUnits"></div>` +
-      `<p class="wx-sheet-context" id="wxUnitsResolvedHint">${escapeHtml(
+      `<details class="weather-settings-group weather-settings-units"${settingsUnitsExpanded ? ' open' : ''}>` +
+      `<summary tabindex="0"><span>${escapeHtml(t('weather.units', 'Units'))}</span><span class="weather-settings-summary" id="wxUnitsResolvedHint">${escapeHtml(
         t('weather.usingUnits', 'Using {hint}').replace('{hint}', resolvedHint)
-      )}</p>` +
+      )}</span></summary><div class="weather-settings-unit-options">` +
+      `<div class="weather-settings-unit">` +
+      `<p class="weather-mod-label">${escapeHtml(tempLab)}</p>` +
+      `<div class="weather-units-row" id="wxTempUnits"></div></div><div class="weather-settings-unit">` +
+      `<p class="weather-mod-label">${escapeHtml(distLab)}</p>` +
+      `<div class="weather-units-row" id="wxDistUnits"></div></div><div class="weather-settings-unit">` +
       `<p class="weather-mod-label">${escapeHtml(t('weather.wind', 'Wind'))}</p>` +
-      `<div class="weather-units-row" id="wxWindUnits2"></div>` +
+      `<div class="weather-units-row" id="wxWindUnits2"></div></div><div class="weather-settings-unit">` +
       `<p class="weather-mod-label">${escapeHtml(t('weather.precip', 'Precipitation'))}</p>` +
-      `<div class="weather-units-row" id="wxPrecipUnits2"></div>` +
+      `<div class="weather-units-row" id="wxPrecipUnits2"></div></div><div class="weather-settings-unit">` +
       `<p class="weather-mod-label">${escapeHtml(t('weather.pressure', 'Pressure'))}</p>` +
-      `<div class="weather-units-row" id="wxPressUnits2"></div>`;
+      `<div class="weather-units-row" id="wxPressUnits2"></div></div></div></details>`;
+    const unitSettings = sheetBody.querySelector('.weather-settings-units');
+    unitSettings.addEventListener('toggle', function () {
+      settingsUnitsExpanded = unitSettings.open;
+      if (unitSettings.open) unitSettings.querySelectorAll('.weather-units-row').forEach(function (row) {
+        slideUnitsPill(row, row.querySelector('button.active'));
+      });
+    });
 
     const updateResolvedHint = function () {
       const el = document.getElementById('wxUnitsResolvedHint');
@@ -4966,16 +4979,19 @@
         openDetail(fresh);
       }
     });
-    const motionTitle = document.createElement('p'); motionTitle.className = 'weather-mod-label'; motionTitle.textContent = t('weather.motion', 'Motion');
-    const motion = document.createElement('select'); motion.className = 'weather-motion-select'; motion.setAttribute('aria-label', motionTitle.textContent);
+    const feedback = document.createElement('section'); feedback.className = 'weather-settings-group weather-settings-feedback';
+    const motionTitle = document.createElement('label'); motionTitle.className = 'weather-settings-row';
+    const motionLabel = document.createElement('span'); motionLabel.textContent = t('weather.motion', 'Motion'); motionTitle.append(motionLabel);
+    const motion = document.createElement('select'); motion.className = 'weather-motion-select';
     [['auto', t('settings.auto','Automatic')], ['full',t('weather.motionFull','Full')], ['reduced',t('weather.motionReduced','Reduced')], ['off',t('weather.motionOff','Off')]].forEach(function (pair) {
       const option = document.createElement('option'); option.value = pair[0]; option.textContent = pair[1]; motion.append(option);
     });
     try { motion.value = localStorage.getItem('duskline-motion') || 'auto'; } catch (error) { motion.value = 'auto'; }
     motion.addEventListener('change', function () { if (typeof setMotionMode === 'function') setMotionMode(motion.value); });
-    sheetBody.append(motionTitle, motion);
-    const hapticTitle = document.createElement('p'); hapticTitle.className = 'weather-mod-label'; hapticTitle.textContent = t('weather.haptic', 'Haptics');
-    const haptic = document.createElement('select'); haptic.className = 'weather-haptic-select'; haptic.setAttribute('aria-label', hapticTitle.textContent);
+    motionTitle.append(motion); feedback.append(motionTitle);
+    const hapticTitle = document.createElement('label'); hapticTitle.className = 'weather-settings-row';
+    const hapticLabel = document.createElement('span'); hapticLabel.textContent = t('weather.haptic', 'Haptics'); hapticTitle.append(hapticLabel);
+    const haptic = document.createElement('select'); haptic.className = 'weather-haptic-select';
     [['full', t('weather.hapticFull','Full')], ['reduced', t('weather.hapticReduced','Reduced')], ['off', t('weather.hapticOff','Off')]].forEach(function (pair) {
       const option = document.createElement('option'); option.value = pair[0]; option.textContent = pair[1]; haptic.append(option);
     });
@@ -4983,13 +4999,16 @@
     haptic.addEventListener('change', function () {
       try { localStorage.setItem('duskline-haptic', haptic.value); } catch (error) {}
     });
-    sheetBody.append(hapticTitle, haptic);
-    const order = document.createElement('section'); order.className = 'weather-place-order';
+    hapticTitle.append(haptic); feedback.append(hapticTitle); sheetBody.append(feedback);
+    const placesSettings = document.createElement('details'); placesSettings.className = 'weather-settings-group weather-settings-places'; placesSettings.open = settingsPlacesExpanded;
+    const placesTitle = document.createElement('summary'); placesTitle.tabIndex = 0; placesTitle.textContent = t('weather.savedPlaces', 'Saved places'); placesSettings.append(placesTitle);
+    placesSettings.addEventListener('toggle', function () { settingsPlacesExpanded = placesSettings.open; });
+    const order = document.createElement('section'); order.className = 'weather-place-order'; placesSettings.append(order);
     function paintOrder() {
       const places = loadFavorites();
       order.replaceChildren();
+      placesSettings.hidden = !places.length && !myLocationCity;
       if (!places.length && !myLocationCity) return;
-      const title = document.createElement('p'); title.className = 'weather-mod-label'; title.textContent = t('weather.rearrange', 'Rearrange saved places'); order.append(title);
       places.forEach(function (city,index) {
         const row = document.createElement('div'); row.className = 'weather-place-order-row';
         const name = document.createElement('span'); name.textContent = displayCityName(city); row.append(name);
@@ -5023,9 +5042,11 @@
         order.append(clear);
       }
     }
-    paintOrder(); sheetBody.append(order);
-    shellApi.mountSettings(sheetBody);
+    paintOrder(); sheetBody.append(placesSettings);
+    const settings = shellApi.mountSettings(sheetBody);
+    const languageGroup = document.createElement('section'); languageGroup.className = 'weather-settings-group'; languageGroup.append(settings.language); sheetBody.prepend(languageGroup);
     pushApi.mountSummary(sheetBody,openNotificationSettings);
+    sheetBody.append(settings.updates);
     presentSheet();
     if (startedFromPage) sheetReturnFocus = unitsBtn;
     if (returningFromNotifications) {
@@ -5329,12 +5350,9 @@
   if (sheetClose) sheetClose.addEventListener('click', closeSheet);
   if (sheetEl) sheetEl.addEventListener('click', (e) => { if (e.target === sheetEl) closeSheet(); });
   if (unitsBtn) unitsBtn.addEventListener('click', openUnitsSheet);
-  // Rebuild the units sheet if open when language changes — its content is
-  // built dynamically via t() and won't update through data-i18n attributes.
+  // Notification copy is rendered independently from the forecast preference UI.
   document.addEventListener('duskline:prefs', function (e) {
-    if (e.detail && e.detail.type === 'lang' && activeSheetKind === 'units' && sheetOpen) {
-      openUnitsSheet();
-    } else if(e.detail && e.detail.type==='lang' && activeSheetKind==='notifications' && sheetOpen)openNotificationSettings();
+    if(e.detail && e.detail.type==='lang' && activeSheetKind==='notifications' && sheetOpen)openNotificationSettings();
   });
   modeButtons.forEach(function (button) {
     button.addEventListener('click', function () {
@@ -5502,7 +5520,7 @@
   function focusables(root) {
     if (!root) return [];
     return Array.prototype.filter.call(
-      root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+      root.querySelectorAll('button, [href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])'),
       function (el) { return !el.disabled && el.tabIndex >= 0 && el.offsetParent !== null
         && !el.hidden && !el.closest('[inert], [aria-hidden="true"]'); }
     );

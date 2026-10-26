@@ -72,7 +72,7 @@
     }
     if(updates) updates.subscribe(renderUpdates);
     function mountSettings(host) {
-      const label=document.createElement('label');label.className='weather-settings-language';
+      const label=document.createElement('label');label.className='weather-settings-language weather-settings-row';
       const text=document.createElement('span');text.textContent=t('settings.languageLabel','Language');
       const select=document.createElement('select');select.dataset.shellLanguage='';
       for (const [code,name] of global.DUSKLINE_LOCALES) {
@@ -82,6 +82,7 @@
       select.addEventListener('change',()=>global.setDusklineLanguage(select.value));
       label.append(text,select);host.append(label);
       updateHost=document.createElement('section');updateHost.className='weather-settings-updates';host.append(updateHost);renderUpdates();
+      return {language:label,updates:updateHost};
     }
     return {mountSettings};
   };

@@ -436,6 +436,7 @@ test('Units sheet locks background scrolling and restores the previous page posi
   expect(before.scroll).toBeGreaterThan(0);
   await page.locator('#weatherUnitsBtn').click();
   const sheet=page.locator('#weatherSheet');await expect(sheet).toHaveClass(/open/);
+  await page.locator('.weather-settings-units summary').click();
   await expect(page.locator('#wxTempUnits')).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>document.body.getBoundingClientRect().top)).toBe(before.top);
   await page.mouse.move(24,800);await attemptUserScroll(page,600);
@@ -1271,6 +1272,7 @@ test('My Sky keeps a compact primary dashboard and one quiet list with rearrange
   await expect(page.locator('#weatherMyLocationBlock .weather-section-label, .weather-row-manage, .weather-row-save')).toHaveCount(0);
   await page.locator('#weatherUnitsBtn').click();
   await expect(page.locator('.weather-place-order-row')).toHaveCount(2);
+  await page.locator('.weather-settings-places summary').click();
   await page.locator('.weather-place-order-row').first().locator('button').last().click();
   await page.locator('#weatherSheetClose').click();
   await expect(page.locator('#weatherSheet')).toBeHidden();

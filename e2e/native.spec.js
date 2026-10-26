@@ -120,6 +120,34 @@ test('deferred updates stay available in Settings and activation can retry @core
   await update.click();expect(await page.evaluate(()=>window.__activations)).toBe(2);
 });
 
+test('compact Settings keeps disclosures, focus and unit choices usable on a small phone',async({page})=>{
+  await page.setViewportSize({width:320,height:568});await personalSky(page);await page.goto('/');
+  await page.locator('#weatherUnitsBtn').click();
+  const units=page.locator('.weather-settings-units'),summary=units.locator('summary');
+  await expect(units).not.toHaveAttribute('open');
+  await expect(page.locator('#wxTempUnits')).toBeHidden();
+  await expect(page.locator('#weatherSheetPanel')).toBeFocused();
+  await summary.scrollIntoViewIfNeeded();
+  await summary.focus();await expect(summary).toBeFocused();await page.keyboard.press('Enter');
+  await expect(units).toHaveAttribute('open');
+  const celsius=page.locator('#wxTempUnits [data-unit="c"]');await celsius.click();
+  await expect(summary).toContainText('°C');
+  await page.locator('[data-shell-language]').focus();
+  await page.locator('[data-shell-language]').selectOption('de');
+  await expect(page.locator('html')).toHaveAttribute('data-lang','de');
+  await expect(units).toHaveAttribute('open');
+  await expect(page.locator('[data-shell-language]')).toBeFocused();
+  await expect(celsius).toHaveAttribute('aria-checked','true');
+  for(const id of ['wxTempUnits','wxDistUnits','wxWindUnits2','wxPrecipUnits2','wxPressUnits2']) {
+    const row=page.locator('#'+id);
+    expect(await row.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    expect((await row.locator('button').first().boundingBox()).height).toBeGreaterThanOrEqual(44);
+  }
+  await summary.click();await expect(page.locator('#wxTempUnits')).toBeHidden();
+  await page.locator('#weatherSheetClose').click();await expect(page.locator('#weatherUnitsBtn')).toBeFocused();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
 test('map gesture guidance can be dismissed and stays dismissed @core',async({page})=>{
   await personalSky(page);await page.goto('/');
   await page.locator('#weatherMapOpen').click();

@@ -625,6 +625,7 @@ test('all languages render the full weather flow, detail sheets, charts, units, 
       await expect(page.locator('#' + id + ' [role="radio"]')).not.toHaveCount(0);
     }
     if (locale === 'en') {
+      await page.locator('.weather-settings-units summary').click();
       await page.locator('#wxTempUnits [data-unit="f"]').click();
       await expect(page.locator('#wxTempUnits [data-unit="f"]')).toHaveAttribute('aria-checked', 'true');
       await expect(page.locator('#wxUnitsResolvedHint')).toContainText('°F');
@@ -713,6 +714,7 @@ test('weather unit choices persist and carry into their detail sheets @core', as
     ['wxTempUnits', 'f'], ['wxDistUnits', 'mi'], ['wxWindUnits2', 'kn'],
     ['wxPrecipUnits2', 'cm'], ['wxPressUnits2', 'kPa']
   ];
+  await page.locator('.weather-settings-units summary').click();
   for (const [id, unit] of preferences) {
     const choice = page.locator('#' + id + ' [data-unit="' + unit + '"]');
     await choice.click();
