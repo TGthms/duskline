@@ -1,5 +1,7 @@
 # Native experience follow-up
 
+For the later interface refinement, see [mobile polish](mobile-polish.md).
+
 The October 25 audit recommendations are implemented on `main`.
 
 - My Sky shows active primary-city warnings with severity, a direct route to expanded details, retry recovery and offline guidance. Warnings remain outside saved forecast snapshots.
