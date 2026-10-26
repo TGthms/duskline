@@ -1,4 +1,4 @@
-const CACHE = 'duskline-shell-v93';
+const CACHE = 'duskline-shell-v94';
 const SHELL = [
   './',
   './index.html',
@@ -20,7 +20,6 @@ const SHELL = [
   './assets/duskline-icon-maskable-512.png',
   './favicon.ico',
   './favicon.png',
-  './assets/duskline-logo-96.jpg',
   './assets/duskline-icon-192.png',
   './assets/duskline-icon-512.png',
   './assets/duskline-icon-maskable.svg',

@@ -92,7 +92,8 @@ test('the service worker precaches only what the app needs offline', () => {
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/)[1];
   // Social preview images are for crawlers, not offline use; 100 KB of precache for nothing.
   assert.ok(!/duskline-og\.jpg/.test(shell), 'the OG share image must not be precached');
-  assert.match(shell, /duskline-logo-96\.jpg/, 'the in-page logo is needed offline');
+  const logo = read('index.html').match(/class="duskline-logo" src="([^"]+)"/)[1];
+  assert.ok(shell.includes('./' + logo), 'the in-page logo is needed offline');
   assert.doesNotMatch(shell, /assets\/duskline-icon\.jpg/, 'the unused 960px icon must not be precached');
   assert.match(shell, /src\/js\/boot\.js/, 'boot.js must be available offline or first paint breaks');
   assert.match(sw, /const CACHE = 'duskline-shell-v\d+';/);
