@@ -44,11 +44,15 @@ test.describe('visual baselines @visual',()=>{
   await page.setViewportSize({width:390,height:844});await page.emulateMedia({colorScheme:variant==='clear'?'light':'dark',reducedMotion:'reduce'});
   await visualWeather(page,variant);await page.goto('/');
   await expect(page.locator('#weatherModeLoading')).toBeHidden();
+  // macOS supports overlay and persistent scrollbars; use one gutter for narrow-control comparisons.
+  await page.addStyleTag({content:'#weatherSheetBody::-webkit-scrollbar{width:8px} #weatherSheetBody::-webkit-scrollbar-thumb{background:rgba(127,153,175,.3);border-radius:8px}'});
   await page.locator('#weatherUnitsBtn').click();
   await expect(page.locator('.weather-push-summary-status')).not.toBeEmpty();
+  await expect(page.locator('.weather-settings-updates [role="status"]')).toHaveText('Unavailable');
   await expect(page).toHaveScreenshot('settings-'+variant+'.png',{animations:'disabled',maxDiffPixelRatio:.005});
   await page.setViewportSize({width:320,height:568});
   await page.locator('.weather-settings-units summary').click();
+  expect(await page.locator('#weatherSheetBody').evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
   await expect(page).toHaveScreenshot('settings-units-'+variant+'.png',{animations:'disabled',maxDiffPixelRatio:.005});
  });
 });
