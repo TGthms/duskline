@@ -63,6 +63,20 @@
   if (effective) root.setAttribute('data-motion-effective', effective);
 })();
 
+/* Installed windows own page gestures; the map renderer owns its canvas gestures. */
+(function () {
+  const display = window.matchMedia('(display-mode: standalone)');
+  const root = document.documentElement;
+  function syncDisplay() { root.toggleAttribute('data-installed-app',!!navigator.standalone || display.matches); }
+  syncDisplay();
+  display.addEventListener('change',syncDisplay);
+  function preventPagePinch(event) {
+    if (root.hasAttribute('data-installed-app') && event.cancelable) event.preventDefault();
+  }
+  document.addEventListener('gesturestart',preventPagePinch,{passive:false});
+  document.addEventListener('gesturechange',preventPagePinch,{passive:false});
+})();
+
 /* ── 2. Web fonts ──
    Public Sans is bundled locally; one Noto script family loads only when the active language needs it.
    Navigation is detected from the saved preference first (so the right font is in flight

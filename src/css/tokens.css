@@ -411,3 +411,12 @@ html[data-mobile-lite="true"] body::before { display: none; }
   outline: none;
 }
 
+/* Installed-app scrolling surfaces retain panning without browser page scaling. */
+html[data-installed-app],
+html[data-installed-app] :is(
+  body, #weatherDetailScroll, #weatherSheetBody, #weatherSuggest,
+  .weather-hourly, .weather-alert-body, .wx-aqi-outlook-scroll, .weather-units-row,
+  .wx-day-choices, .weather-map-panel, .weather-map-layers, .weather-map-places
+) {
+  touch-action:pan-x pan-y;
+}
