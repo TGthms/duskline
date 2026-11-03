@@ -608,6 +608,7 @@
         motionLevel: motionLevel,
         fmtTemp: fmtTemp,
         fmtWind: fmtWind,
+        syncChrome: function () {applyThemeChrome(currentTheme);},
         getPlaces: getMapPlaces,
         isFavorite: isFavorite,
         onSelectCity: openMapCity,
@@ -632,11 +633,13 @@
           return true;
         },
         onOpen: function () {
+          if (shellApi) shellApi.syncView();
           if (navigationApi && !mapNavigationSuspended) navigationApi.map();
           clearAutoRefresh();
           if (skyApi.pauseStormFx) skyApi.pauseStormFx(detailFx);
         },
         onClose: function () {
+          if (shellApi) shellApi.syncView();
           if (navigationApi && !mapNavigationSuspended) navigationApi.close('map');
           if (isDetailShowingOrOpening() && skyApi.resumeStormFx) skyApi.resumeStormFx(detailFx);
           if (mapMySkyRefreshPending && weatherMode === 'my-sky') {
@@ -1207,6 +1210,7 @@
   }
   function setWeatherMode(mode, remember, skipLoad) {
     if (mode !== 'horizon' && mode !== 'my-sky') return;
+    if (document.body.dataset.mobileShell && mapApi && mapApi.isOpen()) mapApi.close();
     const changed = weatherMode !== mode;
     if (weatherMode !== mode) greetingVisitSeed = null;
     if(changed && weatherMode) modeScroll[weatherMode]=window.scrollY;
@@ -1227,7 +1231,13 @@
     try {localStorage.setItem('duskline-horizon-expanded',String(horizonExpanded));}catch(error){}
   }
   function requestWeatherMode(mode) {
-    if (mode !== 'horizon' && mode !== 'my-sky' || mode === weatherMode) return;
+    if (mode !== 'horizon' && mode !== 'my-sky') return;
+    if (document.body.dataset.mobileShell && mapApi && mapApi.isOpen()) {
+      mapApi.close();
+      const button=modeButtons.find(button=>button.dataset.weatherMode===mode);
+      if(button) button.focus({preventScroll:true});
+    }
+    if (mode === weatherMode) return;
     if (finishViewLoading) { finishViewLoading();finishViewLoading = null; }
     setViewLoading(true);
     setWeatherMode(mode,true);
@@ -1524,7 +1534,7 @@
   }
 
   wireRemainingModules();
-  const shellApi = W.factories.shell({t});
+  const shellApi = W.factories.shell({t,mapOpen:()=>mapApi && mapApi.isOpen(),layoutChanged:()=>{if(mapApi) mapApi.syncPresentation();}});
   const primaryAlertsApi = W.factories.primaryAlerts({
     t,escapeHtml,current:alertsApi.currentAlerts,ensure:alertsApi.ensureAlerts,
     repaint:function () { if (productApi) productApi.render(); },
@@ -2697,6 +2707,7 @@
     else if (updatedEl) updatedEl.textContent = '';
     updateGreeting();
     if (productApi) productApi.render();
+    if (shellApi) shellApi.syncView();
     if (!opts.skipAmbient && isPageActive()) applyAmbientPageSky();
     // List is interactive again — clear any stuck full-screen PE lock
     if (!isDetailVisible()) ensureListTappable();
@@ -4182,7 +4193,7 @@
     try { document.documentElement.classList.add('wx-sheet-open'); } catch (eOpen) { /* ignore */ }
     sheetEl.classList.toggle('wx-sheet-light', isDetailVisible()
       ? detailEl.classList.contains('wx-mods-light')
-      : document.body.classList.contains('weather-sky-light'));
+      : !(mapApi && mapApi.isOpen()) && document.body.classList.contains('weather-sky-light'));
     sheetEl.classList.toggle('wx-sheet-centered', sheetCentered());
     try {
       sheetEl.style.removeProperty('--wx-sheet-backdrop');
@@ -5221,6 +5232,9 @@
   });
 
   // Wire UI — manual refresh always works (re-click cancels prior load via refreshGen)
+  document.querySelector('.duskline-brand').addEventListener('click',function (event) {
+    if (document.body.dataset.mobileShell && mapApi && mapApi.isOpen()) {event.preventDefault();mapApi.close();}
+  });
   if (mapOpenBtn && mapApi) {
     mapOpenBtn.addEventListener('click', function () {
       closeSuggest();
@@ -5232,7 +5246,8 @@
   if (refreshBtn) {
     refreshBtn.disabled = false;
     refreshBtn.addEventListener('click', function () {
-      refresh(true, { quiet: false, reason: 'manual' });
+      if (document.body.dataset.mobileShell && mapApi && mapApi.isOpen()) mapApi.refresh();
+      else refresh(true, { quiet: false, reason: 'manual' });
     });
   }
   if (detailRefresh) {

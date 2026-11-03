@@ -140,3 +140,25 @@ body.duskline.weather-sky-light .weather-product-controls select { background-co
   body.duskline[data-mobile-shell] .weather-start-mark, body.duskline[data-mobile-shell] .weather-start-copy p { display:none; }
   body.duskline[data-mobile-shell] .weather-start-copy h3 { margin:0; font-size:16px; }
 }
+
+@media (max-width:640px) and (min-height:500px) {
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] { top:calc(60px + env(safe-area-inset-top)); z-index:200; transition:none; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-panel { height:100%; grid-template-rows:auto minmax(140px,1fr) auto; padding-bottom:calc(90px + env(safe-area-inset-bottom)); box-sizing:border-box; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-header { display:none; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-toolbar { display:flex; min-height:52px; gap:8px; padding:4px 12px; box-sizing:border-box; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-layers { flex:1; min-width:0; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-place-picker { flex:0 0 44px; width:44px; margin:0; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-place-picker > summary { width:44px; height:44px; box-sizing:border-box; padding:0; justify-content:center; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-place-picker > summary span,
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-place-picker > summary::after { display:none; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-places-icon { display:block; width:18px; height:18px; }
+  body[data-mobile-shell] #weatherMap[data-presentation="page"] .weather-map-places { inset-inline-start:auto; inset-inline-end:0; width:min(340px,calc(100vw - 24px)); }
+  html.weather-map-open body.duskline[data-mobile-shell] #navbar { visibility:visible; z-index:250; color:#eef5fc; background:rgba(10,23,39,.96) !important; }
+  html[data-weather-modal="map"] body[data-mobile-shell] #weatherMobileNav { visibility:visible; pointer-events:auto; }
+  html.weather-map-open body.duskline[data-mobile-shell] #weatherMobileNav { background:rgba(12,27,46,.96); color:#eef5fc; border-color:rgba(188,214,239,.18); }
+  html.weather-map-open body.duskline[data-mobile-shell] #navbar .weather-btn-icon { color:#eef5fc !important; }
+  html.weather-map-open body.duskline[data-mobile-shell] .duskline-brand { color:#eef5fc; }
+  html.weather-map-open body.duskline[data-mobile-shell] #weatherMobileNav #weatherMapOpen[aria-pressed="true"],
+  html.weather-map-open body.duskline[data-mobile-shell] #weatherMobileNav button[aria-pressed="true"] { background:rgba(145,205,255,.2) !important; }
+  html.weather-map-open body[data-mobile-shell] #weatherSheet #weatherToast { visibility:visible !important; }
+}

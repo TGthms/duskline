@@ -7,6 +7,7 @@
     let applying = false;
     let pendingClose = false;
     let deferredSheet = null;
+    let deferredMap = false;
     const rootUrl = new URL(location.href);
     ['city', 'dest', 'lat', 'lon', 'name', 'admin1', 'tz', 'country', 'country_code', 'cc','alert','alert_until','alert_event'].forEach(key => rootUrl.searchParams.delete(key));
     function state() { return history.state && history.state.duskline || {city: null, sheet: null}; }
@@ -35,14 +36,16 @@
       if (pendingClose) { deferredSheet = {kind: kind, options: options || {}}; return; }
       const current = state();
       if (applying) return;
-      push({city: current.city, sheet: {kind: kind, options: options || {}}}, !!(current.sheet && current.sheet.kind === kind));
+      push(Object.assign({},current,{sheet: {kind: kind, options: options || {}}}), !!(current.sheet && current.sheet.kind === kind));
     }
     function map() {
+      if (pendingClose) {deferredMap=true;return;}
       if (state().map || applying) return;
       if (!history.state) history.replaceState({duskline:state()},'',location.href);
       push(Object.assign({},state(),{map:true}));
     }
     function close(view) {
+      if (view==='map') deferredMap=false;
       const current = state();
       if (applying || view === 'map' && !current.map || (view === 'sheet' || view === 'sheet-parent') && !current.sheet || view === 'detail' && !current.city) return false;
       if (pendingClose) {
@@ -67,10 +70,20 @@
         history.back();
         return;
       }
+      if (deferredMap) {
+        deferredMap=false;applying=false;
+        const mapState=Object.assign({},next,{map:true});
+        push(mapState);
+        if (deferredSheet) {
+          const queued=deferredSheet;deferredSheet=null;
+          push(Object.assign({},mapState,{sheet:queued}));
+        }
+        return;
+      }
       if (deferredSheet) {
         const queued = deferredSheet; deferredSheet = null;
         applying = false;
-        push({city: next.city, sheet: queued});
+        push(Object.assign({},next,{sheet:queued}));
         return;
       }
       if (deps.mapOpen && deps.mapOpen() && !next.map) deps.dismissMap();

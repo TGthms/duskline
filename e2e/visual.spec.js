@@ -59,4 +59,14 @@ test.describe('visual baselines @visual',()=>{
   expect(await page.locator('#weatherSheetBody').evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
   await expect(page).toHaveScreenshot('settings-units-'+variant+'.png',{animations:'disabled',maxDiffPixelRatio:.005});
  });
+ test('phone Map is integrated with the shared chrome',async({page})=>{
+  await page.emulateMedia({colorScheme:'light',reducedMotion:'reduce'});await visualWeather(page,'clear');
+  await page.setViewportSize({width:390,height:844});await page.goto('/');await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');await expect(page.locator('#weatherMapStatus')).toBeHidden();
+  await expect(page.locator('#weatherModeLoading')).toBeHidden();await page.evaluate(()=>document.fonts.ready);
+  await expect(page).toHaveScreenshot('phone-map.png',{animations:'disabled',maxDiffPixelRatio:.005});
+  await page.setViewportSize({width:320,height:568});
+  await expect(page).toHaveScreenshot('phone-map-small.png',{animations:'disabled',maxDiffPixelRatio:.005});
+ });
+
 });

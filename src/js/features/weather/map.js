@@ -132,7 +132,7 @@
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
       document.documentElement.classList.add('weather-map-open');
-      W.modal.open('map', root);
+      syncPresentation();
       if (typeof deps.onOpen === 'function') deps.onOpen();
     }
     function unlockBackground() {
@@ -143,14 +143,31 @@
       }
       previousStyles = null;
       W.modal.close('map');
+      if (deps.syncChrome) deps.syncChrome();
       if (typeof deps.onClose === 'function') deps.onClose();
+    }
+    function pagePresentation() { return !!document.body.dataset.mobileShell; }
+    function syncPresentation() {
+      if (!root || !isOpen) return;
+      const page = pagePresentation();
+      root.dataset.presentation = page ? 'page' : 'dialog';
+      root.setAttribute('role', page ? 'region' : 'dialog');
+      if (page) root.removeAttribute('aria-modal'); else root.setAttribute('aria-modal','true');
+      const peers = page ? ['navbar','weatherMobileNav'].map(id=>document.getElementById(id)).filter(Boolean) : [];
+      W.modal.open('map',root,{peers});
+      if (deps.syncChrome) deps.syncChrome();
+      if (map) map.resize();
+    }
+    function focusMap() {
+      const target = pagePresentation() ? layerHost && layerHost.querySelector('button') : closeButton;
+      if (target) target.focus({preventScroll:true});
     }
     function hideContextMenu(restoreFocus) {
       if (!contextMenu || contextMenu.hidden) return;
       contextMenu.hidden = true;
       contextCity = null;
       contextGeneration++;
-      if (restoreFocus && isOpen && closeButton) closeButton.focus({ preventScroll: true });
+      if (restoreFocus && isOpen) focusMap();
     }
     function close() {
       if (!isOpen) return;
@@ -204,8 +221,10 @@
       }) : [];
     }
     function onDialogKeydown(event) {
+      if (document.documentElement.dataset.weatherModal !== 'map') return;
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
         if (contextMenu && !contextMenu.hidden) {
           hideContextMenu(true);
           return;
@@ -224,7 +243,7 @@
         }
         return;
       }
-      if (event.key !== 'Tab') return;
+      if (event.key !== 'Tab' || pagePresentation()) return;
       var focusable = focusableItems();
       if (!focusable.length) return;
       var first = focusable[0];
@@ -1306,7 +1325,7 @@
         });
       }
       document.addEventListener('keydown', onDialogKeydown, true);
-      setTimeout(function () { if (isOpen && closeButton) closeButton.focus({ preventScroll: true }); }, 0);
+      setTimeout(function () { if (isOpen) focusMap(); }, 0);
       currentMapOptions = options || {};
       if (rendererReady && map) {
         if (fallbackHost) fallbackHost.hidden = true;
@@ -1371,6 +1390,15 @@
     return {
       open: open,
       close: close,
+      syncPresentation,
+      refresh: function () {
+        if (!isOpen) return;
+        if (fallbackActive) { recoveryAttempts=0; recoverMap(); return; }
+        cachedGrids.clear(); sampleCache.clear();
+        if (activeController) activeController.abort();
+        activeController=null;
+        requestVisibleWeather();
+      },
       finishReturn: function () { if (root) root.classList.remove('is-returning'); },
       updatePlaces: updatePlaces,
       isOpen: function () { return isOpen; },

@@ -44,4 +44,9 @@ async function changeLanguage(page,code) {
   }
   await page.waitForFunction(value=>document.documentElement.dataset.lang===value,code);
 }
-module.exports={attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage};
+async function closeMap(page) {
+  if(await page.locator('#weatherMapClose').isVisible()) await page.locator('#weatherMapClose').click();
+  else await page.keyboard.press('Escape');
+  await page.locator('#weatherMap').waitFor({state:'hidden'});
+}
+module.exports={closeMap,attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage};

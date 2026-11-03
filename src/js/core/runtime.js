@@ -645,7 +645,8 @@ function applyThemeChrome(theme) {
   const light = LIGHT_THEMES.includes(theme);
   document.documentElement.style.colorScheme = light ? 'light' : 'dark';
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', THEME_META_COLORS[theme] || THEME_META_COLORS[DARK_THEME]);
+  const mapPage = document.documentElement.classList.contains('weather-map-open') && document.body.dataset.mobileShell;
+  if (meta) meta.setAttribute('content', mapPage ? '#0a1727' : THEME_META_COLORS[theme] || THEME_META_COLORS[DARK_THEME]);
 }
 
 function applyTheme() {

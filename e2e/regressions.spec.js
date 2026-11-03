@@ -17,7 +17,7 @@
  * request stays full. Without that, this file could not tell the two apart.
  */
 const { test, expect } = require('@playwright/test');
-const {attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage}=require('./browser-actions');
+const {closeMap,attemptUserScroll,prepareAppearance,changeAppearance,changeLanguage}=require('./browser-actions');
 
 
 const LIGHT_DAILY = 'weather_code,temperature_2m_max,temperature_2m_min';
@@ -823,7 +823,7 @@ test('light air quality sheet uses readable dark band colors', async ({ page }) 
   expect(color).toBe('rgb(118, 83, 0)');
 });
 
-test('weather map opens as an accessible dialog with Lucide controls and selectable layers @core', async ({ page }) => {
+test('weather map exposes the active surface with Lucide controls and selectable layers @core', async ({ page }) => {
   await stubWeather(page, null);
   await page.route('https://tiles.openfreemap.org/**', route => route.abort());
   await page.goto('/');
@@ -842,7 +842,8 @@ test('weather map opens as an accessible dialog with Lucide controls and selecta
   await expect(openMap).toBeVisible();
   await openMap.click();
 
-  const dialog = page.getByRole('dialog', { name: 'Weather map' });
+  const phone=!!await page.locator('body').getAttribute('data-mobile-shell');
+  const dialog = page.getByRole(phone?'region':'dialog', { name: 'Weather map' });
   await expect(dialog).toBeVisible({ timeout: 5000 });
   expect(await page.locator('html').evaluate(el => el.style.overflow)).toBe('hidden');
   expect(await page.locator('body').evaluate(el => el.style.overflow)).toBe('hidden');
@@ -934,7 +935,7 @@ test('viewing a map city keeps its point temporary until explicitly added', asyn
   await expect(previewPoint).toHaveCount(0);
   await expect(marker).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('duskline-weather-favorites') || '[]').some(city => city.name === 'Bayview'))).toBe(false);
-  await page.locator('#weatherMapClose').click();
+  await closeMap(page);
   await page.reload();
   await page.locator('#weatherMapOpen').click();
   await expect(surface).toBeVisible({ timeout: 15000 });
@@ -997,7 +998,7 @@ test('map supports long-press actions and responsive footer layouts', async ({ p
     expect(layout.tickOverflow, 'legend tick overflow at ' + size.width + 'px').toBeLessThanOrEqual(1);
     expect(layout.stageHeight).toBeGreaterThanOrEqual(120);
   }
-  await page.locator('#weatherMapClose').click();
+  await closeMap(page);
   await expect(page.locator('#weatherMap')).toBeHidden();
   await page.setViewportSize({ width: 1280, height: 720 });
 });
@@ -1675,7 +1676,8 @@ test('temperature-mode changes preserve the sheet scroll position',async ({page}
     send('touchend',100,true);
   });
   await expect.poll(()=>page.evaluate(()=>window.__mapForTest.getCenter().lng)).not.toBe(before);
-  const close=await page.locator('#weatherMapClose').boundingBox();expect(Math.abs(close.width-close.height)).toBeLessThan(.1);
+  const close=await page.locator('#weatherMapClose').isVisible()?page.locator('#weatherMapClose'):page.locator('#weatherLocate');
+  const bounds=await close.boundingBox();expect(Math.abs(bounds.width-bounds.height)).toBeLessThan(.1);
 }));
 
 test('search and actions align, all controls keep one row, and the gear matches icon weight',async ({page})=>{
@@ -1787,7 +1789,7 @@ test('a queued map request waits while hidden and resumes at current bounds',asy
   expect(grids).toBe(before);
   await page.evaluate(()=>{window.__visibilityForTest='visible';document.dispatchEvent(new Event('visibilitychange'));});
   await expect.poll(()=>grids,{timeout:10000}).toBe(before+1);
-  await page.locator('#weatherMapClose').click();
+  await closeMap(page);
   await expect(page.locator('#weatherMap')).toBeHidden();
 });
 
@@ -1800,7 +1802,7 @@ test('closing and reopening during cold map loading creates only one renderer',a
   const held=new Promise(resolve=>{release=resolve;});
   await page.route('**/assets/vendor/maplibre-gl/maplibre-gl.css',async route=>{await held;await route.fulfill({contentType:'text/css',body:require('node:fs').readFileSync('assets/vendor/maplibre-gl/maplibre-gl.css','utf8')});});
   await page.goto('/');await page.locator('#weatherMapOpen').click();
-  await page.locator('#weatherMapClose').click();
+  await closeMap(page);
   await page.locator('#weatherMapOpen').click();
   await page.evaluate(()=>{
     window.__visibilityForTest='hidden';
@@ -1815,7 +1817,7 @@ test('closing and reopening during cold map loading creates only one renderer',a
     const center=await page.evaluate(()=>window.__mapForTest.getCenter().toArray());
     expect(center[0]).toBeCloseTo(139.6503,3);expect(center[1]).toBeCloseTo(35.6762,3);
   }
-  await page.locator('#weatherMapClose').click();
+  await closeMap(page);
 });
 
 test('stalled map styles end loading and a later open retries cleanly',async ({page})=>{
@@ -1836,7 +1838,7 @@ test('stalled map styles end loading and a later open retries cleanly',async ({p
   await expect(page.locator('#weatherModeLoading')).toBeHidden();
   await expect(page.locator('#weatherMapLibreCss')).toHaveCount(0);
   expect(await page.evaluate(()=>window.__mapCtorCount || 0)).toBe(0);
-  await page.locator('#weatherMapClose').click();
+  await closeMap(page);
   stall=false;release();await page.locator('#weatherMapOpen').click();
   await expect(page.locator('#weatherMapLibreCss')).toHaveAttribute('data-loaded','true');
   expect(await page.locator('#weatherMapLibreCss').evaluate(el=>el!==window.__failedMapStyleForTest && el.sheet.cssRules.length>0)).toBe(true);
@@ -2423,8 +2425,8 @@ test('map recovery is bounded and closing cancels queued recovery',async ({page,
  await expect.poll(()=>styles,{timeout:20000}).toBe(3);
  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','fallback');
  await page.waitForTimeout(3500);expect(styles).toBe(3);
- await page.locator('#weatherMapClose').click();await page.locator('#weatherMapOpen').click();
- await expect.poll(()=>styles).toBe(4);await page.locator('#weatherMapClose').click();
+ await closeMap(page);await page.locator('#weatherMapOpen').click();
+ await expect.poll(()=>styles).toBe(4);await closeMap(page);
  await page.waitForTimeout(3500);expect(styles).toBe(4);
 });
 
@@ -2432,7 +2434,7 @@ for(const release of ['background','idle']) test('closed map renderers release r
  test.skip(browserName==='firefox', noWebGLReason);
  await page.clock.install();await instrumentMap(page);await page.goto('/');await page.locator('#weatherMapOpen').click();
  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state','ready');
- await page.locator('#weatherMapClose').click();await expect(page.locator('#weatherMap')).toBeHidden();
+ await closeMap(page);await expect(page.locator('#weatherMap')).toBeHidden();
  await expect(page.locator('#weatherMapCanvas canvas')).toHaveCount(1);
  if(release==='idle') await page.clock.fastForward(120001);
  else await page.evaluate(()=>{

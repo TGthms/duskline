@@ -17,6 +17,15 @@
       const element=document.getElementById(id),anchor=document.createComment('');
       element.before(anchor);return {element,anchor};
     });
+    function syncView() {
+      const mapOpen=!!(media.matches && deps.mapOpen && deps.mapOpen());
+      document.querySelectorAll('[data-weather-mode]').forEach(button=>{
+        button.setAttribute('aria-pressed',String(!mapOpen && button.dataset.weatherMode===document.body.dataset.weatherView));
+      });
+      const mapButton=document.getElementById('weatherMapOpen');
+      if (media.matches) mapButton.setAttribute('aria-pressed',String(mapOpen));
+      else mapButton.removeAttribute('aria-pressed');
+    }
     function placeLabel() {
       const button=document.getElementById('weatherManagePlaces');
       if(button) button.textContent=media.matches?t('weather.savedPlaces','Saved places'):t('weather.rearrange','Rearrange saved places');
@@ -31,6 +40,8 @@
       });
       nav.hidden=!media.matches;
       placeLabel();
+      if (deps.layoutChanged) deps.layoutChanged();
+      syncView();
       if (W.modal) W.modal.sync();
       if (focused && focused.isConnected && !focused.closest('[inert]') && controls.some(row=>row.element.contains(focused))) focused.focus({preventScroll:true});
     }
@@ -84,6 +95,6 @@
       updateHost=document.createElement('section');updateHost.className='weather-settings-updates';host.append(updateHost);renderUpdates();
       return {language:label,updates:updateHost};
     }
-    return {mountSettings};
+    return {mountSettings,syncView};
   };
 })(window);

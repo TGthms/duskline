@@ -5,13 +5,16 @@
   if (!W || !W.active) return;
   const stack = [];
   const saved = new Map();
+  function contains(owner, element) {
+    return owner.element.contains(element) || owner.peers.some(peer => peer.contains(element));
+  }
   function containFocus() {
     const owner = stack[stack.length - 1];
     if (!owner) return;
     let frames=0;
     requestAnimationFrame(function settle() {
       if (stack[stack.length - 1] !== owner) return;
-      if (!owner.element.contains(document.activeElement)) {
+      if (!contains(owner, document.activeElement)) {
         const target = owner.element.querySelector('[role="dialog"][tabindex="-1"]') || Array.from(owner.element.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),summary,[tabindex="0"]'))
           .find(element=>element.getClientRects().length && !element.closest('[inert]') && getComputedStyle(element).visibility === 'visible');
         if (target) target.focus({preventScroll:true});
@@ -42,7 +45,7 @@
     const background = ['navbar','main','dusklineFooter','weatherMobileNav','weatherToast','weatherUpdateToast']
       .map(id => document.getElementById(id)).concat(stack.slice(0,-1).map(item => item.element));
     background.forEach(element => {
-      if (!element || element === top.element || element.contains(top.element) || top.element.contains(element) || saved.has(element)) return;
+      if (!element || element === top.element || element.contains(top.element) || top.element.contains(element) || top.peers.includes(element) || saved.has(element)) return;
       saved.set(element,{inert:!!element.inert,aria:element.getAttribute('aria-hidden')});
       element.inert = true;
       element.setAttribute('aria-hidden','true');
@@ -50,13 +53,14 @@
     containFocus();
   }
   W.modal = {
-    open(id, element) {
+    open(id, element, options) {
       if (!element) return;
       element.inert=false;
       element.setAttribute('aria-hidden','false');
       const current = stack.find(item => item.id === id);
-      if (current) current.element = element;
-      else stack.push({id,element});
+      const peers = options && options.peers || [];
+      if (current) Object.assign(current,{element,peers});
+      else stack.push({id,element,peers});
       sync();
     },
     close(id) {
