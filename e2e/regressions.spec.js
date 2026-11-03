@@ -332,6 +332,7 @@ test('hourly chart values update on pointer hover and reset when the pointer lea
     .filter(animation => animation.effect && animation.effect.getComputedTiming().iterations !== Infinity)
     .map(animation => animation.finished.catch(() => {}))));
   const initialIndex = await chart.getAttribute('aria-valuenow');
+  const restingIndex = await chart.getAttribute('data-rest-idx');
   const maxIndex = Number(await chart.getAttribute('aria-valuemax'));
   const svg = chart.locator('svg');
   await svg.scrollIntoViewIfNeeded();
@@ -344,7 +345,7 @@ test('hourly chart values update on pointer hover and reset when the pointer lea
   const hoveredReadout = await chart.locator('[data-readout]').textContent();
   expect(hoveredReadout).toBeTruthy();
   await page.mouse.move(0, 0);
-  await expect(chart).toHaveAttribute('aria-valuenow', initialIndex);
+  await expect(chart).toHaveAttribute('aria-valuenow', restingIndex);
 });
 
 test.describe('installed offline shell', () => {

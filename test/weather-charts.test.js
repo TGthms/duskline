@@ -7,9 +7,14 @@ const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 
-function loadCharts() {
+function loadCharts(now) {
   const window = { DusklineWeather: { active: true, factories: {} } };
-  const context = { window, Date, Intl, Math, Number, JSON, Array, Object, Map, Set };
+  window.DusklineWxMath = require('../src/js/core/wx-math');
+  const Clock = now == null ? Date : class extends Date {
+    constructor(...args) { super(...(args.length ? args : [now])); }
+    static now() { return now; }
+  };
+  const context = { window, Date:Clock, Intl, Math, Number, JSON, Array, Object, Map, Set };
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'src/js/features/weather/charts.js'), 'utf8'), context);
   return window.DusklineWeather.factories.charts({
@@ -89,3 +94,12 @@ test('an exhausted saved daily forecast has no upcoming rows',()=>{
  const charts=loadCharts();
  assert.equal(charts.dailySliceCount({time:['2020-01-01'],temperature_2m_max:[20],temperature_2m_min:[10]},{timeZone:'UTC'}),0);
 });
+
+test('current-hour selection uses actual timestamps for offset-bearing provider hours',()=>{
+  const now=Date.parse('2026-11-03T05:20:00Z'),charts=loadCharts(now);
+  const times=Array.from({length:24},(_,hour)=>new Date(Date.parse('2026-11-03T05:00:00Z')+hour*3600000).toISOString());
+  const chart=charts.buildTempChart({time:times,temperature_2m:times.map((_,i)=>10+i)},'temperature_2m',v=>v+'°','America/New_York','2026-11-03',{initialIndex:3});
+  assert.match(chart,/data-now-idx="3"/);
+  assert.match(chart,/data-rest-idx="0"/);
+  assert.match(chart,/data-rest-mode="point"/);
+ });

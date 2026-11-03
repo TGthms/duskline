@@ -343,9 +343,15 @@
     }
 
     /** Wall-clock hour + minute as decimal hours from OM local ISO (…T14:30). */
-    function stampLocalHour(iso) {
+    function stampLocalHour(iso, timeZone) {
       const m = String(iso || '').match(/T(\d{2}):(\d{2})/);
-      if (m) return Number(m[1]) + Number(m[2]) / 60;
+      if (m && !/[zZ]$|[+-]\d{2}:\d{2}$/.test(iso)) return Number(m[1]) + Number(m[2]) / 60;
+      if (timeZone) {
+        try {
+          const parts = new Intl.DateTimeFormat('en-GB', {timeZone, hour:'numeric', minute:'numeric', hourCycle:'h23'}).formatToParts(new Date(iso));
+          return Number(parts.find(part => part.type === 'hour').value) % 24 + Number(parts.find(part => part.type === 'minute').value) / 60;
+        } catch (error) {}
+      }
       try {
         const d = new Date(iso);
         if (!Number.isNaN(d.getTime())) return d.getHours() + d.getMinutes() / 60;
@@ -473,50 +479,38 @@
 
       // “Now” in the *location* timezone (wall-clock hours), not browser parse of bare ISO.
       // Prefer the latest sample at-or-before now — never wrap 23:00 → 00:00 on the right.
-      const nowH = nowLocalHour(tz);
       const todayKey = localDateKey(Date.now(), tz);
-      const activeDayKey = dateKey || todayKey;
       const chartTracksNow = !dateKey || dateKey === todayKey;
       let midIdx = 0;
       let midBest = Infinity;
-      let foundAtOrBefore = false;
-      if (chartOptions.initialIndex != null) {
-        const requested = pts.findIndex(function (point) { return point.i === Number(chartOptions.initialIndex); });
-        if (requested >= 0) midIdx = requested;
-      } else if (!chartTracksNow) {
+      if (!chartTracksNow) {
         // A selected future day has no meaningful “now” marker. Start around its local noon.
         for (let mi = 0; mi < pts.length; mi++) {
-          const distance = Math.abs(stampLocalHour(pts[mi].t) - 12);
+          const distance = Math.abs(stampLocalHour(pts[mi].t, tz) - 12);
           if (distance < midBest) { midBest = distance; midIdx = mi; }
         }
       } else {
+        let latest = -Infinity;
         for (let mi = 0; mi < pts.length; mi++) {
-          const day = stampDateKey(pts[mi].t, tz);
-          const ph = stampLocalHour(pts[mi].t);
-          // Wrong calendar day (e.g. next-day 00:00 left in a rolling window) — heavy penalty
-          const dayPenalty = (day && activeDayKey && day !== activeDayKey) ? 100 : 0;
-          // Prefer at-or-before now so 23:00 wins over 00:00 when local time is 23:xx
-          let d;
-          if (ph <= nowH + 1 / 120) {
-            d = nowH - ph;
-            foundAtOrBefore = true;
-          } else {
-            d = (ph - nowH) + 0.25;
+          const at = wallClockInZoneToUtcMs(pts[mi].t, tz);
+          if (Number.isFinite(at) && at <= Date.now() && at > latest) {
+            latest = at;
+            midIdx = mi;
           }
-          if (nowH >= 18 && ph < 6) d += 50;
-          if (nowH < 6 && ph > 18) d += 50;
-          d += dayPenalty;
-          if (d < midBest) { midBest = d; midIdx = mi; }
         }
-        if (!foundAtOrBefore && pts.length) midIdx = 0;
+      }
+      const restIdx = midIdx;
+      if (chartOptions.initialIndex != null) {
+        const requested = pts.findIndex(point => point.i === Number(chartOptions.initialIndex));
+        if (requested >= 0) midIdx = requested;
       }
       const mid = pts[midIdx];
 
       // Split past / future at “now” (Apple: muted dashed past, solid future).
       // CRITICAL: never fall back to a full solid path when future is short (e.g. 11 PM) —
       // that painted over the dashed past and made the cursor look stuck at the right edge.
-      const pastPts = chartTracksNow ? pts.slice(0, midIdx + 1) : [];
-      const futurePts = chartTracksNow ? pts.slice(midIdx) : pts;
+      const pastPts = chartTracksNow ? pts.slice(0, restIdx + 1) : [];
+      const futurePts = chartTracksNow ? pts.slice(restIdx) : pts;
       const pastLine = pastPts.length >= 2 ? pathThrough(pastPts) : '';
       const futureLine = futurePts.length >= 2 ? pathThrough(futurePts) : '';
       const fullLine = pathThrough(pts);
@@ -543,6 +537,8 @@
       const initialRange = chartOptions.initialMode === 'range';
       const initialReadout = initialRange ? String(chartOptions.initialReadout || unitFmt(mid.v)) : unitFmt(mid.v);
       const initialSub = initialRange ? String(chartOptions.initialSub || '') : formatClock(mid.t, tz);
+      const restReadout = String(chartOptions.initialReadout || unitFmt(dataMin) + ' – ' + unitFmt(dataMax));
+      const restSub = chartOptions.initialSub || t('weather.dailyRange', 'Daily range');
 
       let grids = '';
       for (let g = 0; g < 4; g++) {
@@ -608,10 +604,10 @@
       // Fill: prefer whole-day soft fill when past dominates (evening); stronger future fill midday
       const fillPath = futureArea
         ? '<path d="' + futureArea + '" fill="url(#' + id + 'g)"/>' +
-          (pastLine ? '<path d="' + pathThrough(pastPts) + ' L' + mid.x.toFixed(1) + ',' + (H - padB).toFixed(1) + ' L' + first.x.toFixed(1) + ',' + (H - padB).toFixed(1) + ' Z" fill="url(#' + id + 'gpast)"/>' : '')
+          (pastLine ? '<path d="' + pathThrough(pastPts) + ' L' + pts[restIdx].x.toFixed(1) + ',' + (H - padB).toFixed(1) + ' L' + first.x.toFixed(1) + ',' + (H - padB).toFixed(1) + ' Z" fill="url(#' + id + 'gpast)"/>' : '')
         : '<path d="' + area + '" fill="url(#' + id + (pastLine && !futureLine ? 'gpast' : 'g') + ')"/>';
 
-      return '<div class="weather-chart-wrap weather-chart-card" role="slider" tabindex="0" data-chart="' + id + '" data-pts=\'' + JSON.stringify(payload).replace(/'/g, '&#39;') + '\' data-kind="' + key + '" data-tz="' + escapeHtml(tz || '') + '" data-now-idx="' + midIdx + '" data-vw="' + W + '" data-vh="' + H + '" data-padt="' + padT + '" data-padb="' + padB + '" data-padl="' + padL + '">' +
+      return '<div class="weather-chart-wrap weather-chart-card" role="slider" tabindex="0" data-chart="' + id + '" data-pts=\'' + JSON.stringify(payload).replace(/'/g, '&#39;') + '\' data-kind="' + key + '" data-tz="' + escapeHtml(tz || '') + '" data-now-idx="' + midIdx + '" data-rest-idx="' + restIdx + '" data-rest-mode="' + (chartTracksNow ? 'point' : 'range') + '" data-rest-readout="' + escapeHtml(restReadout) + '" data-rest-sub="' + escapeHtml(restSub) + '" data-vw="' + W + '" data-vh="' + H + '" data-padt="' + padT + '" data-padb="' + padB + '" data-padl="' + padL + '">' +
         '<div class="weather-chart-readout" data-readout data-initial-mode="' + (initialRange ? 'range' : 'point') + '" data-initial-readout="' + escapeHtml(initialReadout) + '" data-initial-sub="' + escapeHtml(initialSub) + '">' + escapeHtml(initialReadout) + '</div>' +
         '<div class="weather-chart-sub" data-sub>' + escapeHtml(initialSub) + '</div>' +
         // preserveAspectRatio=none: CSS size maps 1:1 to viewBox → scrub X/Y stay aligned
@@ -668,14 +664,18 @@
           idxNow = 0;
           let bestNow = Infinity;
           for (let i = 0; i < pts.length; i++) {
-            const ph = stampLocalHour(pts[i].t);
+            const ph = stampLocalHour(pts[i].t, tz);
             let d = ph <= nowH + 1 / 120 ? (nowH - ph) : (ph - nowH) + 0.25;
             if (nowH >= 18 && ph < 6) d += 50;
             if (nowH < 6 && ph > 18) d += 50;
             if (d < bestNow) { bestNow = d; idxNow = i; }
           }
         }
-        const defaultPt = pts[idxNow];
+        const restIndex = Number(wrap.getAttribute('data-rest-idx'));
+        const restMode = wrap.getAttribute('data-rest-mode') || initialMode;
+        const restReadout = wrap.getAttribute('data-rest-readout') || initialReadout;
+        const restSub = wrap.getAttribute('data-rest-sub') || initialSub;
+        const defaultPt = pts[Number.isInteger(restIndex) && restIndex >= 0 && restIndex < pts.length ? restIndex : idxNow];
         let curPt = defaultPt;
         let keyboardIndex = idxNow;
         let selectionCommitted = false;
@@ -732,28 +732,39 @@
           }
           curPt = pt;
         };
-        const resetToInitial = () => {
+        const restoreSelection = (mode, point, value, label) => {
           selectionCommitted = false;
-          if (initialMode === 'range') {
+          if (mode === 'range') {
             if (guide) guide.style.display = 'none';
             if (dot) dot.style.display = 'none';
-            if (readout) readout.textContent = initialReadout;
-            if (sub) sub.textContent = initialSub;
-            wrap.setAttribute('aria-valuenow', String(idxNow));
-            wrap.setAttribute('aria-valuetext', [initialSub, initialReadout].filter(Boolean).join(', '));
-            keyboardIndex = idxNow;
-            curPt = defaultPt;
+            if (readout) readout.textContent = value;
+            if (sub) sub.textContent = label;
+            keyboardIndex = pts.indexOf(point);
+            wrap.setAttribute('aria-valuenow', String(keyboardIndex));
+            wrap.setAttribute('aria-valuetext', [label, value].filter(Boolean).join(', '));
+            curPt = point;
             lastDispatchedIndex = -1;
             if (global.CustomEvent) wrap.dispatchEvent(new global.CustomEvent('weatherchartreset'));
             return;
           }
-          paintImmediate(defaultPt.x, defaultPt.y, defaultPt);
+          paintImmediate(point.x, point.y, point);
+        };
+        const resetToInitial = () => {
+          let point = defaultPt;
+          if (restMode === 'point') {
+            const now = Date.now();
+            for (const sample of pts) {
+              const at = wallClockInZoneToUtcMs(sample.t, tz);
+              if (Number.isFinite(at) && at <= now) point = sample;
+            }
+          }
+          restoreSelection(restMode, point, restReadout, restSub);
         };
         const resetOnLeave = () => {
           if (initialMode === 'range' && selectionCommitted) return;
           resetToInitial();
         };
-        resetToInitial();
+        restoreSelection(initialMode, pts[idxNow], initialReadout, initialSub);
         wrap.addEventListener('keydown', function (event) {
           let next = keyboardIndex;
           if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next += 1;
@@ -837,89 +848,90 @@
         target.style.cursor = 'ew-resize';
         let scrubArmed = false;
         let activePointer = null;
-        let startX = 0;
-        let startY = 0;
-        let lastX = 0;
-        let lastY = 0;
-        const TOUCH_CANCEL_PX = 12;
-        function isMousePtr(e) {
-          return e.pointerType === 'mouse' || e.type === 'mousemove' || e.type === 'mouseleave';
-        }
-        function setPanY() {
-          target.style.touchAction = 'pan-y pinch-zoom';
-          hit.style.touchAction = 'pan-y pinch-zoom';
-        }
-        function endScrub() {
+        let holdTimer = 0;
+        let startX = 0, startY = 0, lastX = 0, lastY = 0;
+        let ignoreMouseUntil = 0;
+        const HOLD_MS = 160;
+        const MOVE_SLOP = 8;
+        const isMousePtr = e => e.pointerType === 'mouse' || e.type === 'mousemove' || e.type === 'mouseleave';
+        function endTouch() {
+          clearTimeout(holdTimer);
+          holdTimer = 0;
+          const pointer = activePointer;
+          activePointer = null;
           const wasArmed = scrubArmed;
           scrubArmed = false;
-          activePointer = null;
-          setPanY();
-          if (wasArmed) selectionCommitted = true;
+          if (wasArmed) resetToInitial();
+          if (pointer != null) {
+            try { if (target.hasPointerCapture(pointer)) target.releasePointerCapture(pointer); } catch (error) {}
+          }
         }
-        target.addEventListener('pointerdown', (e) => {
+        target.addEventListener('pointerdown', e => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
+            if (performance.now() < ignoreMouseUntil) return;
             scrubArmed = true;
             selectionCommitted = true;
-            try { target.setPointerCapture && target.setPointerCapture(e.pointerId); } catch (err) {}
+            try { target.setPointerCapture(e.pointerId); } catch (error) {}
             onMove(e);
             return;
           }
-          // Touch: claim a horizontal drag after its direction is clear.
-          scrubArmed = false;
+          endTouch();
+          ignoreMouseUntil = performance.now() + 800;
+          if (e.isPrimary === false) return;
           activePointer = e.pointerId;
           startX = lastX = e.clientX;
           startY = lastY = e.clientY;
+          holdTimer = setTimeout(() => {
+            holdTimer = 0;
+            if (activePointer == null || !wrap.isConnected || wrap.closest('[inert]')) return;
+            scrubArmed = true;
+            try { target.setPointerCapture(activePointer); } catch (error) {}
+            scrub(lastX, lastY);
+          }, HOLD_MS);
         });
-        target.addEventListener('pointermove', (e) => {
+        target.addEventListener('pointermove', e => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
-            onMove(e);
+            if (performance.now() >= ignoreMouseUntil) onMove(e);
             return;
           }
-          if (activePointer != null && e.pointerId !== activePointer) return;
-          lastX = e.clientX;
-          lastY = e.clientY;
+          if (activePointer == null || e.pointerId !== activePointer) return;
+          lastX = e.clientX; lastY = e.clientY;
           if (!scrubArmed) {
-            const dy = Math.abs(e.clientY - startY);
-            const dx = Math.abs(e.clientX - startX);
-            if (dy > TOUCH_CANCEL_PX && dy > dx) {
-              activePointer = null;
-            }
-            if (dx >= 6 && dx > dy && activePointer != null) {
-              scrubArmed = true; selectionCommitted = true;
-              try { target.setPointerCapture(e.pointerId); } catch (error) {}
-              scrub(e.clientX,e.clientY);
-            }
+            if (Math.hypot(lastX - startX, lastY - startY) > MOVE_SLOP) endTouch();
             return;
           }
-          if (e.cancelable) e.preventDefault();
           onMove(e);
         });
-        target.addEventListener('pointerup', (e) => {
+        // A hold owns subsequent touch moves; a swipe before the hold belongs to scrolling.
+        target.addEventListener('touchmove', e => {
+          if (e.touches.length !== 1) { endTouch(); return; }
+          if (scrubArmed && activePointer != null && e.cancelable) e.preventDefault();
+        }, {passive:false});
+        target.addEventListener('contextmenu', e => { if (activePointer != null) e.preventDefault(); });
+        target.addEventListener('pointerup', e => {
           if (isMousePtr(e) || e.pointerType === 'pen') {
+            if (performance.now() < ignoreMouseUntil) return;
             if (initialMode !== 'range') resetToInitial();
             scrubArmed = false;
             return;
           }
-          if (activePointer != null && !scrubArmed) { scrub(lastX,lastY); selectionCommitted = true; }
-          endScrub();
-        });
-        target.addEventListener('pointercancel', (e) => {
-          if (isMousePtr(e) || e.pointerType === 'pen') {
-            resetOnLeave();
-            scrubArmed = false;
-            return;
+          if (e.pointerId === activePointer) {
+            ignoreMouseUntil = performance.now() + 800;
+            endTouch();
           }
-          endScrub();
         });
-        target.addEventListener('pointerleave', (e) => {
-          if (isMousePtr(e)) resetOnLeave();
+        target.addEventListener('pointercancel', e => {
+          if (isMousePtr(e) || e.pointerType === 'pen') { resetOnLeave(); scrubArmed = false; }
+          else if (e.pointerId === activePointer) endTouch();
         });
-        target.addEventListener('lostpointercapture', (e) => {
-          if (e.pointerType === 'mouse' || e.pointerType === 'pen') resetOnLeave();
+        target.addEventListener('pointerleave', e => { if (isMousePtr(e)) resetOnLeave(); });
+        target.addEventListener('lostpointercapture', e => {
+          if (isMousePtr(e) || e.pointerType === 'pen') resetOnLeave();
+          else if (e.pointerId === activePointer) endTouch();
         });
-        // Desktop hover scrub (no press required)
-        target.addEventListener('mousemove', onMove);
-        target.addEventListener('mouseleave', resetOnLeave);
+        target.addEventListener('mousemove', e => { if (performance.now() >= ignoreMouseUntil) onMove(e); });
+        target.addEventListener('mouseleave', e => { if (performance.now() >= ignoreMouseUntil) resetOnLeave(); });
+
       });
     }
 
