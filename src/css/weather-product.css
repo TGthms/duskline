@@ -4,10 +4,17 @@ body.duskline .weather-row { height: auto; min-height: 142px; }
 body.duskline .weather-row-updated { margin-top: 6px; font-size: 11px; }
 body.duskline .weather-btn { box-shadow: 0 2px 8px rgba(8,17,31,.08); letter-spacing: 0; }
 body.duskline .weather-detail.wx-mods-light .weather-mod {
-  background: rgba(213,227,240,.94) !important;
-  border-color: rgba(255,255,255,.28) !important;
+  --wx-day-card-fill: rgba(190,205,222,.94);
+  --wx-day-card-edge: rgba(255,255,255,.18);
+  --wx-mod-muted: #314b60;
+  background: var(--wx-day-card-fill) !important;
+  border-color: var(--wx-day-card-edge) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+body.duskline .weather-detail.wx-mods-light .weather-mod-daily .weather-daily-lo {
+  color: var(--wx-mod-muted) !important;
+  opacity: 1;
 }
 body.duskline .weather-detail:not(.wx-mods-light) .weather-mod {
   background: rgba(9,23,43,.91) !important;
@@ -67,10 +74,6 @@ body.duskline .weather-list .weather-row-cluster { display: flex; flex-direction
 body.duskline .weather-list .weather-row { flex: 1; height: 100%; min-height: 156px; padding-inline-end: 18px; }
 body.duskline .weather-mod { align-self: stretch; }
 body.duskline .weather-mod:not(.weather-mod-wide) { min-height: 144px; }
-body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
-  background: #e0ebf5 !important; border-color: rgba(22,52,79,.25) !important;
-  box-shadow: 0 5px 18px rgba(12,39,66,.13);
-}
 body.duskline .weather-daily-row:hover .weather-daily-day { text-decoration: none; }
 body.duskline .weather-daily-row:hover { background: rgba(80,126,166,.1); }
 .weather-alert-status { flex-direction: row; flex-wrap: wrap; min-height: 64px; align-items: center; justify-content: flex-start; }
@@ -202,17 +205,17 @@ body:has(.weather-detail.open) .weather-route-progress,
 body:has(.weather-sheet.open) .weather-route-progress,
 body:has(.weather-map.is-open) .weather-route-progress { top: 0; }
 
-/* Override the older, high-specificity translucent hover rules. */
-html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod:hover,
-html[data-motion-effective="off"] body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
-  background: #e0ebf5 !important; border-color: rgba(22,52,79,.22) !important;
+body.duskline .weather-detail.wx-mods-light .weather-mod:hover,
+html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod:hover {
+  background: #c6d4e3 !important;
+  border-color: rgba(22,52,79,.22) !important;
+  box-shadow: 0 5px 18px rgba(12,39,66,.13);
 }
-body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover {
-  background: rgba(213,227,240,.94) !important; border-color: rgba(255,255,255,.28) !important; box-shadow: none;
-}
-html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover,
-html[data-motion-effective="off"] body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover {
-  background: rgba(213,227,240,.94) !important; border-color: rgba(255,255,255,.28) !important; box-shadow: none;
+body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover,
+html.has-fine-pointer body.duskline .weather-detail.wx-mods-light .weather-mod-daily:hover {
+  background: var(--wx-day-card-fill) !important;
+  border-color: var(--wx-day-card-edge) !important;
+  box-shadow: none;
 }
 body.duskline .weather-detail.wx-mods-light .weather-daily-row:hover { background: rgba(22,52,79,.055); }
 .weather-alert-status button:disabled { opacity: .55; cursor: default; }

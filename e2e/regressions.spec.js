@@ -1511,8 +1511,9 @@ test('selecting a saved primary immediately updates the card and landscape uses 
   await page.screenshot({path:testInfo.outputPath('my-sky-landscape.png'),fullPage:true});
 });
 
-test('light forecast hover keeps its opaque surface and only highlights the daily row',async ({page})=>{
+for (const motion of ['reduced','off']) test(`daytime forecast keeps a muted surface on daily row hover with motion ${motion}`,async ({page})=>{
   await page.emulateMedia({colorScheme:'light'});
+  await page.addInitScript(value=>localStorage.setItem('duskline-motion',value),motion);
   await stubWeather(page,null);
   await page.route(/api\.open-meteo\.com\/v1\/forecast/,route=>{
     const u=new URL(route.request().url());const result=body(!u.searchParams.has('hourly'),Date.now(),1);result.current.is_day=1;
@@ -1520,14 +1521,17 @@ test('light forecast hover keeps its opaque surface and only highlights the dail
   });
   await page.goto('/?city=tokyo');
   await expect(page.locator('#weatherDetail')).toHaveClass(/wx-mods-light/);
+  await expect(page.locator('html')).toHaveAttribute('data-motion-effective',motion);
+  const surface='rgba(190, 205, 222, 0.94)';
+  const aqi=page.locator('[data-sheet="aqi"]');
   const daily=page.locator('.weather-mod-daily');
-  await expect(daily).toBeVisible();
-  await expect(daily).toHaveCSS('background-color','rgba(213, 227, 240, 0.94)');
+  await expect(aqi).toHaveCSS('background-color',surface);
+  await expect(daily).toHaveCSS('background-color',surface);
   await daily.locator('.weather-daily-row').nth(2).hover();
-  await expect(daily).toHaveCSS('background-color','rgba(213, 227, 240, 0.94)');
-  expect(await daily.evaluate(node=>getComputedStyle(node).backgroundImage)).toBe('none');
-  await page.locator('[data-sheet="aqi"]').hover();
-  await expect(page.locator('[data-sheet="aqi"]')).toHaveCSS('background-color','rgb(224, 235, 245)');
+  await expect(daily).toHaveCSS('background-color',surface);
+  await expect(daily).toHaveCSS('background-image','none');
+  await aqi.hover();
+  await expect(aqi).toHaveCSS('background-color','rgb(198, 212, 227)');
 });
 
 test('no-alerts refresh checks the provider again and shares loading feedback with search',async ({page})=>{
