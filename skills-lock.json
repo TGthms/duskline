@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "skills": {
+    "apple-design": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/apple-design/SKILL.md",
+      "computedHash": "118d450c2d6ca54fee5f56cf8883fa3231bc2d917bb8f5a3f87488162c55fac9"
+    },
+    "remotion-best-practices": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remotion-best-practices/SKILL.md",
+      "computedHash": "55e6029eeafb7f64bfcaef013f7b9f569dfcc4db6554c6d6fb833ad141ec1494"
+    }
+  }
+}
