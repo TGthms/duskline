@@ -1252,7 +1252,7 @@ test('desktop cards match row heights and light hover keeps a readable surface',
   const [a,b] = await Promise.all([aqi.boundingBox(),feels.boundingBox()]);
   expect(Math.abs(a.height-b.height)).toBeLessThanOrEqual(1);
   await aqi.hover();
-  await expect(aqi).toHaveCSS('background-color','rgb(224, 235, 245)');
+  await expect(aqi).toHaveCSS('background-color','rgb(198, 212, 227)');
 });
 
 test('My Sky keeps a compact primary dashboard and one quiet list with rearrangement in preferences', async ({page}, testInfo) => {
