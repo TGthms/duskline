@@ -218,6 +218,7 @@ test('phone Map isolates its controls and restores nested forecast and page cont
 
 test('Map preserves dialog ownership across phone and desktop resizing',async({page})=>{
  await page.setViewportSize({width:320,height:568});await personalSky(page);await page.goto('/');
+ await page.addStyleTag({content:'html:not(.weather-map-open) #main { transition:visibility 0s linear .3s !important; }'});
  const map=page.locator('#weatherMap'),button=page.locator('#weatherMapOpen');
  await button.click();
  for(const size of [{width:320,height:568},{width:844,height:390},{width:1440,height:1000},{width:390,height:844}]) {
@@ -230,4 +231,10 @@ test('Map preserves dialog ownership across phone and desktop resizing',async({p
  }
  await page.goBack();await expect(map).toBeHidden();await expect(button).toBeFocused();
  await expect(page.locator('#navbar')).toHaveJSProperty('inert',false);
+ await button.click();await page.goBack();await expect(map).toBeHidden();
+ await page.locator('#weatherUnitsBtn').evaluate(element=>element.click());
+ await expect(page.locator('#weatherSheet')).toBeVisible();
+ await expect(page.locator('#main')).toHaveCSS('visibility','visible');
+ await expect.poll(()=>page.evaluate(()=>!!document.activeElement.closest('#weatherSheetPanel'))).toBe(true);
+ await expect(button).not.toBeFocused();
 });

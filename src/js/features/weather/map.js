@@ -205,17 +205,22 @@
       unlockBackground();
       setStatus('', false);
       const target = returnFocus, generation = mapLoadGeneration;
+      const previousFocus = document.activeElement, deadline = performance.now() + 1000;
       returnFocus = null;
-      let frames = 0, visibleFrames = 0;
-      // Motion preferences can briefly keep the page hidden after unlocking it.
+      let focusedFrames = 0;
+      // Visibility can settle after resize and inherited CSS transitions.
+      // A newer view or an explicit focus move owns focus immediately.
       function restoreFocus() {
         if (isOpen || generation !== mapLoadGeneration || !target?.isConnected || target.closest('[inert]')) return;
+        const active = document.activeElement;
+        if (active !== target && active !== previousFocus && active !== document.body && active !== document.documentElement && !root.contains(active)) return;
         let visible = true;
         for (let element = target; element; element = element.parentElement)
           if (getComputedStyle(element).visibility !== 'visible') { visible = false; break; }
-        visibleFrames = visible ? visibleFrames + 1 : 0;
-        if (visibleFrames >= 2) target.focus({preventScroll:true});
-        if (document.activeElement !== target && ++frames < 12) requestAnimationFrame(restoreFocus);
+        focusedFrames = visible && active === target ? focusedFrames + 1 : 0;
+        if (focusedFrames >= 2) return;
+        if (visible) target.focus({preventScroll:true});
+        if (performance.now() < deadline) requestAnimationFrame(restoreFocus);
       }
       restoreFocus();
     }
