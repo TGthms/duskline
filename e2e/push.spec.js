@@ -629,16 +629,33 @@ test('My Sky subscribes directly in the permission gesture with all alerts @core
   await expect(enroll).toContainText('Weather alerts for Boston');
   await expect(button).toBeEnabled();
   await button.click();
-  await expect(enroll.getByRole('status')).toContainText('On ·');
+  await expect(enroll).toBeHidden();
+  await expect(page.locator('#weatherToast')).toContainText('Settings → Notifications');
+  await expect(page.locator('#weatherUnitsBtn')).toBeFocused();
+  expect((await page.locator('#weatherToast').boundingBox()).width).toBeLessThanOrEqual(page.viewportSize().width - 32);
+  expect(f.calls.filter(c => c.path === 'test')).toHaveLength(1);
+  expect(f.calls.find(c => c.path === 'test').body.message).toBe('Notifications are connected on this device.');
+  expect(f.calls.findIndex(c => c.path === 'test')).toBeGreaterThan(f.calls.findIndex(c => c.path === 'subscribe'));
   expect(await page.evaluate(() => window.__push.permissionCalls)).toBe(1);
   expect(await page.evaluate(() => window.__push.gesture)).toBe(true);
   await expect(page.locator('#weatherSheet')).toBeHidden();
   const body = f.calls.find(c => c.path === 'subscribe').body;
   expect(body.locations.map(p => p.name)).toEqual(['Boston']);
   expect(body.preferences).toMatchObject({ version: 3, severity: 'all', categories: ['all'], updates: true, quiet: { enabled: false } });
-  await expect(button).toHaveText('Notifications');
-  await button.click();
+  await page.evaluate(() => window.DusklineWeather.pushNotifications.reconcile(true));
+  await expect(enroll).toBeHidden();
+  expect(f.calls.filter(c => c.path === 'test')).toHaveLength(1);
+  await page.context().setOffline(true);
+  await page.evaluate(() => window.DusklineWeather.pushNotifications.reconcile());
+  await expect(enroll).toBeHidden();
+  await page.context().setOffline(false);
+  await settings(page);
   await expect(page.locator('.weather-push-toggle')).toBeChecked();
+  await page.getByLabel('Weather notifications', {exact:true}).uncheck();
+  await expect(page.locator('.weather-push-status')).toHaveText('Off');
+  await page.locator('#weatherSheetClose').click();
+  await expect(button).toHaveText('Subscribe');
+  await expect(enroll).toBeVisible();
 });
 
 test('legacy notification preferences migrate once while new optional filters survive reload', async ({ page }) => {
@@ -660,6 +677,8 @@ test('legacy notification preferences migrate once while new optional filters su
   await expect(page.getByLabel('Minimum severity')).toHaveValue('extreme');
   await expect(page.getByLabel('Alert type', { exact: true })).toHaveValue('flood');
   await expect(page.locator('.weather-push-status')).toContainText('On ·');
+  await expect(page.locator('#weatherPushEnroll')).toBeHidden();
+  expect(f.calls.filter(c => c.path === 'test')).toHaveLength(0);
 });
 
 test('My Sky subscription respects coverage and denied permissions without claiming delivery', async ({ page }) => {
@@ -669,6 +688,42 @@ test('My Sky subscription respects coverage and denied permissions without claim
   await enroll.getByRole('button', {name:'Subscribe', exact:true}).click();
   await expect(enroll.getByRole('status')).toContainText('blocked');
   expect(f.calls.some(c=>c.path==='subscribe')).toBe(false);
+  expect(f.calls.some(c=>c.path==='test')).toBe(false);
+  await expect(enroll).toBeVisible();
   await page.locator('[data-weather-mode="horizon"]').click();
   await expect(enroll).toBeHidden();
+});
+
+
+test('a failed automatic connection test keeps enrollment and exposes recovery in settings', async ({ page }) => {
+  const f = await fixtures(page);
+  f.failTest(true);
+  await page.goto('/');
+  await page.locator('#weatherPushEnroll .weather-push-subscribe').click();
+  await expect(page.locator('#weatherPushEnroll')).toBeHidden();
+  await expect(page.locator('#weatherToast')).toContainText('The test could not be sent');
+  await expect(page.locator('#weatherToast')).toContainText('Settings → Notifications');
+  expect(f.calls.filter(c => c.path === 'test')).toHaveLength(1);
+  expect(f.records.size).toBe(1);
+  await settings(page);
+  await expect(page.locator('.weather-push-toggle')).toBeChecked();
+  await expect(page.locator('.weather-push-status')).toContainText('The test could not be sent');
+  f.failTest(false);
+  await page.getByRole('button', {name:'Send test notification', exact:true}).click();
+  await expect(page.locator('.weather-push-status')).toContainText('Test accepted');
+});
+
+for (const scheme of ['light','dark']) test('My Sky subscribe hover and focus retain readable text in '+scheme, async ({ page }) => {
+  await page.emulateMedia({colorScheme:scheme});
+  await fixtures(page);
+  await page.goto('/');
+  const button=page.locator('#weatherPushEnroll .weather-push-subscribe');
+  await expect(button).toBeEnabled();
+  const light=await page.locator('body').evaluate(el=>el.classList.contains('weather-sky-light'));
+  const ink=light?'rgb(255, 255, 255)':'rgb(16, 40, 62)';
+  await expect(button).toHaveCSS('color',ink);
+  await button.hover();
+  await expect(button).toHaveCSS('color',ink);
+  await button.focus();
+  await expect(button).toHaveCSS('color',ink);
 });

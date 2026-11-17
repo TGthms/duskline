@@ -34,7 +34,7 @@ Deploy the Worker before the Pages release:
 npx wrangler deploy --config workers/alert-poller/wrangler.toml
 ```
 
-Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load shell v83.
+Confirm its D1 binding and existing secrets, add the production Pages D1 and service bindings, then deploy Pages normally. Settings → Notifications should report service availability. Accept the PWA's Update prompt to load the current release.
 
 ## Retired KV setup
 
@@ -61,7 +61,7 @@ The one-minute cron is a polling interval, not a delivery guarantee. Larger subs
 
 ## User behavior
 
-My Sky offers direct subscription for its primary US city, including My Location. The permission request runs in the Subscribe gesture. Unsupported browsers offer installation help, and blocked permission or service failures lead to notification settings for recovery.
+My Sky offers direct subscription for its primary US city, including My Location. The permission request runs in the Subscribe gesture. Once enrollment succeeds, the app requests one connection-test notification, shows guidance for Settings → Notifications, and hides the enrollment card. Reconciliation and returning to the app do not send another test. A failed test remains explicit in Settings without turning off a valid subscription. Unsupported browsers offer installation help, and blocked permission or service failures lead to notification settings for recovery.
 
 New subscriptions include every alert severity and type, plus significant updates. Preference policy version 3 also gives existing subscriptions these defaults once, on both the client and the poller. The poller normalizes legacy records without waiting for an app visit. Current-version minimum severity, alert type and update filters remain optional in Settings and survive future reconciliation. Quiet hours are retired, including for legacy requests. Settings still supports following My Sky’s primary city or selecting up to five saved US places. Changes are committed with Save preferences.
 

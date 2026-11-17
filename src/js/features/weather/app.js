@@ -313,7 +313,7 @@
   let notificationSettingsReturnScroll = 0;
   let toastTimer = 0;
   const toastEl = $('weatherToast');
-  function notify(message, kind, undo) {
+  function notify(message, kind, undo, duration) {
     if (!message || !toastEl) return;
     window.clearTimeout(toastTimer);
     if(sheetIntentOpen && sheetBody) {
@@ -340,7 +340,7 @@
     toastEl.dataset.kind = kind === 'error' ? 'error' : 'success';
     toastEl.setAttribute('role', kind === 'error' ? 'alert' : 'status');
     toastEl.classList.add('is-visible');
-    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); toastEl.replaceChildren(); }, undo ? 7000 : 2800);
+    toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-visible'); toastEl.replaceChildren(); }, duration || (undo ? 7000 : 2800));
   }
   let detailReturnFocus = null;
   let detailReturnKey = null;
@@ -5732,6 +5732,8 @@
     visible: function () { return weatherMode === 'my-sky'; },
     openSettings: openNotificationSettings,
     install: openInstallHelp,
+    notify: function (message, kind) { notify(message, kind, null, 7000); },
+    focusAfter: function () { if (!document.documentElement.dataset.weatherModal) unitsBtn.focus({preventScroll:true}); },
   });
   pushApi.init();
   savedSnapshots.forEach(function (pack) {

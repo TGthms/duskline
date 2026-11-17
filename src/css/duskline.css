@@ -111,7 +111,9 @@ body.duskline .weather-detail-insight {
   z-index: 11000;
   top: calc(14px + env(safe-area-inset-top));
   left: 50%;
+  width: max-content;
   max-width: min(360px, calc(100vw - 32px));
+  box-sizing: border-box;
   padding: 12px 18px;
   border: 1px solid rgba(255,255,255,.22);
   border-radius: 16px;

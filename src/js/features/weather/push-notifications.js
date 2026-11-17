@@ -31,7 +31,8 @@
       pendingEnabled = null,
       controlId = 0,
       queuedReconcile = null,
-      settingsDraft = null;
+      settingsDraft = null,
+      enrollmentPending = false;
     let state = {
       enabled: false,
       follow: true,
@@ -204,7 +205,9 @@
         }
         if (view.subscribe) {
           const city = deps.primary();
-          view.root.hidden = !view.visible() || !city || countryCode(city) !== 'US';
+          const enrolled = state.enabled && state.synced && !enrollmentPending
+            && !['repair', 'blocked'].includes(phase) && global.Notification?.permission !== 'denied';
+          view.root.hidden = !view.visible() || !city || countryCode(city) !== 'US' || !!enrolled;
           view.caption.textContent = state.enabled && !state.follow
             ? t('places', 'Monitored places')
             : t('cityAlerts', 'Weather alerts for {place}').replace('{place}', city ? deps.cityName(city) : '');
@@ -387,7 +390,7 @@
         finishOperation();
       }
     }
-    async function enable(draft) {
+    async function enable(draft, afterEnabled) {
       if (busy) return;
       message = '';
       deliveryMessage = '';
@@ -441,6 +444,7 @@
         persist();
         await upload(sub);
         remote = await request('status', identity());
+        if (afterEnabled) await afterEnabled();
       } catch (e) {
         phase = e.message === 'denied' ? 'blocked' : 'error';
         message = errorText(e);
@@ -578,6 +582,25 @@
       views.add({ root: button, status });
       paint();
     }
+    async function sendTest() {
+      try {
+        await request('test', {
+          ...identity(),
+          message: t('testBody', 'Notifications are connected on this device.'),
+        });
+        deliveryMessage = t('testAccepted', 'Test accepted by the push service. Check your device for the notification.');
+        try {
+          remote = await request('status', identity());
+        } catch {
+          /* Transport acceptance remains true if activity refresh fails. */
+        }
+        return true;
+      } catch (e) {
+        deliveryMessage = e.message === 'delivery_failed'
+          ? t('testFailed', 'The test could not be sent. Try again.') : errorText(e);
+        return false;
+      }
+    }
     function privacyText() {
       return t(
         'privacy',
@@ -612,7 +635,18 @@
           options.install();
         } else {
           settingsDraft = null;
-          enable({ follow: true, selected: [], preferences: structuredClone(state.preferences) });
+          const startingFocus = document.activeElement;
+          enrollmentPending = true;
+          enable({ follow: true, selected: [], preferences: structuredClone(state.preferences) }, async () => {
+            const accepted = await sendTest();
+            const hint = t('manageHint', 'Manage alerts or unsubscribe in Settings → Notifications.');
+            options.notify((accepted ? '' : deliveryMessage + ' ') + hint, accepted ? undefined : 'error');
+          }).finally(() => {
+            const restoreFocus = root.contains(document.activeElement) || document.activeElement === document.body || document.activeElement === startingFocus;
+            enrollmentPending = false;
+            paint();
+            if (restoreFocus && root.hidden && options.visible()) options.focusAfter();
+          });
         }
       });
       root.append(copy, button, status, privacy);
@@ -745,24 +779,7 @@
         deliveryMessage = '';
         paint();
         try {
-          await request('test', {
-            ...identity(),
-            message: t('testBody', 'Notifications are connected on this device.'),
-          });
-          deliveryMessage = t(
-            'testAccepted',
-            'Test accepted by the push service. Check your device for the notification.',
-          );
-          try {
-            remote = await request('status', identity());
-          } catch {
-            /* Transport acceptance remains true if activity refresh fails. */
-          }
-        } catch (e) {
-          deliveryMessage =
-            e.message === 'delivery_failed'
-              ? t('testFailed', 'The test could not be sent. Try again.')
-              : errorText(e);
+          await sendTest();
         } finally {
           finishOperation();
         }

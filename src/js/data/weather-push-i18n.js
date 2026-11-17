@@ -51,7 +51,8 @@ const copy={
     "testFailed": "The test could not be sent. Try again.",
     "subscribe": "Subscribe",
     "cityAlerts": "Weather alerts for {place}",
-    "allSeverities": "All severities"
+    "allSeverities": "All severities",
+    "manageHint": "Manage alerts or unsubscribe in Settings → Notifications."
   },
   "es": {
     "title": "Notificaciones",
@@ -102,7 +103,8 @@ const copy={
     "testFailed": "No se pudo enviar la prueba. Inténtalo de nuevo.",
     "subscribe": "Suscribirse",
     "cityAlerts": "Alertas meteorológicas para {place}",
-    "allSeverities": "Todas las gravedades"
+    "allSeverities": "Todas las gravedades",
+    "manageHint": "Gestiona las alertas o cancela la suscripción en Ajustes → Notificaciones."
   },
   "fr": {
     "title": "Notifications",
@@ -153,7 +155,8 @@ const copy={
     "testFailed": "Le test n’a pas pu être envoyé. Réessayez.",
     "subscribe": "S’abonner",
     "cityAlerts": "Alertes météo pour {place}",
-    "allSeverities": "Tous les niveaux de gravité"
+    "allSeverities": "Tous les niveaux de gravité",
+    "manageHint": "Gérez les alertes ou désabonnez-vous dans Réglages → Notifications."
   },
   "de": {
     "title": "Benachrichtigungen",
@@ -204,7 +207,8 @@ const copy={
     "testFailed": "Die Testnachricht konnte nicht gesendet werden. Versuche es erneut.",
     "subscribe": "Abonnieren",
     "cityAlerts": "Wetterwarnungen für {place}",
-    "allSeverities": "Alle Schweregrade"
+    "allSeverities": "Alle Schweregrade",
+    "manageHint": "Verwalte Warnungen oder melde dich unter Einstellungen → Benachrichtigungen ab."
   },
   "it": {
     "title": "Notifiche",
@@ -255,7 +259,8 @@ const copy={
     "testFailed": "Impossibile inviare il test. Riprova.",
     "subscribe": "Iscriviti",
     "cityAlerts": "Allerte meteo per {place}",
-    "allSeverities": "Tutti i livelli di gravità"
+    "allSeverities": "Tutti i livelli di gravità",
+    "manageHint": "Gestisci gli avvisi o annulla l’iscrizione in Impostazioni → Notifiche."
   },
   "pt-BR": {
     "title": "Notificações",
@@ -306,7 +311,8 @@ const copy={
     "testFailed": "Não foi possível enviar o teste. Tente novamente.",
     "subscribe": "Inscrever-se",
     "cityAlerts": "Alertas meteorológicos para {place}",
-    "allSeverities": "Todos os níveis de gravidade"
+    "allSeverities": "Todos os níveis de gravidade",
+    "manageHint": "Gerencie alertas ou cancele a inscrição em Configurações → Notificações."
   },
   "pt-PT": {
     "title": "Notificações",
@@ -357,7 +363,8 @@ const copy={
     "testFailed": "Não foi possível enviar o teste. Tenta novamente.",
     "subscribe": "Subscrever",
     "cityAlerts": "Alertas meteorológicos para {place}",
-    "allSeverities": "Todos os níveis de gravidade"
+    "allSeverities": "Todos os níveis de gravidade",
+    "manageHint": "Gira os alertas ou cancele a subscrição em Definições → Notificações."
   },
   "nl": {
     "title": "Meldingen",
@@ -408,7 +415,8 @@ const copy={
     "testFailed": "De test kon niet worden verzonden. Probeer het opnieuw.",
     "subscribe": "Abonneren",
     "cityAlerts": "Weerwaarschuwingen voor {place}",
-    "allSeverities": "Alle ernstniveaus"
+    "allSeverities": "Alle ernstniveaus",
+    "manageHint": "Beheer waarschuwingen of meld je af via Instellingen → Meldingen."
   },
   "da": {
     "title": "Notifikationer",
@@ -459,7 +467,8 @@ const copy={
     "testFailed": "Testen kunne ikke sendes. Prøv igen.",
     "subscribe": "Abonner",
     "cityAlerts": "Vejrvarsler for {place}",
-    "allSeverities": "Alle alvorlighedsgrader"
+    "allSeverities": "Alle alvorlighedsgrader",
+    "manageHint": "Administrer varsler eller afmeld under Indstillinger → Notifikationer."
   },
   "sv": {
     "title": "Notiser",
@@ -510,7 +519,8 @@ const copy={
     "testFailed": "Testet kunde inte skickas. Försök igen.",
     "subscribe": "Prenumerera",
     "cityAlerts": "Vädervarningar för {place}",
-    "allSeverities": "Alla allvarlighetsgrader"
+    "allSeverities": "Alla allvarlighetsgrader",
+    "manageHint": "Hantera varningar eller avsluta prenumerationen i Inställningar → Notiser."
   },
   "nb": {
     "title": "Varslinger",
@@ -561,7 +571,8 @@ const copy={
     "testFailed": "Testen kunne ikke sendes. Prøv igjen.",
     "subscribe": "Abonner",
     "cityAlerts": "Værvarsler for {place}",
-    "allSeverities": "Alle alvorlighetsgrader"
+    "allSeverities": "Alle alvorlighetsgrader",
+    "manageHint": "Administrer varsler eller avslutt abonnementet i Innstillinger → Varsler."
   },
   "fi": {
     "title": "Ilmoitukset",
@@ -612,7 +623,8 @@ const copy={
     "testFailed": "Testiä ei voitu lähettää. Yritä uudelleen.",
     "subscribe": "Tilaa",
     "cityAlerts": "Säävaroitukset paikalle {place}",
-    "allSeverities": "Kaikki vakavuustasot"
+    "allSeverities": "Kaikki vakavuustasot",
+    "manageHint": "Hallitse varoituksia tai lopeta tilaus kohdassa Asetukset → Ilmoitukset."
   },
   "pl": {
     "title": "Powiadomienia",
@@ -663,7 +675,8 @@ const copy={
     "testFailed": "Nie udało się wysłać testu. Spróbuj ponownie.",
     "subscribe": "Subskrybuj",
     "cityAlerts": "Alerty pogodowe dla {place}",
-    "allSeverities": "Wszystkie poziomy zagrożenia"
+    "allSeverities": "Wszystkie poziomy zagrożenia",
+    "manageHint": "Zarządzaj alertami lub anuluj subskrypcję w Ustawienia → Powiadomienia."
   },
   "cs": {
     "title": "Oznámení",
@@ -714,7 +727,8 @@ const copy={
     "testFailed": "Test se nepodařilo odeslat. Zkuste to znovu.",
     "subscribe": "Odebírat",
     "cityAlerts": "Výstrahy počasí pro {place}",
-    "allSeverities": "Všechny stupně závažnosti"
+    "allSeverities": "Všechny stupně závažnosti",
+    "manageHint": "Spravujte výstrahy nebo zrušte odběr v Nastavení → Oznámení."
   },
   "hu": {
     "title": "Értesítések",
@@ -765,7 +779,8 @@ const copy={
     "testFailed": "A tesztet nem sikerült elküldeni. Próbáld újra.",
     "subscribe": "Feliratkozás",
     "cityAlerts": "Időjárási riasztások ehhez: {place}",
-    "allSeverities": "Minden súlyossági szint"
+    "allSeverities": "Minden súlyossági szint",
+    "manageHint": "A riasztásokat és a leiratkozást a Beállítások → Értesítések menüben kezelheted."
   },
   "ro": {
     "title": "Notificări",
@@ -816,7 +831,8 @@ const copy={
     "testFailed": "Testul nu a putut fi trimis. Încearcă din nou.",
     "subscribe": "Abonează-te",
     "cityAlerts": "Alerte meteo pentru {place}",
-    "allSeverities": "Toate nivelurile de gravitate"
+    "allSeverities": "Toate nivelurile de gravitate",
+    "manageHint": "Gestionează alertele sau dezabonează-te din Setări → Notificări."
   },
   "el": {
     "title": "Ειδοποιήσεις",
@@ -867,7 +883,8 @@ const copy={
     "testFailed": "Δεν ήταν δυνατή η αποστολή της δοκιμής. Δοκιμάστε ξανά.",
     "subscribe": "Εγγραφή",
     "cityAlerts": "Προειδοποιήσεις καιρού για {place}",
-    "allSeverities": "Όλα τα επίπεδα σοβαρότητας"
+    "allSeverities": "Όλα τα επίπεδα σοβαρότητας",
+    "manageHint": "Διαχειριστείτε τις προειδοποιήσεις ή καταργήστε την εγγραφή στις Ρυθμίσεις → Ειδοποιήσεις."
   },
   "tr": {
     "title": "Bildirimler",
@@ -918,7 +935,8 @@ const copy={
     "testFailed": "Test gönderilemedi. Tekrar deneyin.",
     "subscribe": "Abone ol",
     "cityAlerts": "{place} için hava durumu uyarıları",
-    "allSeverities": "Tüm önem düzeyleri"
+    "allSeverities": "Tüm önem düzeyleri",
+    "manageHint": "Ayarlar → Bildirimler bölümünden uyarıları yönetin veya abonelikten çıkın."
   },
   "ru": {
     "title": "Уведомления",
@@ -969,7 +987,8 @@ const copy={
     "testFailed": "Не удалось отправить тест. Повторите попытку.",
     "subscribe": "Подписаться",
     "cityAlerts": "Погодные предупреждения для {place}",
-    "allSeverities": "Все уровни опасности"
+    "allSeverities": "Все уровни опасности",
+    "manageHint": "Настройте предупреждения или отмените подписку в разделе Настройки → Уведомления."
   },
   "uk": {
     "title": "Сповіщення",
@@ -1020,7 +1039,8 @@ const copy={
     "testFailed": "Не вдалося надіслати тест. Спробуйте ще раз.",
     "subscribe": "Підписатися",
     "cityAlerts": "Погодні попередження для {place}",
-    "allSeverities": "Усі рівні небезпеки"
+    "allSeverities": "Усі рівні небезпеки",
+    "manageHint": "Керуйте попередженнями або скасуйте підписку в Налаштування → Сповіщення."
   },
   "ar": {
     "title": "الإشعارات",
@@ -1071,7 +1091,8 @@ const copy={
     "testFailed": "تعذر إرسال الاختبار. حاول مرة أخرى.",
     "subscribe": "اشتراك",
     "cityAlerts": "تنبيهات الطقس في {place}",
-    "allSeverities": "جميع درجات الخطورة"
+    "allSeverities": "جميع درجات الخطورة",
+    "manageHint": "يمكنك إدارة التنبيهات أو إلغاء الاشتراك من الإعدادات، ثم الإشعارات."
   },
   "he": {
     "title": "התראות",
@@ -1122,7 +1143,8 @@ const copy={
     "testFailed": "לא ניתן לשלוח את הבדיקה. נסו שוב.",
     "subscribe": "הרשמה",
     "cityAlerts": "התרעות מזג אוויר עבור {place}",
-    "allSeverities": "כל דרגות החומרה"
+    "allSeverities": "כל דרגות החומרה",
+    "manageHint": "אפשר לנהל התרעות או לבטל הרשמה בהגדרות, תחת התראות."
   },
   "hi": {
     "title": "सूचनाएँ",
@@ -1173,7 +1195,8 @@ const copy={
     "testFailed": "परीक्षण भेजा नहीं जा सका। फिर से कोशिश करें।",
     "subscribe": "सदस्यता लें",
     "cityAlerts": "{place} के लिए मौसम की चेतावनियाँ",
-    "allSeverities": "गंभीरता के सभी स्तर"
+    "allSeverities": "गंभीरता के सभी स्तर",
+    "manageHint": "सेटिंग्स → सूचनाएँ में चेतावनियाँ प्रबंधित करें या सदस्यता रद्द करें।"
   },
   "th": {
     "title": "การแจ้งเตือน",
@@ -1224,7 +1247,8 @@ const copy={
     "testFailed": "ส่งการทดสอบไม่สำเร็จ โปรดลองอีกครั้ง",
     "subscribe": "สมัครรับการแจ้งเตือน",
     "cityAlerts": "การแจ้งเตือนสภาพอากาศสำหรับ {place}",
-    "allSeverities": "ทุกระดับความรุนแรง"
+    "allSeverities": "ทุกระดับความรุนแรง",
+    "manageHint": "จัดการการแจ้งเตือนหรือยกเลิกการสมัครได้ที่ การตั้งค่า → การแจ้งเตือน"
   },
   "vi": {
     "title": "Thông báo",
@@ -1275,7 +1299,8 @@ const copy={
     "testFailed": "Không thể gửi thông báo thử. Hãy thử lại.",
     "subscribe": "Đăng ký",
     "cityAlerts": "Cảnh báo thời tiết cho {place}",
-    "allSeverities": "Mọi mức độ nghiêm trọng"
+    "allSeverities": "Mọi mức độ nghiêm trọng",
+    "manageHint": "Quản lý cảnh báo hoặc hủy đăng ký trong Cài đặt → Thông báo."
   },
   "id": {
     "title": "Notifikasi",
@@ -1326,7 +1351,8 @@ const copy={
     "testFailed": "Uji coba tidak dapat dikirim. Coba lagi.",
     "subscribe": "Berlangganan",
     "cityAlerts": "Peringatan cuaca untuk {place}",
-    "allSeverities": "Semua tingkat keparahan"
+    "allSeverities": "Semua tingkat keparahan",
+    "manageHint": "Kelola peringatan atau berhenti berlangganan di Pengaturan → Notifikasi."
   },
   "ja": {
     "title": "通知",
@@ -1377,7 +1403,8 @@ const copy={
     "testFailed": "テストを送信できませんでした。もう一度お試しください。",
     "subscribe": "通知を受け取る",
     "cityAlerts": "{place}の気象警報",
-    "allSeverities": "すべての重大度"
+    "allSeverities": "すべての重大度",
+    "manageHint": "設定 → 通知で、警報の設定や通知の解除ができます。"
   },
   "ko": {
     "title": "알림",
@@ -1428,7 +1455,8 @@ const copy={
     "testFailed": "테스트를 보내지 못했습니다. 다시 시도해 주세요.",
     "subscribe": "구독",
     "cityAlerts": "{place} 기상 경보",
-    "allSeverities": "모든 심각도"
+    "allSeverities": "모든 심각도",
+    "manageHint": "설정 → 알림에서 경보를 관리하거나 구독을 해지할 수 있습니다."
   },
   "zh": {
     "title": "通知",
@@ -1479,7 +1507,8 @@ const copy={
     "testFailed": "测试未能发送。请重试。",
     "subscribe": "订阅",
     "cityAlerts": "{place}的天气预警",
-    "allSeverities": "所有严重程度"
+    "allSeverities": "所有严重程度",
+    "manageHint": "可在“设置 → 通知”中管理预警或取消订阅。"
   },
   "zh-TW": {
     "title": "通知",
@@ -1530,7 +1559,8 @@ const copy={
     "testFailed": "無法傳送測試通知。請再試一次。",
     "subscribe": "訂閱",
     "cityAlerts": "{place}的天氣警報",
-    "allSeverities": "所有嚴重程度"
+    "allSeverities": "所有嚴重程度",
+    "manageHint": "可在「設定 → 通知」中管理警報或取消訂閱。"
   }
 };
 for(const [code,strings]of Object.entries(copy)){global.I18N[code]=global.I18N[code]||{};for(const [key,value]of Object.entries(strings))global.I18N[code]['weather.push.'+key]=value;}
