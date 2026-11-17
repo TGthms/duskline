@@ -146,21 +146,17 @@
       if (deps.syncChrome) deps.syncChrome();
       if (typeof deps.onClose === 'function') deps.onClose();
     }
-    function pagePresentation() { return !!document.body.dataset.mobileShell; }
     function syncPresentation() {
       if (!root || !isOpen) return;
-      const page = pagePresentation();
-      root.dataset.presentation = page ? 'page' : 'dialog';
-      root.setAttribute('role', page ? 'region' : 'dialog');
-      if (page) root.removeAttribute('aria-modal'); else root.setAttribute('aria-modal','true');
-      const peers = page ? ['navbar','weatherMobileNav'].map(id=>document.getElementById(id)).filter(Boolean) : [];
-      W.modal.open('map',root,{peers});
+      root.dataset.presentation = 'dialog';
+      root.setAttribute('role', 'dialog');
+      root.setAttribute('aria-modal','true');
+      W.modal.open('map',root);
       if (deps.syncChrome) deps.syncChrome();
       if (map) map.resize();
     }
     function focusMap() {
-      const target = pagePresentation() ? layerHost && layerHost.querySelector('button') : closeButton;
-      if (target) target.focus({preventScroll:true});
+      if (closeButton) closeButton.focus({preventScroll:true});
     }
     function hideContextMenu(restoreFocus) {
       if (!contextMenu || contextMenu.hidden) return;
@@ -208,10 +204,20 @@
       }
       unlockBackground();
       setStatus('', false);
-      if (returnFocus && returnFocus.isConnected) {
-        try { returnFocus.focus({ preventScroll: true }); } catch (e) { returnFocus.focus(); }
-      }
+      const target = returnFocus, generation = mapLoadGeneration;
       returnFocus = null;
+      let frames = 0, visibleFrames = 0;
+      // Motion preferences can briefly keep the page hidden after unlocking it.
+      function restoreFocus() {
+        if (isOpen || generation !== mapLoadGeneration || !target?.isConnected || target.closest('[inert]')) return;
+        let visible = true;
+        for (let element = target; element; element = element.parentElement)
+          if (getComputedStyle(element).visibility !== 'visible') { visible = false; break; }
+        visibleFrames = visible ? visibleFrames + 1 : 0;
+        if (visibleFrames >= 2) target.focus({preventScroll:true});
+        if (document.activeElement !== target && ++frames < 12) requestAnimationFrame(restoreFocus);
+      }
+      restoreFocus();
     }
     function focusableItems() {
       return root ? Array.prototype.slice.call(root.querySelectorAll(
@@ -243,7 +249,7 @@
         }
         return;
       }
-      if (event.key !== 'Tab' || pagePresentation()) return;
+      if (event.key !== 'Tab') return;
       var focusable = focusableItems();
       if (!focusable.length) return;
       var first = focusable[0];

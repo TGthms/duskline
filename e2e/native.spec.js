@@ -34,7 +34,7 @@ test('modal surfaces isolate the page and restore nested contexts @core',async({
   await page.locator('#weatherDetailBack').click();await isolated(false);
   await page.locator('#weatherMapOpen').click();
   await expect(main).toHaveJSProperty('inert',true);
-  await expect(header).toHaveJSProperty('inert',!await page.locator('body').getAttribute('data-mobile-shell'));
+  await expect(header).toHaveJSProperty('inert',true);
   await closeMap(page);await isolated(false);
   await expect(page.locator('#weatherMapOpen')).toBeFocused();
   await page.locator('#weatherMapOpen').click();await expect(page.locator('#weatherMap')).toHaveJSProperty('inert',false);
@@ -87,18 +87,19 @@ test('primary alert checks can retry without interrupting the forecast',async({p
 test('phone navigation stays reachable and Settings owns the language picker @core',async({page},testInfo)=>{
   await page.setViewportSize({width:430,height:932});await personalSky(page);await page.goto('/');
   await expect(page.locator('#weatherHome .weather-home-temperature')).toBeVisible();
-  const nav=page.locator('#weatherMobileNav');await expect(nav).toBeVisible();
+  const nav=page.locator('.weather-toolbar-actions');await expect(nav).toBeVisible();
+  await expect(page.locator('#weatherMobileNav')).toHaveCount(0);
   await page.screenshot({path:testInfo.outputPath('phone-home.png'),fullPage:true});
-  expect((await page.locator('#weatherHome').boundingBox()).y).toBeLessThan(280);
+  expect((await page.locator('#weatherHome').boundingBox()).y).toBeLessThan(360);
   await expect(page.locator('#dusklineLanguage')).toBeHidden();
-  await page.locator('#weatherUnitsBtn').click();await expect(nav).toBeHidden();
+  await page.locator('#weatherUnitsBtn').click();await expect(page.locator('#main')).toHaveJSProperty('inert',true);
   await page.locator('[data-shell-language]').selectOption('he');await expect(page.locator('html')).toHaveAttribute('dir','rtl');
   await page.locator('#weatherSheetClose').click();await expect(nav).toBeVisible();
   await page.setViewportSize({width:320,height:568});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.locator('#weatherUnitsBtn').click();await page.locator('[data-shell-language]').selectOption('en');
   await page.locator('#weatherSheetClose').click();
-  await page.setViewportSize({width:1440,height:1000});await expect(nav).toBeHidden();
+  await page.setViewportSize({width:1440,height:1000});await expect(nav).toBeVisible();
   await expect(page.locator('#dusklineLanguage')).toBeVisible();
   await expect(page.locator('.weather-toolbar-actions #weatherMapOpen')).toBeVisible();
   await page.locator('#weatherUnitsBtn').click();await expect(page.locator('[data-shell-language]')).toHaveValue('en');
@@ -168,7 +169,7 @@ for (const locales of [['fr','de','ja'],['ar','he']]) test('representative langu
     await expect(page.locator('html')).toHaveAttribute('dir',['ar','he'].includes(code)?'rtl':'ltr');
     await expect(page.locator('#weatherSheetTitle')).not.toHaveText('Settings');
     await page.locator('#weatherSheetClose').click();
-    await expect(page.locator('#weatherMobileNav')).toBeVisible();
+    await expect(page.locator('.weather-toolbar-actions')).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.locator('#weatherHome [data-home-hour]').first().click();
     await expect(page.locator('#weatherSheetBody .weather-chart-wrap').first()).toBeVisible();
@@ -197,56 +198,36 @@ test('manual update checks distinguish failure from a current installation',asyn
   await expect(updates).toContainText('duskline is up to date');
 });
 
-test('phone Map shares navigation and Settings while keeping forecast returns intact',async({page})=>{
+test('phone Map isolates its controls and restores nested forecast and page context',async({page})=>{
  await page.setViewportSize({width:390,height:844});await personalSky(page);await page.goto('/');
  await expect(page.locator('#weatherHome .weather-daily-row')).toHaveCount(5);
- await page.evaluate(()=>window.scrollTo(0,180));const previous=await page.evaluate(()=>scrollY);
- const nav=page.locator('#weatherMobileNav'),map=page.locator('#weatherMap'),tab=page.locator('#weatherMapOpen');
- await tab.click();await expect(map).toHaveAttribute('role','region');await expect(map).not.toHaveAttribute('aria-modal');
- await expect(nav).toBeVisible();await expect(nav).toHaveJSProperty('inert',false);
- await expect(page.locator('#navbar')).toHaveJSProperty('inert',false);
+ await page.evaluate(()=>window.scrollTo(0,80));const previous=await page.evaluate(()=>scrollY);expect(previous).toBeGreaterThan(0);
+ const map=page.locator('#weatherMap'),button=page.locator('#weatherMapOpen');
+ await button.click();await expect(map).toHaveAttribute('role','dialog');await expect(map).toHaveAttribute('aria-modal','true');
+ await expect(page.locator('#navbar')).toHaveJSProperty('inert',true);
  await expect(page.locator('#main')).toHaveJSProperty('inert',true);
- await expect(tab).toHaveAttribute('aria-pressed','true');
- await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content','#0a1727');
- await expect(page.locator('[data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed','false');
- await expect(page.locator('#weatherMapClose')).toBeHidden();
- await expect(tab).not.toHaveCSS('background-color','rgba(0, 0, 0, 0)');
- await page.locator('#weatherUnitsBtn').click();await expect(nav).toBeHidden();await expect(map).toHaveJSProperty('inert',true);
- await page.locator('.weather-push-summary').click();await page.goBack();
- await expect(page.locator('.weather-settings-units')).toBeVisible();await page.goBack();
- await expect(nav).toBeVisible();await expect(map).toHaveJSProperty('inert',false);
- await expect(page.locator('#weatherUnitsBtn')).toBeFocused();
+ await expect(page.locator('#weatherMapClose')).toBeVisible();
  await page.locator('#weatherMapPlacesSummary').click();
  await page.locator('#weatherMapPlaces .weather-map-place[data-place-key="48.85,2.35"]').click();
- await expect(page.locator('#weatherDetail')).toBeVisible();await expect(nav).toBeHidden();
- await page.locator('#weatherDetailBack').click();await expect(map).toBeVisible();await expect(tab).toHaveAttribute('aria-pressed','true');
- await page.locator('[data-weather-mode="my-sky"]').click();await expect(map).toBeHidden();
- await expect(page.locator('[data-weather-mode="my-sky"]')).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('#weatherDetail')).toBeVisible();await expect(map).toHaveJSProperty('inert',true);
+ await page.locator('#weatherDetailBack').click();await expect(map).toBeVisible();await expect(map).toHaveJSProperty('inert',false);
+ await page.goBack();await expect(map).toBeHidden();await expect(button).toBeFocused();
+ await expect(page.locator('#main')).toHaveJSProperty('inert',false);
  await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(previous);
 });
 
-test('phone Map survives rapid tab changes and adapts to desktop presentation',async({page})=>{
+test('Map preserves dialog ownership across phone and desktop resizing',async({page})=>{
  await page.setViewportSize({width:320,height:568});await personalSky(page);await page.goto('/');
- const map=page.locator('#weatherMap'),tab=page.locator('#weatherMapOpen');
- await tab.click();
- const stage=await page.locator('.weather-map-stage').boundingBox(),footer=await page.locator('.weather-map-footer').boundingBox(),nav=await page.locator('#weatherMobileNav').boundingBox();
- expect(stage.height).toBeGreaterThanOrEqual(140);expect(footer.y+footer.height).toBeLessThanOrEqual(nav.y);
- await page.evaluate(()=>{
-  document.querySelector('[data-weather-mode="horizon"]').click();
-  document.getElementById('weatherMapOpen').click();
-  document.getElementById('weatherUnitsBtn').click();
- });
- await expect(page.locator('#weatherSheet')).toBeVisible();
- await expect.poll(()=>page.evaluate(()=>history.state?.duskline?.sheet?.kind)).toBe('units');
- await page.goBack();await expect(page.locator('#weatherSheet')).toBeHidden();
- await expect(map).toBeVisible();await expect.poll(()=>page.evaluate(()=>!!history.state?.duskline?.map)).toBe(true);
- await page.goBack();await expect(map).toBeHidden();
- await expect(page.locator('[data-weather-mode="horizon"]')).toHaveAttribute('aria-pressed','true');
- await tab.click();await page.setViewportSize({width:1440,height:1000});
- await expect(map).toHaveAttribute('role','dialog');await expect(map).toHaveAttribute('aria-modal','true');
- await expect(page.locator('#weatherMobileNav')).toBeHidden();await expect(page.locator('#navbar')).toHaveJSProperty('inert',true);
- await expect(page.locator('#weatherMapClose')).toBeVisible();
- await page.setViewportSize({width:390,height:844});await expect(map).toHaveAttribute('role','region');
- await expect(page.locator('#navbar')).toHaveJSProperty('inert',false);await expect(tab).toHaveAttribute('aria-pressed','true');
- await page.locator('[data-weather-mode="my-sky"]').click();await expect(map).toBeHidden();
+ const map=page.locator('#weatherMap'),button=page.locator('#weatherMapOpen');
+ await button.click();
+ for(const size of [{width:320,height:568},{width:844,height:390},{width:1440,height:1000},{width:390,height:844}]) {
+  await page.setViewportSize(size);
+  await expect(map).toHaveAttribute('role','dialog');await expect(map).toHaveAttribute('aria-modal','true');
+  await expect(page.locator('#navbar')).toHaveJSProperty('inert',true);
+  await expect(page.locator('#weatherMapClose')).toBeVisible();
+  const stage=await page.locator('.weather-map-stage').boundingBox(),footer=await page.locator('.weather-map-footer').boundingBox();
+  expect(stage.height).toBeGreaterThanOrEqual(140);expect(footer.y+footer.height).toBeLessThanOrEqual(size.height);
+ }
+ await page.goBack();await expect(map).toBeHidden();await expect(button).toBeFocused();
+ await expect(page.locator('#navbar')).toHaveJSProperty('inert',false);
 });

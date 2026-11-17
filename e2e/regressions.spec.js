@@ -432,7 +432,7 @@ test('dragging a mobile sheet closed returns focus to its opener', async ({page}
 test('Units sheet locks background scrolling and restores the previous page position @core', async ({page})=>{
   await page.setViewportSize({width:390,height:844});await stubWeather(page);await page.goto('/');
   await expect(page.locator('#weatherList .weather-row').first()).toBeVisible();
-  await page.evaluate(()=>window.scrollTo({top:320,behavior:'instant'}));
+  await page.evaluate(()=>window.scrollTo({top:80,behavior:'instant'}));
   const before=await page.evaluate(()=>({scroll:scrollY,top:document.body.getBoundingClientRect().top}));
   expect(before.scroll).toBeGreaterThan(0);
   await page.locator('#weatherUnitsBtn').click();
@@ -842,8 +842,7 @@ test('weather map exposes the active surface with Lucide controls and selectable
   await expect(openMap).toBeVisible();
   await openMap.click();
 
-  const phone=!!await page.locator('body').getAttribute('data-mobile-shell');
-  const dialog = page.getByRole(phone?'region':'dialog', { name: 'Weather map' });
+  const dialog = page.getByRole('dialog', { name: 'Weather map' });
   await expect(dialog).toBeVisible({ timeout: 5000 });
   expect(await page.locator('html').evaluate(el => el.style.overflow)).toBe('hidden');
   expect(await page.locator('body').evaluate(el => el.style.overflow)).toBe('hidden');
@@ -1690,9 +1689,8 @@ test('search and actions align, all controls keep one row, and the gear matches 
     await page.setViewportSize({width,height:900});
     const layout=await page.locator('.weather-toolbar').evaluate(toolbar=>{
       const search=toolbar.querySelector('.weather-search-wrap').getBoundingClientRect();
-      const mobile=!!document.body.dataset.mobileShell;
-      const controls=(mobile?[...document.querySelectorAll('#weatherMobileNav button')]:[...toolbar.querySelector('.weather-toolbar-actions').children].filter(el=>!el.hidden)).map(el=>el.getBoundingClientRect());
-      return {search:search.x,start:mobile?search.x:controls[0].x,centers:controls.map(b=>b.y+b.height/2),right:Math.max(...controls.map(b=>b.right)),page:document.documentElement.scrollWidth};
+      const controls=[...toolbar.querySelector('.weather-toolbar-actions').children].filter(el=>!el.hidden).map(el=>el.getBoundingClientRect());
+      return {search:search.x,start:controls[0].x,centers:controls.map(b=>b.y+b.height/2),right:Math.max(...controls.map(b=>b.right)),page:document.documentElement.scrollWidth};
     });
     expect(Math.abs(layout.search-layout.start)).toBeLessThan(1);
     expect(Math.max(...layout.centers)-Math.min(...layout.centers)).toBeLessThan(1);

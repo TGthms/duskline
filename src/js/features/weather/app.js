@@ -1534,7 +1534,7 @@
   }
 
   wireRemainingModules();
-  const shellApi = W.factories.shell({t,mapOpen:()=>mapApi && mapApi.isOpen(),layoutChanged:()=>{if(mapApi) mapApi.syncPresentation();}});
+  const shellApi = W.factories.shell({t,layoutChanged:()=>{if(mapApi) mapApi.syncPresentation();}});
   const primaryAlertsApi = W.factories.primaryAlerts({
     t,escapeHtml,current:alertsApi.currentAlerts,ensure:alertsApi.ensureAlerts,
     repaint:function () { if (productApi) productApi.render(); },

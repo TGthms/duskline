@@ -42,7 +42,7 @@
     if(toast && toast.parentElement!==toastParent) toastParent.append(toast);
     if (!top) { delete document.documentElement.dataset.weatherModal; return; }
     document.documentElement.dataset.weatherModal = top.id;
-    const background = ['navbar','main','dusklineFooter','weatherMobileNav','weatherToast','weatherUpdateToast']
+    const background = ['navbar','main','dusklineFooter','weatherToast','weatherUpdateToast']
       .map(id => document.getElementById(id)).concat(stack.slice(0,-1).map(item => item.element));
     background.forEach(element => {
       if (!element || element === top.element || element.contains(top.element) || top.element.contains(element) || top.peers.includes(element) || saved.has(element)) return;

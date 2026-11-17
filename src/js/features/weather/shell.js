@@ -8,59 +8,25 @@
     let updateHost;
     const updates=global.DusklineUpdates;
     const media = matchMedia('(max-width:640px) and (min-height:500px)');
-    const headerActions = document.querySelector('#navbar .nav-actions');
-    const nav = document.createElement('nav');
-    nav.id='weatherMobileNav';nav.className='weather-mobile-nav';
-    nav.setAttribute('aria-label',t('weather.weatherView','Weather view'));
-    document.body.append(nav);
-    const controls = ['weatherModeSwitch','weatherMapOpen','weatherLocate','weatherRefresh','weatherUnitsBtn'].map(id=>{
-      const element=document.getElementById(id),anchor=document.createComment('');
-      element.before(anchor);return {element,anchor};
-    });
     function syncView() {
-      const mapOpen=!!(media.matches && deps.mapOpen && deps.mapOpen());
       document.querySelectorAll('[data-weather-mode]').forEach(button=>{
-        button.setAttribute('aria-pressed',String(!mapOpen && button.dataset.weatherMode===document.body.dataset.weatherView));
+        button.setAttribute('aria-pressed',String(button.dataset.weatherMode===document.body.dataset.weatherView));
       });
-      const mapButton=document.getElementById('weatherMapOpen');
-      if (media.matches) mapButton.setAttribute('aria-pressed',String(mapOpen));
-      else mapButton.removeAttribute('aria-pressed');
     }
     function placeLabel() {
       const button=document.getElementById('weatherManagePlaces');
       if(button) button.textContent=media.matches?t('weather.savedPlaces','Saved places'):t('weather.rearrange','Rearrange saved places');
     }
     function layout() {
-      const focused=document.activeElement;
       if (media.matches) document.body.dataset.mobileShell='true';
       else delete document.body.dataset.mobileShell;
-      controls.forEach(({element,anchor},index)=>{
-        if (media.matches) (index<2?nav:headerActions).append(element);
-        else anchor.after(element);
-      });
-      nav.hidden=!media.matches;
       placeLabel();
       if (deps.layoutChanged) deps.layoutChanged();
       syncView();
       if (W.modal) W.modal.sync();
-      if (focused && focused.isConnected && !focused.closest('[inert]') && controls.some(row=>row.element.contains(focused))) focused.focus({preventScroll:true});
     }
     media.addEventListener('change',layout);layout();
-    function keyboardChanged() {
-      const viewport=global.visualViewport;
-      const editing=document.activeElement && document.activeElement.matches('input,textarea,[contenteditable="true"]');
-      document.body.toggleAttribute('data-soft-keyboard',!!(media.matches && editing && viewport && innerHeight-viewport.height>150));
-    }
-    if(global.visualViewport) global.visualViewport.addEventListener('resize',keyboardChanged);
-    document.addEventListener('focusin',keyboardChanged);document.addEventListener('focusout',keyboardChanged);
-    nav.addEventListener('keydown',function (event) {
-      const buttons=Array.from(nav.querySelectorAll('button'));
-      const index=buttons.indexOf(document.activeElement),direction=document.documentElement.dir==='rtl'?-1:1;
-      const step=event.key==='ArrowRight'?direction:event.key==='ArrowLeft'?-direction:0;
-      if(index>=0 && step) {event.preventDefault();buttons[(index+step+buttons.length)%buttons.length].focus();}
-    });
     document.addEventListener('duskline:prefs',function () {
-      nav.setAttribute('aria-label',t('weather.weatherView','Weather view'));
       placeLabel();
       document.querySelectorAll('[data-shell-language]').forEach(select=>{select.value=document.documentElement.dataset.lang || 'en';});
       renderUpdates();
