@@ -1,20 +1,20 @@
 'use strict';
-/* Optional background alerts. The settings renderer owns the DOM; this factory
-   owns permission, browser/server reconciliation and durable retry intent. */
+/* Background-alert views share permission, subscription ownership and retry intent. */
 (function (global) {
   const W = global.DusklineWeather;
   if (!W) return;
   W.factories.pushNotifications = function (deps) {
     const KEY = 'duskline-push-settings-v2';
     const defaults = {
-      severity: 'severe',
+      version: 3,
+      severity: 'all',
       categories: ['all'],
       updates: true,
       quiet: {
         enabled: false,
         start: '22:00',
         end: '07:00',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        timeZone: 'UTC',
         overrideExtreme: true,
       },
     };
@@ -50,8 +50,8 @@
           ...saved,
           preferences: {
             ...defaults,
-            ...saved.preferences,
-            quiet: { ...defaults.quiet, ...saved.preferences?.quiet },
+            ...(saved.preferences?.version === 3 ? saved.preferences : {}),
+            quiet: { ...defaults.quiet },
           },
         };
     } catch {}
@@ -145,19 +145,7 @@
           : all.filter((p) => draft.selected.includes(key(p)));
       return [...new Map(wanted.map((p) => [key(p), p])).values()];
     }
-    function validateQuiet(draft) {
-      const q = draft.preferences.quiet;
-      try {
-        if (!q.timeZone) throw Error();
-        new Intl.DateTimeFormat('en', { timeZone: q.timeZone });
-      } catch {
-        throw Error('invalid_preferences');
-      }
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(q.start) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(q.end))
-        throw Error('invalid_preferences');
-    }
     function desired(draft = state) {
-      validateQuiet(draft);
       const all = selected(draft);
       if (!all.length) throw Error('choose');
       if (all.some((p) => countryCode(p) !== 'US')) throw Error('coverage');
@@ -188,7 +176,6 @@
           rate_limited: t('rateLimit', 'Please wait before trying again.'),
           ownership_conflict: t('repair', 'Reconnect notifications.'),
           timeout: t('error', 'Could not connect. Your changes will retry when you reconnect.'),
-          invalid_preferences: t('invalid', 'Check the quiet hours and time zone.'),
           storage: t('storage', 'Allow local storage to save notification settings.'),
         }[code] || t('error', 'Could not connect. Your changes will retry when you reconnect.')
       );
@@ -215,7 +202,26 @@
           views.delete(view);
           continue;
         }
+        if (view.subscribe) {
+          const city = deps.primary();
+          view.root.hidden = !view.visible() || !city || countryCode(city) !== 'US';
+          view.caption.textContent = state.enabled && !state.follow
+            ? t('places', 'Monitored places')
+            : t('cityAlerts', 'Weather alerts for {place}').replace('{place}', city ? deps.cityName(city) : '');
+          view.subscribe.textContent = state.enabled
+            ? t('title', 'Notifications')
+            : !supported()
+              ? deps.t('weather.install', 'Install duskline')
+              : t('subscribe', 'Subscribe');
+          view.status.hidden = !state.enabled && phase === 'off' && !busy && !message;
+        }
         view.status.textContent = statusText();
+        if (view.subscribe) {
+          view.root.querySelector('strong').textContent = t('enable', 'Weather notifications');
+          view.root.querySelector('summary').textContent = deps.t('legal.privacyLink', 'Privacy Policy');
+          view.disclosure.firstChild.textContent = privacyText();
+          view.disclosure.querySelector('a').textContent = deps.t('legal.privacyLink', 'Privacy Policy');
+        }
         view.root.setAttribute('aria-busy', String(busy));
         view.root.querySelectorAll('button,input,select').forEach((e) => {
           e.disabled = busy || !!e.dataset.unsupported;
@@ -224,6 +230,7 @@
           view.toggle.checked = pendingEnabled === null ? state.enabled : pendingEnabled;
           view.toggle.disabled = busy || !supported() || !config?.available;
         }
+        if (view.subscribe) view.subscribe.disabled = busy;
         if (view.test) view.test.disabled = busy || phase !== 'active';
         if (view.retry)
           view.retry.hidden =
@@ -485,7 +492,6 @@
       if (busy) return;
       deliveryMessage = '';
       try {
-        validateQuiet(draft);
         if (state.enabled) desired(draft);
         state = { ...state, ...structuredClone(draft) };
         persist();
@@ -572,6 +578,47 @@
       views.add({ root: button, status });
       paint();
     }
+    function privacyText() {
+      return t(
+        'privacy',
+        'Enabling notifications stores your selected places and subscription securely on duskline’s server for 90 days, renewed when you use the app. Turning notifications off removes the server record.',
+      );
+    }
+    function privacyDisclosure() {
+      const disclosure = element('p', 'wx-sheet-context', privacyText());
+      disclosure.id = 'weatherPushPrivacy' + ++controlId;
+      const link = element('a', '', deps.t('legal.privacyLink', 'Privacy Policy'));
+      link.href = 'privacy.html';
+      disclosure.append(' ', link);
+      return disclosure;
+    }
+    function mountMySky(root, options) {
+      const copy = element('div', 'weather-push-enroll-copy'),
+        caption = element('p'),
+        button = element('button', 'weather-btn weather-push-subscribe'),
+        status = element('p', 'weather-push-enroll-status');
+      copy.append(element('strong', '', t('enable', 'Weather notifications')), caption);
+      button.type = 'button';
+      status.id = 'weatherPushEnrollStatus';
+      status.setAttribute('role', 'status');
+      const privacy = element('details', 'weather-push-enroll-privacy'),
+        disclosure = privacyDisclosure();
+      privacy.append(element('summary', '', deps.t('legal.privacyLink', 'Privacy Policy')), disclosure);
+      button.setAttribute('aria-describedby', status.id + ' ' + disclosure.id);
+      button.addEventListener('click', () => {
+        if (state.enabled || phase === 'blocked' || phase === 'unavailable') {
+          options.openSettings();
+        } else if (!supported()) {
+          options.install();
+        } else {
+          settingsDraft = null;
+          enable({ follow: true, selected: [], preferences: structuredClone(state.preferences) });
+        }
+      });
+      root.append(copy, button, status, privacy);
+      views.add({ root, status, caption, subscribe: button, disclosure, visible: options.visible });
+      paint();
+    }
     function mountSettings(root) {
       const draft =
         settingsDraft ||
@@ -596,19 +643,8 @@
       );
       toggle.className = 'weather-push-toggle';
       overview.append(status);
-      const disclosure = element(
-        'p',
-        'wx-sheet-context',
-        t(
-          'privacy',
-          'Enabling notifications stores your selected places and subscription securely on duskline’s server for 90 days, renewed when you use the app. Turning notifications off removes the server record.',
-        ),
-      );
-      disclosure.id = 'weatherPushPrivacy';
+      const disclosure = privacyDisclosure();
       toggle.setAttribute('aria-describedby', disclosure.id);
-      const link = element('a', '', deps.t('legal.privacyLink', 'Privacy Policy'));
-      link.href = 'privacy.html';
-      disclosure.append(' ', link);
       const places = section(container, t('places', 'Monitored places'));
       check(places, t('follow', 'Follow My Sky primary city'), draft.follow, (v) => {
         draft.follow = v;
@@ -658,6 +694,7 @@
         rules,
         t('severity', 'Minimum severity'),
         [
+          ['all', t('allSeverities', 'All severities')],
           ['moderate', t('moderate', 'Moderate and above')],
           ['severe', t('severe', 'Severe and extreme')],
           ['extreme', t('extreme', 'Extreme only')],
@@ -685,58 +722,6 @@
         t('updates', 'Include significant updates'),
         draft.preferences.updates,
         (v) => (draft.preferences.updates = v),
-      );
-      const quiet = section(container, t('quiet', 'Quiet hours'));
-      check(
-        quiet,
-        t('quietEnable', 'Pause notifications during quiet hours'),
-        draft.preferences.quiet.enabled,
-        (v) => (draft.preferences.quiet.enabled = v),
-      );
-      const times = element('div', 'weather-push-times');
-      quiet.append(times);
-      for (const [key, label] of [
-        ['start', t('from', 'From')],
-        ['end', t('to', 'To')],
-      ]) {
-        const input = element('input');
-        input.type = 'time';
-        input.value = draft.preferences.quiet[key];
-        input.required = true;
-        input.addEventListener('change', () => (draft.preferences.quiet[key] = input.value));
-        labelled(times, label, input);
-      }
-      const zone = element('input');
-      zone.type = 'text';
-      zone.value = draft.preferences.quiet.timeZone;
-      zone.maxLength = 80;
-      zone.autocomplete = 'off';
-      zone.setAttribute('list', 'weatherPushTimeZones');
-      const zones = element('datalist');
-      zones.id = 'weatherPushTimeZones';
-      const timeZones = [
-        'UTC',
-        draft.preferences.quiet.timeZone,
-        ...(Intl.supportedValuesOf
-          ? Intl.supportedValuesOf('timeZone')
-          : known()
-              .map((p) => p.tz)
-              .filter(Boolean)),
-      ];
-      for (const value of new Set(timeZones)) {
-        const option = element('option');
-        option.value = value;
-        option.label = value.replace(/_/g, ' ');
-        zones.append(option);
-      }
-      quiet.append(zones);
-      zone.addEventListener('change', () => (draft.preferences.quiet.timeZone = zone.value.trim()));
-      labelled(quiet, t('timezone', 'Time zone'), zone);
-      check(
-        quiet,
-        t('override', 'Allow extreme alerts during quiet hours'),
-        draft.preferences.quiet.overrideExtreme,
-        (v) => (draft.preferences.quiet.overrideExtreme = v),
       );
       const actions = element('div', 'weather-push-actions'),
         saveButton = element('button', 'weather-btn', t('save', 'Save preferences')),
@@ -819,6 +804,8 @@
     return {
       init,
       mountSummary,
+      mountMySky,
+      refreshViews: paint,
       mountSettings,
       reconcile,
       placesChanged,

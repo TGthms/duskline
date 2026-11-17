@@ -2,7 +2,8 @@
 export const RETENTION_MS = 90 * 86400000;
 export const MAX_PLACES = 5;
 export const DEFAULTS = {
-  severity: 'severe',
+  version: 3,
+  severity: 'all',
   categories: ['all'],
   updates: true,
   quiet: { enabled: false, start: '22:00', end: '07:00', timeZone: 'UTC', overrideExtreme: true },
@@ -112,34 +113,26 @@ export function places(value) {
   });
 }
 export function preferences(value = {}) {
-  const v = { ...DEFAULTS, ...value, quiet: { ...DEFAULTS.quiet, ...value.quiet } };
+  // Legacy subscriptions adopt the current alert policy on their next poll,
+  // even before the installation returns to the app.
+  const v = { ...DEFAULTS, ...(value?.version === 3 ? value : {}) };
   if (
-    !['moderate', 'severe', 'extreme'].includes(v.severity) ||
+    !['all', 'moderate', 'severe', 'extreme'].includes(v.severity) ||
     typeof v.updates !== 'boolean' ||
     !Array.isArray(v.categories) ||
     !v.categories.length ||
     v.categories.length > 6 ||
     v.categories.some(
       (c) => !['all', 'storm', 'flood', 'winter', 'heat', 'wind', 'other'].includes(c),
-    ) ||
-    typeof v.quiet.enabled !== 'boolean' ||
-    typeof v.quiet.timeZone !== 'string' ||
-    !v.quiet.timeZone ||
-    typeof v.quiet.overrideExtreme !== 'boolean' ||
-    !/^([01]\d|2[0-3]):[0-5]\d$/.test(v.quiet.start) ||
-    !/^([01]\d|2[0-3]):[0-5]\d$/.test(v.quiet.end)
+    )
   )
     throw new HttpError(400, 'invalid_preferences');
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: v.quiet.timeZone });
-  } catch {
-    throw new HttpError(400, 'invalid_preferences');
-  }
   return {
+    version: 3,
     severity: v.severity,
     categories: [...new Set(v.categories)],
     updates: v.updates,
-    quiet: v.quiet,
+    quiet: { ...DEFAULTS.quiet },
   };
 }
 export function configured(env) {

@@ -158,20 +158,43 @@ test('rate limits are atomic and remain bounded across simultaneous requests', a
   );
   assert.equal(results.filter((r) => r.status === 'fulfilled').length, 2);
 });
-test('quiet hours handle midnight, timezone and extreme override', async () => {
-  const a = await alerts,
-    p = await common;
-  const prefs = p.preferences({
-    quiet: { enabled: true, timeZone: 'America/New_York', start: '22:00', end: '07:00' },
-  });
+test('legacy subscriptions adopt all alerts without quiet hours and current filters remain optional', async () => {
+  const a = await alerts, p = await common;
+  const prefs = p.preferences({ severity: 'extreme', categories: ['heat'], updates: false,
+    quiet: { enabled: true, timeZone: 'America/New_York', start: '22:00', end: '07:00' } });
+  assert.deepEqual(prefs, p.preferences());
   const now = Date.parse('2026-01-03T04:00:00Z');
-  assert.equal(a.quietNow(prefs.quiet, now), true);
-  assert.equal(a.eligible({ event: 'Tornado Warning', severity: 'severe' }, prefs, now), false);
-  assert.equal(a.eligible({ event: 'Tornado Warning', severity: 'extreme' }, prefs, now), true);
-  prefs.quiet.overrideExtreme = false;
-  assert.equal(a.eligible({ event: 'Tornado Warning', severity: 'extreme' }, prefs, now), false);
-  assert.throws(() => p.preferences({ quiet: { start: '25:00' } }));
-  assert.throws(() => p.preferences({ quiet: { timeZone: 'invalid' } }));
+  for (const severity of ['unknown', 'minor', 'moderate', 'severe', 'extreme'])
+    for (const event of ['Tornado Warning', 'Flood Advisory', 'Winter Storm Warning', 'Heat Advisory', 'Wind Advisory', 'Special Weather Statement'])
+      assert.equal(a.eligible({ event, severity }, prefs, now), true);
+  assert.equal(prefs.updates, true);
+  assert.equal(prefs.quiet.enabled, false);
+  const filtered = p.preferences({ ...prefs, severity: 'moderate', categories: ['flood'], updates: false,
+    quiet: { enabled: true, timeZone: 'invalid' } });
+  assert.equal(a.eligible({ event: 'Flood Warning', severity: 'moderate' }, filtered, now), true);
+  assert.equal(a.eligible({ event: 'Tornado Warning', severity: 'extreme' }, filtered, now), false);
+  assert.equal(a.eligible({ event: 'Flood Advisory', severity: 'minor' }, filtered, now), false);
+  assert.equal(filtered.updates, false);
+  assert.equal(filtered.quiet.enabled, false);
+  assert.deepEqual(p.preferences(filtered), filtered);
+  assert.throws(() => p.preferences({ ...prefs, severity: 'invalid' }));
+  assert.throws(() => p.preferences({ ...prefs, categories: ['invalid'] }));
+});
+test('the poller applies the new defaults to an untouched legacy registration', async () => {
+  const { db, env } = await setup();
+  db.sqlite.prepare('UPDATE push_subscriptions SET preferences_json=?').run(JSON.stringify({
+    severity: 'extreme', categories: ['heat'], updates: false,
+    quiet: { enabled: true, start: '00:00', end: '23:59', timeZone: 'UTC', overrideExtreme: false },
+  }));
+  const { poll } = await import('../workers/alert-poller/src/poll.js');
+  const sent = [];
+  await poll(env, {
+    fetcher: async () => Response.json({ features: [warning('minor-flood', { event: 'Flood Advisory', severity: 'Minor' })] }),
+    sender: async (_sub, body) => { sent.push(body); return 201; },
+  });
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].title, /Flood Advisory/);
+  assert.equal(db.sqlite.prepare('SELECT count(*) n FROM push_subscriptions').get().n, 1);
 });
 test('active updates qualify; expired, cancelled, test and future alerts do not', async () => {
   const a = await alerts;

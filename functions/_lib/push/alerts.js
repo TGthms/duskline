@@ -8,20 +8,6 @@ export function category(event) {
   if (/wind|gale/i.test(event)) return 'wind';
   return 'other';
 }
-export function quietNow(quiet, now = Date.now()) {
-  if (!quiet.enabled || quiet.start === quiet.end) return false;
-  const p = new Intl.DateTimeFormat('en-GB', {
-    timeZone: quiet.timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now);
-  const time =
-    p.find((x) => x.type === 'hour').value + ':' + p.find((x) => x.type === 'minute').value;
-  return quiet.start < quiet.end
-    ? time >= quiet.start && time < quiet.end
-    : time >= quiet.start || time < quiet.end;
-}
 export function normalizeAlert(feature, now = Date.now()) {
   const p = feature?.properties || {},
     id = p.id || feature?.id,
@@ -72,9 +58,8 @@ export async function deliveryKey(alert, place, prefs) {
 }
 export function eligible(alert, prefs, now = Date.now()) {
   return (
-    ranks[alert.severity] >= ranks[prefs.severity] &&
-    (prefs.categories.includes('all') || prefs.categories.includes(category(alert.event))) &&
-    (!quietNow(prefs.quiet, now) || (alert.severity === 'extreme' && prefs.quiet.overrideExtreme))
+    (prefs.severity === 'all' || ranks[alert.severity] >= ranks[prefs.severity]) &&
+    (prefs.categories.includes('all') || prefs.categories.includes(category(alert.event)))
   );
 }
 export async function fetchAlerts(place, fetcher = fetch, now = Date.now()) {

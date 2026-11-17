@@ -2606,6 +2606,7 @@
       if (hasGreetingSources) greetingPlaceBtn.setAttribute('aria-haspopup', 'dialog');
       else greetingPlaceBtn.removeAttribute('aria-haspopup');
     }
+    if (pushApi) pushApi.refreshViews();
     scheduleGreetingBoundary(timeZone, parts, pack);
   }
 
@@ -5727,6 +5728,11 @@
   // Kick off — paint the complete static catalog immediately, then refresh it quietly.
   myLocationCity = loadMyLocation();
   selectedGreetingCity = loadGreetingCity();
+  pushApi.mountMySky(document.getElementById('weatherPushEnroll'), {
+    visible: function () { return weatherMode === 'my-sky'; },
+    openSettings: openNotificationSettings,
+    install: openInstallHelp,
+  });
   pushApi.init();
   savedSnapshots.forEach(function (pack) {
     cacheStore.set(cityKey(pack.city), Object.assign({}, pack, { stored: true }));

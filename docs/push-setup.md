@@ -61,7 +61,9 @@ The one-minute cron is a polling interval, not a delivery guarantee. Larger subs
 
 ## User behavior
 
-Settings supports following My Sky's actual primary city (including My Location) or selecting up to five saved US places. Users can choose minimum severity, alert type, significant updates, quiet hours/timezone, and an explicit extreme-alert override. Changes are committed with Save preferences. Quiet hours pause eligible delivery; an alert still active when quiet hours end may then be delivered.
+My Sky offers direct subscription for its primary US city, including My Location. The permission request runs in the Subscribe gesture. Unsupported browsers offer installation help, and blocked permission or service failures lead to notification settings for recovery.
+
+New subscriptions include every alert severity and type, plus significant updates. Preference policy version 3 also gives existing subscriptions these defaults once, on both the client and the poller. The poller normalizes legacy records without waiting for an app visit. Current-version minimum severity, alert type and update filters remain optional in Settings and survive future reconciliation. Quiet hours are retired, including for legacy requests. Settings still supports following My Sky’s primary city or selecting up to five saved US places. Changes are committed with Save preferences.
 
 Permission, browser subscription, desired preferences and confirmed server registration are separate states. Failed enable/disable intent survives reconnect; removing the last eligible place pauses server monitoring. Unsupported countries never appear actively monitored. Permission denial stays visible with recovery guidance. iOS requires an installed Home Screen app and a direct user gesture for the initial permission request.
 

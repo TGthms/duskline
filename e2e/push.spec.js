@@ -17,7 +17,7 @@ const publicKey =
   'BP3dIi3qXzMN8PueacJpT5wJH7Vje5o7SV8U4kqGZJcyM2yy9JWUd-OeHl7m50bXEPdWxI4JxN60qPCTBzNNbbk';
 async function fixtures(
   page,
-  { permission = 'granted', onlyLocation = false, city = primary } = {},
+  { permission = 'granted', onlyLocation = false, city = primary, savedSettings, subscribed = false } = {},
 ) {
   const calls = [],
     records = new Map();
@@ -26,7 +26,7 @@ async function fixtures(
     failTest = false,
     failStatus = false;
   await page.addInitScript(
-    ({ permission, primary, favorite, onlyLocation }) => {
+    ({ permission, primary, favorite, onlyLocation, savedSettings, subscribed }) => {
       localStorage.setItem('duskline-motion', 'off');
       localStorage.setItem(
         onlyLocation ? 'duskline-weather-myloc' : 'duskline-weather-greeting-city',
@@ -40,6 +40,8 @@ async function fixtures(
         'duskline-weather-greeting-source',
         onlyLocation ? 'my-location' : 'city:42.360,-71.060',
       );
+      if (savedSettings && !localStorage.getItem('duskline-push-settings-v2'))
+        localStorage.setItem('duskline-push-settings-v2', JSON.stringify(savedSettings));
       window.__push = { sub: null, permissionCalls: 0, unsubscribes: 0 };
       window.Notification = {
         permission,
@@ -68,12 +70,13 @@ async function fixtures(
           return sub;
         },
       };
+      if (subscribed) manager.subscribe();
       Object.defineProperty(navigator.serviceWorker, 'ready', {
         configurable: true,
         get: () => Promise.resolve({ pushManager: manager }),
       });
     },
-    { permission, primary: city, favorite, onlyLocation },
+    { permission, primary: city, favorite, onlyLocation, savedSettings, subscribed },
   );
   await page.route('**/api/push/**', async (route) => {
     const path = new URL(route.request().url()).pathname.split('/').pop(),
@@ -377,24 +380,22 @@ test('unsupported primary is explained before asking for notification permission
   expect(await page.evaluate(() => window.__push.permissionCalls)).toBe(0);
   expect(f.calls.some((c) => c.path === 'subscribe')).toBe(false);
 });
-test('manual city selection and quiet hours persist across settings rebuilds', async ({ page }) => {
+test('manual city selection persists and quiet hours have no controls', async ({ page }) => {
   const f = await fixtures(page);
   await page.goto('/');
   await settings(page);
   await page.getByLabel('Follow My Sky primary city', { exact: true }).uncheck();
   await page.getByLabel('New York', { exact: true }).check();
-  await page.getByLabel('Pause notifications during quiet hours').check();
-  await page.getByLabel('Time zone', { exact: true }).fill('Europe/Paris');
-  await page.getByLabel('Time zone', { exact: true }).press('Tab');
+  await expect(page.getByRole('group', { name: 'Quiet hours', exact: true })).toHaveCount(0);
   await page.getByLabel('Weather notifications', { exact: true }).check();
   await expect(page.locator('.weather-push-status')).toContainText('On ·');
   const body = f.calls.find((c) => c.path === 'subscribe').body;
   expect(body.locations.map((p) => p.name)).toEqual(['New York']);
-  expect(body.preferences.quiet).toMatchObject({ enabled: true, timeZone: 'Europe/Paris' });
+  expect(body.preferences).toMatchObject({version:3,severity:'all',categories:['all'],updates:true,quiet:{enabled:false}});
   await page.locator('.weather-sheet-back').click();
   await page.locator('.weather-push-summary').click();
   await expect(page.getByLabel('Follow My Sky primary city', { exact: true })).not.toBeChecked();
-  await expect(page.getByLabel('Time zone', { exact: true })).toHaveValue('Europe/Paris');
+  await expect(page.getByLabel('New York', { exact: true })).toBeChecked();
 });
 test('changing the primary or removing a favorite updates server monitoring', async ({ page }) => {
   const f = await fixtures(page);
@@ -497,7 +498,7 @@ test('unsaved preferences do not leak into reconnect synchronization', async ({ 
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await expect(page.locator('.weather-push-status')).toContainText('On ·');
   expect(f.calls.filter((c) => c.path === 'subscribe').at(-1).body.preferences.severity).toBe(
-    'severe',
+    'all',
   );
 });
 test('notification Retry is hidden while off and recent activity keeps its heading', async ({
@@ -610,4 +611,64 @@ test('foreground events from a denied native prompt preserve the recovery messag
     )
     .toBe('blocked:false');
   await expect(page.locator('.weather-push-status')).toContainText('blocked');
+});
+
+
+test('My Sky subscribes directly in the permission gesture with all alerts @core', async ({ page }) => {
+  const f = await fixtures(page, { permission: 'default', onlyLocation: true });
+  await page.addInitScript(() => {
+    window.Notification.requestPermission = () => {
+      window.__push.permissionCalls++;
+      window.__push.gesture = navigator.userActivation?.isActive;
+      window.Notification.permission = 'granted';
+      return Promise.resolve('granted');
+    };
+  });
+  await page.goto('/');
+  const enroll = page.locator('#weatherPushEnroll'), button = enroll.locator('.weather-push-subscribe');
+  await expect(enroll).toContainText('Weather alerts for Boston');
+  await expect(button).toBeEnabled();
+  await button.click();
+  await expect(enroll.getByRole('status')).toContainText('On ·');
+  expect(await page.evaluate(() => window.__push.permissionCalls)).toBe(1);
+  expect(await page.evaluate(() => window.__push.gesture)).toBe(true);
+  await expect(page.locator('#weatherSheet')).toBeHidden();
+  const body = f.calls.find(c => c.path === 'subscribe').body;
+  expect(body.locations.map(p => p.name)).toEqual(['Boston']);
+  expect(body.preferences).toMatchObject({ version: 3, severity: 'all', categories: ['all'], updates: true, quiet: { enabled: false } });
+  await expect(button).toHaveText('Notifications');
+  await button.click();
+  await expect(page.locator('.weather-push-toggle')).toBeChecked();
+});
+
+test('legacy notification preferences migrate once while new optional filters survive reload', async ({ page }) => {
+  const f = await fixtures(page, { subscribed: true, savedSettings: {
+    enabled: true, follow: true, selected: [], endpoint: 'https://web.push.apple.com/Q/test', capability: 'A'.repeat(43),
+    preferences: { severity: 'extreme', categories: ['heat'], updates: false,
+      quiet: { enabled: true, start: 'bad', end: 'bad', timeZone: 'invalid' } },
+  } });
+  await page.goto('/');
+  await expect.poll(() => f.calls.filter(c => c.path === 'subscribe').length).toBe(1);
+  expect(f.calls.find(c => c.path === 'subscribe').body.preferences).toMatchObject({ version: 3, severity: 'all', categories: ['all'], updates: true, quiet: { enabled: false } });
+  await settings(page);
+  await page.getByLabel('Minimum severity').selectOption('extreme');
+  await page.getByLabel('Alert type', { exact: true }).selectOption('flood');
+  await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
+  await expect.poll(() => f.calls.filter(c => c.path === 'subscribe').at(-1)?.body.preferences.categories[0]).toBe('flood');
+  await page.reload();
+  await settings(page);
+  await expect(page.getByLabel('Minimum severity')).toHaveValue('extreme');
+  await expect(page.getByLabel('Alert type', { exact: true })).toHaveValue('flood');
+  await expect(page.locator('.weather-push-status')).toContainText('On ·');
+});
+
+test('My Sky subscription respects coverage and denied permissions without claiming delivery', async ({ page }) => {
+  const f = await fixtures(page, { permission: 'denied' });
+  await page.goto('/');
+  const enroll=page.locator('#weatherPushEnroll');
+  await enroll.getByRole('button', {name:'Subscribe', exact:true}).click();
+  await expect(enroll.getByRole('status')).toContainText('blocked');
+  expect(f.calls.some(c=>c.path==='subscribe')).toBe(false);
+  await page.locator('[data-weather-mode="horizon"]').click();
+  await expect(enroll).toBeHidden();
 });
