@@ -1,0 +1,57 @@
+name: Publish weather map tiles
+on:
+  schedule:
+    - cron: '27,57 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: weather-map-tiles
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tools/weather-tiles/requirements.txt
+      - run: python -m pip install -r tools/weather-tiles/requirements.txt
+      - run: python -B -m unittest discover -s tools/weather-tiles
+      - name: Generate and publish complete forecast
+        run: |
+          set -euo pipefail
+          run=$(python tools/weather-tiles/generate.py --run)
+          [[ "$run" =~ ^[0-9]{10}$ ]]
+          tag="map-tiles-v1-$run"
+          state=$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null || true)
+          if [ "$state" = false ]; then
+            echo "$tag is already published."
+            exit 0
+          fi
+          tiles="$RUNNER_TEMP/duskline-model-tiles"
+          python tools/weather-tiles/generate.py --expected-run "$run" --output "$tiles"
+          if [ "$state" != true ]; then
+            gh release create "$tag" --target "$GITHUB_SHA" --draft --prerelease --latest=false \
+              --title "Weather map tiles · $run UTC" \
+              --notes "DWD ICON forecast data via Open-Meteo (CC BY 4.0). Reprojected and colorized by duskline."
+          fi
+          gh release upload "$tag" "$tiles"/* --clobber
+          gh release edit "$tag" --draft=false --prerelease --latest=false
+      - name: Prune expired generated runs
+        run: |
+          set -euo pipefail
+          cutoff=$(date -u -d '48 hours ago' +%Y%m%d%H)
+          gh release list --limit 100 --json tagName,isPrerelease,isDraft \
+            --jq '.[] | select(.isPrerelease or .isDraft) | .tagName' |
+          while IFS= read -r tag; do
+            if [[ "$tag" =~ ^map-tiles-v1-([0-9]{10})$ ]] && [[ "${BASH_REMATCH[1]}" < "$cutoff" ]]; then
+              gh release delete "$tag" --cleanup-tag --yes
+            fi
+          done

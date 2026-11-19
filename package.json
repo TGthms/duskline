@@ -28,6 +28,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@block65/webcrypto-web-push": "2.0.0"
+    "@block65/webcrypto-web-push": "2.0.0",
+    "pmtiles": "4.5.0"
   }
 }
