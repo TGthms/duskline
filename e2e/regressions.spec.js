@@ -1717,6 +1717,66 @@ async function instrumentMap(page) {
   await page.route('https://tiles.openfreemap.org/styles/liberty',route=>route.fulfill({json:{version:8,sources:{},layers:[{id:'background',type:'background',paint:{'background-color':'#ccddee'}}]}}));
 }
 
+test('cached model map selects the matching forecast frame and distinguishes amount from chance', async ({page}) => {
+  await instrumentMap(page);
+  await page.clock.setFixedTime(new Date('2026-11-19T07:15:00Z'));
+  await page.addInitScript(() => localStorage.setItem('duskline-weather-precip', 'mm'));
+  const palettes = require('../tools/weather-tiles/palettes.json');
+  const frames = Array.from({length:24}, (_, index) => iso(index + 1, Date.parse('2026-11-19T00:00:00Z'))
+    .slice(0,13).replace(/[-T]/g,''));
+  const modelRequests = [];
+  const gridRequests = [];
+  let breakTiles = false;
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.searchParams.get('cell_selection') === 'nearest') gridRequests.push(url.href);
+  });
+  await page.route('**/api/map-tiles/v1/manifest.json', route => route.fulfill({
+    json:{version:1, run:'2026111900', frames, model:'DWD ICON', maxZoom:3, tileSize:512, palettes}
+  }));
+  await page.route('**/api/map-tiles/v1/**/*.webp', route => {
+    modelRequests.push(new URL(route.request().url()).pathname);
+    if (breakTiles) return route.fulfill({status:503});
+    return route.fulfill({contentType:'image/webp',
+      body:Buffer.from('UklGRh4AAABXRUJQVlA4TBEAAAAvAUAAAAdQso40uf+BiOh/AAA=','base64')});
+  });
+  await page.goto('/'); await page.locator('#weatherMapOpen').click();
+  await expect(page.locator('#weatherMap')).toHaveAttribute('data-map-state',/ready|fallback/,{timeout:15000});
+  test.skip(await page.locator('#weatherMapFallback').isVisible(), 'The browser did not initialize WebGL.');
+  const time = page.locator('#weatherMapTime');
+  const status = page.locator('#weatherMapStatus');
+  const precip = page.locator('[data-weather-layer="precipitation"]');
+  await expect(precip).toHaveText('Precipitation');
+  await expect.poll(() => modelRequests.some(url => url.includes('/2026111907/temperature/'))).toBe(true);
+  await expect(status).toBeHidden();
+  expect(gridRequests).toHaveLength(0);
+  await precip.click();
+  await expect(page.locator('#weatherMapLegendTitle')).toHaveText('Precipitation · mm/h');
+  await expect(time).toBeEnabled();
+  await expect(status).toBeHidden();
+
+  await time.evaluate(input => {
+    for (const value of ['1','2','3']) {
+      input.value = value;
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+  });
+  await expect.poll(() => modelRequests.some(url => url.includes('/2026111910/precipitation/'))).toBe(true);
+  await expect(page.locator('#weatherMapTimeOutput')).toContainText(/10:00.*UTC/);
+  expect(modelRequests.some(url => /\/202611190[89]\/precipitation\//.test(url))).toBe(false);
+  await expect(status).toBeHidden();
+  expect(gridRequests).toHaveLength(0);
+
+  breakTiles = true;
+  await time.fill('4');
+  await expect(page.locator('#weatherMapLegendTitle')).toHaveText('Chance of precipitation');
+  await expect(precip).toHaveText('Chance of precipitation');
+  await expect(status).toBeHidden();
+  expect(gridRequests).toHaveLength(1);
+  await closeMap(page);
+  await expect(page.locator('#weatherMapOpen')).toBeFocused();
+});
+
 test('map batches place changes, keeps focused buttons, and reuses raster buffers without duplicate redraws',async ({page})=>{
   await instrumentMap(page);
   await page.goto('/');

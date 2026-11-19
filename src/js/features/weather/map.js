@@ -62,6 +62,15 @@
     var activeRequestKey = '';
     var lastGridRequestAt = 0;
     var cachedGrids = new Map();
+    let catalog = null;
+    let catalogUntil = 0;
+    let catalogRequest = null;
+    let modelTimeline = null;
+    let modelFrame = null;
+    let modelSerial = 0;
+    let modelTimer = 0;
+    let modelRefresh = 0;
+    let modelRetryAfter = 0;
     var rasterWeights = null;
     var rasterCanvas = null;
     var rasterContext = null;
@@ -175,6 +184,10 @@
       clearTimeout(moveTimer);
       clearTimeout(styleTimer);
       clearTimeout(requestTimer);
+      clearTimeout(modelTimer);
+      clearTimeout(modelRefresh);
+      cancelCatalogRequest();
+      if (modelFrame && !modelFrame.ready) removeModelFrame();
       clearTimeout(feedbackTimer);
       clearTimeout(longPressTimer);
       if (renderFrame) {
@@ -343,7 +356,7 @@
       return request;
     }
     function estimatedValue(city) {
-      if (!activeGrid || !city) return null;
+      if (!activeGrid || modelTimeline || !city) return null;
       const g=activeGrid.geometry,points=g.points;
       let lon=Number(city.lon);while(lon<g.west) lon+=360;while(lon>g.east) lon-=360;
       const x=(lon-g.west)/(g.east-g.west),y=(mercatorY(g.north)-mercatorY(city.lat))/(mercatorY(g.north)-mercatorY(g.south));
@@ -573,6 +586,7 @@
       var now = Date.now();
       var cached = cachedGrids.get(geometry.key);
       if (cached && now - cached.fetchedAt < 8 * 60 * 1000) {
+        cancelGridRequest();
         applyGrid(cached.grid);
         return Promise.resolve(cached.grid);
       }
@@ -715,14 +729,17 @@
         ]
       };
     }
+    function legendPosition(config, value) {
+      return config.position ? config.position(value) : (value - config.min) / (config.max - config.min);
+    }
     function gradientCss(config) {
       var stops = [];
       if (config.transparentUntil != null) {
-        var transparentAt = ((config.transparentUntil - config.min) / (config.max - config.min)) * 100;
+        var transparentAt = legendPosition(config, config.transparentUntil) * 100;
         stops.push('transparent 0%', 'transparent ' + transparentAt.toFixed(2) + '%');
       }
       config.stops.forEach(function (stop) {
-        var position = ((stop.value - config.min) / (config.max - config.min)) * 100;
+        var position = legendPosition(config, stop.value) * 100;
         stops.push(stop.color + ' ' + position.toFixed(2) + '%');
       });
       return 'linear-gradient(90deg,' + stops.join(',') + ')';
@@ -855,17 +872,55 @@
       updateTimeOutput(grid);
       if (timeLabel) timeLabel.textContent = t('weather.mapForecastHour', 'Forecast hour · UTC');
     }
+    function precipRate(value) {
+      const unit = deps.precipUnit?.() || 'mm';
+      const divisor = unit === 'in' ? 25.4 : unit === 'cm' ? 10 : 1;
+      const name = unit === 'in' ? 'inch' : unit === 'cm' ? 'centimeter' : 'millimeter';
+      const locale = deps.localeTag?.();
+      const fractionDigits = unit === 'mm' ? 1 : value / divisor < 0.01 ? 3 : 2;
+      const formatter = new Intl.NumberFormat(locale, { style:'unit', unit:name + '-per-hour', unitDisplay:'short' });
+      const unitLabel = formatter.formatToParts(0).find(part => part.type === 'unit')?.value || unit + '/h';
+      return { number:new Intl.NumberFormat(locale, { maximumFractionDigits:fractionDigits }).format(value / divisor), unit:unitLabel };
+    }
+    function modelLegend(layer) {
+      const palette = catalog.palettes[layer];
+      return {
+        min: layer === 'precipitation' ? 0 : palette.stops[0][0],
+        max: palette.stops.at(-1)[0],
+        ticks: palette.ticks,
+        transparentUntil: layer === 'precipitation' ? palette.stops[0][0] : null,
+        stops: palette.stops.map(([value, color]) => ({ value, color: 'rgb(' + color.join(',') + ')' })),
+        position: layer === 'precipitation' ? value => {
+          const thresholds = palette.stops;
+          const right = thresholds.findIndex(([threshold]) => threshold >= value);
+          if (right === 0) return 0;
+          if (right < 0) return 1;
+          const low = thresholds[right - 1][0], high = thresholds[right][0];
+          return (right - 1 + (value - low)/(high - low))/(thresholds.length - 1);
+        } : null
+      };
+    }
     function legendForLayer(layer) {
+      const model = !!modelTimeline && usesModelLayer(layer);
       var title = layer === 'temperature' ? t('settings.temperature', 'Temperature')
-        : layer === 'aqi' ? t('weather.aqi','Air Quality')+' · US AQI' : layer === 'precipitation' ? t('weather.chanceOfPrecipitation', 'Chance of precipitation')
+        : layer === 'aqi' ? t('weather.aqi','Air Quality')+' · US AQI' : layer === 'precipitation' ? (model ? t('weather.precip', 'Precipitation') : t('weather.chanceOfPrecipitation', 'Chance of precipitation'))
           : t('weather.wind', 'Wind');
       if(layer === 'temperature') title += ' · '+(typeof deps.useF === 'function' && deps.useF()?'°F':'°C');
+      if (model && layer === 'precipitation') title += ' · ' + precipRate(0).unit;
       const subhead=document.getElementById('weatherMapSubhead');
-      if(subhead) subhead.textContent=t('weather.mapEstimate','Interpolated forecast estimates')+(layer === 'aqi'?' · CAMS · ~45 km':'');
-      if(credit && !fallbackActive && credit.dataset.layerCredits!==layer) {credit.innerHTML=mapCredits+' · <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>'+(layer === 'aqi'?' · CAMS (~45 km)':'');credit.dataset.layerCredits=layer;}
+      if(subhead) subhead.textContent=model ? 'DWD ICON · 0.125°' : t('weather.mapEstimate','Interpolated forecast estimates')+(layer === 'aqi'?' · CAMS · ~45 km':'');
+      const creditKey = model ? 'icon-' + layer : layer;
+      if(credit && !fallbackActive && credit.dataset.layerCredits!==creditKey) {
+        credit.innerHTML=mapCredits+' · <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>'+
+          (model ? ' · <a href="https://open-meteo.com/en/docs/dwd-api" target="_blank" rel="noopener noreferrer">DWD ICON</a>' : layer === 'aqi'?' · CAMS (~45 km)':'');
+        credit.dataset.layerCredits=creditKey;
+      }
+      const precipitationButton = layerHost?.querySelector('[data-weather-layer="precipitation"]');
+      if (precipitationButton) precipitationButton.textContent = modelBaseIndex(Date.now()) >= 0 && Date.now() >= modelRetryAfter
+        ? t('weather.precip','Precipitation') : t('weather.chanceOfPrecipitation','Chance of precipitation');
       if (legendTitle) legendTitle.textContent = title;
       if (legendGradient) legendGradient.dataset.layer = layer;
-      var config = legendConfig(layer);
+      var config = model ? modelLegend(layer) : legendConfig(layer);
       if (legendGradient) legendGradient.style.background = gradientCss(config);
       if (legendValues) {
         legendValues.replaceChildren();
@@ -873,8 +928,8 @@
         legendValues.style.height = '14px';
         config.ticks.forEach(function (value) {
           var tick = document.createElement('span');
-          var fraction = (value - config.min) / (config.max - config.min);
-          tick.textContent = formatLegendValue(layer, value);
+          var fraction = legendPosition(config, value);
+          tick.textContent = model && layer === 'precipitation' ? precipRate(value).number : formatLegendValue(layer, value);
           tick.style.position = 'absolute';
           tick.style.left = (fraction * 100).toFixed(2) + '%';
           tick.style.transform = fraction >= 0.999 ? 'translateX(-100%)' : (fraction <= 0.001 ? 'none' : 'translateX(-50%)');
@@ -884,7 +939,7 @@
       }
     }
     function applyGrid(grid) {
-      if (!grid || !isOpen) return;
+      if (!grid || !isOpen || modelTimeline || (selectedLayer === 'aqi') !== (grid.geometry.kind === 'aqi')) return;
       grid.baseIndex = valueAtOrNearNow(grid.times);
       activeGrid = grid;
       baseIndex = grid.baseIndex;
@@ -895,7 +950,7 @@
       if (rendererReady) { setStatus('', false); setBusy(false); }
       else { setStatus(t('weather.mapLoading', 'Loading map…'), true, true); setBusy(true); }
     }
-    function requestVisibleWeather() {
+    function requestGridWeather() {
       if (!map || !styleReady || fallbackActive || !isOpen || document.visibilityState === 'hidden') return;
       var geometry;
       try { geometry = gridGeometry(map.getBounds()); } catch (e) { return; }
@@ -911,6 +966,156 @@
       if (!fresh) lastGridRequestAt = Date.now();
       fetchWeatherGrid(geometry);
     }
+    function cancelGridRequest() {
+      activeController?.abort();
+      activeController = null;
+      clearTimeout(requestTimer);
+    }
+    function usesModelLayer(layer) {
+      return layer === 'temperature' || layer === 'precipitation';
+    }
+    function formatTileHour(stamp) {
+      return new Date(stamp).toISOString().slice(0, 13).replace(/[-T]/g,'');
+    }
+    function isoTileHour(key) {
+      return key.slice(0,4) + '-' + key.slice(4,6) + '-' + key.slice(6,8) + 'T' + key.slice(8,10) + ':00';
+    }
+    function readModelCatalog(value) {
+      if (!value || value.version !== 1
+          || value.model !== 'DWD ICON' || !/^\d{10}$/.test(value.run)
+          || !Array.isArray(value.frames) || !value.frames.length || value.frames.length > 24) return null;
+      if (!(value.tileSize === 512 && value.maxZoom === 3 || value.tileSize === 256 && value.maxZoom === 4)) return null;
+      const start = Date.parse(isoTileHour(value.run) + 'Z');
+      if (!Number.isFinite(start) || formatTileHour(start) !== value.run
+          || value.frames.some((frame, i) => frame !== formatTileHour(start + (i + 1) * 3600000))) return null;
+      for (const layer of ['temperature','precipitation']) {
+        const palette = value.palettes?.[layer];
+        if (!palette || !Array.isArray(palette.stops) || palette.stops.length < 2 || palette.stops.length > 20
+            || !Array.isArray(palette.ticks) || !palette.ticks.length || palette.ticks.length > 7
+            || palette.ticks.some(tick => !Number.isFinite(tick) || Math.abs(tick) > 500)) return null;
+        let previous = -Infinity;
+        for (const stop of palette.stops) {
+          if (!Array.isArray(stop) || stop.length !== 2) return null;
+          const [threshold, color] = stop;
+          if (!Number.isFinite(threshold) || threshold <= previous || Math.abs(threshold) > 500
+              || !Array.isArray(color) || color.length !== 3
+              || color.some(channel => !Number.isInteger(channel) || channel < 0 || channel > 255)) return null;
+          previous = threshold;
+        }
+        if (palette.ticks.some(tick => tick < palette.stops[0][0] || tick > previous)) return null;
+      }
+      return value;
+    }
+    function cancelCatalogRequest() {
+      catalogRequest?.abort();
+      catalogRequest = null;
+    }
+    function loadModelCatalog() {
+      if (catalogRequest) return;
+      const controller = new AbortController();
+      catalogRequest = controller;
+      const timeout = setTimeout(() => controller.abort(), 4500);
+      fetch(new URL('api/map-tiles/v1/manifest.json', document.baseURI), { signal:controller.signal })
+        .then(response => response.ok ? response.json() : null)
+        .then(readModelCatalog)
+        .catch(() => null)
+        .then(result => {
+          if (catalogRequest !== controller) return;
+          catalogRequest = null;
+          catalogUntil = Date.now() + (result ? 240000 : 60000);
+          if (result) catalog = result;
+          requestVisibleWeather();
+        }).finally(() => clearTimeout(timeout));
+    }
+    function removeModelFrame() {
+      if (!modelFrame) return;
+      const { id, timeout } = modelFrame;
+      modelFrame = null;
+      clearTimeout(timeout);
+      if (map?.getLayer(id)) map.removeLayer(id);
+      if (map?.getSource(id)) map.removeSource(id);
+    }
+    function clearModel() {
+      clearTimeout(modelTimer);
+      clearTimeout(modelRefresh);
+      removeModelFrame();
+      modelTimeline = null;
+    }
+    function useGridFallback(frame) {
+      if (frame !== modelFrame || !isOpen) return;
+      modelRetryAfter = Date.now() + 60000;
+      clearModel();
+      if (timeInput) timeInput.disabled = true;
+      if (timeOutput) timeOutput.textContent = '';
+      legendForLayer(selectedLayer);
+      requestGridWeather();
+    }
+    function showModelFrame() {
+      if (!modelTimeline || !map || !isOpen || document.visibilityState === 'hidden') return;
+      clearTimeout(modelTimer);
+      const frame = catalog.frames[modelTimeline.baseIndex + selectedOffset];
+      const key = [catalog.run, frame, selectedLayer].join('/');
+      if (modelFrame?.key === key) return;
+      removeModelFrame();
+      const id = 'duskline-model-' + (++modelSerial);
+      const uri = new URL('api/map-tiles/v1/' + key + '/', document.baseURI).href + '{z}/{x}/{y}.webp';
+      const pending = { id, key, ready:false };
+      modelFrame = pending;
+      setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
+      setBusy(true);
+      pending.timeout = setTimeout(() => useGridFallback(pending), 14000);
+      try {
+        map.addSource(id, { type:'raster', tiles:[uri], tileSize:catalog.tileSize, maxzoom:catalog.maxZoom });
+        const symbol = map.getStyle().layers.find(layer => layer.type === 'symbol');
+        map.addLayer({ id, type:'raster', source:id, paint:{
+          'raster-opacity': selectedLayer === 'precipitation' ? 0.9 : 0.83,
+          'raster-fade-duration':0, 'raster-resampling':selectedLayer === 'precipitation' ? 'nearest' : 'linear'
+        } }, symbol?.id);
+      } catch (error) { useGridFallback(pending); }
+    }
+    function applyModel(base) {
+      cancelGridRequest();
+      activeGrid = null;
+      if (!modelTimeline) lastRaster = null;
+      if (map.getLayer(RASTER_ID)) map.setPaintProperty(RASTER_ID,'raster-opacity',0);
+      const changed = !modelTimeline || modelTimeline.run !== catalog.run || modelTimeline.baseIndex !== base;
+      if (changed) {
+        modelTimeline = { run:catalog.run, times:catalog.frames.map(isoTileHour), baseIndex:base };
+        syncTimeControl(modelTimeline);
+        legendForLayer(selectedLayer);
+      }
+      showModelFrame();
+      if (modelFrame?.ready && rendererReady && root.getAttribute('aria-busy') === 'true') {
+        setStatus('', false);
+        setBusy(false);
+      }
+      clearTimeout(modelRefresh);
+      modelRefresh = setTimeout(requestVisibleWeather, 60000);
+    }
+    function modelBaseIndex(now) {
+      return catalog?.frames.indexOf(formatTileHour(now)) ?? -1;
+    }
+    function requestVisibleWeather() {
+      if (!map || !styleReady || fallbackActive || !isOpen || document.visibilityState === 'hidden') return;
+      if (usesModelLayer(selectedLayer) && Date.now() >= modelRetryAfter) {
+        const now = Date.now();
+        if (now >= catalogUntil) loadModelCatalog();
+        const base = modelBaseIndex(now);
+        if (base >= 0) { applyModel(base); return; }
+        if (catalogRequest && !activeGrid) {
+          setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
+          setBusy(true);
+          return;
+        }
+      }
+      if (modelTimeline) {
+        clearModel();
+        if (timeInput) timeInput.disabled = true;
+        if (timeOutput) timeOutput.textContent = '';
+        legendForLayer(selectedLayer);
+      }
+      requestGridWeather();
+    }
     function queueVisibleWeather() {
       clearTimeout(moveTimer);
       if (!isOpen || document.visibilityState === 'hidden') return;
@@ -920,9 +1125,8 @@
       lastRaster = null;
       var bounds = map.getBounds();
       var geometry = gridGeometry(bounds);
-      var transparent = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
       map.addSource(RASTER_ID, {
-        type: 'image', url: transparent,
+        type: 'image', url: 'assets/weather-map-transparent.svg',
         coordinates: geometry.coordinates
       });
       var symbol = (map.getStyle().layers || []).find(function (layer) { return layer.type === 'symbol'; });
@@ -1151,6 +1355,8 @@
     }
     function disposeRenderer() {
       clearTimeout(releaseTimer);
+      cancelCatalogRequest();
+      clearModel();
       if (map) { try { map.remove(); } catch (error) {} }
       map = null;
       styleReady = rendererReady = false;
@@ -1245,7 +1451,7 @@
           if (fallbackHost) fallbackHost.hidden=true;
           clearTimeout(styleTimer);
           instance.off('render',revealGeography);
-          if (activeGrid) { setStatus('',false);setBusy(false); }
+          if (activeGrid || modelFrame?.ready) { setStatus('',false);setBusy(false); }
         }
         instance.on('render',revealGeography);
         instance.once('style.load', function () {
@@ -1266,9 +1472,21 @@
         },{once:true});
         instance.on('error', function (event) {
           if (!isOpen || fallbackActive || map !== instance) return;
+          if (modelFrame && event.sourceId === modelFrame.id) {
+            if (!modelFrame.ready) useGridFallback(modelFrame);
+            else setStatus(t('weather.mapWeatherUnavailable', 'Weather layers are unavailable right now.'), true);
+            return;
+          }
           // Source/tile/glyph errors belong to the SDK's recovery. A single
           // unavailable resource must not tear down an otherwise useful map.
           if (!styleReady && !(event && (event.sourceId || event.source))) useFallback();
+        });
+        instance.on('sourcedata', function (event) {
+          if (map !== instance || !isOpen || !modelFrame || event.sourceId !== modelFrame.id
+              || !event.isSourceLoaded) return;
+          clearTimeout(modelFrame.timeout);
+          modelFrame.ready = true;
+          if (rendererReady) { setStatus('', false); setBusy(false); }
         });
         instance.on('moveend', queueVisibleWeather);
       }).catch(function (error) {
@@ -1280,6 +1498,10 @@
       if (!isOpen) { if (document.visibilityState === 'hidden') disposeRenderer(); return; }
       if (document.visibilityState === 'hidden') {
         clearTimeout(recoveryTimer);
+        clearTimeout(modelTimer);
+        clearTimeout(modelRefresh);
+        cancelCatalogRequest();
+        if (modelFrame && !modelFrame.ready) removeModelFrame();
         clearTimeout(moveTimer);clearTimeout(styleTimer);
         if (renderFrame) global.cancelAnimationFrame(renderFrame);
         renderFrame = 0;
@@ -1342,7 +1564,7 @@
         if (fallbackHost) fallbackHost.hidden = true;
         map.resize();map.triggerRepaint();
         if (activeGrid && Date.now()-activeGrid.fetchedAt < 8*60*1000) applyGrid(activeGrid);
-        else { setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'),true,true);setBusy(true); }
+        else if (!modelFrame?.ready) { setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'),true,true);setBusy(true); }
         requestVisibleWeather();
       } else loadCityMap(options || {});
     }
@@ -1370,20 +1592,36 @@
     if (layerHost) layerHost.addEventListener('click', function (event) {
       var button = event.target.closest && event.target.closest('[data-weather-layer]');
       if (!button || !layerHost.contains(button)) return;
-      selectedLayer = button.getAttribute('data-weather-layer') || 'temperature';
+      const nextLayer = button.getAttribute('data-weather-layer');
+      if (nextLayer === selectedLayer) return;
+      selectedLayer = nextLayer;
       layerHost.querySelectorAll('[data-weather-layer]').forEach(function (item) {
         item.setAttribute('aria-pressed', item === button ? 'true' : 'false');
       });
+      if (modelTimeline && !usesModelLayer(selectedLayer)) clearModel();
       legendForLayer(selectedLayer);
       if (activeGrid && (selectedLayer === 'aqi') === (activeGrid.geometry.kind === 'aqi')) scheduleWeatherImage(activeGrid);
-      else { activeGrid=null; if(map && map.getLayer(RASTER_ID)) map.setPaintProperty(RASTER_ID,'raster-opacity',0); if (timeInput) timeInput.disabled=true; if(timeOutput) timeOutput.textContent=''; requestVisibleWeather(); }
+      else if (!modelTimeline) {
+        cancelGridRequest();
+        activeGrid = null;
+        if (map?.getLayer(RASTER_ID)) map.setPaintProperty(RASTER_ID,'raster-opacity',0);
+        if (timeInput) timeInput.disabled = true;
+        if (timeOutput) timeOutput.textContent = '';
+      }
+      requestVisibleWeather();
     });
     if (timeInput) timeInput.addEventListener('input', function () {
       var next = Math.max(0, Math.min(maxOffset, Number(timeInput.value) || 0));
       var stepped = next !== selectedOffset;
       selectedOffset = next;
       if (stepped && W.haptics) W.haptics.detent();
-      if (activeGrid) {
+      if (modelTimeline && stepped) {
+        updateTimeOutput(modelTimeline);
+        removeModelFrame();
+        clearTimeout(modelTimer);
+        setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
+        modelTimer = setTimeout(showModelFrame, 100);
+      } else if (activeGrid) {
         updateTimeOutput(activeGrid);
         scheduleWeatherImage(activeGrid);
       }
@@ -1406,8 +1644,8 @@
         if (!isOpen) return;
         if (fallbackActive) { recoveryAttempts=0; recoverMap(); return; }
         cachedGrids.clear(); sampleCache.clear();
-        if (activeController) activeController.abort();
-        activeController=null;
+        cancelGridRequest();
+        catalogUntil = modelRetryAfter = 0;
         requestVisibleWeather();
       },
       finishReturn: function () { if (root) root.classList.remove('is-returning'); },

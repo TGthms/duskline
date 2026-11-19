@@ -605,6 +605,7 @@
         t: t,
         localeTag: localeTag,
         useF: useF,
+        precipUnit: precipUnit,
         motionLevel: motionLevel,
         fmtTemp: fmtTemp,
         fmtWind: fmtWind,

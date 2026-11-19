@@ -25,8 +25,8 @@ SPATIAL = "https://openmeteo.s3.amazonaws.com/data_spatial/dwd_icon/"
 MODEL = "DWD ICON"
 GRID_SHAPE = (1441, 2879)
 GRID_STEP = 0.125
-TILE_SIZE = 256
-MAX_ZOOM = 4
+TILE_SIZE = 512
+MAX_ZOOM = 3
 HOUR = timedelta(hours=1)
 VARIABLES = {"temperature": "temperature_2m", "precipitation": "precipitation"}
 PALETTES = json.loads(Path(__file__).with_name("palettes.json").read_text())

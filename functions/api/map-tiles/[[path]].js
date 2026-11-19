@@ -42,8 +42,9 @@ async function findManifest(now, fetcher) {
       const response = await fetchRelease(RELEASE + key + '/manifest.json', {}, fetcher);
       if (!response.ok) { await response.body?.cancel(); continue; }
       const manifest = await response.json();
-      if (manifest.version !== 1 || manifest.run !== key || manifest.tileSize !== 256
-          || manifest.maxZoom !== TILE_ZOOM || !Array.isArray(manifest.frames)
+      const validGrid = manifest.tileSize === 512 && manifest.maxZoom === 3
+        || manifest.tileSize === 256 && manifest.maxZoom === TILE_ZOOM;
+      if (manifest.version !== 1 || manifest.run !== key || !validGrid || !Array.isArray(manifest.frames)
           || manifest.frames.length !== 24
           || manifest.frames.some((frame, index) => frame !== hourKey(run + (index + 1) * HOUR))
           || !manifest.frames.includes(currentHour)) continue;
