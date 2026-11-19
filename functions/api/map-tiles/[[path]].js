@@ -1,4 +1,4 @@
-import { PMTiles, ResolvedValueCache } from 'pmtiles';
+import { PMTiles, ResolvedValueCache } from '../../_lib/vendor/pmtiles/reader.js';
 
 const HOUR = 3600000;
 const TILE_ZOOM = 4;
