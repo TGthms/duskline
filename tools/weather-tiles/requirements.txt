@@ -1,4 +1,5 @@
 fsspec[http]==2026.9.0
+mapbox-vector-tile==2.2.0
 numpy==2.5.5
 omfiles==1.2.0
 Pillow==13.0.0

@@ -14,6 +14,7 @@ from urllib.request import urlopen
 import aiohttp
 from fsspec.core import OpenFile
 from fsspec.implementations.http import HTTPFileSystem
+import mapbox_vector_tile
 import numpy as np
 from omfiles import OmFileReader
 from PIL import Image
@@ -27,8 +28,14 @@ GRID_SHAPE = (1441, 2879)
 GRID_STEP = 0.125
 TILE_SIZE = 512
 MAX_ZOOM = 3
+WIND_ARROW_ZOOM = 4
 HOUR = timedelta(hours=1)
-VARIABLES = {"temperature": "temperature_2m", "precipitation": "precipitation"}
+VARIABLES = {
+    "temperature": "temperature_2m",
+    "precipitation": "precipitation",
+    "wind_u": "wind_u_component_10m",
+    "wind_v": "wind_v_component_10m",
+}
 PALETTES = json.loads(Path(__file__).with_name("palettes.json").read_text())
 
 
@@ -98,11 +105,11 @@ def get_run():
     return run, frames
 
 
-def grid_coordinates(z, x, y):
-    side = TILE_SIZE << z
-    pixel_centers = np.arange(TILE_SIZE) + 0.5
-    longitude = (x * TILE_SIZE + pixel_centers) * 360 / side - 180
-    mercator = np.pi * (1 - 2 * (y * TILE_SIZE + pixel_centers) / side)
+def grid_coordinates(z, x, y, samples=TILE_SIZE):
+    side = 1 << z
+    centers = (np.arange(samples) + 0.5) / samples
+    longitude = (x + centers) * 360 / side - 180
+    mercator = np.pi * (1 - 2 * (y + centers) / side)
     latitude = np.degrees(np.arctan(np.sinh(mercator)))
     return (latitude + 90) / GRID_STEP, (longitude + 180) / GRID_STEP
 
@@ -117,8 +124,8 @@ def longitude_indices(columns):
     return west, east, fraction
 
 
-def project(field, z, x, y, *, interpolate):
-    rows, columns = grid_coordinates(z, x, y)
+def project(field, z, x, y, *, interpolate, samples=TILE_SIZE):
+    rows, columns = grid_coordinates(z, x, y, samples)
     west, east, dx = longitude_indices(columns)
     if not interpolate:
         # Keep sampled dry pixels transparent at the edges of precipitation.
@@ -135,7 +142,7 @@ def colorize(values, layer):
     stops, colors = zip(*PALETTES[layer]["stops"])
     finite = np.isfinite(values)
     values = np.where(finite, values, 0)
-    step = 0.5 if layer == "temperature" else 0.1
+    step = 0.1 if layer == "precipitation" else 0.5
     quantized = np.rint(values / step) * step
     rgba = np.empty((*values.shape, 4), dtype=np.uint8)
     for channel in range(3):
@@ -146,19 +153,44 @@ def colorize(values, layer):
     return rgba
 
 
-def write_archive(path, field, layer):
+def raster_tile(field, layer, z, x, y):
+    if layer == "wind":
+        values = np.hypot(*(project(component, z, x, y, interpolate=True) for component in field))
+    else:
+        values = project(field, z, x, y, interpolate=layer == "temperature")
+    buf = io.BytesIO()
+    Image.fromarray(colorize(values, layer)).save(buf, format="WEBP", lossless=True, method=3)
+    return buf.getvalue()
+
+
+def wind_arrow_tile(wind, z, x, y):
+    count = 7
+    east, north = (project(component, z, x, y, interpolate=True, samples=count) for component in wind)
+    speed = np.hypot(east, north)
+    bearings = np.degrees(np.arctan2(east, north)) % 360
+    features = []
+    for row, col in np.argwhere(speed >= 1.5):
+        features.append({
+            "geometry": {"type": "Point", "coordinates": [
+                round((col + 0.5) * 4096 / count), round((row + 0.5) * 4096 / count)
+            ]},
+            "properties": {"bearing": int(round(bearings[row, col])) % 360},
+        })
+    return mapbox_vector_tile.encode({"name": "wind", "features": features}, default_options={"y_coord_down": True})
+
+
+def write_archive(path, layer, max_zoom, tile_type, make_tile):
     with path.open("wb") as payload:
         writer = Writer(payload)
-        for tile_id in range((4 ** (MAX_ZOOM + 1) - 1) // 3):
-            z, x, y = tileid_to_zxy(tile_id)
-            rgba = colorize(project(field, z, x, y, interpolate=layer == "temperature"), layer)
-            buf = io.BytesIO()
-            Image.fromarray(rgba).save(buf, format="WEBP", lossless=True, method=3)
-            writer.write_tile(tile_id, buf.getvalue())
+        for tile_id in range((4 ** (max_zoom + 1) - 1) // 3):
+            tile = make_tile(*tileid_to_zxy(tile_id))
+            if len(tile) > 512 * 1024:
+                raise ValueError(f"Tile exceeds gateway range budget: {path.name} / {tile_id}")
+            writer.write_tile(tile_id, tile)
+        file_format = "webp" if tile_type == TileType.WEBP else "pbf"
         writer.finalize(
-            {"tile_type": TileType.WEBP, "tile_compression": Compression.NONE,
-             "min_zoom": 0, "max_zoom": MAX_ZOOM},
-            {"name": layer, "attribution": "DWD ICON · Open-Meteo", "format": "webp"},
+            {"tile_type": tile_type, "tile_compression": Compression.NONE, "min_zoom": 0, "max_zoom": max_zoom},
+            {"name": layer, "attribution": "DWD ICON · Open-Meteo", "format": file_format},
         )
 
 
@@ -168,10 +200,15 @@ def render_frame(output, run, stamp):
         fields = collect_fields(source_path(run, stamp))
     except Exception as error:
         raise RuntimeError(f"Cannot read ICON frame {stamp.isoformat()}") from error
+    wind = (fields.pop("wind_u"), fields.pop("wind_v"))
+    fields["wind"] = wind
     for layer, field in fields.items():
         archive = output / f"{frame_id(stamp)}-{layer}.pmtiles"
-        write_archive(archive, field, layer)
+        write_archive(archive, layer, MAX_ZOOM, TileType.WEBP, lambda z, x, y: raster_tile(field, layer, z, x, y))
         print(f"{archive.name} {archive.stat().st_size:,} bytes", flush=True)
+    arrows = output / f"{frame_id(stamp)}-wind-direction.pmtiles"
+    write_archive(arrows, "wind", WIND_ARROW_ZOOM, TileType.MVT, lambda z, x, y: wind_arrow_tile(wind, z, x, y))
+    print(f"{arrows.name} {arrows.stat().st_size:,} bytes", flush=True)
     print(f"{stamp.isoformat()} rendered in {time.monotonic() - started:.1f}s", flush=True)
 
 
@@ -184,6 +221,7 @@ def manifest(run, frames):
         "maxZoom": MAX_ZOOM,
         "tileSize": TILE_SIZE,
         "palettes": PALETTES,
+        "windArrowZoom": WIND_ARROW_ZOOM,
     }
 
 

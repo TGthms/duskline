@@ -80,27 +80,29 @@ export async function serveMapTile(request, { fetcher = fetch, now = Date.now(),
   if (url.search) return unavailable(404);
   const asset = url.pathname.slice('/api/map-tiles/v1/'.length);
   if (!url.pathname.startsWith('/api/map-tiles/v1/')) return unavailable(404);
-  const match = /^(\d{10})\/(\d{10})\/(temperature|precipitation)\/([0-4])\/(\d{1,2})\/(\d{1,2})\.webp$/.exec(asset);
+  const match = /^(\d{10})\/(\d{10})\/(temperature|precipitation|wind|wind-direction)\/([0-4])\/(\d{1,2})\/(\d{1,2})\.(webp|pbf)$/.exec(asset);
   if (!match && asset !== 'manifest.json') return unavailable(404);
 
   let response;
   if (match) {
-    const [, run, frame, layer, zoom, column, row] = match;
+    const [, run, frame, layer, zoom, column, row, format] = match;
+    const direction = layer === 'wind-direction';
     const runTime = timestamp(run), frameTime = timestamp(frame);
     const z = Number(zoom), x = Number(column), y = Number(row);
     if (!Number.isFinite(runTime) || !Number.isFinite(frameTime) || runTime % (6 * HOUR)
         || runTime > now || now - runTime > 36 * HOUR || frameTime <= runTime
         || frameTime - runTime > 24 * HOUR || x >= (1 << z) || y >= (1 << z)
-        || String(x) !== column || String(y) !== row) return unavailable(404);
+        || String(x) !== column || String(y) !== row
+        || direction !== (format === 'pbf')) return unavailable(404);
     const hit = await cache?.match(url.href);
     if (hit) return hit;
     try {
       const archive = new PMTiles(new ReleaseArchive(RELEASE + run + '/' + frame + '-' + layer + '.pmtiles', fetcher), archiveDirectories);
       const tile = await archive.getZxy(z, x, y);
-      if (!tile || new DataView(tile.data).getUint32(8) !== 0x57454250) return unavailable(502);
+      if (!tile || (!direction && new DataView(tile.data).getUint32(8) !== 0x57454250)) return unavailable(502);
       response = new Response(tile.data, {
         headers: {
-          'Content-Type': 'image/webp',
+          'Content-Type': direction ? 'application/vnd.mapbox-vector-tile' : 'image/webp',
           'Cache-Control': 'public, max-age=86400, immutable',
           'X-Content-Type-Options': 'nosniff',
         },

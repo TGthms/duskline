@@ -67,7 +67,8 @@ test('weather tiles reject invalid coordinates and discover a previous complete 
       : new Response(null, { status:404 });
   } };
   const bad = ['/2026111900/temperature/0/0/0.webp', '/2026111907/temperature/2/4/0.webp',
-    '/2026111907/temperature/2/03/0.webp', '/2026111907/precipitation/0/0/0.webp?x=1'];
+    '/2026111907/temperature/2/03/0.webp', '/2026111907/precipitation/0/0/0.webp?x=1',
+    '/2026111907/wind-direction/0/0/0.webp', '/2026111907/wind/0/0/0.pbf'];
   for (const path of bad) assert.equal((await serveMapTile(new Request(endpoint + run + path), options)).status, 404);
   assert.equal(calls.length, 0);
   const result = await serveMapTile(new Request(endpoint + 'manifest.json'), options);

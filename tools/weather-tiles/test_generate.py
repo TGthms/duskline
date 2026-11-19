@@ -1,8 +1,9 @@
 import unittest
 
+import mapbox_vector_tile
 import numpy as np
 
-from generate import GRID_SHAPE, TILE_SIZE, colorize, grid_coordinates, longitude_indices, project
+from generate import GRID_SHAPE, TILE_SIZE, colorize, grid_coordinates, longitude_indices, project, wind_arrow_tile
 
 
 class RasterTests(unittest.TestCase):
@@ -28,6 +29,19 @@ class RasterTests(unittest.TestCase):
         painted = colorize(np.array([[0, 0.09, 0.1, 30, np.nan]]), "precipitation")
         self.assertEqual(painted[0, :, 3].tolist(), [0, 0, 255, 255, 0])
         np.testing.assert_array_equal(painted[0, 3, :3], [255, 196, 81])
+
+    def test_wind_arrows_point_in_the_direction_of_travel_and_omit_calm(self):
+        calm = np.zeros(GRID_SHAPE, dtype=np.float32)
+        breeze = np.full(GRID_SHAPE, 5, dtype=np.float32)
+        def features(east, north):
+            tile = wind_arrow_tile((east, north), 0, 0, 0)
+            return mapbox_vector_tile.decode(tile, default_options={"y_coord_down": True})["wind"]["features"]
+        self.assertFalse(features(calm, calm))
+        arrows = features(breeze, calm)
+        self.assertEqual(len(arrows), 49)
+        self.assertEqual(arrows[0]["geometry"]["coordinates"], [293, 293])
+        self.assertEqual({feature["properties"]["bearing"] for feature in arrows}, {90})
+        self.assertEqual({feature["properties"]["bearing"] for feature in features(calm, -breeze)}, {180})
 
 
 if __name__ == "__main__":

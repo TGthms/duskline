@@ -70,7 +70,7 @@
     let modelSerial = 0;
     let modelTimer = 0;
     let modelRefresh = 0;
-    let modelRetryAfter = 0;
+    const modelRetryAfter = new Map();
     var rasterWeights = null;
     var rasterCanvas = null;
     var rasterContext = null;
@@ -84,6 +84,7 @@
     var deferredMapOptions = null;
     var currentMapOptions = null;
     var RASTER_ID = 'duskline-weather-field';
+    const WIND_ARROW_IMAGE = 'duskline-wind-arrow';
     var GRID_ID = 'duskline-weather-grid';
     var CITY_SOURCE = 'duskline-weather-places';
     var STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
@@ -916,7 +917,8 @@
         credit.dataset.layerCredits=creditKey;
       }
       const precipitationButton = layerHost?.querySelector('[data-weather-layer="precipitation"]');
-      if (precipitationButton) precipitationButton.textContent = modelBaseIndex(Date.now()) >= 0 && Date.now() >= modelRetryAfter
+      if (precipitationButton) precipitationButton.textContent = modelBaseIndex(Date.now()) >= 0
+        && Date.now() >= (modelRetryAfter.get('precipitation') || 0)
         ? t('weather.precip','Precipitation') : t('weather.chanceOfPrecipitation','Chance of precipitation');
       if (legendTitle) legendTitle.textContent = title;
       if (legendGradient) legendGradient.dataset.layer = layer;
@@ -926,10 +928,12 @@
         legendValues.replaceChildren();
         legendValues.style.position = 'relative';
         legendValues.style.height = '14px';
-        config.ticks.forEach(function (value) {
+        config.ticks.forEach(function (value, index) {
           var tick = document.createElement('span');
           var fraction = legendPosition(config, value);
-          tick.textContent = model && layer === 'precipitation' ? precipRate(value).number : formatLegendValue(layer, value);
+          const label = model && layer === 'precipitation' ? precipRate(value).number : formatLegendValue(layer, value);
+          tick.textContent = model && index === config.ticks.length - 1 ? '≥' + label
+            : model && layer === 'temperature' && index === 0 ? '≤' + label : label;
           tick.style.position = 'absolute';
           tick.style.left = (fraction * 100).toFixed(2) + '%';
           tick.style.transform = fraction >= 0.999 ? 'translateX(-100%)' : (fraction <= 0.001 ? 'none' : 'translateX(-50%)');
@@ -972,7 +976,7 @@
       clearTimeout(requestTimer);
     }
     function usesModelLayer(layer) {
-      return layer === 'temperature' || layer === 'precipitation';
+      return layer === 'temperature' || layer === 'precipitation' || (layer === 'wind' && !!catalog?.palettes.wind);
     }
     function formatTileHour(stamp) {
       return new Date(stamp).toISOString().slice(0, 13).replace(/[-T]/g,'');
@@ -988,7 +992,12 @@
       const start = Date.parse(isoTileHour(value.run) + 'Z');
       if (!Number.isFinite(start) || formatTileHour(start) !== value.run
           || value.frames.some((frame, i) => frame !== formatTileHour(start + (i + 1) * 3600000))) return null;
-      for (const layer of ['temperature','precipitation']) {
+      const layers = ['temperature','precipitation'];
+      if (value.palettes?.wind) {
+        if (value.windArrowZoom !== 4) return null;
+        layers.push('wind');
+      }
+      for (const layer of layers) {
         const palette = value.palettes?.[layer];
         if (!palette || !Array.isArray(palette.stops) || palette.stops.length < 2 || palette.stops.length > 20
             || !Array.isArray(palette.ticks) || !palette.ticks.length || palette.ticks.length > 7
@@ -1029,9 +1038,11 @@
     }
     function removeModelFrame() {
       if (!modelFrame) return;
-      const { id, timeout } = modelFrame;
+      const { id, timeout, arrows } = modelFrame;
       modelFrame = null;
       clearTimeout(timeout);
+      if (arrows && map?.getLayer(arrows)) map.removeLayer(arrows);
+      if (arrows && map?.getSource(arrows)) map.removeSource(arrows);
       if (map?.getLayer(id)) map.removeLayer(id);
       if (map?.getSource(id)) map.removeSource(id);
     }
@@ -1043,12 +1054,44 @@
     }
     function useGridFallback(frame) {
       if (frame !== modelFrame || !isOpen) return;
-      modelRetryAfter = Date.now() + 60000;
+      modelRetryAfter.set(selectedLayer, Date.now() + 60000);
       clearModel();
       if (timeInput) timeInput.disabled = true;
       if (timeOutput) timeOutput.textContent = '';
       legendForLayer(selectedLayer);
       requestGridWeather();
+    }
+    function installWindArrows(pending, stamp, before) {
+      if (!map.hasImage(WIND_ARROW_IMAGE)) {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 40;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.lineCap = ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(20,31); ctx.lineTo(20,9);
+        ctx.moveTo(11,18); ctx.lineTo(20,9); ctx.lineTo(29,18);
+        ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(8,26,45,0.8)'; ctx.stroke();
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgb(226,246,255)'; ctx.stroke();
+        map.addImage(WIND_ARROW_IMAGE, ctx.getImageData(0,0,40,40), { pixelRatio:2 });
+      }
+      const id = pending.id + '-arrows';
+      const path = 'api/map-tiles/v1/' + catalog.run + '/' + stamp + '/wind-direction/';
+      const url = new URL(path, document.baseURI).href + '{z}/{x}/{y}.pbf';
+      pending.arrows = id;
+      map.addSource(id, { type:'vector', tiles:[url], maxzoom:catalog.windArrowZoom });
+      map.addLayer({
+        id, type:'symbol', source:id, 'source-layer':'wind',
+        layout:{
+          'icon-image':WIND_ARROW_IMAGE,
+          'icon-size':0.9,
+          'icon-rotate':['get','bearing'],
+          'icon-rotation-alignment':'map',
+          'icon-ignore-placement':true,
+          'icon-allow-overlap':true
+        },
+        paint:{ 'icon-opacity':0.75 }
+      }, before);
     }
     function showModelFrame() {
       if (!modelTimeline || !map || !isOpen || document.visibilityState === 'hidden') return;
@@ -1071,7 +1114,14 @@
           'raster-opacity': selectedLayer === 'precipitation' ? 0.9 : 0.83,
           'raster-fade-duration':0, 'raster-resampling':selectedLayer === 'precipitation' ? 'nearest' : 'linear'
         } }, symbol?.id);
-      } catch (error) { useGridFallback(pending); }
+      } catch (error) { useGridFallback(pending); return; }
+      if (selectedLayer === 'wind') {
+        try {
+          // The arrows use the same valid frame as the speed raster.
+          const label = map.getStyle().layers.find(layer => layer.type === 'symbol');
+          installWindArrows(pending, frame, label?.id);
+        } catch (error) { /* The speed raster remains available without symbols. */ }
+      }
     }
     function applyModel(base) {
       cancelGridRequest();
@@ -1097,11 +1147,11 @@
     }
     function requestVisibleWeather() {
       if (!map || !styleReady || fallbackActive || !isOpen || document.visibilityState === 'hidden') return;
-      if (usesModelLayer(selectedLayer) && Date.now() >= modelRetryAfter) {
+      if (selectedLayer !== 'aqi' && Date.now() >= (modelRetryAfter.get(selectedLayer) || 0)) {
         const now = Date.now();
         if (now >= catalogUntil) loadModelCatalog();
         const base = modelBaseIndex(now);
-        if (base >= 0) { applyModel(base); return; }
+        if (base >= 0 && usesModelLayer(selectedLayer)) { applyModel(base); return; }
         if (catalogRequest && !activeGrid) {
           setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
           setBusy(true);
@@ -1645,7 +1695,8 @@
         if (fallbackActive) { recoveryAttempts=0; recoverMap(); return; }
         cachedGrids.clear(); sampleCache.clear();
         cancelGridRequest();
-        catalogUntil = modelRetryAfter = 0;
+        catalogUntil = 0;
+        modelRetryAfter.clear();
         requestVisibleWeather();
       },
       finishReturn: function () { if (root) root.classList.remove('is-returning'); },

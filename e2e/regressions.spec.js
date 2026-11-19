@@ -1732,8 +1732,13 @@ test('cached model map selects the matching forecast frame and distinguishes amo
     if (url.searchParams.get('cell_selection') === 'nearest') gridRequests.push(url.href);
   });
   await page.route('**/api/map-tiles/v1/manifest.json', route => route.fulfill({
-    json:{version:1, run:'2026111900', frames, model:'DWD ICON', maxZoom:3, tileSize:512, palettes}
+    json:{version:1, run:'2026111900', frames, model:'DWD ICON', maxZoom:3, tileSize:512, palettes, windArrowZoom:4}
   }));
+  await page.route('**/api/map-tiles/v1/**/*.pbf', route => {
+    modelRequests.push(new URL(route.request().url()).pathname);
+    return route.fulfill({contentType:'application/vnd.mapbox-vector-tile',
+      body:Buffer.from('GicKBHdpbmQSDRICAAAYASIFCYAggCAaB2JlYXJpbmciAiBaKIAgeAI=','base64')});
+  });
   await page.route('**/api/map-tiles/v1/**/*.webp', route => {
     modelRequests.push(new URL(route.request().url()).pathname);
     if (breakTiles) return route.fulfill({status:503});
@@ -1766,6 +1771,20 @@ test('cached model map selects the matching forecast frame and distinguishes amo
   expect(modelRequests.some(url => /\/202611190[89]\/precipitation\//.test(url))).toBe(false);
   await expect(status).toBeHidden();
   expect(gridRequests).toHaveLength(0);
+
+  await page.locator('[data-weather-layer="wind"]').click();
+  await expect.poll(() => modelRequests.some(url => url.includes('/2026111910/wind/'))).toBe(true);
+  await expect.poll(() => modelRequests.some(url => url.includes('/2026111910/wind-direction/'))).toBe(true);
+  await expect.poll(() => page.evaluate(() => {
+    const map = window.__mapForTest;
+    const layer = map.getStyle().layers.find(item => item['source-layer'] === 'wind');
+    return layer ? map.querySourceFeatures(layer.source, {sourceLayer:'wind'}).some(feature => feature.properties.bearing === 90) : false;
+  })).toBe(true);
+  await expect(status).toBeHidden();
+  expect(gridRequests).toHaveLength(0);
+  await precip.click();
+  await expect(status).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.__mapForTest.getStyle().layers.some(item => item['source-layer'] === 'wind'))).toBe(false);
 
   breakTiles = true;
   await time.fill('4');
