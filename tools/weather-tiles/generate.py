@@ -208,12 +208,28 @@ def colorize(values, layer):
 
 def raster_tile(field, layer, z, x, y):
     if layer == "wind":
-        values = np.hypot(*(project(component, z, x, y, interpolate=True) for component in field))
+        rgba = colorize(np.hypot(*(project(component, z, x, y, interpolate=True) for component in field)), layer)
+    elif layer == "precipitation":
+        # Keep the wide-view pyramid compact. At local zoom, sample partial coverage.
+        rgba = (precipitation_pixels(field, z, x, y) if z == MAX_ZOOM
+                else colorize(project(field, z, x, y, interpolate=False), layer))
     else:
-        values = project(field, z, x, y, interpolate=layer == "temperature")
+        rgba = colorize(project(field, z, x, y, interpolate=True), layer)
     buf = io.BytesIO()
-    Image.fromarray(colorize(values, layer)).save(buf, format="WEBP", lossless=True, method=3)
+    Image.fromarray(rgba).save(buf, format="WEBP", lossless=True, method=3)
     return buf.getvalue()
+
+
+def precipitation_pixels(field, z, x, y):
+    samples = project(field, z, x, y, interpolate=False, samples=TILE_SIZE * 2)
+    samples = samples.reshape(TILE_SIZE, 2, TILE_SIZE, 2)
+    wet = np.isfinite(samples) & (samples >= PALETTES["precipitation"]["stops"][0][0] - 1e-6)
+    coverage = wet.sum(axis=(1, 3))
+    # Use the wet samples for intensity, and use their pixel coverage for opacity.
+    rate = np.where(wet, samples, 0).sum(axis=(1, 3)) / np.maximum(coverage, 1)
+    rgba = colorize(rate, "precipitation")
+    rgba[..., 3] = np.rint(coverage * (255 / 4)).astype(np.uint8)
+    return rgba
 
 
 def wind_arrow_tile(wind, z, x, y):

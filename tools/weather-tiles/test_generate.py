@@ -6,8 +6,8 @@ import mapbox_vector_tile
 import numpy as np
 from scipy.spatial import cKDTree
 
-from generate import (GRID_SHAPE, NATIVE_FEED, REGULAR_FEED, TILE_SIZE, colorize, get_run,
-                      grid_coordinates, longitude_indices, nearest_cells, project, unit_sphere, wind_arrow_tile)
+from generate import (GRID_SHAPE, NATIVE_FEED, REGULAR_FEED, TILE_SIZE, colorize, get_run, grid_coordinates,
+                      longitude_indices, nearest_cells, precipitation_pixels, project, unit_sphere, wind_arrow_tile)
 
 
 class RasterTests(unittest.TestCase):
@@ -46,6 +46,16 @@ class RasterTests(unittest.TestCase):
         painted = colorize(np.array([[0, 0.09, 0.1, 30, np.nan]]), "precipitation")
         self.assertEqual(painted[0, :, 3].tolist(), [0, 0, 255, 255, 0])
         np.testing.assert_array_equal(painted[0, 3, :3], [255, 196, 81])
+
+    @patch("generate.project")
+    def test_precipitation_edges_use_coverage_without_diluting_rain_intensity(self, projection):
+        samples = np.zeros((TILE_SIZE * 2, TILE_SIZE * 2), dtype=np.float32)
+        samples[:2, :2] = [[5, 0], [np.nan, 0.09]]
+        samples[:2, 2:4] = 5
+        projection.return_value = samples
+        pixels = precipitation_pixels(None, 3, 0, 0)
+        self.assertEqual(pixels[0, :3, 3].tolist(), [64, 255, 0])
+        np.testing.assert_array_equal(pixels[0, 0, :3], pixels[0, 1, :3])
 
     def test_wind_arrows_point_in_the_direction_of_travel_and_omit_calm(self):
         calm = np.zeros(GRID_SHAPE, dtype=np.float32)
