@@ -1727,6 +1727,8 @@ test('cached model map selects the matching forecast frame and distinguishes amo
   const modelRequests = [];
   const gridRequests = [];
   let breakTiles = false;
+  let releaseReplacement;
+  const replacement = new Promise(resolve => { releaseReplacement = resolve; });
   page.on('request', request => {
     const url = new URL(request.url());
     if (url.searchParams.get('cell_selection') === 'nearest') gridRequests.push(url.href);
@@ -1739,8 +1741,10 @@ test('cached model map selects the matching forecast frame and distinguishes amo
     return route.fulfill({contentType:'application/vnd.mapbox-vector-tile',
       body:Buffer.from('GicKBHdpbmQSDRICAAAYASIFCYAggCAaB2JlYXJpbmciAiBaKIAgeAI=','base64')});
   });
-  await page.route('**/api/map-tiles/v1/**/*.webp', route => {
-    modelRequests.push(new URL(route.request().url()).pathname);
+  await page.route('**/api/map-tiles/v1/**/*.webp', async route => {
+    const path = new URL(route.request().url()).pathname;
+    modelRequests.push(path);
+    if (path.includes('/2026111910/precipitation/')) await replacement;
     if (breakTiles) return route.fulfill({status:503});
     return route.fulfill({contentType:'image/webp',
       body:Buffer.from('UklGRh4AAABXRUJQVlA4TBEAAAAvAUAAAAdQso40uf+BiOh/AAA=','base64')});
@@ -1768,8 +1772,19 @@ test('cached model map selects the matching forecast frame and distinguishes amo
   });
   await expect.poll(() => modelRequests.some(url => url.includes('/2026111910/precipitation/'))).toBe(true);
   await expect(page.locator('#weatherMapTimeOutput')).toContainText(/10:00.*UTC/);
-  expect(modelRequests.some(url => /\/202611190[89]\/precipitation\//.test(url))).toBe(false);
+  expect(modelRequests.some(url => url.includes('/2026111909/precipitation/'))).toBe(false);
+  expect(modelRequests.some(url => url.includes('/2026111911/precipitation/'))).toBe(false);
+  const visiblePrecipitationFrame = () => page.evaluate(() => {
+    const style = window.__mapForTest.getStyle();
+    return style.layers.filter(layer => layer.paint?.['raster-opacity'] === 0.9)
+      .map(layer => style.sources[layer.source].tiles[0].split('/').at(-5));
+  });
+  expect(await visiblePrecipitationFrame()).toEqual(['2026111907']);
+  releaseReplacement();
   await expect(status).toBeHidden();
+  expect(await visiblePrecipitationFrame()).toEqual(['2026111910']);
+  await expect.poll(() => modelRequests.filter(url => url.includes('/2026111911/precipitation/')).length).toBeGreaterThan(0);
+  expect(modelRequests.filter(url => url.includes('/2026111911/precipitation/')).length).toBeLessThanOrEqual(4);
   expect(gridRequests).toHaveLength(0);
 
   await page.locator('[data-weather-layer="wind"]').click();
@@ -1787,7 +1802,7 @@ test('cached model map selects the matching forecast frame and distinguishes amo
   await expect.poll(() => page.evaluate(() => window.__mapForTest.getStyle().layers.some(item => item['source-layer'] === 'wind'))).toBe(false);
 
   breakTiles = true;
-  await time.fill('4');
+  await time.fill('5');
   await expect(page.locator('#weatherMapLegendTitle')).toHaveText('Chance of precipitation');
   await expect(precip).toHaveText('Chance of precipitation');
   await expect(status).toBeHidden();

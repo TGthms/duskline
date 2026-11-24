@@ -67,9 +67,14 @@
     let catalogRequest = null;
     let modelTimeline = null;
     let modelFrame = null;
+    let pendingModelFrame = null;
     let modelSerial = 0;
     let modelTimer = 0;
     let modelRefresh = 0;
+    let modelWarmTimer = 0;
+    let modelWarmRequest = null;
+    const modelWarmTiles = new Map();
+    const MODEL_WARM_PROTOCOL = 'duskline-warm';
     const modelRetryAfter = new Map();
     var rasterWeights = null;
     var rasterCanvas = null;
@@ -188,7 +193,9 @@
       clearTimeout(modelTimer);
       clearTimeout(modelRefresh);
       cancelCatalogRequest();
-      if (modelFrame && !modelFrame.ready) removeModelFrame();
+      discardPendingModelFrame();
+      cancelModelWarmup();
+      modelWarmTiles.clear();
       clearTimeout(feedbackTimer);
       clearTimeout(longPressTimer);
       if (renderFrame) {
@@ -522,7 +529,10 @@
         mapLibraryPromise = Promise.all([
           import('../../../../assets/vendor/maplibre-gl/maplibre-gl.mjs'),
           addStyleSheet()
-        ]).then(function (result) { return result[0]; }).catch(function (error) {
+        ]).then(function ([library]) {
+          library.addProtocol(MODEL_WARM_PROTOCOL, loadWarmTile);
+          return library;
+        }).catch(function (error) {
           mapLibraryPromise = null;
           throw error;
         });
@@ -1051,24 +1061,38 @@
           requestVisibleWeather();
         }).finally(() => clearTimeout(timeout));
     }
-    function removeModelFrame() {
-      if (!modelFrame) return;
-      const { id, timeout, arrows } = modelFrame;
-      modelFrame = null;
+    function removeModelFrame(frame) {
+      if (!frame) return;
+      const { id, timeout, arrows } = frame;
       clearTimeout(timeout);
       if (arrows && map?.getLayer(arrows)) map.removeLayer(arrows);
       if (arrows && map?.getSource(arrows)) map.removeSource(arrows);
       if (map?.getLayer(id)) map.removeLayer(id);
       if (map?.getSource(id)) map.removeSource(id);
     }
+    function discardPendingModelFrame() {
+      const pending = pendingModelFrame;
+      pendingModelFrame = null;
+      removeModelFrame(pending);
+    }
+    function cancelModelWarmup() {
+      clearTimeout(modelWarmTimer);
+      modelWarmRequest?.abort();
+      modelWarmRequest = null;
+    }
     function clearModel() {
       clearTimeout(modelTimer);
       clearTimeout(modelRefresh);
-      removeModelFrame();
+      cancelModelWarmup();
+      modelWarmTiles.clear();
+      discardPendingModelFrame();
+      const shown = modelFrame;
+      modelFrame = null;
+      removeModelFrame(shown);
       modelTimeline = null;
     }
     function useGridFallback(frame) {
-      if (frame !== modelFrame || !isOpen) return;
+      if (frame !== pendingModelFrame || !isOpen) return;
       modelRetryAfter.set(selectedLayer, Date.now() + 60000);
       clearModel();
       if (timeInput) timeInput.disabled = true;
@@ -1105,20 +1129,66 @@
           'icon-ignore-placement':true,
           'icon-allow-overlap':true
         },
-        paint:{ 'icon-opacity':0.75 }
+        paint:{ 'icon-opacity':0 }
       }, before);
+    }
+    function modelTileBase(key) {
+      return new URL('api/map-tiles/v1/' + key + '/', document.baseURI).href;
+    }
+    async function loadWarmTile({ url }, { signal }) {
+      const tileURL = url.slice(MODEL_WARM_PROTOCOL.length + 3);
+      const warmed = modelWarmTiles.get(tileURL);
+      if (warmed) return { data:warmed.slice(0) };
+      const response = await fetch(tileURL, { signal });
+      if (!response.ok) throw new Error('Weather tile HTTP ' + response.status);
+      return { data:await response.arrayBuffer() };
+    }
+    function scheduleModelWarmup(frame) {
+      const nextStamp = catalog?.frames[catalog.frames.indexOf(frame.stamp) + 1];
+      if (!nextStamp || !frame.tiles.size || frame.warmed || global.navigator.connection?.saveData) return;
+      clearTimeout(modelWarmTimer);
+      modelWarmTimer = setTimeout(() => {
+        if (!isOpen || document.visibilityState === 'hidden' || map?.isMoving() || pendingModelFrame
+            || frame !== modelFrame || catalog.run !== frame.run || selectedLayer !== frame.layer
+            || frame.stamp !== catalog.frames[modelTimeline?.baseIndex + selectedOffset]) return;
+        frame.warmed = true;
+        const controller = new AbortController();
+        modelWarmRequest = controller;
+        modelWarmTiles.clear();
+        const base = modelTileBase([frame.run, nextStamp, frame.layer].join('/'));
+        // Keep the next hour's visible tiles in memory until MapLibre requests them.
+        Promise.allSettled(Array.from(frame.tiles, async tile => {
+          const url = base + tile + '.webp';
+          const response = await fetch(url, { signal:controller.signal, priority:'low' });
+          if (!response.ok) return;
+          const data = await response.arrayBuffer();
+          if (!controller.signal.aborted && data.byteLength <= 512 * 1024) modelWarmTiles.set(url, data);
+        })).then(() => {
+          if (modelWarmRequest === controller) modelWarmRequest = null;
+        });
+      }, 650);
     }
     function showModelFrame() {
       if (!modelTimeline || !map || !isOpen || document.visibilityState === 'hidden') return;
       clearTimeout(modelTimer);
       const frame = catalog.frames[modelTimeline.baseIndex + selectedOffset];
       const key = [catalog.run, frame, selectedLayer].join('/');
-      if (modelFrame?.key === key) return;
-      removeModelFrame();
+      if (pendingModelFrame?.key === key) return;
+      discardPendingModelFrame();
+      if (modelFrame?.key === key) {
+        if (rendererReady) { setStatus('', false); setBusy(false); }
+        return;
+      }
+      cancelModelWarmup();
+      if (modelFrame && modelFrame.layer !== selectedLayer) {
+        const shown = modelFrame;
+        modelFrame = null;
+        removeModelFrame(shown);
+      }
       const id = 'duskline-model-' + (++modelSerial);
-      const uri = new URL('api/map-tiles/v1/' + key + '/', document.baseURI).href + '{z}/{x}/{y}.webp';
-      const pending = { id, key, ready:false };
-      modelFrame = pending;
+      const uri = modelTileBase(key) + '{z}/{x}/{y}.webp';
+      const pending = { id, key, run:catalog.run, stamp:frame, layer:selectedLayer, tiles:new Set() };
+      pendingModelFrame = pending;
       setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
       setBusy(true);
       pending.timeout = setTimeout(() => useGridFallback(pending), 14000);
@@ -1126,8 +1196,8 @@
         map.addSource(id, { type:'raster', tiles:[uri], tileSize:catalog.tileSize, maxzoom:catalog.maxZoom });
         const symbol = map.getStyle().layers.find(layer => layer.type === 'symbol');
         map.addLayer({ id, type:'raster', source:id, paint:{
-          'raster-opacity': selectedLayer === 'precipitation' ? 0.9 : 0.83,
-          'raster-fade-duration':0, 'raster-resampling':selectedLayer === 'precipitation' ? 'nearest' : 'linear'
+          'raster-opacity': 0, 'raster-opacity-transition':{ duration:0 },
+          'raster-fade-duration':0, 'raster-resampling':'linear'
         } }, symbol?.id);
       } catch (error) { useGridFallback(pending); return; }
       if (selectedLayer === 'wind') {
@@ -1150,10 +1220,6 @@
         legendForLayer(selectedLayer);
       }
       showModelFrame();
-      if (modelFrame?.ready && rendererReady && root.getAttribute('aria-busy') === 'true') {
-        setStatus('', false);
-        setBusy(false);
-      }
       clearTimeout(modelRefresh);
       modelRefresh = setTimeout(requestVisibleWeather, 60000);
     }
@@ -1502,6 +1568,7 @@
           dragRotate: false,
           attributionControl: false,
           cooperativeGestures: false,
+          transformRequest: url => ({ url:modelWarmTiles.has(url) ? MODEL_WARM_PROTOCOL + '://' + url : url }),
           canvasContextAttributes: { antialias: true, preserveDrawingBuffer: false }
         });
         const instance = map;
@@ -1516,7 +1583,7 @@
           if (fallbackHost) fallbackHost.hidden=true;
           clearTimeout(styleTimer);
           instance.off('render',revealGeography);
-          if (activeGrid || modelFrame?.ready) { setStatus('',false);setBusy(false); }
+          if (activeGrid || (modelFrame && !pendingModelFrame)) { setStatus('',false);setBusy(false); }
         }
         instance.on('render',revealGeography);
         instance.once('style.load', function () {
@@ -1537,9 +1604,12 @@
         },{once:true});
         instance.on('error', function (event) {
           if (!isOpen || fallbackActive || map !== instance) return;
-          if (modelFrame && event.sourceId === modelFrame.id) {
-            if (!modelFrame.ready) useGridFallback(modelFrame);
-            else setStatus(t('weather.mapWeatherUnavailable', 'Weather layers are unavailable right now.'), true);
+          if (pendingModelFrame && event.sourceId === pendingModelFrame.id) {
+            useGridFallback(pendingModelFrame);
+            return;
+          }
+          if (!pendingModelFrame && modelFrame && event.sourceId === modelFrame.id) {
+            setStatus(t('weather.mapWeatherUnavailable', 'Weather layers are unavailable right now.'), true);
             return;
           }
           // Source/tile/glyph errors belong to the SDK's recovery. A single
@@ -1547,12 +1617,22 @@
           if (!styleReady && !(event && (event.sourceId || event.source))) useFallback();
         });
         instance.on('sourcedata', function (event) {
-          if (map !== instance || !isOpen || !modelFrame || event.sourceId !== modelFrame.id
-              || !event.isSourceLoaded) return;
-          clearTimeout(modelFrame.timeout);
-          modelFrame.ready = true;
+          const pending = pendingModelFrame;
+          if (map !== instance || !isOpen || !pending || event.sourceId !== pending.id) return;
+          const tile = event.coord?.canonical;
+          if (tile && pending.tiles.size < 4) pending.tiles.add([tile.z, tile.x, tile.y].join('/'));
+          if (!event.isSourceLoaded) return;
+          const shown = modelFrame;
+          pendingModelFrame = null;
+          modelFrame = pending;
+          clearTimeout(pending.timeout);
+          instance.setPaintProperty(pending.id, 'raster-opacity', pending.layer === 'precipitation' ? 0.9 : 0.83);
+          if (pending.arrows && instance.getLayer(pending.arrows)) instance.setPaintProperty(pending.arrows, 'icon-opacity', 0.75);
+          removeModelFrame(shown);
+          scheduleModelWarmup(pending);
           if (rendererReady) { setStatus('', false); setBusy(false); }
         });
+        instance.on('movestart', cancelModelWarmup);
         instance.on('moveend', queueVisibleWeather);
       }).catch(function (error) {
         if (!isOpen || generation !== mapLoadGeneration) return;
@@ -1566,7 +1646,9 @@
         clearTimeout(modelTimer);
         clearTimeout(modelRefresh);
         cancelCatalogRequest();
-        if (modelFrame && !modelFrame.ready) removeModelFrame();
+        discardPendingModelFrame();
+        cancelModelWarmup();
+        modelWarmTiles.clear();
         clearTimeout(moveTimer);clearTimeout(styleTimer);
         if (renderFrame) global.cancelAnimationFrame(renderFrame);
         renderFrame = 0;
@@ -1629,7 +1711,7 @@
         if (fallbackHost) fallbackHost.hidden = true;
         map.resize();map.triggerRepaint();
         if (activeGrid && Date.now()-activeGrid.fetchedAt < 8*60*1000) applyGrid(activeGrid);
-        else if (!modelFrame?.ready) { setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'),true,true);setBusy(true); }
+        else if (!modelFrame) { setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'),true,true);setBusy(true); }
         requestVisibleWeather();
       } else loadCityMap(options || {});
     }
@@ -1682,17 +1764,19 @@
       if (stepped && W.haptics) W.haptics.detent();
       if (modelTimeline && stepped) {
         updateTimeOutput(modelTimeline);
-        removeModelFrame();
+        discardPendingModelFrame();
+        cancelModelWarmup();
         clearTimeout(modelTimer);
         setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
-        modelTimer = setTimeout(showModelFrame, 100);
+        modelTimer = setTimeout(showModelFrame, 120);
       } else if (activeGrid) {
         updateTimeOutput(activeGrid);
         scheduleWeatherImage(activeGrid);
       }
     });
     if (timeInput) timeInput.addEventListener('change', function () {
-      if (activeGrid) scheduleWeatherImage(activeGrid);
+      if (modelTimeline) showModelFrame();
+      else if (activeGrid) scheduleWeatherImage(activeGrid);
     });
     if (root) root.addEventListener('transitionend', function (event) {
       if (event.target === root && isOpen && map) map.resize();
