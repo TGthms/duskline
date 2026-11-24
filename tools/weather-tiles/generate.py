@@ -8,6 +8,8 @@ import io
 import json
 import multiprocessing
 from pathlib import Path
+import sys
+from tempfile import TemporaryDirectory
 import time
 from urllib.request import urlopen
 
@@ -20,11 +22,15 @@ from omfiles import OmFileReader
 from PIL import Image
 from pmtiles.tile import Compression, TileType, tileid_to_zxy
 from pmtiles.writer import Writer
+from scipy.spatial import cKDTree
 
 
-SPATIAL = "https://openmeteo.s3.amazonaws.com/data_spatial/dwd_icon/"
+BUCKET = "https://openmeteo.s3.amazonaws.com/"
+REGULAR_FEED = "dwd_icon"
+NATIVE_FEED = "dwd_icon_global_native"
 MODEL = "DWD ICON"
 GRID_SHAPE = (1441, 2879)
+NATIVE_SHAPE = (1, 2949120)
 GRID_STEP = 0.125
 TILE_SIZE = 512
 MAX_ZOOM = 3
@@ -65,17 +71,20 @@ class SpatialFileSystem(HTTPFileSystem):
         return b"".join(result)
 
 
-def collect_fields(url):
+def collect_fields(url, native_index=None):
     filesystem = SpatialFileSystem()
     fields = {}
     with OmFileReader(OpenFile(filesystem, url)) as root:
         for layer, name in VARIABLES.items():
             reader = root.get_child_by_name(name)
-            if reader.shape != GRID_SHAPE:
+            expected_shape = GRID_SHAPE if native_index is None else NATIVE_SHAPE
+            if reader.shape != expected_shape:
                 raise ValueError(f"Unexpected ICON grid for {name}: {reader.shape}")
             field = reader[:, :]
             if np.count_nonzero(np.isfinite(field)) < field.size * 0.99:
                 raise ValueError(f"Incomplete ICON field: {name}")
+            if native_index is not None:
+                field = field[0, native_index]
             fields[layer] = field
     return fields
 
@@ -88,12 +97,12 @@ def frame_id(stamp):
     return stamp.strftime("%Y%m%d%H")
 
 
-def source_path(run, stamp):
-    return f"{SPATIAL}{run:%Y/%m/%d/%H%MZ}/{stamp:%Y-%m-%dT%H%M}.om"
+def source_path(feed, run, stamp):
+    return f"{BUCKET}data_spatial/{feed}/{run:%Y/%m/%d/%H%MZ}/{stamp:%Y-%m-%dT%H%M}.om"
 
 
-def get_run():
-    with urlopen(SPATIAL + "latest.json", timeout=30) as response:
+def feed_run(feed):
+    with urlopen(f"{BUCKET}data_spatial/{feed}/latest.json", timeout=30) as response:
         metadata = json.load(response)
     run = model_time(metadata["reference_time"])
     frames = [run + offset * HOUR for offset in range(1, 25)]
@@ -102,7 +111,51 @@ def get_run():
         raise ValueError("The published ICON model run is incomplete.")
     if not all(stamp in valid for stamp in frames):
         raise ValueError("The published ICON run is missing hourly frames.")
-    return run, frames
+    expected_crs = 'GEOGCRS["WGS 84"' if feed == REGULAR_FEED else 'GEOGCRS["ICON Native Grid"'
+    if not metadata["crs_wkt"].startswith(expected_crs):
+        raise ValueError(f"Unexpected coordinate system for {feed}")
+    return run, frames, feed
+
+
+def get_run(source):
+    feeds = [REGULAR_FEED, NATIVE_FEED] if source == "auto" else [source]
+    complete = []
+    for feed in feeds:
+        try:
+            complete.append(feed_run(feed))
+        except (OSError, ValueError, KeyError) as error:
+            print(f"ICON feed {feed}: {error}", file=sys.stderr)
+    if not complete:
+        raise ValueError("No supported complete ICON run is available.")
+    return max(complete, key=lambda candidate: candidate[0])
+
+
+def unit_sphere(latitude, longitude):
+    lat, lon = np.deg2rad(latitude), np.deg2rad(longitude)
+    horizontal = np.cos(lat)
+    return np.stack(np.broadcast_arrays(horizontal * np.cos(lon), horizontal * np.sin(lon), np.sin(lat)), axis=-1)
+
+
+def nearest_cells(tree, latitude, longitude):
+    return tree.query(unit_sphere(latitude, longitude))[1]
+
+
+def save_native_index(path):
+    url = f"{BUCKET}data/{NATIVE_FEED}/static/coordinates.om"
+    with OmFileReader(OpenFile(SpatialFileSystem(), url)) as root:
+        latitude = root.get_child_by_name("lat")
+        longitude = root.get_child_by_name("lon")
+        if latitude.shape != NATIVE_SHAPE or longitude.shape != NATIVE_SHAPE:
+            raise ValueError("Unexpected native ICON coordinate grid")
+        tree = cKDTree(unit_sphere(latitude[0, :], longitude[0, :]))
+    height, width = GRID_SHAPE
+    columns = np.arange(width) * GRID_STEP - 180
+    index = np.empty(GRID_SHAPE, dtype=np.int32)
+    # Row batches bound peak memory and use the same grid for every forecast hour.
+    for start in range(0, height, 32):
+        rows = np.arange(start, min(height, start + 32)) * GRID_STEP - 90
+        index[start:start + len(rows)] = nearest_cells(tree, rows[:, None], columns)
+    np.save(path, index)
 
 
 def grid_coordinates(z, x, y, samples=TILE_SIZE):
@@ -194,10 +247,11 @@ def write_archive(path, layer, max_zoom, tile_type, make_tile):
         )
 
 
-def render_frame(output, run, stamp):
+def render_frame(output, run, stamp, feed, index_path):
     started = time.monotonic()
     try:
-        fields = collect_fields(source_path(run, stamp))
+        native_index = np.load(index_path, mmap_mode="r") if index_path else None
+        fields = collect_fields(source_path(feed, run, stamp), native_index)
     except Exception as error:
         raise RuntimeError(f"Cannot read ICON frame {stamp.isoformat()}") from error
     wind = (fields.pop("wind_u"), fields.pop("wind_v"))
@@ -232,8 +286,9 @@ def main():
     parser.add_argument("--expected-run", help="Abort if the upstream run changed")
     parser.add_argument("--frame", help="Generate one forecast frame for local verification")
     parser.add_argument("--jobs", type=int, default=3)
+    parser.add_argument("--source", choices=["auto", REGULAR_FEED, NATIVE_FEED], default="auto")
     args = parser.parse_args()
-    run, frames = get_run()
+    run, frames, feed = get_run(args.source)
     if args.run:
         print(frame_id(run))
         return
@@ -244,13 +299,18 @@ def main():
     if not args.output or not frames:
         parser.error("Provide --output and an available forecast frame.")
     args.output.mkdir(exist_ok=True, parents=True)
-    if len(frames) == 1:
-        render_frame(args.output, run, frames[0])
-    else:
-        with ProcessPoolExecutor(max_workers=args.jobs, mp_context=multiprocessing.get_context("spawn")) as pool:
-            jobs = [pool.submit(render_frame, args.output, run, stamp) for stamp in frames]
-            for job in jobs:
-                job.result()
+    print(f"Publishing {feed} run {frame_id(run)}", flush=True)
+    with TemporaryDirectory() as scratch:
+        index_path = Path(scratch) / "native-index.npy" if feed == NATIVE_FEED else None
+        if index_path:
+            save_native_index(index_path)
+        if len(frames) == 1:
+            render_frame(args.output, run, frames[0], feed, index_path)
+        else:
+            with ProcessPoolExecutor(max_workers=args.jobs, mp_context=multiprocessing.get_context("spawn")) as pool:
+                jobs = [pool.submit(render_frame, args.output, run, stamp, feed, index_path) for stamp in frames]
+                for job in jobs:
+                    job.result()
     (args.output / "manifest.json").write_text(json.dumps(manifest(run, frames), separators=(",", ":")))
 
 

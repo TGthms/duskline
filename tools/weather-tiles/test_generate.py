@@ -1,12 +1,29 @@
 import unittest
+from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 import mapbox_vector_tile
 import numpy as np
+from scipy.spatial import cKDTree
 
-from generate import GRID_SHAPE, TILE_SIZE, colorize, grid_coordinates, longitude_indices, project, wind_arrow_tile
+from generate import (GRID_SHAPE, NATIVE_FEED, REGULAR_FEED, TILE_SIZE, colorize, get_run,
+                      grid_coordinates, longitude_indices, nearest_cells, project, unit_sphere, wind_arrow_tile)
 
 
 class RasterTests(unittest.TestCase):
+    def test_native_lookup_wraps_the_date_line_and_handles_polar_latitudes(self):
+        tree = cKDTree(unit_sphere(np.array([0, 0, 89.9]), np.array([179.9, -175, 90])))
+        self.assertEqual(nearest_cells(tree, [0, 0, 89.9], [-179.9, -175, -90]).tolist(), [0, 1, 2])
+
+    @patch("generate.feed_run")
+    def test_newer_native_run_replaces_the_legacy_run_and_survives_its_removal(self, feed_run):
+        now = datetime(2026, 11, 30, tzinfo=timezone.utc)
+        regular = (now - timedelta(hours=6), [], REGULAR_FEED)
+        native = (now, [], NATIVE_FEED)
+        feed_run.side_effect = [regular, native, OSError("offline"), native]
+        self.assertEqual(get_run("auto"), native)
+        self.assertEqual(get_run("auto"), native)
+
     def test_web_mercator_tile_edges_use_the_same_model_coordinates(self):
         top_rows, right_columns = grid_coordinates(1, 1, 0)
         bottom_rows, left_columns = grid_coordinates(1, 0, 1)
