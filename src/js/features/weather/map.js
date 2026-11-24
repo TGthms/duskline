@@ -663,21 +663,23 @@
         [18,[173,222,113,194]],[28,[255,199,70,202]],[40,[235,86,68,210]]],
       precipitation: [[8,[109,203,255,72]],[25,[50,176,241,120]],[50,[63,122,232,165]],
         [75,[91,83,207,190]],[100,[153,78,214,210]]],
-      aqi: [[0,[70,190,122,170]],[50,[70,190,122,170]],[100,[241,211,68,185]],[150,[239,150,61,190]],[200,[223,75,73,200]],[300,[150,88,190,205]],[500,[126,48,76,210]]],
       wind: [[2,[73,176,217,75]],[6,[79,205,183,130]],[12,[190,218,97,175]],
         [18,[255,167,72,198]],[26,[228,80,95,214]]]
     };
+    const AQI_COLORS = {
+      Good:[70,190,122,170], Moderate:[241,211,68,185], UnhealthySG:[239,150,61,190],
+      Unhealthy:[223,75,73,200], VeryUnhealthy:[150,88,190,205], Hazardous:[126,48,76,210]
+    };
     function writePalette(layer, value, target, offset) {
-      const kind = ['temperature','precipitation','aqi'].includes(layer) ? layer : 'wind';
-      const stops = PALETTE_STOPS[kind];
-      if (!Number.isFinite(value) || (kind !== 'temperature' && value < stops[0][0])) {
-        target[offset] = target[offset+1] = target[offset+2] = target[offset+3] = 0;
+      if (layer === 'aqi' && Number.isFinite(value) && value >= 0) {
+        const color = AQI_COLORS[global.DusklineAqiMath.band(value, 'us')];
+        for (let channel = 0; channel < 4; channel++) target[offset + channel] = color[channel];
         return;
       }
-      if (kind === 'aqi') {
-        const n=Math.round(value), band=global.DusklineAqiMath ? global.DusklineAqiMath.band(n,'us') : n<=50?'Good':n<=100?'Moderate':n<=150?'UnhealthySG':n<=200?'Unhealthy':n<=300?'VeryUnhealthy':'Hazardous';
-        const color={Good:[70,190,122,170],Moderate:[241,211,68,185],UnhealthySG:[239,150,61,190],Unhealthy:[223,75,73,200],VeryUnhealthy:[150,88,190,205],Hazardous:[126,48,76,210]}[band];
-        for(let channel=0;channel<4;channel++) target[offset+channel]=color[channel];
+      const kind = ['temperature','precipitation','aqi'].includes(layer) ? layer : 'wind';
+      const stops = PALETTE_STOPS[kind];
+      if (!stops || !Number.isFinite(value) || (kind !== 'temperature' && value < stops[0][0])) {
+        target[offset] = target[offset+1] = target[offset+2] = target[offset+3] = 0;
         return;
       }
       let left = stops[0], right = left, mix = 0;
@@ -700,7 +702,20 @@
       return color;
     }
     function legendConfig(layer) {
-      if (layer === 'aqi') return {min:0,max:500,ticks:[0,50,100,150,200,300,500],transparentUntil:null,stops:PALETTE_STOPS.aqi.map(stop=>({value:stop[0],color:'rgb('+stop[1].slice(0,3).join(',')+')'}))};
+      if (layer === 'aqi') {
+        const bands = global.DusklineAqiMath.bands('us');
+        const max = bands.at(-1).max;
+        return {
+          min: 0, max, ticks: [0, ...bands.map(band => band.max)],
+          stops: bands.flatMap(({ key, min, max: upper }) => {
+            const color = 'rgb(' + AQI_COLORS[key].slice(0, 3).join(',') + ')';
+            return [
+              { value: Math.max(0, min - 0.5), color },
+              { value: Math.min(max, upper + 0.5), color }
+            ];
+          })
+        };
+      }
       if (layer === 'precipitation') {
         return {
           min: 0, max: 100, ticks: [0, 25, 50, 75, 100], transparentUntil: 8,

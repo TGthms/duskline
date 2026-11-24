@@ -16,6 +16,7 @@ function loadMapFactory() {
   const document = { getElementById() { return null; } };
   const context = { window, document, URLSearchParams, fetch, AbortController, Map, Math, Date, Intl, setTimeout, clearTimeout };
   vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'src/js/features/weather/aqi-math.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(root, 'src/js/features/weather/map.js'), 'utf8'), context);
   return window.DusklineWeather.factories.map({});
 }
@@ -72,6 +73,21 @@ test('map legend tick marks follow the actual palette thresholds', () => {
   assert.match(map.helpers.gradientCss(temperature), /25\.00%/);
   assert.match(map.helpers.gradientCss(precipitation), /transparent 8\.00%,#6dcbff 8\.00%/);
   assert.match(map.helpers.gradientCss(wind), /transparent 7\.69%,#49b0d9 7\.69%/);
+});
+
+test('AQI legend changes directly between the same categories as the overlay', () => {
+  const { legendConfig, gradientCss, palette } = loadMapFactory().helpers;
+  const config = legendConfig('aqi');
+  const gradient = gradientCss(config);
+  assert.equal(config.stops.length, 12);
+  for (const boundary of [50, 100, 150, 200, 300]) {
+    const position = ((boundary + 0.5) / 5).toFixed(2) + '%';
+    const before = Array.from(palette('aqi', boundary)).slice(0, 3).join(',');
+    const after = Array.from(palette('aqi', boundary + 1)).slice(0, 3).join(',');
+    assert.notEqual(before, after);
+    assert.ok(gradient.includes(`rgb(${before}) ${position},rgb(${after}) ${position}`));
+  }
+  assert.deepEqual(Array.from(palette('aqi', NaN)), [0, 0, 0, 0]);
 });
 
 test('local-cell interpolation reconstructs a linear field and preserves missing cells',()=>{
