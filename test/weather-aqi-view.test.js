@@ -30,3 +30,13 @@ test('a late detailed AQI response patches no older weather over a refreshed cit
 test('unavailable AQI has no marker that could imply a healthy zero',()=>{
  const api=create();assert.equal(api.aqiBarHtml(null,true,'us'),'');assert.equal(api.aqiBarHtml('',true,'us'),'');assert.match(api.aqiBarHtml(0,true,'us'),/wx-aqi-dot/);
 });
+
+test('AQI glyphs follow the selected scale and distinguish zero from missing',()=>{
+ const api=create();
+ assert.equal(api.aqiGlyph(null,'us'),'duskline-aqi');
+ assert.equal(api.aqiGlyph(0,'us'),'duskline-aqi-low');
+ assert.equal(api.aqiGlyph(50,'us'),'duskline-aqi-low');
+ assert.equal(api.aqiGlyph(50,'eu'),'duskline-aqi-medium');
+ assert.equal(api.aqiGlyph(61,'eu'),'duskline-aqi-high');
+ assert.equal(api.aqiGlyph(101,'us'),'duskline-aqi-high');
+});

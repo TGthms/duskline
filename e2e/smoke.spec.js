@@ -478,7 +478,11 @@ test('U.S. AQI detail follows all six official bands and boundaries', async ({ p
     aqiValue = value;
     await page.goto('/?city=nyc');
     await expect(page.locator('#weatherDetail')).toHaveClass(/open/);
-    await page.locator('#weatherModules [data-sheet="aqi"]').click();
+    const tile = page.locator('#weatherModules [data-sheet="aqi"]');
+    const glyph = '#duskline-aqi-' + (value <= 50 ? 'low' : value <= 100 ? 'medium' : 'high');
+    await expect(tile.locator('use')).toHaveAttribute('href', glyph);
+    await tile.click();
+    await expect(page.locator('#weatherSheetPanel .wx-sheet-icon use')).toHaveAttribute('href', glyph);
     const sheet = page.locator('#weatherSheetBody');
     await expect(sheet).toContainText(label);
     await expect(sheet).toContainText(range);

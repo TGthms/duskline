@@ -35,6 +35,13 @@
   function aqiBandKey(v, scale) {
     return window.DusklineAqiMath.band(v, scale || aqiScale());
   }
+  function aqiGlyph(v, scale) {
+    const band = aqiBandKey(v, scale);
+    if (!band) return 'duskline-aqi';
+    if (band === 'Good') return 'duskline-aqi-low';
+    if (band === 'Fair' || band === 'Moderate') return 'duskline-aqi-medium';
+    return 'duskline-aqi-high';
+  }
   function aqiDescription(v, scale) {
     scale = scale || aqiScale();
     if (scale === 'eu') return '';
@@ -291,6 +298,6 @@
     </div>
     <div class="wx-aqi-labels">${tickHtml}</div>`;
   }
-    return {aqiCurrentValue,aqiScaleLabel,aqiLabel,aqiBandKey,aqiDescription,aqiGreetingDescription,aqiRange,airValueText,aqiExtendedHtml,loadAqiDetail,aqiOutlookHtml,aqiColor,aqiLightColor,aqiPct,aqiBarHtml};
+    return {aqiCurrentValue,aqiScaleLabel,aqiLabel,aqiBandKey,aqiGlyph,aqiDescription,aqiGreetingDescription,aqiRange,airValueText,aqiExtendedHtml,loadAqiDetail,aqiOutlookHtml,aqiColor,aqiLightColor,aqiPct,aqiBarHtml};
   };
 })(window);

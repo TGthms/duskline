@@ -304,7 +304,7 @@
   let detailInsightGeneration = 0;
   let lastDetailInsightKey = '';
   let greetingVisitSeed = null;
-  var aqiCurrentValue, aqiScaleLabel, aqiLabel, aqiBandKey, aqiDescription, aqiGreetingDescription, aqiRange, airValueText, aqiExtendedHtml, loadAqiDetail, aqiOutlookHtml, aqiColor, aqiLightColor, aqiPct, aqiBarHtml;
+  var aqiCurrentValue, aqiScaleLabel, aqiLabel, aqiBandKey, aqiGlyph, aqiDescription, aqiGreetingDescription, aqiRange, airValueText, aqiExtendedHtml, loadAqiDetail, aqiOutlookHtml, aqiColor, aqiLightColor, aqiPct, aqiBarHtml;
   let cityRefreshApi = null;
   let forecastSheetApi = null;
   let activeSheetKind = null;
@@ -519,6 +519,7 @@
     aqiScaleLabel=aqiApi.aqiScaleLabel;
     aqiLabel=aqiApi.aqiLabel;
     aqiBandKey=aqiApi.aqiBandKey;
+    aqiGlyph=aqiApi.aqiGlyph;
     aqiDescription=aqiApi.aqiDescription;
     aqiGreetingDescription=aqiApi.aqiGreetingDescription;
     aqiRange=aqiApi.aqiRange;
@@ -1348,7 +1349,7 @@
 
   function modLabelIcon(key) {
     const map = {
-      aqi: 'duskline-aqi', feels: 'thermometer', humidity: 'drop', wind: 'wind',
+      feels: 'thermometer', humidity: 'drop', wind: 'wind',
       uv: 'sun.max', vis: 'eye', pressure: 'barometer', precip: 'umbrella',
       sun: 'sunrise', conditions: 'cloud.sun'
     };
@@ -3190,7 +3191,7 @@
       'aqi', t('weather.aqi', 'Air Quality'),
       aqi != null ? String(Math.round(aqi)) : '—',
       aqi != null ? aqiScaleLabel(selectedAqiScale) + ' · ' + aqiLabel(aqi, selectedAqiScale) : aqiScaleLabel(selectedAqiScale),
-      true, false, aqiBarHtml(aqi, true, selectedAqiScale)
+      true, false, aqiBarHtml(aqi, true, selectedAqiScale), aqiGlyph(aqi, selectedAqiScale)
     ));
     {
       const feels = cur.apparent_temperature;
@@ -3496,11 +3497,11 @@
    * label (icon + title) → large value → subtitle → optional foot viz (bar / compass).
    * footHtml is always raw HTML (bars, compass), kept separate from sub text.
    */
-  function modHtml(key, label, value, sub, tappable, subIsHtml, footHtml) {
+  function modHtml(key, label, value, sub, tappable, subIsHtml, footHtml, glyph) {
     const tag = tappable ? 'button' : 'div';
     const type = tappable ? ' type="button"' : '';
     const ds = tappable ? ` data-sheet="${key}"` : '';
-    const icon = modLabelIcon(key);
+    const icon = glyph ? weatherIcon(glyph, 'weather-mod-icon') : modLabelIcon(key);
     const subBlock = !sub
       ? ''
       : (subIsHtml ? sub : `<div class="weather-mod-sub">${escapeHtml(sub)}</div>`);
@@ -3700,10 +3701,16 @@
 
     const aboutTitle = t('weather.about', 'About');
     const dayMode = sheetOptions.tempMode === 'feels' ? 'feels' : 'actual';
+    const sheetAqiScale = kind === 'aqi' ? aqiScale(pack.city) : null;
+    const sheetAqi = sheetAqiScale ? aqiCurrentValue(pack.air && pack.air.current, sheetAqiScale) : null;
+    const sheetIcon = sheetAqiScale ? weatherIcon(aqiGlyph(sheetAqi, sheetAqiScale), 'weather-mod-icon')
+      : kind === 'day' || kind === 'conditions'
+        ? selectedDayCode != null ? condIcon(selectedDayCode, false, 'weather-mod-icon') : modLabelIcon('conditions')
+        : modLabelIcon(kind);
     // Build after the selected day is known so the sheet title matches the date in the body.
     const sheetTitleHtml = `
       <div class="wx-sheet-head" data-sheet-title>
-        <div class="wx-sheet-icon">${(kind === 'day' || kind === 'conditions') && selectedDayCode != null ? condIcon(selectedDayCode, false, 'weather-mod-icon') : modLabelIcon(kind === 'conditions' || kind === 'day' ? 'conditions' : kind)}</div>
+        <div class="wx-sheet-icon">${sheetIcon}</div>
         <h3 class="wx-sheet-title">${escapeHtml(titleMap[kind] || t('weather.about', 'About'))}</h3>
       </div>`;
 
@@ -3765,8 +3772,8 @@
         body += `<p class="wx-sheet-context">${escapeHtml(t('weather.uvMax', 'Today’s max'))} ${Math.round(uvMax * 10) / 10}</p>`;
       }
     } else if (kind === 'aqi') {
-      const scale = aqiScale(pack.city);
-      const aqi = aqiCurrentValue(pack.air && pack.air.current, scale);
+      const scale = sheetAqiScale;
+      const aqi = sheetAqi;
       body += `<div class="wx-sheet-hero">
         <div class="weather-chart-readout wx-aqi-readout" style="--wx-aqi-color:${aqiColor(aqi, scale)};--wx-aqi-light:${aqiLightColor(aqi, scale)}">${aqi != null ? Math.round(aqi) : '—'}</div>
         <div class="weather-chart-sub">${escapeHtml(aqiLabel(aqi, scale) || t('weather.aqi', 'Air Quality'))}${aqi != null ? ' · ' + escapeHtml(aqiRange(aqi, scale)) : ''}</div>

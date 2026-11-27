@@ -167,7 +167,9 @@ test('Lucide glyphs and complete third-party license notices are local', () => {
   assert.match(index, /symbol id="duskline-alert-triangle"/);
   assert.match(index, /symbol id="duskline-cloud-rain-heavy"/);
   assert.match(app, /glyph\.indexOf\('duskline-'\) === 0/);
-  assert.match(app, /aqi: 'duskline-aqi'/);
+  for (const suffix of ['', '-low', '-medium', '-high']) {
+    assert.ok(index.includes('symbol id="duskline-aqi' + suffix + '"'));
+  }
   assert.match(app, /'cloud\.heavyrain': 'duskline-cloud-rain-heavy'/);
   assert.match(app, /weatherIcon\('duskline-alert-triangle'/);
   assert.doesNotMatch(index, /assets\/icons\/lucide-sprite\.svg#/);
