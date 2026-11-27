@@ -549,28 +549,39 @@
     function normalizeLongitude(longitude) {
       return ((longitude + 180) % 360 + 360) % 360 - 180;
     }
-    function gridGeometry(bounds) {
+    function gridGeometry(bounds, layer = selectedLayer) {
       let west = bounds.getWest(), east = bounds.getEast();
       if (east <= west) east += 360;
       east = Math.min(east,west+360);
+      const aqi = layer === 'aqi';
+      const viewNorth = bounds.getNorth(), viewSouth = bounds.getSouth();
+      const wrappedWest = normalizeLongitude(west);
+      // CAMS regional grid covers 30–70°N and 25°W–45°E. Keep each image on one model.
+      const regional = aqi && wrappedWest >= -25 && wrappedWest + (east-west) <= 45
+        && viewSouth >= 30 && viewNorth <= 70;
+      const domain = aqi ? (regional ? 'cams_europe' : 'cams_global') : null;
       const choose = span => samplingSteps.find(step=>step >= span/5) || 90;
-      const lonStep = Math.max(selectedLayer === 'aqi' ? .5 : .025,choose(east-west));
-      const latStep = Math.max(selectedLayer === 'aqi' ? .5 : .025, choose(Math.min(85,bounds.getNorth())-Math.max(-85,bounds.getSouth())));
-      west = Math.floor(west/lonStep)*lonStep; east = Math.min(west+360,Math.ceil(east/lonStep)*lonStep);
-      const north = Math.min(85,Math.ceil(Math.min(85,bounds.getNorth())/latStep)*latStep);
-      const south = Math.max(-85,Math.floor(Math.max(-85,bounds.getSouth())/latStep)*latStep);
-      const cols = Math.max(2,Math.round((east-west)/lonStep)+1);
-      const rows = Math.max(2,Math.ceil((north-south)/latStep)+1);
+      const minStep = regional ? .1 : aqi ? .5 : .025;
+      const lonStep = Math.max(minStep,choose(east-west));
+      const latStep = Math.max(minStep,choose(Math.min(85,viewNorth)-Math.max(-85,viewSouth)));
+      const worldOffset = west - wrappedWest;
+      west = Math.max(regional ? worldOffset - 25 : -Infinity, Math.floor(west/lonStep)*lonStep);
+      east = Math.min(regional ? worldOffset + 45 : west+360, Math.ceil(east/lonStep)*lonStep);
+      const north = Math.min(regional ? 70 : 85, Math.ceil(Math.min(85,viewNorth)/latStep)*latStep);
+      const south = Math.max(regional ? 30 : -85, Math.floor(Math.max(-85,viewSouth)/latStep)*latStep);
+      const cols = Math.max(2,Math.ceil((east-west)/lonStep-1e-9)+1);
+      const rows = Math.max(2,Math.ceil((north-south)/latStep-1e-9)+1);
       const topY = mercatorY(north), bottomY = mercatorY(south), points = [];
       for (let row=0;row<rows;row++) for (let col=0;col<cols;col++) {
-        const latitude = Math.max(south,north-row*latStep), rawLon = west+col*lonStep;
+        const latitude = row === rows-1 ? south : north-row*latStep;
+        const rawLon = col === cols-1 ? east : west+col*lonStep;
         points.push({x:(rawLon-west)/(east-west),y:(topY-mercatorY(latitude))/(topY-bottomY),
           latitude:latitude,longitude:normalizeLongitude(rawLon),hourly:null});
       }
       return {west,east,north,south,cols,rows,points,
-        kind:selectedLayer === 'aqi' ? 'aqi' : 'weather',
+        kind:aqi ? 'aqi' : 'weather', domain,
         coordinates:[[west,north],[east,north],[east,south],[west,south]],
-        key:[west,east,north,south,lonStep,latStep,selectedLayer === 'aqi' ? 'aqi' : 'weather'].join(',')};
+        key:[west,east,north,south,lonStep,latStep,domain || 'weather'].join(',')};
     }
     function makeGridUrl(geometry) {
       var params = new URLSearchParams();
@@ -580,8 +591,11 @@
       if (geometry.kind !== 'aqi') { params.set('temperature_unit', 'celsius'); params.set('wind_speed_unit', 'ms'); }
       params.set('timezone', 'GMT');
       params.set('cell_selection', 'nearest');
-      params.set('forecast_days', '2');
-      if (geometry.kind === 'aqi') params.set('domains','cams_global');
+      if (geometry.kind === 'aqi') {
+        params.set('domains', geometry.domain);
+        // Now, 12 selectable hours, and one spare for cached grids crossing the hour.
+        params.set('forecast_hours', '14');
+      } else params.set('forecast_days', '2');
       return (geometry.kind === 'aqi' ? 'https://air-quality-api.open-meteo.com/v1/air-quality?' : 'https://api.open-meteo.com/v1/forecast?') + params.toString();
     }
     function valueAtOrNearNow(times) {
@@ -609,7 +623,7 @@
       setStatus(t('weather.mapLoadingWeather', 'Loading nearby forecast…'), true, true);
       setBusy(true);
       requestTimer = setTimeout(function () { controller.abort(); }, 20000);
-      const pointKey = point => geometry.kind+':'+point.latitude.toFixed(5)+','+point.longitude.toFixed(5);
+      const pointKey = point => (geometry.domain || geometry.kind)+':'+point.latitude.toFixed(5)+','+point.longitude.toFixed(5);
       geometry.points.forEach(point=>{
         const hit = sampleCache.get(pointKey(point));
         if (hit && now-hit.at < 8*60*1000) point.hourly = hit.hourly;
@@ -934,11 +948,14 @@
       if(layer === 'temperature') title += ' · '+(typeof deps.useF === 'function' && deps.useF()?'°F':'°C');
       if (model && layer === 'precipitation') title += ' · ' + precipRate(0).unit;
       const subhead=document.getElementById('weatherMapSubhead');
-      if(subhead) subhead.textContent=model ? 'DWD ICON · 0.125°' : t('weather.mapEstimate','Interpolated forecast estimates')+(layer === 'aqi'?' · CAMS · ~45 km':'');
-      const creditKey = model ? 'icon-' + layer : layer;
+      const aqiDomain = layer === 'aqi' ? activeGrid?.geometry.domain : null;
+      const aqiResolution = aqiDomain === 'cams_europe' ? '~11 km' : aqiDomain === 'cams_global' ? '~45 km' : '';
+      if(subhead) subhead.textContent=model ? 'DWD ICON · 0.125°' : t('weather.mapEstimate','Interpolated forecast estimates')+(aqiResolution ? ' · CAMS · '+aqiResolution : '');
+      const creditKey = model ? 'icon-' + layer : aqiDomain || layer;
       if(credit && !fallbackActive && credit.dataset.layerCredits!==creditKey) {
         credit.innerHTML=mapCredits+' · <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>'+
-          (model ? ' · <a href="https://open-meteo.com/en/docs/dwd-api" target="_blank" rel="noopener noreferrer">DWD ICON</a>' : layer === 'aqi'?' · CAMS (~45 km)':'');
+          (model ? ' · <a href="https://open-meteo.com/en/docs/dwd-api" target="_blank" rel="noopener noreferrer">DWD ICON</a>'
+            : layer === 'aqi' ? ' · <a href="https://open-meteo.com/en/docs/air-quality-api#data-sources" target="_blank" rel="noopener noreferrer">CAMS</a>' + (aqiResolution ? ' ('+aqiResolution+')' : '') : '');
         credit.dataset.layerCredits=creditKey;
       }
       const precipitationButton = layerHost?.querySelector('[data-weather-layer="precipitation"]');

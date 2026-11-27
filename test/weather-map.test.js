@@ -110,12 +110,33 @@ test('nearby pans reuse geographic sample positions and AQI uses its dedicated s
  const first=api.gridGeometry({getWest:()=>10.1,getEast:()=>12.1,getNorth:()=>40.1,getSouth:()=>38.1});
  const second=api.gridGeometry({getWest:()=>10.2,getEast:()=>12.2,getNorth:()=>40.2,getSouth:()=>38.2});
  assert.equal(first.key,second.key);
- const request=new URL(api.makeGridUrl({...first,kind:'aqi'}));
+ const global=api.gridGeometry({getWest:()=>-20,getEast:()=>30,getNorth:()=>55,getSouth:()=>-35}, 'aqi');
+ const request=new URL(api.makeGridUrl(global));
  assert.equal(request.hostname,'air-quality-api.open-meteo.com');
  assert.equal(request.searchParams.get('hourly'),'us_aqi');
  assert.equal(request.searchParams.get('domains'),'cams_global');
+ assert.equal(request.searchParams.get('forecast_hours'),'14');
+ assert.equal(request.searchParams.has('forecast_days'),false);
  assert.deepEqual(Array.from(api.palette('aqi',50)),[70,190,122,170]);
  assert.deepEqual(Array.from(api.palette('aqi',51)),[241,211,68,185]);
+});
+
+test('CAMS Europe uses bounded regional samples, including at the coverage edge and on wrapped worlds',()=>{
+ const api=loadMapFactory().helpers;
+ const grid=(west,east,south,north)=>api.gridGeometry({
+   getWest:()=>west,getEast:()=>east,getSouth:()=>south,getNorth:()=>north
+ }, 'aqi');
+ const paris=grid(2.21,2.46,48.74,48.96);
+ assert.equal(new URL(api.makeGridUrl(paris)).searchParams.get('domains'),'cams_europe');
+ assert.ok(Math.abs(paris.points[1].longitude-paris.points[0].longitude-.1)<1e-9);
+ assert.ok(paris.points.length<=64);
+ assert.equal(grid(362.21,362.46,48.74,48.96).domain,'cams_europe');
+ const edge=grid(-25,44,31,70);
+ assert.ok(edge.points.length<=64);
+ assert.ok(edge.points.every(p=>p.latitude>=30 && p.latitude<=70 && p.longitude>=-25 && p.longitude<=45));
+ assert.equal(edge.points.at(-1).longitude,edge.east);
+ assert.equal(grid(-25.01,44,31,70).domain,'cams_global');
+ assert.equal(grid(170,-170,30,60).domain,'cams_global');
 });
 
 test('map raster reads each forecast sample once per frame and clears stale pixels when data is missing', () => {

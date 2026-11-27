@@ -2301,6 +2301,13 @@ test('map history, attribution keyboard access, landscape space and AQI source a
  if(await page.locator('#weatherMap').getAttribute('data-map-state')==='ready') {
   await expect.poll(()=>airQueries.length).toBeGreaterThan(0);
   expect(airQueries[0].searchParams.get('domains')).toBe('cams_global');
+  expect(airQueries[0].searchParams.get('forecast_hours')).toBe('14');
+  await expect(page.locator('#weatherMapTime')).toBeEnabled();
+  await expect(page.locator('#weatherMapSubhead')).toContainText('~45 km');
+  await page.evaluate(()=>window.__mapForTest.jumpTo({center:[2.35,48.85],zoom:11}));
+  await expect(page.locator('#weatherMapSubhead')).toContainText('~11 km');
+  const regional=airQueries.find(query=>query.searchParams.get('domains')==='cams_europe');
+  expect(regional.searchParams.get('latitude').split(',').length).toBeLessThanOrEqual(64);
   await expect(page.locator('#weatherMapTime')).toBeEnabled();
  }
  if(await page.locator('#weatherMap').getAttribute('data-map-state')==='ready'){
